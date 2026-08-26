@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>بطاقات الأدوار — حزمة السلامة</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green: #0f3d2e;
+  --green-2: #1b5c46;
+  --gold: #b8912f;
+  --ink: #12100e;
+  --muted: #6b6560;
+  --line: #c9c4bd;
+  --paper: #fff;
+  --bg: #e9e6e0;
+  --tint: #f4f2ee;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Cairo', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.7;
+  min-height: 100vh;
+}
+.header {
+  background: linear-gradient(135deg, var(--green) 0%, var(--green-2) 100%);
+  color: #fff;
+  padding: 32px 24px;
+  border-bottom: 4px solid var(--gold);
+}
+.header .back {
+  color: var(--gold);
+  text-decoration: none;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.header .back:hover { text-decoration: underline; }
+.header h1 {
+  font-size: 26px;
+  font-weight: 900;
+}
+.header p {
+  font-size: 14px;
+  opacity: 0.85;
+  margin-top: 4px;
+}
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 20px 60px;
+}
+.section {
+  background: var(--paper);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.section-title {
+  background: var(--tint);
+  border-bottom: 1px solid var(--line);
+  padding: 12px 20px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--green);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title .count {
+  background: var(--gold);
+  color: #fff;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.links {
+  display: grid;
+  gap: 1px;
+  background: var(--line);
+}
+.link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  background: var(--paper);
+  text-decoration: none;
+  color: var(--ink);
+  transition: background 0.15s;
+}
+.link:hover {
+  background: var(--tint);
+}
+.link .num {
+  width: 32px;
+  height: 32px;
+  background: var(--green);
+  color: #fff;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+}
+.link .text {
+  flex: 1;
+}
+.link .title {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--green);
+}
+.link .desc {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.link .arrow {
+  color: var(--muted);
+  font-size: 18px;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a href="../index.html" class="back">&#8594; العودة للفهرس الرئيسي</a>
+  <h1>بطاقات الأدوار</h1>
+  <p>21 دور في 4 فئات</p>
+</div>
+
+<div class="container">
+
+  <div class="section">
+    <div class="section-title">
+      القيادة
+      <span class="count">5</span>
+    </div>
+    <div class="links">
+      <a href="leadership/role-01.html" class="link">
+        <div class="num">1</div>
+        <div class="text">
+          <div class="title">المشرف العام للسلامة وقائد فريق الطوارئ</div>
+          <div class="desc">مدير الشؤون الإدارية والهندسية</div>
+        </div>
+        <div class="arrow">&#8592;</div>
+      </a>
+      <a href="leadership/role-02.html" class="link">
+        <div class="num">2</div>
+        <div class="text">
+          <div class="title">مدير المرافق والصيانة</div>
+          <div class="desc">القيادة الفنية</div>
+        </div>
+        <div class="arrow">&#8592;</div>
+      </a>
+      <a href="leadership/role-03.html" class="link">
+        <div class="num">3</div>
+        <div class="text">
+          <div class="title">رئيس قسم الأمن والسلامة</div>
+          <div class="desc">القيادة الميدانية</div>
+        </div>
+        <div class="arrow">&#8592;</div>
+      </a>
+      <a href="leadership/role-20.html" class="link">
+        <div class="num">20</div>
+        <div class="text">
+          <div class="title">مسؤول السلامة بالمعهد</div>
+          <div class="desc">أخصائي السلامة</div>
+        </div>
+        <div class="arrow">&#8592;</div>
+      </a>
+      <a href="leadership/role-21.html" class="link">
+        <div class="num">21</div>
+        <div class="text">
+          <div class="title">مناوب مركز السلامة</div>
+          <div class="desc">المحرك التشغيلي للمركز</div>
+        </div>
+        <div class="arrow">&#8592;</div>
+      </a>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">
+      فريق الاستجابة الأولي
+      <span class="count">5</span>
+    </div>
+    <div class="links">
+      <a href="response-team/role-08.html" class="link">
+        <div class="num">8</div>
+        <div class="text">
+          <div class="title">المنسق</div>
+          <div class="desc">لكل إدارة أو قسم أو فريق</div>
+        </div>
+        <div class="arrow">&#8592;</div>
+      </a>
+      <a href="response-team/role-09.html" class="link">
+        <div class="num">9</div>
+        <div class="text">
+          <div class="title">المسعف</div>
+          <div class="desc">لكل إدارة أو قسم أو فريق</div>
+        </div>
+        <div class="arrow">&#8592;</div>
+      </a>
+      <a href="response-team/role-10.html" class="link">
+        <div class="num">10</div>
+        <div class="text">
+          <div class="title">المنقذ</div>
+          <div class="desc">لكل إدارة أو قسم أو فريق</div>
+        </div>
+        <div class="arrow">&#8592;</div>
+      </a>
+      <a href="response-team/role-11.html" class="link">
+        <div class="num">11</div>
+        <div class="text">
+          <div class="title">الإطفائي</div>
+          <div class="desc">لكل إدارة أو قسم أو فريق</div>
+        </div>
+        <div class="arrow">&#8592;</div>
+      </a>
+      <a href="response-team/role-06.html" class="link">
+        <div class="num">6</div>
+        <div class="text">
+          <div class="title">المحاضر</div>
+          <div class="desc">منسق + مسعف لقاعته</div>
+        </div>
+        <div class="arrow">&#8592;</div>
+      </a>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">
+      الإسناد
+      <span class="count">9</span>
+    </div>
+    <div class="links">
+      <a href="support/role-05.html" class="link">
+        <div class="num">5</div>
+        <div class="text">
+          <div class="title">أفراد الأمن المكلفون</div>
+          <div class="desc">التدفق والمحيط + منقذ/إطفائي القاعات</div>
+        </div>
+        <div class="arrow">&#8592;</div>
+      </a>
+      <a href="support/role-04.html" class="link">
+        <div class="num">4</div>
+        <div class="text">
+          <div class="title">طبيب المعهد</div>
+          <div class="desc">الإسناد الطبي</div>
+        </div>
+        <div class="arrow">&#8592;</div>
+      </a>
+      <a href="support/role-13.html" class="link">
+        <div class="num">13</div>
+        <div class="text">
+          <div class="title">مراقب الحريق</div>
+          <div class="desc">مراقبة عدم تجدد الحريق</div>
+        </div>
+        <div class="arrow">&#8592;</div>
+      </a>
+      <a href="support/role-14.html" class="link">
+        <div class="num">14</div>
+        <div class="text">
+          <div class="title">فني مضخة الحريق</div>
+          <div class="desc">غرفة المضخة</div>
+        </div>
+        <div class="arrow">&#8592;</div>
+      </a>
+      <a href="support/role-15.html" class="link">
+        <div class="num">15</div>
+        <div class="text">
+          <div class="title">فني المولد الاحتياطي</div>
+          <div class="desc">غرفة المولد</div>
+        </div>
+        <div class="arrow">&#8592;</div>
+      </a>
+      <a href="support/role-16.html" class="link">
+        <div class="num">16</div>
+        <div class="text">
+          <div class="title">فني لوحة الإنذار والحريق</div>
+          <div class="desc">غرفة لوحة الإنذار</div>
+        </div>
+        <div class="arrow">&#8592;</div>
+      </a>
+      <a href="support/role-17.html" class="link">
+        <div class="num">17</div>
+        <div class="text">
+          <div class="title">فني التكييف ونظام الدخان</div>
+          <div class="desc">غرفة التحكم بالتكييف</div>
+        </div>
+        <div class="arrow">&#8592;</div>
+      </a>
+      <a href="support/role-18.html" class="link">
+        <div class="num">18</div>
+        <div class="text">
+          <div class="title">فني المصاعد</div>
+          <div class="desc">غرفة ماكينة المصاعد</div>
+        </div>
+        <div class="arrow">&#8592;</div>
+      </a>
+      <a href="support/role-19.html" class="link">
+        <div class="num">19</div>
+        <div class="text">
+          <div class="title">فني الكهرباء</div>
+          <div class="desc">اللوحات والتمديدات</div>
+        </div>
+        <div class="arrow">&#8592;</div>
+      </a>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">
+      الشاغلين
+      <span class="count">2</span>
+    </div>
+    <div class="links">
+      <a href="occupants/role-07.html" class="link">
+        <div class="num">7</div>
+        <div class="text">
+          <div class="title">المتدرب</div>
+          <div class="desc">الفئة الأخطر — لا يعرف المبنى</div>
+        </div>
+        <div class="arrow">&#8592;</div>
+      </a>
+      <a href="occupants/role-12.html" class="link">
+        <div class="num">12</div>
+        <div class="text">
+          <div class="title">الموظف</div>
+          <div class="desc">عضو في خلية الـ20</div>
+        </div>
+        <div class="arrow">&#8592;</div>
+      </a>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
