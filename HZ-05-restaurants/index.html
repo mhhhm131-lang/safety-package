@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>المطاعم — HZ-05</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--green:#0f3d2e;--green-2:#1b5c46;--gold:#b8912f;--ink:#12100e;--muted:#6b6560;--line:#c9c4bd;--paper:#fff;--bg:#e9e6e0;--tint:#f4f2ee}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--ink);line-height:1.7;min-height:100vh}
+.header{background:linear-gradient(135deg,var(--green) 0%,var(--green-2) 100%);color:#fff;padding:32px 24px;border-bottom:4px solid var(--gold)}
+.header .back{color:var(--gold);text-decoration:none;font-size:13px;display:inline-flex;align-items:center;gap:6px;margin-bottom:12px}
+.header .back:hover{text-decoration:underline}
+.header .code{font-size:13px;opacity:0.7;margin-bottom:4px}
+.header h1{font-size:26px;font-weight:900}
+.container{max-width:700px;margin:0 auto;padding:32px 20px 60px}
+.section{background:var(--paper);border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-bottom:20px;overflow:hidden}
+.section-title{background:var(--tint);border-bottom:1px solid var(--line);padding:12px 20px;font-size:14px;font-weight:700;color:var(--green)}
+.links{display:grid;gap:1px;background:var(--line)}
+.link{display:flex;align-items:center;gap:14px;padding:16px 20px;background:var(--paper);text-decoration:none;color:var(--ink);transition:background 0.15s}
+.link:hover{background:var(--tint)}
+.link .icon{width:40px;height:40px;background:var(--tint);border:2px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.link:hover .icon{border-color:var(--gold);background:#fdf9ec}
+.link .text{flex:1}
+.link .title{font-weight:700;font-size:15px;color:var(--green)}
+.link .desc{font-size:12px;color:var(--muted);margin-top:2px}
+.link .arrow{color:var(--muted);font-size:20px}
+</style>
+</head>
+<body>
+<div class="header">
+<a href="../index.html" class="back">→ العودة للفهرس الرئيسي</a>
+<div class="code">HZ-05</div>
+<h1>المطاعم</h1>
+</div>
+<div class="container">
+<div class="section">
+<div class="section-title">الخطط</div>
+<div class="links">
+<a href="safety-plan.html" class="link"><div class="icon">📋</div><div class="text"><div class="title">خطة السلامة</div><div class="desc">خطة السلامة الخاصة بالموقع</div></div><div class="arrow">←</div></a>
+<a href="response-plan.html" class="link"><div class="icon">🚨</div><div class="text"><div class="title">خطة الطوارئ</div><div class="desc">خطة الاستجابة للحوادث</div></div><div class="arrow">←</div></a>
+</div>
+</div>
+<div class="section">
+<div class="section-title">النموذج التفاعلي</div>
+<div class="links">
+<a href="inspection-form.html" class="link"><div class="icon">📝</div><div class="text"><div class="title">نموذج الفحص</div><div class="desc">نموذج الفحص التفاعلي للموقع</div></div><div class="arrow">←</div></a>
+</div>
+</div>
+<div class="section">
+<div class="section-title">فريق السلامة (٤ أدوار)</div>
+<div class="links">
+<a href="roles/coordinator.html" class="link"><div class="icon">👔</div><div class="text"><div class="title">المنسق</div><div class="desc">منسق السلامة للموقع</div></div><div class="arrow">←</div></a>
+<a href="roles/paramedic.html" class="link"><div class="icon">🏥</div><div class="text"><div class="title">المسعف</div><div class="desc">مسعف الموقع</div></div><div class="arrow">←</div></a>
+<a href="roles/rescuer.html" class="link"><div class="icon">🦺</div><div class="text"><div class="title">المنقذ</div><div class="desc">منقذ الموقع</div></div><div class="arrow">←</div></a>
+<a href="roles/firefighter.html" class="link"><div class="icon">🧯</div><div class="text"><div class="title">الإطفائي</div><div class="desc">إطفائي الموقع</div></div><div class="arrow">←</div></a>
+</div>
+</div>
+</div>
+</body>
+</html>
