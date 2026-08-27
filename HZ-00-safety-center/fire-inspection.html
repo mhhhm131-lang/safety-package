@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>نموذج فحص أنظمة السلامة والوقاية والحماية من الحريق — الإصدار ٤.١</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--green:#0f3d2e;--green-2:#1b5c46;--gold:#b8912f;--red:#9b1c1c;--amber:#a8620f;--blue:#1e4a6b;
+--ink:#12100e;--muted:#6b6560;--line:#c9c4bd;--paper:#fff;--bg:#e9e6e0;--tint:#f4f2ee}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:'Cairo',Arial,sans-serif;color:var(--ink);font-size:13px;line-height:1.7}
+.bar{position:sticky;top:0;z-index:20;background:var(--green);color:#fff;padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-bottom:3px solid var(--gold)}
+.bar b{font-weight:700;margin-left:8px;font-size:13px}
+.tab{background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff;font-family:inherit;font-size:12px;padding:5px 11px;border-radius:3px;cursor:pointer}
+.tab:hover{background:rgba(255,255,255,.12)}
+.tab[aria-selected="true"]{background:var(--gold);border-color:var(--gold);color:#1a1509;font-weight:700}
+.tab:focus-visible,button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.print{margin-inline-start:auto;background:var(--gold);color:#1a1509;border:0;font-family:inherit;font-weight:700;font-size:12px;padding:6px 16px;border-radius:3px;cursor:pointer}
+.sheet{max-width:1020px;margin:20px auto 60px;background:var(--paper);padding:26px 30px 34px;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px double var(--green);padding-bottom:12px;gap:16px}
+.head h1{font-size:19px;margin:0 0 3px;color:var(--green);font-weight:900}
+.head .sub{font-size:11.5px;color:var(--muted);margin:0}
+.stamp{border:1px solid var(--line);border-top:3px solid var(--gold);padding:7px 12px;font-size:10.5px;min-width:170px;text-align:center;line-height:1.9}
+.stamp span{display:block;color:var(--muted)}.stamp strong{color:var(--green);font-size:12px}
+h2{font-size:13px;color:#fff;background:var(--green-2);margin:20px 0 0;padding:5px 12px;font-weight:700;display:flex;justify-content:space-between;gap:10px}
+h2 em{font-style:normal;font-weight:400;font-size:10.5px;opacity:.85}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{border:1px solid var(--line);padding:5px 7px;vertical-align:middle}
+th{background:var(--tint);font-weight:600;font-size:11px;color:var(--green)}
+td.lbl{background:var(--tint);font-weight:600;width:130px;font-size:11.5px}
+.c{text-align:center}
+tbody tr:nth-child(even) td{background:#fbfaf8}
+input[type=checkbox],input[type=radio]{appearance:none;-webkit-appearance:none;width:14px;height:14px;border:1.4px solid var(--muted);background:#fff;cursor:pointer;vertical-align:-2px;margin:0;flex:none}
+input[type=radio]{border-radius:50%}
+input[type=checkbox]:checked,input[type=radio]:checked{background:var(--green);border-color:var(--green)}
+input[type=checkbox]:checked::after{content:"✓";color:#fff;font-size:11px;display:block;text-align:center;line-height:12px}
+input[type=radio]:checked::after{content:"";display:block;width:6px;height:6px;background:#fff;border-radius:50%;margin:3px auto}
+input:disabled{opacity:.55;cursor:not-allowed}
+input[type=text],input[type=date],input[type=time],textarea{width:100%;border:0;border-bottom:1px dotted var(--line);font-family:inherit;font-size:12px;background:transparent;padding:2px 0;color:var(--ink)}
+textarea{resize:vertical;min-height:36px;border:1px solid var(--line);padding:5px 7px}
+input:focus,textarea:focus{outline:0;background:#fdf9ec;border-bottom-color:var(--gold)}
+label.k{display:inline-flex;align-items:center;gap:5px;margin-inline-end:14px;font-size:11.5px;cursor:pointer}
+.ref{font-size:10.5px;color:var(--green);white-space:nowrap;font-weight:600}
+.ver{font-size:10px;color:var(--red);font-weight:700}
+.refv{background:#f3f1ed;color:var(--green);font-weight:700}
+.del{display:none;font-family:inherit;font-size:10px;font-weight:700;border:1px solid var(--red);color:var(--red);background:#fff;padding:2px 8px;border-radius:3px;cursor:pointer;margin-inline-start:6px}
+.del:hover{background:var(--red);color:#fff}
+.cns .del{display:inline-block}
+.cns td.ed{background:#fdf9ec;outline:1px dashed var(--gold);cursor:text}
+.addrow{display:none;font-family:inherit;font-size:11.5px;font-weight:700;border:1px dashed var(--green);color:var(--green);background:#fff;padding:5px 14px;border-radius:3px;cursor:pointer;margin-top:8px}
+.addrow:hover{background:var(--green);color:#fff}
+.cns .addrow{display:inline-block}
+.refv:read-only{cursor:default}
+.cns .refv{background:#fdf9ec;border-bottom:1px solid var(--gold);cursor:text}
+.note{border:1px solid var(--gold);border-inline-start:5px solid var(--gold);background:#fdfaf0;padding:9px 12px;font-size:11.5px;margin-top:10px}
+.note b{color:var(--green)}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:10.5px;color:var(--muted);margin-top:7px}
+.act{font-family:inherit;font-size:10.5px;font-weight:700;border:1px solid var(--red);color:var(--red);background:#fff;padding:3px 9px;border-radius:3px;cursor:pointer;white-space:nowrap}
+.act:hover{background:var(--red);color:#fff}
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap}
+.b-open{background:#fdf3f3;color:var(--red);border:1px solid var(--red)}
+.b-esc{background:#fdf6ea;color:var(--amber);border:1px solid var(--amber)}
+.b-done{background:#eef5f1;color:var(--green);border:1px solid var(--green-2)}
+.b-watch{background:#f0eaf3;color:#5b2d6b;border:1px solid #5b2d6b}
+.muted{color:var(--muted);font-size:10.5px}
+.overlay{position:fixed;inset:0;background:rgba(10,20,16,.55);display:none;z-index:60;padding:18px;overflow:auto}
+.overlay.on{display:block}
+.modal{max-width:800px;margin:0 auto;background:#fff;border-top:5px solid var(--red)}
+.m-head{background:var(--green);color:#fff;padding:11px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;position:sticky;top:0;z-index:2}
+.m-head h3{margin:0;font-size:14px;font-weight:700}
+.m-head .id{background:var(--gold);color:#1a1509;font-size:11px;font-weight:700;padding:2px 9px;border-radius:3px}
+.m-close{background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff;font-family:inherit;font-size:12px;padding:3px 10px;border-radius:3px;cursor:pointer}
+.m-body{padding:16px 18px 20px}
+.sendbox{border:1px solid var(--red);border-inline-start:5px solid var(--red);background:#fdf3f3;padding:11px 13px;margin-top:12px}
+.btn-send{background:var(--red);color:#fff;width:100%;padding:10px;font-size:13px}
+.btn-send:hover{background:#7d1a19}
+.sendbox.done{border-color:var(--green-2);border-inline-start-color:var(--green-2);background:#eef5f1}
+.sendbox.done .btn-send{display:none}
+#sendState{font-size:12px;font-weight:700;color:var(--green);margin-top:2px}
+.savebar{position:sticky;bottom:0;background:#fff;border-top:2px solid var(--green);padding:11px 0 4px;margin-top:16px;display:flex;gap:10px;align-items:center}
+.savebar .btn-main{flex:1}
+.sec{font-size:12px;font-weight:700;color:#fff;background:var(--green-2);padding:4px 11px;margin:18px 0 10px}
+.sec:first-child{margin-top:0}
+.sec.watch{background:var(--blue)}
+.fl{font-size:11.5px;font-weight:700;color:var(--green);margin:12px 0 5px}
+.ro{background:var(--tint);border:1px solid var(--line);padding:7px 9px;font-size:12px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opts{display:grid;gap:7px;margin-top:6px}
+.opt{border:1px solid var(--line);padding:8px 11px;cursor:pointer;display:flex;align-items:center;gap:9px;font-size:12px}
+.opt:hover{border-color:var(--gold);background:#fdfaf0}
+.opt.sel{border-color:var(--green);background:#eef5f1;box-shadow:inset 0 0 0 1px var(--green)}
+.opt .t{font-weight:700}
+.opt .d{color:var(--muted);font-size:11px;margin-inline-start:auto;text-align:end}
+.opt.sel .d{color:var(--green);font-weight:700}
+.blk{display:none;border:1px solid var(--line);border-top:3px solid var(--gold);padding:12px 14px;margin-top:10px;background:#fcfbf9}
+.blk.on{display:block}
+.hidesec{display:none}
+.mono{font-family:"IBM Plex Mono",monospace;direction:ltr;display:inline-block;font-weight:700}
+.login{position:fixed;inset:0;background:#0d1a14;z-index:90;overflow:auto;padding:30px 16px;display:flex;align-items:flex-start;justify-content:center}
+.login.off{display:none}
+.lbox{max-width:470px;width:100%;background:#fff;padding:26px 28px 22px;border-top:5px solid var(--gold)}
+.lseal{width:44px;height:44px;border:2px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--green);font-weight:900;font-size:19px;margin:0 auto 12px}
+.login h1{font-size:16px;color:var(--green);margin:0;text-align:center;line-height:1.6}
+.lsub{font-size:11.5px;color:var(--muted);text-align:center;margin:4px 0 0}
+.lwarn{border:1px solid var(--gold);background:#fdfaf0;font-size:11.5px;padding:9px 12px;margin:14px 0 16px}
+.lwarn b{color:var(--green)}
+.lf{margin-bottom:10px}
+.lf label{display:block;font-size:11.5px;color:var(--muted);margin-bottom:3px}
+.lf input{width:100%;font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:2px;background:#fff}
+.lf input:focus{outline:0;border-color:var(--gold);background:#fdf9ec}
+.lerr{color:var(--red);font-size:12px;font-weight:700;min-height:18px;margin-top:4px}
+.lusers{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:18px}
+.lusers th,.lusers td{border:1px solid var(--line);padding:5px 8px;text-align:start}
+.lusers th{background:var(--tint);color:var(--green);font-size:11px}
+.lnote{font-size:10.5px;color:var(--muted);margin-top:8px;text-align:center}
+.userbar{background:var(--green-2);color:#fff;font-size:11.5px;padding:5px 16px;display:flex;gap:12px;align-items:center}
+.userbar b{color:var(--gold)}
+.userbar button{margin-inline-start:auto;background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff;font-family:inherit;font-size:11px;padding:3px 11px;border-radius:2px}
+.ro-lock input,.ro-lock textarea,.ro-lock select{pointer-events:none;opacity:.75}
+.ro-lock .btn,.ro-lock .act,.ro-lock .addrow,.ro-lock .del{display:none!important}
+.roflag{font-size:10.5px;color:var(--muted);font-weight:700;padding:6px 0}
+.inbox{max-width:1020px;margin:18px auto -6px;background:#fff;border:1px solid var(--line);border-top:4px solid var(--gold)}
+.ib-h{background:var(--tint);color:var(--green);font-weight:700;font-size:12.5px;padding:7px 14px;border-bottom:1px solid var(--line)}
+.ib-row{display:flex;gap:12px;align-items:center;padding:9px 14px;border-bottom:1px solid #eeeae4;font-size:12px}
+.ib-row:last-child{border-bottom:0}
+.ib-row .t{flex:1;min-width:0}
+.ib-row .t b{color:var(--green)}
+.ib-row .go{font-family:inherit;font-size:11px;font-weight:700;border:1px solid var(--green);color:var(--green);background:#fff;padding:4px 12px;border-radius:3px;cursor:pointer}
+.ib-row .go:hover{background:var(--green);color:#fff}
+.ib-empty{padding:14px;text-align:center;color:var(--muted);font-size:12px}
+.ib-n{background:var(--red);color:#fff;border-radius:10px;font-size:10.5px;font-weight:700;padding:1px 8px;margin-inline-start:6px}
+@media print{.inbox,.userbar,.login{display:none!important}}
+.hidesec.show{display:block}
+.blk h4{margin:0 0 8px;font-size:12px;color:var(--green)}
+.need{border:1px solid var(--amber);background:#fdf6ea;padding:10px 12px;margin-top:10px}
+.need .t{font-size:11.5px;font-weight:700;color:var(--amber);margin-bottom:5px}
+.lvl{border:1px solid var(--line);margin-top:9px}
+.lvl-h{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--tint)}
+.lvl-n{width:22px;height:22px;border-radius:50%;background:#fff;border:1.5px solid var(--muted);color:var(--muted);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none}
+.lvl-n.done{background:var(--green);border-color:var(--green);color:#fff}
+.lvl-n.act{background:var(--gold);border-color:var(--gold);color:#1a1509}
+.lvl-t{font-size:12px;font-weight:700}
+.lvl-s{margin-inline-start:auto;font-size:10.5px;color:var(--muted)}
+.lvl-s.done{color:var(--green);font-weight:700}
+.lvl-s.up{color:var(--amber);font-weight:700}
+.lvl-b{padding:11px 13px;display:none;border-top:1px solid var(--line)}
+.lvl-b.on{display:block}
+.sig{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:9px}
+.btn{font-family:inherit;font-weight:700;font-size:12px;border:0;padding:8px 18px;border-radius:3px;cursor:pointer}
+.btn-main{background:var(--green);color:#fff;width:100%;margin-top:16px;padding:11px}
+.btn-sm{background:var(--green-2);color:#fff;font-size:11px;padding:6px 14px;margin-top:8px}
+.btn-gh{background:#fff;border:1px solid var(--line);color:var(--muted);font-size:11px;padding:6px 14px;margin-top:8px}
+.btn-w{background:var(--blue);color:#fff;font-size:11px;padding:6px 14px;margin-top:9px}
+.btn-r{background:var(--red);color:#fff;font-size:11px;padding:7px 15px;margin-top:9px;width:100%}
+.btn:disabled{background:#ddd9d3;color:#8c8880;cursor:not-allowed}
+.watchbox{border:1px solid var(--blue);border-top:3px solid var(--blue);background:#f5f8fa;padding:12px 14px}
+.wtab{width:100%;font-size:11.5px;margin-top:6px}
+.wtab th{background:#e8eef3;color:var(--blue)}
+.gate{border:1px dashed var(--red);background:#fdf3f3;padding:9px 12px;font-size:11.5px;margin-top:11px}
+.gate b{color:var(--red)}
+.m7{border:1px solid var(--red);background:#fdf3f3;padding:9px 12px;font-size:11.5px;margin-top:12px;display:flex;gap:10px}
+.m7 b{color:var(--red)}
+#printDetails{display:none}
+.pd{border:1px solid var(--line);border-top:3px solid var(--red);padding:11px 13px;margin-top:11px;font-size:11.5px}
+.pd h4{margin:0 0 7px;font-size:12.5px;color:var(--green);display:flex;gap:9px;align-items:center}
+.pd .r{display:flex;gap:8px;padding:2.5px 0;border-bottom:1px dotted var(--line)}
+.pd .r span:first-child{color:var(--muted);min-width:130px}
+.sign{display:grid;grid-template-columns:repeat(3,1fr)}
+.sign div{border:1px solid var(--line);border-top:0;padding:9px 10px;font-size:11px}
+.sign div:not(:last-child){border-inline-start:0}
+.sign span{display:block;color:var(--muted);font-size:10px;margin-bottom:26px}
+.foot{margin-top:22px;border-top:1px solid var(--line);padding-top:8px;display:flex;justify-content:space-between;font-size:10px;color:var(--muted);flex-wrap:wrap;gap:8px}
+.empty{padding:12px;text-align:center;color:var(--muted);font-size:11.5px;border:1px dashed var(--line)}
+@media print{
+  @page{size:A4;margin:11mm}
+  body{background:#fff;font-size:10.5pt}
+  .bar,.print,.act,.overlay{display:none!important}
+  .sheet{box-shadow:none;margin:0;max-width:none;padding:0}
+  #printDetails{display:block}
+  h2,th,.note,.badge,td.lbl,tbody tr:nth-child(even) td,.pd{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  tr,.pd{page-break-inside:avoid}h2{page-break-after:avoid}
+}
+@media (max-width:680px){.sheet{padding:16px 12px}.head{flex-direction:column}.sign{grid-template-columns:1fr}.sign div{border-inline-start:1px solid var(--line)}.two,.sig{grid-template-columns:1fr}}
+
+.rd input[type=text]{border-bottom:1px dashed var(--muted)}
+.grade{font-size:10.5px;line-height:1.5}
+.grade b{color:var(--red)}
+.warnbox{border:1px solid var(--red);border-inline-start:5px solid var(--red);background:#fdf3f3;padding:8px 11px;font-size:11.5px;margin-top:8px}
+.sign3{display:grid;grid-template-columns:repeat(3,1fr)}
+.sign3 div{border:1px solid var(--line);border-top:0;padding:9px 10px;font-size:11px}
+.sign3 div:not(:last-child){border-inline-start:0}
+.sign3 .h{font-weight:700;color:var(--green);font-size:11.5px;margin-bottom:4px}
+.sign3 span{display:block;color:var(--muted);font-size:10px;margin-bottom:24px}
+@media(max-width:680px){.sign3{grid-template-columns:1fr}.sign3 div{border-inline-start:1px solid var(--line)}}
+</style>
+</head>
+<body>
+
+<div class="login" id="login">
+  <div class="lbox">
+    <div class="lseal">س</div>
+    <h1>نموذج فحص أنظمة السلامة والوقاية والحماية من الحريق</h1>
+    <p class="lsub">معهد الإدارة العامة — مبنى الملز · اللائحة ٥-٤٦-٢</p>
+    <div class="lwarn"><b>واجهة عرض.</b> الدخول هنا لتوضيح الأدوار فقط. في النظام الفعلي يدخل كل مستخدم بحسابه الوظيفي في المعهد، ويُشتق دوره من نظام الصلاحيات.</div>
+    <div class="lf"><label>اسم المستخدم</label><input type="text" id="uu" autocomplete="off" placeholder="fani"></div>
+    <div class="lf"><label>كلمة المرور</label><input type="password" id="pp" autocomplete="off" placeholder="1234"></div>
+    <div id="lerr" class="lerr"></div>
+    <button class="btn btn-main" style="width:100%;margin-top:14px" onclick="doLogin()">دخول</button>
+    <table class="lusers"><thead><tr><th>الدور</th><th>اسم المستخدم</th><th>كلمة المرور</th></tr></thead><tbody>
+      <tr><td>الفني المنفّذ</td><td class="mono">fani</td><td class="mono">1234</td></tr>
+      <tr><td>مدير المرافق والصيانة</td><td class="mono">marafiq</td><td class="mono">1234</td></tr>
+      <tr><td>مدير الشؤون الإدارية والهندسية</td><td class="mono">shuon</td><td class="mono">1234</td></tr>
+      <tr><td>الإدارة العليا</td><td class="mono">idara</td><td class="mono">1234</td></tr>
+      <tr><td>مسؤول السلامة</td><td class="mono">salama</td><td class="mono">1234</td></tr>
+      <tr><td>المكتب الاستشاري</td><td class="mono">maktab</td><td class="mono">1234</td></tr>
+    </tbody></table>
+    <div class="lnote">بيانات الدخول معروضة عمداً — هذه واجهة عرض لا نظام مؤمَّن.</div>
+  </div>
+</div>
+
+<div class="userbar" id="userbar" style="display:none">الدور الحالي: <b id="uRole">—</b><span id="uHint" style="opacity:.8"></span><button onclick="logout()">خروج</button></div>
+<nav class="bar" role="tablist" aria-label="اختيار النظام">
+  <b>النظام:</b>
+  <button class="tab" role="tab" aria-selected="true" data-sys="s01">الإنذار</button>
+  <button class="tab" role="tab" aria-selected="false" data-sys="s02">الرشاشات</button>
+  <button class="tab" role="tab" aria-selected="false" data-sys="s03">مضخة الحريق</button>
+  <button class="tab" role="tab" aria-selected="false" data-sys="s04">الخزانات والمياه</button>
+  <button class="tab" role="tab" aria-selected="false" data-sys="s05">الطفايات</button>
+  <button class="tab" role="tab" aria-selected="false" data-sys="s06">الخراطيم والحنفيات</button>
+  <button class="tab" role="tab" aria-selected="false" data-sys="s07">الغاز النظيف</button>
+  <button class="tab" role="tab" aria-selected="false" data-sys="s08">سحب الدخان</button>
+  <button class="tab" role="tab" aria-selected="false" data-sys="s09">المولّد</button>
+  <button class="tab" role="tab" aria-selected="false" data-sys="s10">إنارة الطوارئ</button>
+  <button class="tab" role="tab" aria-selected="false" data-sys="s11">المصاعد</button>
+  <button class="tab" role="tab" aria-selected="false" data-sys="s12">أبواب الحريق</button>
+  <button class="print" style="margin-inline-start:auto;background:var(--gold);color:#2a2008" onclick="saveSelf()">حفظ النموذج بالبيانات</button>
+  <button class="print" style="background:#fff;color:var(--green)" onclick="impFile()">استيراد بيانات</button>
+  <input type="file" id="fpick" accept=".json,.html" hidden>
+  <button class="print" onclick="window.print()">طباعة</button>
+  <button class="print" style="background:#fff;color:var(--red)" onclick="clearAll()">مسح الجولة</button>
+</nav>
+
+<div class="inbox" id="inbox" style="display:none">
+  <div class="ib-h">صندوق الوارد — <span id="ibRole"></span></div>
+  <div id="ibBody"></div>
+</div>
+
+<main class="sheet">
+  <header class="head">
+    <div>
+      <h1>نموذج فحص أنظمة السلامة والوقاية والحماية من الحريق</h1>
+      <p class="sub">معهد الإدارة العامة — مبنى الملز · <b>فحص فنّي</b> تنفّذه إدارة المرافق والصيانة عبر فنييها أو مكتبها المتعاقد · نموذج داخلي وفق م١٤/١٠ · متضمّن وحدة الإبلاغ والتصعيد (م١٢/٣ · م١٢/٥ · م٧ · م٨)</p>
+    </div>
+    <div class="stamp"><span>رقم النموذج</span><strong>ف س ح — <span id="code">٠١</span></strong><span>الإصدار</span><strong>٤.١</strong></div>
+  </header>
+
+  <h2>١ · بيانات الجولة <em>م١٢/٢</em></h2>
+  <table>
+    <tr>
+      <td class="lbl">المبنى</td>
+      <td><label class="k"><input type="checkbox"> الملز</label><label class="k"><input type="checkbox"> النرجس</label><label class="k"><input type="checkbox"> أخرى:</label><input type="text" style="width:80px"></td>
+      <td class="lbl">النظام المفحوص</td><td colspan="3"><input type="text" id="sysName" readonly></td>
+    </tr>
+    <tr>
+      <td class="lbl">الموقع / المنطقة</td><td><input type="text" id="loc"></td>
+      <td class="lbl">دورية هذا الفحص</td>
+      <td><select id="freq" style="border:0;border-bottom:1px dotted var(--line);font-family:inherit;font-size:12px;background:transparent"></select></td>
+      <td class="lbl">التاريخ</td><td><input type="date" id="dtRound" readonly></td>
+    </tr>
+    <tr>
+      <td class="lbl">وقت البدء</td><td><input type="time" id="tStart" readonly></td>
+      <td class="lbl">آخر نشاط</td><td><input type="time" id="tEnd" readonly></td>
+      <td class="lbl">صفة الفاحص</td>
+      <td><select id="insQ" style="border:0;border-bottom:1px dotted var(--line);font-family:inherit;font-size:12px;background:transparent;width:100%">
+        <option>فني مختص — إدارة المرافق والصيانة</option><option>مكتب مرخّص متعاقد</option></select></td>
+    </tr>
+    <tr>
+      <td class="lbl">اسم الفاحص</td><td><input type="text" id="insN"></td>
+      <td class="lbl" id="lbOff" style="display:none">اسم المكتب</td>
+      <td id="tdOff" style="display:none"><input type="text" id="offN"></td>
+      <td class="lbl" id="lbLic" style="display:none">رقم الترخيص</td>
+      <td id="tdLic" style="display:none"><input type="text" id="offL"></td>
+    </tr>
+    <tr>
+      <td class="lbl">التنسيق مع المركز</td>
+      <td colspan="5"><label class="k" style="font-weight:700;color:var(--green)"><input type="checkbox" id="ackIns">
+        أُبلغ المناوب قبل البدء وبعد الانتهاء، وأُعيد النظام لوضعه الطبيعي</label></td>
+    </tr>
+  </table>
+
+  <h2>٢ · القراءات المقاسة <em>القيمة المقاسة إثبات — والملاحظة بلا رقم رأي</em></h2>
+  <table>
+    <tr>
+      <td class="lbl">مرجع القيم</td>
+      <td colspan="3">تقرير المكتب الاستشاري المعتمد من الدفاع المدني — لا تُعدَّل من الفاحص</td>
+      <td class="lbl">رقم التقرير</td><td><input type="text" id="repNo"></td>
+      <td class="lbl">تاريخه</td><td><input type="text" id="repDt" style="width:110px"></td>
+    </tr>
+  </table>
+  <table><thead><tr>
+      <th style="width:26px">#</th><th>القراءة</th>
+      <th style="width:130px">القيمة المرجعية</th><th style="width:130px">القيمة الفعلية</th>
+      <th style="width:44px">مطابق</th><th style="width:52px">غير مطابق</th><th style="width:200px">الإجراء</th>
+    </tr></thead><tbody id="reads"></tbody></table>
+  <button type="button" class="addrow" onclick="addRow('r')">＋ أضف قراءة</button>
+  <div class="note" id="refNote"><b>القيم المرجعية يعبّئها المكتب الاستشاري.</b>
+    الفاحص يسجّل القيمة الفعلية فقط، ويقارنها بالمرجعية أمامه.
+    <button type="button" class="act" id="cnsBtn" style="border-color:var(--green);color:var(--green);margin-inline-start:8px" onclick="togCns()">وضع المكتب الاستشاري</button>
+</div>
+
+  <h2>٣ · قائمة التحقق <em>البنود تتغير بتغير النظام — بقية الأقسام ثابتة</em></h2>
+  <table><thead><tr>
+      <th style="width:26px">#</th><th>بند الفحص</th><th style="width:74px">المرجع</th>
+      <th style="width:44px">مطابق</th><th style="width:52px">غير مطابق</th><th style="width:50px">لا ينطبق</th>
+      <th style="width:200px">الملاحظة والإجراء</th></tr></thead>
+    <tbody id="items"></tbody></table>
+  <button type="button" class="addrow" onclick="addRow('i')">＋ أضف بنداً</button>
+  <div class="note"><b>بنود مبدئية مقترحة من مسؤول السلامة.</b>
+    عند اعتماد النموذج يعبّئها المكتب الاستشاري المعتمد من الدفاع المدني — بنوداً وقراءات وقيماً مرجعية — ويتحمّل مسؤوليتها.</div>
+  <div class="legend">
+    <span>أي بند أو قراءة غير مطابقة يظهر بجانبها زر <b>فتح بلاغ</b> — يفتح وحدة الإبلاغ والتصعيد</span>
+    <span class="ver">SBC ٨٠١ — بند فني يلزم توثيق رقمه من كود البناء السعودي قبل الاعتماد</span>
+  </div>
+
+  <h2>٤ · سجل الملاحظات والبلاغات <em>يُبنى تلقائياً — م١٢/٥ · م١٤/٤</em></h2>
+  <div id="logWrap"><div class="empty">لا توجد ملاحظات مسجّلة في هذه الجولة</div></div>
+
+  <h2>٥ · نتيجة الفحص</h2>
+  <table>
+    <tr>
+      <td class="lbl">الحكم</td>
+      <td colspan="3">
+        <label class="k"><input type="checkbox"> النظام صالح وجاهز</label>
+        <label class="k"><input type="checkbox"> صالح مع تحفظ</label>
+        <label class="k"><input type="checkbox"> غير صالح</label>
+      </td>
+      <td class="lbl">موعد الفحص القادم</td><td><input type="date"></td>
+    </tr>
+    <tr><td class="lbl">ملخص عام</td><td colspan="5"><textarea rows="2"></textarea></td></tr>
+  </table>
+
+  <h2>٦ · القيد في سجل السلامة <em>م٥</em></h2>
+  <table>
+    <tr>
+      <td class="lbl">رقم القيد</td><td><input type="text"></td>
+      <td class="lbl">تاريخ الفحص</td><td><input type="date"></td>
+      <td class="lbl">الجهة القائمة بالفحص</td><td><input type="text"></td>
+    </tr>
+    <tr>
+      <td class="lbl">شكل السجل</td><td><label class="k"><input type="checkbox"> ورقي</label><label class="k"><input type="checkbox"> إلكتروني</label></td>
+      <td class="lbl">عدد البلاغات</td><td class="c"><b id="cnt">٠</b></td>
+      <td class="lbl">عمليات الإصلاح المقيَّدة</td><td><input type="text"></td>
+    </tr>
+    <tr>
+      <td class="lbl">إبلاغ الدفاع المدني بموعد الفحص الدوري <span class="ref">م٦</span></td>
+      <td colspan="5">
+        <label class="k"><input type="checkbox"> أُبلغ — التاريخ:</label><input type="text" style="width:100px">
+        <label class="k"><input type="checkbox"> حضر مفتش السلامة بالدفاع المدني</label>
+        <label class="k"><input type="checkbox"> لم يُبلَّغ (فحص داخلي)</label>
+      </td>
+    </tr>
+  </table>
+  <div class="note"><b>تنبيه على النطاق:</b> هذا نموذج تشغيلي داخلي بموجب م١٤/١٠. أما تقارير الكشف والمتابعة التي تُزوَّد بها الجهة المختصة بشكل دوري، فتوجب م١٢/١ أن تكون «وفق النماذج المعدة والمعتمدة من الجهة المختصة» — ولا يحل هذا النموذج محلها.</div>
+
+  <div id="printDetails"></div>
+
+  <h2>٧ · الاعتماد <em>م٨</em></h2>
+  <div class="sign3">
+    <div><div class="h">الفني المنفّذ</div><span>الاسم / رقم الترخيص / التوقيع</span></div>
+    <div><div class="h">مدير المرافق والصيانة</div><span>الاسم / التوقيع / التاريخ</span></div>
+    <div><div class="h">تحقّق مسؤول السلامة</div>
+      <label class="k"><input type="checkbox"> مستلم ومعتمد</label><span></span></div>
+  </div>
+  <div class="note"><b>مسؤولية الإشراف:</b> وفقاً للمادة الثامنة، يتحقق مسؤول السلامة من أي إهمال أو تقصير في أعمال الخاضعين لإشرافه، ويرفع الأمر للجهات العليا المختصة بالجهة، ويثبت ذلك في سجل السلامة.</div>
+
+  <footer class="foot">
+    <span>معهد الإدارة العامة — قسم الأمن والسلامة · نموذج داخلي</span>
+    <span>المرجع: اللائحة ٥-٤٦-٢ — المديرية العامة للدفاع المدني · كود البناء السعودي SBC ٨٠١</span>
+    <span>الإصدار ٤.١ — تاريخ المراجعة: (يُحدَّد)</span>
+  </footer>
+</main>
+
+<!-- ============ وحدة الإبلاغ والتصعيد ============ -->
+<div class="overlay" id="ov" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+ <div class="modal">
+  <div class="m-head">
+    <h3 id="mTitle">وحدة الإبلاغ والتصعيد</h3>
+    <span class="id" id="mId">ب — ٠٠</span>
+    <button class="m-close" onclick="closeM()">إغلاق ✕</button>
+  </div>
+  <div class="m-body">
+
+    <div class="sec">أ · بيانات البلاغ</div>
+    <div class="ro" id="mItem"></div>
+    <div class="muted" style="margin-top:4px" id="mMeta"></div>
+
+    <div class="fl">وصف العطل أو الملاحظة</div>
+    <textarea id="mDesc" rows="2" placeholder="ما الذي شوهد بالضبط؟"></textarea>
+    <div class="fl">وقت الاكتشاف <span class="muted">— تُحسب منه المهلة</span></div>
+    <input type="text" id="mWhen" placeholder="التاريخ والساعة">
+
+    <div class="sendbox">
+      <button class="btn btn-send" id="sendBtn" onclick="sendReport()">إرسال البلاغ فوراً</button>
+      <div class="muted" style="margin-top:6px">إلى: مدير المرافق والصيانة · نسخة: مسؤول السلامة · وقيد في سجل السلامة <span class="ref">م٥ · م١٢/٥</span></div>
+      <div id="sendState"></div>
+    </div>
+
+    <div class="sec">ب · قرار الفني المنفّذ</div>
+
+    <!-- المستوى ١ -->
+    <div class="lvl" data-lvl="1">
+      <div class="lvl-h"><span class="lvl-n act">١</span><span class="lvl-t">الفني المنفّذ</span><span class="lvl-s">في انتظار القرار</span></div>
+      <div class="lvl-b on">
+        <div class="opts">
+          <div class="opt" data-ld="close"><input type="radio" name="l1"><span class="t">أصلحتُ العطل وأُغلق البلاغ</span><span class="d">إغلاق</span></div>
+          <div class="opt" data-ld="up"><input type="radio" name="l1"><span class="t">تعذّر الإصلاح — حدّدتُ المطلوب وأصعّد</span><span class="d">← مدير المرافق والصيانة</span></div>
+        </div>
+        <textarea rows="2" placeholder="ما تم إجراؤه / سبب تعذّر الإصلاح" style="margin-top:9px"></textarea>
+        <div class="blk" data-close="1">
+          <h4>إقرار الإغلاق</h4>
+          <label class="k"><input type="checkbox" class="ack"> أُقرّ بأن الإصلاح تم على الوجه الصحيح وأتحمّل مسؤوليته</label>
+          <div class="muted" style="margin-top:6px">نسخة تلقائية إلى: مدير المرافق والصيانة · مسؤول السلامة · سجل السلامة <span class="ref">م٥</span></div>
+        </div>
+        <div class="sig"><input type="text" placeholder="الاسم"><input type="text" placeholder="التاريخ"></div>
+        <button class="btn btn-sm" onclick="saveLvl(1)">تثبيت قرار الفني</button>
+      </div>
+    </div>
+
+<div class="sec hidesec" id="secC">ج · تقييم الأثر والمطلوب <span style="font-weight:400;opacity:.85">— يظهر عند تعذّر الإصلاح</span></div>
+<div id="escOnly" class="hidesec">
+    
+    <div class="muted">ما أثر ذلك لو وقع طارئ الآن في نفس المكان؟ — يحدد التصنيف والمهلة تلقائياً</div>
+    <div class="opts" id="mImpact">
+      <div class="opt" data-imp="alt" data-sev="ج · تحسين" data-due="٧٢ ساعة"><input type="radio" name="imp"><span class="t">ج · بديل كامل يغطي الموقع</span><span class="d">تحسين · ٧٢ ساعة</span></div>
+      <div class="opt" data-imp="partial" data-sev="ب · حرج" data-due="٢٤ ساعة"><input type="radio" name="imp"><span class="t">ب · الحماية منقوصة — بديل جزئي</span><span class="d">حرج · ٢٤ ساعة</span></div>
+      <div class="opt" data-imp="none" data-sev="أ · حرج" data-due="فوري"><input type="radio" name="imp"><span class="t">أ · الحماية مُعطّلة — لا بديل</span><span class="d">حرج · فوري</span></div>
+    </div>
+    <label class="k" style="margin-top:11px"><input type="checkbox" id="mOos"> النظام أو جزء منه خرج عن الخدمة (تعطيل مؤقت)</label>
+    <div class="blk" id="blkOos">
+      <h4>الإجراءات التعويضية أثناء خروج النظام عن الخدمة</h4>
+      <label class="k"><input type="checkbox"> مراقبة بشرية على موقع الخطر</label>
+      <label class="k"><input type="checkbox"> منع الأعمال الساخنة</label>
+      <label class="k"><input type="checkbox"> وسيلة إنذار بديلة</label>
+      <label class="k"><input type="checkbox"> طفايات إضافية</label>
+      <label class="k"><input type="checkbox"> إبلاغ شاغلي الموقع</label>
+      <div class="two" style="margin-top:9px">
+        <div><div class="muted">بداية التعطيل</div><input type="text" id="oosFrom" readonly placeholder="تلقائي"></div>
+        <div><div class="muted">إعادة الخدمة</div>
+          <input type="text" id="oosTo" placeholder="لم تُسجَّل بعد" readonly>
+          <button type="button" class="act" style="border-color:var(--green);color:var(--green);margin-top:5px" onclick="$('oosTo').value=stamp();touch()">تسجيل إعادة الخدمة الآن</button></div>
+      </div>
+      <div class="muted" style="margin-top:7px">م١٣/٧ — عند انطلاق الأنظمة بسبب حريق، تُحدَّد معلومات مراقبي السلامة على مواقع الخطر إلى حين عودة الأنظمة للعمل.</div>
+    </div>
+
+    <div class="need" id="needBox">
+      <div class="t">المطلوب لإتمام الإصلاح — ينتقل مع البلاغ من مستوى لآخر</div>
+      <textarea id="needTxt" rows="2" placeholder="قطعة غيار محددة / فريق فني / صلاحية / ميزانية / عقد صيانة..."></textarea>
+    </div>
+
+</div>
+
+    <div class="sec hidesec" id="secD">د · مسار التصعيد الإداري <span style="font-weight:400;opacity:.85">— كل مستوى: يوفّر المطلوب ويغلق، أو يصعّد</span></div>
+
+    <!-- المستوى ٢ -->
+    <div class="lvl hidesec" data-lvl="2">
+      <div class="lvl-h"><span class="lvl-n">٢</span><span class="lvl-t">مدير المرافق والصيانة</span><span class="lvl-s">—</span></div>
+      <div class="lvl-b">
+        <div class="opts">
+          <div class="opt" data-ld="back"><input type="radio" name="l2"><span class="t">وفّرتُ المطلوب — يعود للفني للتنفيذ</span><span class="d">← الفني المنفّذ</span></div>
+          <div class="opt" data-ld="up"><input type="radio" name="l2"><span class="t">لم أستطع توفير المطلوب وأصعّد</span><span class="d">← مدير الشؤون الإدارية والهندسية</span></div>
+        </div>
+        <textarea rows="2" placeholder="ما وُفِّر / سبب تعذّر التوفير والمطلوب من المستوى الأعلى" style="margin-top:9px"></textarea>
+        <div class="sig"><input type="text" placeholder="الاسم"><input type="text" placeholder="التاريخ"></div>
+        <button class="btn btn-sm" onclick="saveLvl(2)">تثبيت القرار</button>
+      </div>
+    </div>
+
+    <!-- المستوى ٣ -->
+    <div class="lvl hidesec" data-lvl="3">
+      <div class="lvl-h"><span class="lvl-n">٣</span><span class="lvl-t">مدير الشؤون الإدارية والهندسية</span><span class="lvl-s">—</span></div>
+      <div class="lvl-b">
+        <div class="opts">
+          <div class="opt" data-ld="back"><input type="radio" name="l3"><span class="t">وفّرتُ المطلوب — يعود للفني للتنفيذ</span><span class="d">← الفني المنفّذ</span></div>
+          <div class="opt" data-ld="up"><input type="radio" name="l3"><span class="t">لم أستطع توفير المطلوب وأصعّد</span><span class="d">← الإدارة العليا</span></div>
+        </div>
+        <textarea rows="2" placeholder="ما وُفِّر / سبب تعذّر التوفير والمطلوب من الإدارة العليا" style="margin-top:9px"></textarea>
+        <div class="sig"><input type="text" placeholder="الاسم"><input type="text" placeholder="التاريخ"></div>
+        <button class="btn btn-sm" onclick="saveLvl(3)">تثبيت القرار</button>
+      </div>
+    </div>
+
+    <!-- المستوى ٤ -->
+    <div class="lvl hidesec" data-lvl="4">
+      <div class="lvl-h"><span class="lvl-n">٤</span><span class="lvl-t">الإدارة العليا <span class="muted">(الجهات العليا المختصة — التعريف ٤)</span></span><span class="lvl-s">—</span></div>
+      <div class="lvl-b">
+        <div class="opts">
+          <div class="opt" data-ld="back"><input type="radio" name="l4"><span class="t">وفّرتُ المطلوب — يعود للفني للتنفيذ</span><span class="d">← الفني المنفّذ</span></div>
+          <div class="opt" data-ld="stop"><input type="radio" name="l4"><span class="t">قرار بعدم التنفيذ حالياً</span><span class="d">يُوثَّق</span></div>
+        </div>
+        <div class="muted" style="margin-top:9px">القرار النهائي</div>
+        <textarea rows="2"></textarea>
+        <div class="muted" id="l4src" style="margin-top:6px"></div>
+        <div class="sig"><input type="text" placeholder="الاسم"><input type="text" placeholder="التاريخ"></div>
+        <button class="btn btn-sm" onclick="saveLvl(4)">تثبيت القرار النهائي</button>
+      </div>
+    </div>
+
+    <div class="sec watch hidesec" id="secE">هـ · لوحة مسؤول السلامة — المراقبة والمتابعة والتوصية <span style="font-weight:400;opacity:.85">م١٢/٥ · م٨</span></div>
+    <div class="watchbox hidesec" id="watchBox">
+      <div class="muted">مسؤول السلامة لا يقطع المسار الإداري. دوره متابعة سيره، والتواصل مع أطرافه، والتوصية — ولا يتجاوزه إلى الإدارة العليا إلا عند توقّفه، وبعد تواصل مسبق موثَّق.</div>
+
+      <table class="wtab"><thead><tr>
+        <th style="width:88px">التاريخ</th><th style="width:170px">الجهة المتواصَل معها</th><th>التوصية / الطلب</th><th style="width:150px">الرد أو النتيجة</th>
+      </tr></thead><tbody id="wRows"></tbody></table>
+      <button class="btn btn-w" onclick="addWatch()">+ إضافة سطر متابعة</button>
+
+      <div class="gate">
+        <label class="k"><input type="checkbox" id="gStuck"> المسار متوقف — تجاوز المهلة أو لم يُتخذ قرار ولم يُصعَّد</label><br>
+        <b>شرطان لفتح التصعيد الرقابي:</b> تعليم توقّف المسار، ووجود سطر متابعة واحد على الأقل يثبت التواصل المسبق.
+        <textarea id="gWhy" rows="2" placeholder="سبب التصعيد الرقابي: عند أي مستوى توقف المسار، ومنذ متى" style="margin-top:8px"></textarea>
+        <button class="btn btn-r" id="gBtn" disabled onclick="watchEscalate()">تصعيد رقابي إلى الإدارة العليا</button>
+      </div>
+
+      <label class="k" style="margin-top:11px"><input type="checkbox" id="reopen"> إعادة فتح البلاغ — الإصلاح المُبلَّغ غير كافٍ</label>
+    </div>
+
+    <div class="m7" id="m7box"><span>⚠</span>
+      <div><b>شرط المادة السابعة:</b> <span id="m7state">لم يتحقق بعد — البلاغ لم يصل الجهات العليا المختصة</span>.
+      الإعفاء من المساءلة مشروط بأمرين معاً: إثبات إبلاغ الجهات العليا المختصة، وبذل كافة الإجراءات المتاحة.</div>
+    </div>
+
+    <div class="savebar">
+      <button class="btn btn-main" style="margin:0" onclick="saveM()">حفظ البلاغ وإغلاق النافذة</button>
+      <button class="btn btn-gh" style="margin:0" onclick="closeM()">إلغاء</button>
+    </div>
+  </div>
+ </div>
+</div>
+
+<script id="SAVED" type="application/json">null</script>
+<script>
+const SYS={
+ s01:{code:"٠١",name:"نظام كشف وإنذار الحريق",
+  sched:[["يومي","مراقبة حالة اللوحة (طاقة · لا أعطال · لا إشراف)","مسؤول السلامة / المناوب"],
+         ["شهري","اختبار عيّنة كواشف ونقاط سحب","الفني المختص"],
+         ["سنوي","اختبار شامل للكواشف والمنبهات والواجهة","المكتب المرخّص"]],
+  steps:["تأكّد من وضع اللوحة الطبيعي (طاقة · لا أعطال · لا إشراف) قبل البدء.",
+         "أبلغ المركز أن هذا اختبار لتفادي بلاغ حريق.",
+         "فعّل عيّنة كواشف بمحاكاة الدخان أو الحرارة وتأكّد من ظهور الإنذار وتحديد الموقع باللوحة.",
+         "فعّل نقطة سحب يدوية وتأكّد من وصول الإنذار.",
+         "تحقّق من عمل المنبهات الصوتية والضوئية وعدم حجبها.",
+         "اختبر أجهزة الواجهة (استدعاء المصاعد · إيقاف التكييف · تحرير الأبواب).",
+         "أعد اللوحة لوضعها الطبيعي وأبلغ المركز، ثم وثّق ووقّع."],
+  reads:["جهد التغذية الرئيسية","جهد البطارية الاحتياطية","زمن صمود البطارية",
+         "شدة صوت المنبه (ديسيبل) عند أبعد نقطة","زمن استجابة عيّنة الكاشف"],
+  items:[["فحص بصري للوحة (فيوزات · مصابيح · طاقة رئيسية واحتياطية)","م١٢/٢"],
+         ["خلو اللوحة من أعطال أو إشراف قبل البدء","م١٢/٢"],
+         ["نقاط السحب اليدوية والمنبهات غير محجوبة","م١٣/١"],
+         ["عمل أجهزة الواجهة (المصاعد · التكييف · الأبواب)","SBC ٨٠١"],
+         ["نبرة إنذار الطوارئ مميزة عن النبرة المستخدمة في الأوقات العادية","م١٣/٦"],
+         ["لا توجد مناطق أو كواشف معزولة بغير تصريح تعطيل موثَّق","م١٢/٥"],
+         ["سجل أحداث اللوحة مُراجَع والإنذارات الكاذبة موثَّقة","م٥"],
+         ["ربط اللوحة بجهة الاستقبال أو مركز المراقبة يعمل ومختبَر","SBC ٨٠١"]]},
+
+ s02:{code:"٠٢",name:"نظام الرشاشات التلقائية",
+  sched:[["أسبوعي","فحص الضغط ومؤشرات صمامات التحكم","مسؤول السلامة / الفني"],
+         ["شهري","فحص بصري للرشاشات وصمامات الإنذار","الفني المختص"],
+         ["سنوي","اختبار تدفّق صمام الاختبار الرئيسي وإشارة التدفّق","المكتب المرخّص"]],
+  steps:["تحقّق من الضغط الثابت على مقياس صمام التحكم.",
+         "افحص عدم إغلاق أو عبث صمامات العزل وأنها مُشرَف عليها.",
+         "افتح صمام الاختبار وتحقّق من وصول إشارة التدفّق للوحة الإنذار وقياس الزمن.",
+         "تأكّد من خلو الرشاشات من الطلاء والعوائق ومسافة الأمان.",
+         "أعد الوضع الطبيعي وأبلغ المركز ووثّق."],
+  reads:["الضغط الثابت","الضغط الديناميكي","زمن إشارة التدفّق","عدد الرشاشات المعطّلة أو المطلية"],
+  items:[["الضغط ضمن الحد المرجعي","م١٢/٢"],
+         ["صمامات العزل مفتوحة بالكامل ومُشرَف عليها","SBC ٨٠١"],
+         ["وصول إشارة التدفّق للوحة ضمن الزمن","SBC ٨٠١"],
+         ["الرشاشات خالية من الطلاء والعوائق","SBC ٨٠١"],
+         ["مسافة الخلوص أسفل الرشاشات مطابقة ولا يعوقها التخزين","SBC ٨٠١"],
+         ["مرشات احتياطية ومفتاح التركيب متوفرة في الصندوق المخصص","SBC ٨٠١"],
+         ["لا تسريب أو تآكل أو ارتخاء في الشبكة والتعليقات","SBC ٨٠١"],
+         ["غرفة الصمامات مضاءة وخالية من التخزين والوصول إليها ميسَّر","م١٤/١"]]},
+
+ s03:{code:"٠٣",name:"مضخة الحريق",
+  sched:[["أسبوعي","تشغيل تجريبي بدون حمل ومراقبة القراءات","الفني المختص"],
+         ["شهري","فحص الصمامات والتوصيلات ومنسوب الوقود والزيت","الفني المختص"],
+         ["سنوي","اختبار الأداء الكامل (منحنى ١٠٠٪ و١٥٠٪)","المكتب المرخّص"]],
+  steps:["شغّل المضخة تجريبياً وراقب بدء التشغيل التلقائي عند هبوط الضغط.",
+         "اقرأ ضغط السحب والطرد وسرعة الدوران وضغط زيت المحرك.",
+         "للديزل: تحقّق من جهد البطاريتين ومنسوب الوقود والتبريد.",
+         "نفّذ اختبار الأداء (١٠٠٪ و١٥٠٪) عبر المكتب المرخّص وسجّل التدفّق.",
+         "تحقّق من المحاذاة وعدم الاهتزاز أو التسريب، ثم وثّق."],
+  reads:["ضغط السحب","ضغط الطرد","ضغط زيت المحرك","سرعة الدوران (دورة/دقيقة)",
+         "جهد البطارية ١","جهد البطارية ٢","زمن التشغيل الفعلي","التدفّق عند ١٠٠٪","التدفّق عند ١٥٠٪"],
+  items:[["لا تسريب من المضخة أو الوصلات أو الحشوات","SBC ٨٠١"],
+         ["حالة القارنة والمحاذاة دون اهتزاز","SBC ٨٠١"],
+         ["عمل لوحة تحكم المضخة ومؤشراتها وإنذاراتها","SBC ٨٠١"],
+         ["صمامات السحب والطرد مفتوحة بالكامل ومُشرَف عليها","SBC ٨٠١"],
+         ["مستوى الوقود والزيت والتبريد ضمن الحد (للديزل)","SBC ٨٠١"],
+         ["بدء المضخة تلقائياً عند هبوط الضغط","SBC ٨٠١"],
+         ["المضخة في وضع التشغيل التلقائي ولوحة التحكم خالية من الإنذارات","SBC ٨٠١"],
+         ["غرفة المضخة مضاءة ومهوَّاة وخالية من التخزين والوصول إليها ميسَّر","م١٤/١"]]},
+
+ s04:{code:"٠٤",name:"الخزانات وشبكة المياه وكفايتها",
+  sched:[["أسبوعي","فحص المنسوب والضغط والصمامات","الفني المختص"],
+         ["سنوي","اختبار كفاية المياه (تدفّق)","المكتب المرخّص"]],
+  steps:["تحقّق من منسوب خزان مياه الحريق ومطابقته للحد.",
+         "اقرأ الضغط الثابت للشبكة.",
+         "افحص عدم وجود تسريب وأن الصمامات الرئيسية مفتوحة ومُشرَف عليها.",
+         "عند اختبار الكفاية: نفّذ اختبار التدفّق عبر المكتب المرخّص وسجّل المعدّل.",
+         "وثّق القراءات ووقّع."],
+  reads:["منسوب الخزان","الضغط الثابت","الضغط الديناميكي","معدّل التدفّق"],
+  items:[["منسوب الخزان ضمن الحد المعتمد","م١٤/٣"],
+         ["لا تسريب والصمامات مفتوحة ومُشرَف عليها","م١٤/٣"],
+         ["كفاية المياه للرشاشات والخراطيم","م١٤/٣"],
+         ["الضغط في أنابيب المياه ضمن الحد المعتمد","م١٢/٢"],
+         ["صمام تغذية الخزان يعمل ولا توجد تسريبات في التوصيلات","م١٤/٣"]]},
+
+ s05:{code:"٠٥",name:"طفايات الحريق اليدوية",
+  sched:[["شهري","فحص بصري وجرد المواقع","مسؤول السلامة / الفني"],
+         ["سنوي","الصيانة المعتمدة","المكتب المرخّص"]],
+  steps:["افحص كل طفاية بصرياً (مؤشر الضغط · الوزن · الصمام · الخرطوم · المسمار).",
+         "تأكّد أنها في موقعها المحدّد وغير محجوبة وواضحة العلامة.",
+         "راجع تواريخ الصيانة السنوية والاختبار الهيدروستاتي.",
+         "سجّل أي طفاية تحتاج شحناً أو استبدالاً ووثّق."],
+  reads:["وزن الطفاية","قراءة مؤشر الضغط","تاريخ آخر صيانة","تاريخ الاختبار الهيدروستاتي"],
+  items:[["مؤشر الضغط ضمن النطاق الصالح والوزن سليم","SBC ٨٠١"],
+         ["في المكان المحدّد وغير محجوبة وواضحة ومطابقة للمخطط","م١٣/١"],
+         ["الصيانة السنوية معتمدة وسارية","م١٢/٣"],
+         ["الاختبار الهيدروستاتي حسب الاستحقاق","م١٢/٣"],
+         ["نوع الطفاية مناسب لنوع الخطر في الموقع","SBC ٨٠١"],
+         ["المسمار والختم سليمان وغير مكسورين","SBC ٨٠١"],
+         ["الجسم خالٍ من الصدأ والانبعاج والتلف الظاهر","SBC ٨٠١"],
+         ["ارتفاع التعليق وإشارة الموقع مطابقان للمعتمد","SBC ٨٠١"]]},
+
+ s06:{code:"٠٦",name:"الخراطيم والصناديق وحنفيات الحريق",
+  sched:[["شهري","فحص الصناديق والمحتوى","الفني المختص"],
+         ["دوري","اختبار الحنفيات والاختبار الهيدروستاتي","المكتب المرخّص"]],
+  steps:["افحص بصرياً الخرطوم والقاذف والصمام والحنفية (لا تلف ولا تآكل).",
+         "تأكّد أن الصناديق كاملة المحتوى وغير محجوبة.",
+         "اختبر ضغط وتدفّق الحنفيات عبر المكتب المرخّص.",
+         "راجع استحقاق الاختبار الهيدروستاتي للخراطيم.",
+         "وثّق ووقّع."],
+  reads:["ضغط الحنفية","معدّل التدفّق"],
+  items:[["الخرطوم والقاذف والصمام سليمة","م١٢/٢"],
+         ["الصناديق كاملة وغير محجوبة وتُفتح بسهولة","م١٢/٢"],
+         ["اختبار ضغط وتدفّق الحنفيات مطابق","م١٢/٢"],
+         ["الاختبار الهيدروستاتي حسب الاستحقاق","م١٢/٣"],
+         ["وصلة الدفاع المدني سليمة ومعلَّمة ومحيطها خالٍ من العوائق","SBC ٨٠١"],
+         ["حنفيات الحريق الخارجية ظاهرة ومسار الوصول إليها سالك","م١٣/١"],
+         ["مواقع الصناديق مطابقة لما هو مثبت في مخطط الإخلاء","م١٣/١"]]},
+
+ s07:{code:"٠٧",name:"الإطفاء بالغاز النظيف (مركز البيانات)",
+  sched:[["شهري","فحص ضغط ووزن الأسطوانات وحالة اللوحة","الفني المختص"],
+         ["سنوي","اختبار الربط بالكشف والإحكام","المكتب المرخّص"]],
+  steps:["تحقّق من ضغط ووزن أسطوانات الغاز ومطابقتها للحد.",
+         "افحص لوحة التحكم وعدم وجود أعطال أو إشراف.",
+         "اختبر تسلسل الربط مع نظام الكشف (بدون تفريغ).",
+         "تحقّق من إحكام الغرفة (اختبار الباب المروحي عند الاستحقاق).",
+         "أعد الوضع الطبيعي ووثّق."],
+  reads:["ضغط الأسطوانة","وزن الأسطوانة","زمن التأخير قبل التفريغ","نتيجة اختبار الإحكام"],
+  items:[["ضغط ووزن الأسطوانات ضمن الحد","SBC ٨٠١"],
+         ["اللوحة بلا أعطال أو إشراف","SBC ٨٠١"],
+         ["الربط مع نظام الكشف سليم","SBC ٨٠١"],
+         ["إحكام الغرفة مطابق","SBC ٨٠١"],
+         ["مسار الإخلاء من الغرفة واضح والتحذير الصوتي والضوئي يعمل","م١٣/١"]]},
+
+ s08:{code:"٠٨",name:"سحب الدخان والتهوية",
+  sched:[["شهري","تشغيل تجريبي للمراوح والدمبرات","الفني المختص"],
+         ["سنوي","قياس معدّل التصريف الشامل","المكتب المرخّص"]],
+  steps:["شغّل مراوح سحب الدخان تجريبياً وتحقّق من الاتجاه الصحيح.",
+         "اختبر فتح وغلق دمبرات الحريق والدخان.",
+         "قِس معدّل التصريف وقارنه بالمرجع.",
+         "تحقّق من الربط التلقائي مع نظام الإنذار.",
+         "أعد الوضع الطبيعي ووثّق."],
+  reads:["معدّل التصريف","زمن تشغيل المراوح","حالة الدمبرات","فرق الضغط بالسلالم المضغوطة"],
+  items:[["المراوح تعمل بالاتجاه الصحيح","م١٢/٢"],
+         ["الدمبرات تفتح وتغلق سليماً","SBC ٨٠١"],
+         ["الربط التلقائي مع الإنذار يعمل","SBC ٨٠١"],
+         ["معدّل التصريف مطابق","SBC ٨٠١"],
+         ["فتحات وقنوات الدخان خالية من الانسداد والعوائق","SBC ٨٠١"],
+         ["أولوية التحكم اليدوي متاحة وتعمل لفرق الاستجابة","SBC ٨٠١"]]},
+
+ s09:{code:"٠٩",name:"مولّد الطوارئ والتغذية الاحتياطية",
+  sched:[["أسبوعي","تشغيل تجريبي ومراقبة القراءات","الفني المختص"],
+         ["شهري","فحص الوقود والبطاريات والتبريد","الفني المختص"],
+         ["سنوي","اختبار التحميل الكامل","المكتب المرخّص"]],
+  steps:["شغّل المولّد تجريبياً وراقب زمن التحويل التلقائي عند انقطاع التيار.",
+         "اقرأ جهد وتردّد الخرج ومنسوب الوقود.",
+         "تحقّق من جهد البطاريات ومستوى التبريد والزيت.",
+         "نفّذ اختبار التحميل الكامل عبر المكتب المرخّص.",
+         "تحقّق من عدم التسريب والتهوية السليمة، ثم وثّق."],
+  reads:["زمن التحويل","جهد الخرج","تردّد الخرج","منسوب الوقود","جهد البطارية","مستوى التبريد والزيت"],
+  items:[["بدء وتحويل تلقائي ضمن الزمن","SBC ٨٠١"],
+         ["جهد وتردّد الخرج ضمن الحد","SBC ٨٠١"],
+         ["منسوب الوقود كافٍ","SBC ٨٠١"],
+         ["البطاريات والتبريد سليمة","SBC ٨٠١"],
+         ["لا تسريب والتهوية سليمة","SBC ٨٠١"],
+         ["غرفة المولّد خالية من التخزين والوصول إليها ميسَّر","م١٤/١"]]},
+
+ s10:{code:"١٠",name:"إنارة الطوارئ ولوحات الإرشاد",
+  sched:[["شهري","اختبار قصير للإنارة ووضوح اللوحات","مسؤول السلامة / الفني"],
+         ["سنوي","اختبار زمن الصمود الكامل","الفني المختص"]],
+  steps:["افصل التغذية اختبارياً وتحقّق من اشتعال إنارة الطوارئ فوراً.",
+         "قِس شدة الإضاءة على مسار الإخلاء.",
+         "تحقّق من إضاءة ووضوح لوحات المخارج ونقاط التجمع.",
+         "للاختبار السنوي: قِس زمن الصمود الكامل للبطاريات.",
+         "أعد التغذية ووثّق."],
+  reads:["شدة الإضاءة على المسار","زمن الصمود","عدد الوحدات المعطّلة","وضوح لوحات الإرشاد"],
+  items:[["اشتعال فوري عند فصل التغذية","SBC ٨٠١"],
+         ["شدة الإضاءة ضمن الحد","SBC ٨٠١"],
+         ["لوحات المخارج مضيئة وواضحة على كامل المسار","SBC ٨٠١"],
+         ["زمن الصمود مطابق","SBC ٨٠١"],
+         ["نقاط التجمع معلَّمة والمسار إليها آمن ومطابق للمخطط","م١٣/١"],
+         ["مخططات الإخلاء معلَّقة ومقروءة ومطابقة للواقع","م١٣/١"]]},
+
+ s11:{code:"١١",name:"التحكم بالمصاعد وقت الحريق",
+  sched:[["شهري","اختبار استدعاء المصاعد لدور الإخلاء","الفني المختص"],
+         ["سنوي","اختبار شامل مع سيناريو الإنذار","المكتب المرخّص"]],
+  steps:["فعّل إشارة الحريق (اختباراً) وتحقّق من عودة المصاعد لدور الإخلاء.",
+         "تأكّد من فتح الأبواب في دور الإخلاء وتعطّل الاستدعاء العادي.",
+         "تحقّق من وضع مصعد رجال الإطفاء (إن وُجد).",
+         "أعد الوضع الطبيعي وأبلغ المركز ووثّق."],
+  reads:["زمن العودة لدور الإخلاء","حالة أبواب المصعد","وضع مصعد الإطفاء"],
+  items:[["العودة لدور الإخلاء عند الإنذار","SBC ٨٠١"],
+         ["فتح الأبواب وتعطّل الاستدعاء العادي","SBC ٨٠١"],
+         ["مصعد الإطفاء يعمل بوضعه الخاص","SBC ٨٠١"],
+         ["إعادة الوضع الطبيعي سليمة","SBC ٨٠١"],
+         ["لوحة إرشادية تمنع استخدام المصاعد أثناء الحريق","م١٣/١"]]},
+
+ s12:{code:"١٢",name:"أبواب الحريق ومخارج الطوارئ",
+  sched:[["أسبوعي","جولة خلوّ المسالك والمخارج","مسؤول السلامة"],
+         ["شهري","فحص الإغلاق الذاتي وأذرع الذعر","الفني المختص"]],
+  steps:["تحقّق من خلوّ مسالك ومخارج الطوارئ من العوائق وعدم قفلها.",
+         "اختبر الإغلاق الذاتي لأبواب الحريق (لا إبقاء مفتوحاً).",
+         "اختبر ذراع الذعر وسهولة الفتح للخارج.",
+         "تحقّق من سلامة منظومات الإحكام ضد الدخان.",
+         "وثّق أي خلل ووقّع."],
+  reads:["عدد الأبواب دون إغلاق ذاتي","عدد المخارج المعاقة أو المقفلة","حالة أذرع الذعر"],
+  items:[["جميع المخارج صالحة وغير مقفلة وغير معاقة على مدار الساعة","م١٢/٢"],
+         ["أبواب الحريق تُغلق ذاتياً ولا تُبقى مفتوحة بأي وسيلة","SBC ٨٠١"],
+         ["ذراع الذعر يعمل والفتح باتجاه الهروب","SBC ٨٠١"],
+         ["منظومات الإحكام ضد الدخان سليمة","SBC ٨٠١"],
+         ["مسالك الهروب خالية من التخزين والعوائق وبعرضها الكامل","م١٢/٢"],
+         ["السلالم وحواجزها سليمة وغير مستخدمة للتخزين","م١٢/٢"],
+         ["طرق ومسارات سيارات الإطفاء والإنقاذ خالية من العوائق","م١٣/١"]]}
+};
+
+const LNAME={1:'الفني المنفّذ',2:'مدير المرافق والصيانة',3:'مدير الشؤون الإدارية والهندسية',4:'الإدارة العليا'};
+
+
+/* ================= الأدوار والدخول ================= */
+const USERS={
+ fani:{p:'1234',r:'tech',n:'الفني المنفّذ',h:'يسجّل البلاغ ويرسله، ويقرر: أصلحتُ أم تعذّر'},
+ marafiq:{p:'1234',r:'fm',n:'مدير المرافق والصيانة',h:'يقرر في المستوى الثاني: يوفّر المطلوب أو يصعّد'},
+ shuon:{p:'1234',r:'adm',n:'مدير الشؤون الإدارية والهندسية',h:'يقرر في المستوى الثالث'},
+ idara:{p:'1234',r:'exec',n:'الإدارة العليا',h:'القرار النهائي — وبإبلاغها يتحقق شرط المادة السابعة'},
+ salama:{p:'1234',r:'safety',n:'مسؤول السلامة',h:'يراقب ويتابع ويوصي، ويصعّد رقابياً عند توقّف المسار'},
+ maktab:{p:'1234',r:'cons',n:'المكتب الاستشاري',h:'يعتمد بنود الفحص والقراءات وقيمها المرجعية'}
+};
+let ROLE='';
+function doLogin(){
+  const u=($('uu').value||'').trim().toLowerCase(), p=$('pp').value;
+  const U=USERS[u];
+  if(!U||U.p!==p){$('lerr').textContent='اسم المستخدم أو كلمة المرور غير صحيحة';return;}
+  ROLE=U.r;
+  $('lerr').textContent='';$('login').classList.add('off');
+  $('userbar').style.display='flex';
+  $('uRole').textContent=U.n;$('uHint').textContent='· '+U.h;
+  applyRole();drawInbox();startRound();
+}
+function logout(){location.reload()}
+function applyRole(){
+  document.body.dataset.role=ROLE;
+  /* وضع المكتب الاستشاري متاح له وحده */
+  $('cnsBtn').style.display=(ROLE==='cons')?'':'none';
+  if(ROLE!=='cons'&&document.body.classList.contains('cns')){document.body.classList.remove('cns');applyCns();}
+  lockByRole();
+}
+const OWNER={tech:['1'],fm:['2'],adm:['3'],exec:['4']};
+function lockByRole(){
+  /* الجدولان: التعليم للفني والمكتب فقط */
+  const canMark=(ROLE==='tech'||ROLE==='cons');
+  document.querySelectorAll('#reads input,#items input').forEach(i=>{
+    if(i.classList.contains('refv'))return;
+    i.disabled=!canMark;
+  });
+  document.querySelectorAll('.act').forEach(b=>{
+    if(b.id==='cnsBtn')return;
+    b.style.display=(ROLE==='cons')?'none':'';});
+  lockModalByRole();
+}
+function lockModalByRole(){
+  const ov=$('ov'); if(!ov) return;
+  /* قسم أ + قرار الفني: للفني */
+  const aBox=[$('mDesc'),$('mWhen'),$('sendBtn')];
+  aBox.forEach(el=>{if(el)el.disabled=(ROLE!=='tech')});
+  /* المستويات */
+  ov.querySelectorAll('.lvl').forEach(l=>{
+    const n=l.dataset.lvl, mine=(OWNER[ROLE]||[]).indexOf(n)>=0;
+    const body=l.querySelector('.lvl-b'); if(!body)return;
+    body.classList.toggle('ro-lock',!mine);
+    let f=l.querySelector('.roflag');
+    if(!mine){
+      if(!f){f=document.createElement('div');f.className='roflag';body.appendChild(f);}
+      f.textContent='🔒 للاطلاع — التحرير لصاحب هذا المستوى';
+    }else if(f)f.remove();
+  });
+  /* تقييم الأثر والمطلوب: للفني */
+  ['secC','escOnly'].forEach(id=>{const e=$(id);if(e)e.classList.toggle('ro-lock',ROLE!=='tech')});
+  /* لوحة مسؤول السلامة */
+  const w=document.querySelector('.watchbox');
+  if(w)w.classList.toggle('ro-lock',ROLE!=='safety');
+}
+
+
+/* ================= صندوق الوارد ================= */
+function myItems(){
+  const R=ROLE;
+  return REPORTS.filter(r=>{
+    const lv=Object.keys(r.levels||{}).map(Number).sort();
+    const last=lv.length?lv[lv.length-1]:0;
+    const closed=r.levels&&lv.some(n=>!r.levels[n].up);
+    if(R==='tech')   return !closed&&(last===0||!!r.backFrom);
+    if(R==='fm')     return !closed&&last===1&&r.levels[1].up;
+    if(R==='adm')    return !closed&&last===2&&r.levels[2].up;
+    if(R==='exec')   return !closed&&((last===3&&r.levels[3].up)||(r.path&&r.path!=='إداري'&&last<4));
+    if(R==='safety') return !closed;
+    return false;
+  });
+}
+function drawInbox(){
+  if(!ROLE||ROLE==='cons'){$('inbox').style.display='none';return;}
+  const list=myItems();
+  $('inbox').style.display='';
+  $('ibRole').innerHTML=USERSN(ROLE)+(list.length?`<span class="ib-n">${AR(list.length)}</span>`:'');
+  $('ibBody').innerHTML=list.length?list.map(r=>`
+    <div class="ib-row">
+      <span class="badge ${r.cls}">${r.status}</span>
+      <div class="t"><b>${r.id}</b> — ${r.item}
+        <div class="muted">${r.sys} · ${r.sev}${r.due!=='—'?' · المهلة '+r.due:''}${r.need&&r.need!=='—'?' · المطلوب: '+r.need:''}</div></div>
+      <button class="go" onclick="jump('${r.row}')">فتح البلاغ</button>
+    </div>`).join('')
+    :'<div class="ib-empty">لا شيء بانتظار قرارك الآن</div>';
+}
+function USERSN(r){
+  const m={tech:'الفني المنفّذ',fm:'مدير المرافق والصيانة',adm:'مدير الشؤون الإدارية والهندسية',
+           exec:'الإدارة العليا',safety:'مسؤول السلامة',cons:'المكتب الاستشاري'};
+  return m[r]||'';
+}
+function jump(row){
+  const key=row.split('-')[0];
+  if(key!==CUR){
+    const tab=document.querySelector(`.tab[data-sys="${key}"]`);
+    if(tab){document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected','false'));
+      tab.setAttribute('aria-selected','true');render(key);}
+  }
+  openM(row,true);
+}
+
+/* ================= الحفظ التلقائي ================= */
+const AKEY='ipa-fire-form-v41';
+function autoSave(){
+  try{localStorage.setItem(AKEY,JSON.stringify(snapshot()))}catch(e){}
+}
+function autoLoad(){
+  let d=null;
+  try{d=JSON.parse(localStorage.getItem(AKEY))}catch(e){}
+  if(!d||!d.reports)return false;
+  return applyData(d);
+}
+function applyData(d){
+  REPORTS=d.reports;SEQ=d.seq||REPORTS.length;MARKS=d.marks||{};VALS=d.vals||{};
+  if(d.defs)Object.keys(d.defs).forEach(k=>{if(SYS[k]){SYS[k].items=d.defs[k].items;SYS[k].reads=d.defs[k].reads;}});
+  const tab=document.querySelector(`.tab[data-sys="${d.sys||'s01'}"]`);
+  if(tab){document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected','false'));
+    tab.setAttribute('aria-selected','true');render(d.sys);}
+  else render('s01');
+  const fs=staticFields();
+  (d.fields||[]).forEach((v,i)=>{const el=fs[i];if(!el)return;
+    if(el.type==='checkbox')el.checked=!!v;else el.value=v;});
+  const off=$('insQ').value.indexOf('مكتب مرخّص')===0;
+  ['lbOff','tdOff','lbLic','tdLic'].forEach(id=>$(id).style.display=off?'':'none');
+  renderLog();refreshRows();drawInbox();
+  return true;
+}
+function clearAll(){
+  if(!confirm('مسح كل بيانات هذه الجولة من المتصفح؟ لا يمكن التراجع.'))return;
+  localStorage.removeItem(AKEY);location.reload();
+}
+
+/* ================= الحالة ================= */
+let DIRTY=false,SENT='';
+let CUR='s01',REPORTS=[],SEQ=0,EDIT=null,M7OK=false,STATE={},MARKS={},VALS={};
+const $=id=>document.getElementById(id);
+const strip=s=>String(s).replace(/<[^>]*>/g,'').trim();
+const AR=n=>String(n).replace(/[0-9]/g,d=>'٠١٢٣٤٥٦٧٨٩'[d]);
+
+/* ================= رسم النظام ================= */
+function render(key){
+  CUR=key; const s=SYS[key];
+  $('sysName').value=s.name; $('code').textContent=s.code;
+  $('freq').innerHTML=s.sched.map(r=>`<option>${r[0]}</option>`).join('');
+
+  $('reads').innerHTML=s.reads.map((t,i)=>`
+    <tr data-row="${key}-r-${i}">
+      <td class="c">${AR(i+1)}</td>
+      <td class="ed" data-ed="r" data-i="${i}">${t}</td>
+      <td><input type="text" data-v="ref" class="refv" placeholder="لم تُعتمد بعد" readonly></td>
+      <td><input type="text" data-v="act"></td>
+      <td class="c"><input type="checkbox" data-r="ok"></td>
+      <td class="c"><input type="checkbox" data-r="no"></td>
+      <td class="cell"><span class="muted">—</span><button class="del" onclick="delRow('r',${i})">حذف</button></td></tr>`).join('');
+
+  $('items').innerHTML=s.items.map((it,i)=>`
+    <tr data-row="${key}-i-${i}">
+      <td class="c">${AR(i+1)}</td>
+      <td class="ed" data-ed="i" data-i="${i}">${it[0]}</td>
+      <td class="c ref ed" data-ed="f" data-i="${i}">${it[1]}</td>
+      <td class="c"><input type="checkbox" data-r="ok"></td>
+      <td class="c"><input type="checkbox" data-r="no"></td>
+      <td class="c"><input type="checkbox" data-r="na"></td>
+      <td class="cell"><span class="muted">—</span><button class="del" onclick="delRow('i',${i})">حذف</button></td></tr>`).join('');
+
+  document.querySelectorAll('td.ed').forEach(td=>{
+    td.addEventListener('blur',()=>{
+      const i=+td.dataset.i, v=td.textContent.trim(), S=SYS[CUR];
+      if(td.dataset.ed==='r')S.reads[i]=v;
+      else if(td.dataset.ed==='i')S.items[i][0]=v;
+      else S.items[i][1]=v;
+    });
+  });
+  applyCns();
+
+  document.querySelectorAll('#reads tr,#items tr').forEach(tr=>{
+    const m=MARKS[tr.dataset.row];
+    if(m){const el=tr.querySelector(`input[data-r="${m}"]`);if(el)el.checked=true;}
+    tr.querySelectorAll('input[data-v]').forEach(inp=>{
+      const k=tr.dataset.row+'|'+inp.dataset.v;
+      if(VALS[k])inp.value=VALS[k];
+      inp.addEventListener('input',()=>VALS[k]=inp.value);
+    });
+  });
+  document.querySelectorAll('#reads input[data-r],#items input[data-r]').forEach(cb=>
+    cb.addEventListener('change',e=>{
+      const tr=e.target.closest('tr');
+      tr.querySelectorAll('input[data-r]').forEach(o=>{if(o!==e.target)o.checked=false});
+      MARKS[tr.dataset.row]=e.target.checked?e.target.dataset.r:null;
+      paintRow(tr);}));
+  refreshRows();
+  if(ROLE)lockByRole();
+}
+function rowInfo(id){
+  const p=id.split('-'); const s=SYS[p[0]];
+  if(p[1]==='r')return {txt:s.reads[+p[2]],ref:'قراءة مقاسة',sys:s.name};
+  const it=s.items[+p[2]];
+  return {txt:strip(it[0]),ref:strip(it[1]),sys:s.name};
+}
+function paintRow(tr){
+  const id=tr.dataset.row,rep=REPORTS.find(r=>r.row===id),cell=tr.querySelector('.cell');
+  const no=tr.querySelector('input[data-r="no"]').checked;
+  if(rep){cell.innerHTML=`<span class="badge ${rep.cls}">${rep.status}</span> <span class="muted">${rep.id}</span>
+    <button class="act" style="border-color:var(--green);color:var(--green)" onclick="openM('${id}',true)">عرض / تعديل</button>`;return;}
+  cell.innerHTML=no?`<button class="act" onclick="openM('${id}',false)">فتح بلاغ</button>`:`<span class="muted">—</span>`;
+}
+function refreshRows(){document.querySelectorAll('#reads tr,#items tr').forEach(paintRow)}
+
+function openM(rowId,isEdit){
+  const inf=rowInfo(rowId);
+  EDIT=isEdit?REPORTS.find(r=>r.row===rowId):null;
+  $('mItem').textContent=inf.txt;
+  $('mMeta').textContent=`${inf.sys} · ${$('loc').value||'الموقع (يُحدَّد)'} · ${inf.ref}`;
+  $('mId').textContent=EDIT?EDIT.id:'ب — '+AR(String(SEQ+1).padStart(2,'0'));
+  $('ov').dataset.row=rowId;
+  resetM(); if(EDIT) fillM(EDIT);
+  lockModalByRole();
+  $('ov').classList.add('on');document.body.style.overflow='hidden';
+}
+function closeM(){$('ov').classList.remove('on');document.body.style.overflow=''}
+
+function resetM(){
+  STATE={levels:{},closedAt:null,path:'إداري',backFrom:0};
+  $('mDesc').value='';$('mOos').checked=false;$('blkOos').classList.remove('on');
+  $('ov').querySelectorAll('.opt').forEach(o=>{o.classList.remove('sel');o.querySelector('input').checked=false});
+  $('ov').querySelectorAll('textarea').forEach(t=>t.value='');
+  $('ov').querySelectorAll('input[type=text]').forEach(t=>t.value='');
+  $('ov').querySelectorAll('input[type=checkbox]:not(#gStuck)').forEach(c=>c.checked=false);
+  $('gStuck').checked=false;$('reopen').checked=false;$('wRows').innerHTML='';$('l4src').textContent='';
+  $('ov').querySelectorAll('.lvl').forEach(l=>{
+    const n=l.dataset.lvl;
+    l.classList.toggle('show',n==='1');
+    l.querySelector('.lvl-b').classList.toggle('on',n==='1');
+    const dot=l.querySelector('.lvl-n');dot.className='lvl-n'+(n==='1'?' act':'');
+    const st=l.querySelector('.lvl-s');st.className='lvl-s';st.textContent=n==='1'?'في انتظار القرار':'—';
+    const cb=l.querySelector('[data-close]');if(cb)cb.classList.remove('on');
+  });
+  SENT='';markSent();showEsc(false);unlockAll();addWatch();gateCheck();setM7(false);
+}
+function fillM(r){
+  $('mDesc').value=r.desc;$('needTxt').value=r.need||'';
+  $('mWhen').value=r.when||'';SENT=r.sent||'';markSent();
+  const im=[...$('mImpact').children].find(o=>o.dataset.imp===r.imp);if(im)im.click();
+  if(r.oos){$('mOos').checked=true;$('blkOos').classList.add('on');
+    $('oosFrom').value=r.oosFrom||'';$('oosTo').value=r.oosTo||'';}
+  STATE.levels=JSON.parse(JSON.stringify(r.levels||{}));
+  if(r.levels&&r.levels[1]&&r.levels[1].up)showEsc(true);
+  STATE.path=r.path||'إداري';STATE.closedAt=null;STATE.backFrom=r.backFrom||0;
+  Object.keys(STATE.levels).map(Number).sort().forEach(n=>{
+    const L=STATE.levels[n],l=$('ov').querySelector(`.lvl[data-lvl="${n}"]`);if(!l)return;
+    l.classList.add('show');
+    l.querySelector('.lvl-b').classList.add('on');
+    const o=l.querySelector(`.opt[data-ld="${L.ld}"]`);
+    if(o){o.classList.add('sel');o.querySelector('input').checked=true;
+      const cb=l.querySelector('[data-close]');if(cb)cb.classList.toggle('on',L.ld==='close');}
+    const ack=l.querySelector('.ack');if(ack)ack.checked=!!L.ack;
+    l.querySelector('textarea').value=L.note||'';
+    const si=l.querySelectorAll('.sig input');si[0].value=L.by||'';si[1].value=L.date||'';
+    l.querySelector('.lvl-n').className='lvl-n done';
+    const st=l.querySelector('.lvl-s');st.className='lvl-s '+(L.up?'up':'done');
+    st.textContent=n===4?'✓ قرار نهائي':(L.up?'↑ صُعّد':'✓ أُغلق');
+    lockLvl(n);
+    if(L.up)unlock(n+1); else STATE.closedAt=n;
+  });
+  if(r.backFrom&&!(r.levels&&r.levels[1])){
+    const l1=$('ov').querySelector('.lvl[data-lvl="1"]');
+    if(l1){l1.classList.add('show');
+      l1.querySelector('.lvl-s').textContent='أُعيد للتنفيذ — وُفِّر المطلوب من المستوى '+AR(r.backFrom);}
+  }
+  $('wRows').innerHTML='';
+  (r.watch&&r.watch.length?r.watch:[{}]).forEach(o=>{addWatch();
+    const tr=$('wRows').lastElementChild;
+    tr.querySelector('.wd').value=o.d||stamp();tr.querySelector('.ww').value=o.w||'';
+    tr.querySelector('.wr').value=o.r||'';tr.querySelector('.wp').value=o.p||'';});
+  $('gStuck').checked=!!r.stuck;$('gWhy').value=r.why||'';$('reopen').checked=!!r.reopen;
+  if(r.path&&r.path!=='إداري')$('l4src').innerHTML='<b style="color:var(--red)">وصل بتصعيد رقابي من مسؤول السلامة</b>';
+  gateCheck();setM7(r.m7==='تحقق');
+}
+function bindOpts(box){
+  [...box.children].forEach(o=>o.addEventListener('click',()=>{
+    [...box.children].forEach(x=>{x.classList.remove('sel');x.querySelector('input').checked=false});
+    o.classList.add('sel');o.querySelector('input').checked=true;
+    if(box.id==='mImpact'&&o.dataset.imp==='none'&&!$('mOos').checked){
+      $('mOos').checked=true;$('blkOos').classList.add('on');
+      if(!$('oosFrom').value)$('oosFrom').value=stamp();
+    }
+    const lvl=o.closest('.lvl');
+    if(lvl){const cb=lvl.querySelector('[data-close]');if(cb)cb.classList.toggle('on',o.dataset.ld==='close');
+      if(lvl.dataset.lvl==='1')showEsc(o.dataset.ld==='up');}
+  }));
+}
+bindOpts($('mImpact'));
+$('ov').querySelectorAll('.lvl .opts').forEach(bindOpts);
+$('mOos').addEventListener('change',e=>{
+  $('blkOos').classList.toggle('on',e.target.checked);
+  if(e.target.checked&&!$('oosFrom').value)$('oosFrom').value=stamp();
+});
+$('gStuck').addEventListener('change',gateCheck);
+
+function addWatch(){
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td><input type="text" class="wd" readonly></td><td><input type="text" class="ww"></td>
+                <td><input type="text" class="wr"></td><td><input type="text" class="wp"></td>`;
+  $('wRows').appendChild(tr);
+  tr.querySelector('.wd').value=stamp();
+  tr.querySelectorAll('input').forEach(i=>i.addEventListener('input',gateCheck));
+  gateCheck();
+}
+function watchLines(){
+  return [...$('wRows').children].map(tr=>({
+    d:tr.querySelector('.wd').value,w:tr.querySelector('.ww').value,
+    r:tr.querySelector('.wr').value,p:tr.querySelector('.wp').value
+  })).filter(o=>o.d||o.w||o.r||o.p);
+}
+function gateCheck(){
+  const ok=$('gStuck').checked && watchLines().length>0;
+  $('gBtn').disabled=!ok;
+}
+function watchEscalate(){
+  if(!$('gWhy').value.trim()){alert('اكتب سبب التصعيد الرقابي أولاً');return;}
+  STATE.path='رقابي — من مسؤول السلامة';
+  $('l4src').innerHTML='<b style="color:var(--red)">وصل بتصعيد رقابي من مسؤول السلامة</b> — لتوقّف المسار الإداري بعد تواصل مسبق موثَّق';
+  unlock(4);
+}
+function setM7(ok,when){
+  M7OK=ok;
+  $('m7state').innerHTML=ok?`<b style="color:var(--green)">تحقق شرط الإبلاغ</b> — وصل البلاغ الجهات العليا المختصة${when?' بتاريخ '+when:''}`
+    :'لم يتحقق بعد — البلاغ لم يصل الجهات العليا المختصة';
+  $('m7box').style.background=ok?'#eef5f1':'#fdf3f3';
+  $('m7box').style.borderColor=ok?'var(--green-2)':'var(--red)';
+}
+function unlock(n){
+  const l=$('ov').querySelector(`.lvl[data-lvl="${n}"]`);if(!l)return;
+  l.classList.add('show');
+  l.querySelector('.lvl-b').classList.add('on');
+  l.querySelector('.lvl-n').className='lvl-n act';
+  const st=l.querySelector('.lvl-s');st.className='lvl-s';st.textContent='في انتظار القرار';
+  if(n===4)setM7(true);
+}
+function showEsc(on){
+  ['secC','escOnly','secD'].forEach(id=>$(id).classList.toggle('show',on));
+  ['secE','watchBox'].forEach(id=>$(id).classList.toggle('show',on||!!STATE.closedAt));
+  if(!on)$('ov').querySelectorAll('.lvl[data-lvl="2"],.lvl[data-lvl="3"],.lvl[data-lvl="4"]')
+    .forEach(l=>l.classList.remove('show'));
+}
+function backToTech(from){
+  const l1=$('ov').querySelector('.lvl[data-lvl="1"]');
+  if(!l1)return;
+  l1.classList.add('show');
+  l1.querySelectorAll('.lvl-b input, .lvl-b textarea').forEach(el=>el.disabled=false);
+  l1.querySelectorAll('.lvl-b .opt').forEach(o=>{o.style.cursor='pointer';o.classList.remove('sel');o.querySelector('input').checked=false});
+  const b=l1.querySelector('.btn-sm');if(b)b.style.display='';
+  const m=l1.querySelector('.lockmsg');if(m)m.remove();
+  const cb=l1.querySelector('[data-close]');if(cb)cb.classList.remove('on');
+  const ackEl=l1.querySelector('.ack');if(ackEl)ackEl.checked=false;
+  l1.querySelector('textarea').value='';
+  const si=l1.querySelectorAll('.sig input');si[0].value='';si[1].value='';si[1].readOnly=false;
+  l1.querySelector('.lvl-n').className='lvl-n act';
+  const st=l1.querySelector('.lvl-s');st.className='lvl-s';
+  st.textContent='أُعيد للتنفيذ — وُفِّر المطلوب من المستوى '+AR(from);
+  delete STATE.levels[1];
+  STATE.backFrom=from;
+}
+function saveLvl(n){
+  const l=$('ov').querySelector(`.lvl[data-lvl="${n}"]`);
+  const sel=l.querySelector('.opt.sel');
+  if(n<4&&!sel){alert('حدّد القرار: إغلاق أم تصعيد');return;}
+  const ack=l.querySelector('.ack');
+  if(sel&&sel.dataset.ld==='close'&&ack&&!ack.checked){alert('لا يُغلق البلاغ إلا بإقرار المسؤولية عن صحة الإصلاح');return;}
+  const inputs=l.querySelectorAll('.sig input');
+  if(!inputs[1].value)inputs[1].value=stamp();
+  inputs[1].readOnly=true;
+  const by=inputs[0].value,date=inputs[1].value;
+  const ld=sel?sel.dataset.ld:'final';
+  const up=(ld==='up'), back=(ld==='back');
+  l.querySelector('.lvl-n').className='lvl-n done';
+  const st=l.querySelector('.lvl-s');
+  st.className='lvl-s '+(up||back?'up':'done');
+  st.textContent = up?'↑ صُعّد' : back?'↩ أُعيد للفني' : (n===4?'✓ قرار نهائي':'✓ أُغلق');
+  STATE.levels[n]={by,date,up,back,ld,ack:!!(ack&&ack.checked),note:l.querySelector('textarea').value};
+  lockLvl(n);
+  if(up)unlock(n+1);
+  if(back)backToTech(n);
+  if(!up&&!back&&(n===1||n===4))STATE.closedAt=n;
+  if(n===4)setM7(true,date);
+  if(STATE.closedAt){['secE','watchBox'].forEach(id=>$(id).classList.add('show'));}
+  autoSave();
+}
+function lockLvl(n){
+  const l=$('ov').querySelector(`.lvl[data-lvl="${n}"]`);if(!l)return;
+  l.querySelectorAll('.lvl-b input, .lvl-b textarea').forEach(el=>el.disabled=true);
+  l.querySelectorAll('.lvl-b .opt').forEach(o=>o.style.cursor='default');
+  const b=l.querySelector('.btn-sm');if(b){b.style.display='none';}
+  if(!l.querySelector('.lockmsg')){
+    const d=document.createElement('div');d.className='muted lockmsg';
+    d.style.cssText='margin-top:8px;color:var(--green);font-weight:700';
+    d.textContent='🔒 قرار محفوظ وموقَّع — لا يُعدَّل من مستوى لاحق';
+    l.querySelector('.lvl-b').appendChild(d);
+  }
+}
+function unlockAll(){
+  $('ov').querySelectorAll('.lvl').forEach(l=>{
+    l.querySelectorAll('.lvl-b input, .lvl-b textarea').forEach(el=>el.disabled=false);
+    l.querySelectorAll('.lvl-b .opt').forEach(o=>o.style.cursor='pointer');
+    const b=l.querySelector('.btn-sm');if(b)b.style.display='';
+    const m=l.querySelector('.lockmsg');if(m)m.remove();
+  });
+}
+function stamp(){
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  return AR(`${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} — ${p(d.getHours())}:${p(d.getMinutes())}`);
+}
+function nowD(){const d=new Date(),p=n=>String(n).padStart(2,'0');
+  return {d:`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`,t:`${p(d.getHours())}:${p(d.getMinutes())}`};}
+function startRound(){
+  const n=nowD();
+  if(!$('dtRound').value)$('dtRound').value=n.d;
+  if(!$('tStart').value)$('tStart').value=n.t;
+  $('tEnd').value=n.t;
+}
+function sendReport(){
+  if(!$('mDesc').value.trim()){alert('اكتب وصف العطل قبل الإرسال');return;}
+  if(!$('mWhen').value.trim())$('mWhen').value=stamp();
+  SENT=stamp();
+  markSent();
+  saveM(true);
+  alert('سُجّل إرسال البلاغ — '+SENT+'\n\nإلى: مدير المرافق والصيانة · نسخة: مسؤول السلامة\n\nإن كان المستلم على جهاز آخر، اضغط «حفظ النموذج بالبيانات» وأرسل الملف إليه.');
+}
+function markSent(){
+  const b=document.querySelector('.sendbox');
+  if(!b)return;
+  b.classList.toggle('done',!!SENT);
+  $('sendState').textContent=SENT?('✓ أُرسل البلاغ — '+SENT):'';
+}
+function saveM(keepOpen){
+  const row=$('ov').dataset.row;
+  const l1=STATE.levels[1];
+  const escalated=!!(l1&&l1.up);
+  const imp=$('mImpact').querySelector('.opt.sel');
+  if(!$('mDesc').value.trim()){alert('اكتب وصف العطل أو الملاحظة قبل الحفظ');return;}
+  if(escalated&&!imp){alert('حدّد فئة الأثر (أ / ب / ج) قبل الحفظ');return;}
+  const inf=rowInfo(row);
+  const finder=$('insQ').value;
+  const lv=Object.keys(STATE.levels).map(Number).sort();
+  const last=lv.length?lv[lv.length-1]:0;
+  const closed=STATE.closedAt;
+  const backFrom=STATE.backFrom&&!STATE.levels[1]?STATE.backFrom:0;
+  const rec={row,id:EDIT?EDIT.id:'ب — '+AR(String(++SEQ).padStart(2,'0')),
+    sys:inf.sys,item:inf.txt,ref:inf.ref,
+    finder,finderName:($('insN').value||'—')+($('offN').value?' — '+$('offN').value:''),desc:$('mDesc').value||'—',
+    imp:imp?imp.dataset.imp:'',sev:imp?imp.dataset.sev:'—',due:imp?imp.dataset.due:'—',
+    when:$('mWhen').value,sent:SENT,
+    oos:$('mOos').checked,oosFrom:$('oosFrom').value,oosTo:$('oosTo').value,
+    need:$('needTxt').value||'—',path:STATE.path,
+    levels:STATE.levels,watch:watchLines(),
+    stuck:$('gStuck').checked,why:$('gWhy').value,reopen:$('reopen').checked,
+    status:closed?`مُغلق عند ${LNAME[closed]}`
+      :(backFrom?`وُفِّر المطلوب — بانتظار تنفيذ الفني`
+      :(last?`قيد المعالجة — ${LNAME[Math.min(last+1,4)]}`
+        :(SENT?'أُرسل — بانتظار قرار الفني':'مفتوح — لم يُرسل'))),
+    owner:closed?'—':(backFrom?LNAME[1]:(last?LNAME[Math.min(last+1,4)]:LNAME[1])),
+    cls:closed?'b-done':(backFrom?'b-esc':(last>=2?'b-open':'b-esc')),
+    backFrom,
+    m7:M7OK?'تحقق':'لم يتحقق'};
+  if(rec.reopen){rec.status='أُعيد فتحه — إصلاح غير كافٍ';rec.cls='b-open';rec.owner=LNAME[1];}
+  const i=REPORTS.findIndex(r=>r.row===row);
+  if(i>=0)REPORTS[i]=rec;else REPORTS.push(rec);
+  refreshRows();renderLog();drawInbox();autoSave();
+  if(keepOpen===true){ $('mId').textContent=rec.id; EDIT=rec; return; }
+  closeM();
+}
+
+
+/* ================= سجل البلاغات ================= */
+function renderLog(){
+  $('cnt').textContent=AR(REPORTS.length);
+  if(!REPORTS.length){$('logWrap').innerHTML='<div class="empty">لا توجد ملاحظات مسجّلة في هذه الجولة</div>';$('printDetails').innerHTML='';return;}
+  $('logWrap').innerHTML=`<table><thead><tr>
+   <th style="width:58px">البلاغ</th><th>البند والملاحظة</th><th style="width:104px">من اكتشفه</th>
+   <th style="width:132px">الفئة</th><th style="width:74px">المهلة</th>
+   <th style="width:132px">الحالة</th><th style="width:126px">لدى مَن الآن</th><th style="width:58px">م٧</th>
+  </tr></thead><tbody>${REPORTS.map(r=>`<tr>
+   <td class="c"><b>${r.id}</b></td>
+   <td>${r.item}<div class="muted">${r.desc}${r.oos?' · <b style="color:var(--red)">خارج الخدمة</b>':''}${r.need&&r.need!=='—'?' · المطلوب: '+r.need:''}</div></td>
+   <td>${r.finder}</td><td class="c">${r.sev}</td><td class="c">${r.due}</td>
+   <td class="c"><span class="badge ${r.cls}">${r.status}</span>
+     ${r.path&&r.path!=='إداري'?'<div style="margin-top:3px"><span class="badge b-watch">تصعيد رقابي</span></div>':''}</td>
+   <td>${r.owner}</td><td class="c muted">${r.m7}</td></tr>`).join('')}</tbody></table>`;
+  $('printDetails').innerHTML='<h2>ملحق · تفاصيل البلاغات ومسار التصعيد</h2>'+REPORTS.map(r=>{
+    const lv=Object.keys(r.levels).map(Number).sort().map(n=>`<div class="r"><span>المستوى ${AR(n)} — ${LNAME[n]}</span><span>${r.levels[n].up?'↑ صُعّد':(r.levels[n].back?'↩ وُفِّر المطلوب وأُعيد للفني':'✓ أُغلق')} · ${r.levels[n].note||'—'} · ${r.levels[n].by||''} ${r.levels[n].date||''}</span></div>`).join('');
+    const w=r.watch.map(o=>`<div class="r"><span>متابعة ${o.d||''}</span><span>${o.w||''} — ${o.r||''} — الرد: ${o.p||''}</span></div>`).join('');
+    return `<div class="pd"><h4>${r.id} — ${r.item} <span class="badge ${r.cls}">${r.status}</span></h4>
+      <div class="r"><span>النظام</span><span>${r.sys} · ${r.ref}</span></div>
+      <div class="r"><span>من اكتشف العطل</span><span>${r.finder} — ${r.finderName}</span></div>
+      <div class="r"><span>الملاحظة</span><span>${r.desc}</span></div>
+      <div class="r"><span>وقت الاكتشاف</span><span>${r.when||'—'}</span></div>
+      <div class="r"><span>إرسال البلاغ</span><span>${r.sent?'أُرسل لمدير المرافق والصيانة ونسخة لمسؤول السلامة — '+r.sent:'<b style="color:var(--red)">لم يُرسل</b>'}</span></div>
+      <div class="r"><span>الفئة والمهلة</span><span>${r.sev} — ${r.due}</span></div>
+      ${r.oos?`<div class="r"><span>خروج عن الخدمة</span><span>من ${r.oosFrom||'—'} إلى ${r.oosTo||'—'}</span></div>`:''}
+      <div class="r"><span>المطلوب</span><span>${r.need}</span></div>
+      ${lv||'<div class="r"><span>مسار التنفيذ</span><span>لم يُسجَّل قرار</span></div>'}
+      ${w?'<div class="r"><span><b>لوحة مسؤول السلامة</b></span><span></span></div>'+w:''}
+      ${r.stuck?`<div class="r"><span>تصعيد رقابي</span><span>${r.why||'—'}</span></div>`:''}
+      <div class="r"><span>مسار الوصول للإدارة العليا</span><span>${r.path}</span></div>
+      <div class="r"><span>شرط المادة السابعة</span><span>${r.m7}</span></div>
+      <div class="r"><span>توقيع مسؤول السلامة</span><span>&nbsp;</span></div></div>`;}).join('');
+}
+
+/* ================= حفظ وفتح ملف الجولة ================= */
+function staticFields(){
+  return [...document.querySelectorAll('main input, main textarea')]
+    .filter(el=>!el.closest('#reads')&&!el.closest('#items')&&!el.closest('#logWrap')&&!el.closest('#printDetails'));
+}
+function snapshot(){
+  const defs={};Object.keys(SYS).forEach(k=>defs[k]={items:SYS[k].items,reads:SYS[k].reads});
+  return {v:41,sys:CUR,seq:SEQ,marks:MARKS,vals:VALS,reports:REPORTS,defs,
+    fields:staticFields().map(el=>el.type==='checkbox'?(el.checked?1:0):el.value)};
+}
+function saveSelf(){
+  const doc=document.documentElement.cloneNode(true);
+  const tag=doc.querySelector('#SAVED');
+  tag.textContent=JSON.stringify(snapshot()).replace(/</g,'\\u003c');
+  const html='<!DOCTYPE html>\n'+doc.outerHTML;
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  const nm=($('loc').value||SYS[CUR].name).replace(/[\\/:*?"<>|]/g,'-');
+  a.download='فحص-'+SYS[CUR].code+'-'+nm+'-'+new Date().toISOString().slice(0,10)+'.html';
+  a.click();URL.revokeObjectURL(a.href);
+  DIRTY=false;
+}
+function loadSelf(){
+  let d=null;
+  try{d=JSON.parse($('SAVED').textContent)}catch(e){}
+  if(!d||!d.reports)return false;
+  REPORTS=d.reports;SEQ=d.seq||REPORTS.length;MARKS=d.marks||{};VALS=d.vals||{};
+  if(d.defs)Object.keys(d.defs).forEach(k=>{if(SYS[k]){SYS[k].items=d.defs[k].items;SYS[k].reads=d.defs[k].reads;}});
+  const tab=document.querySelector(`.tab[data-sys="${d.sys||'s01'}"]`);
+  if(tab){document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected','false'));
+    tab.setAttribute('aria-selected','true');render(d.sys);}
+  else render('s01');
+  const fs=staticFields();
+  (d.fields||[]).forEach((v,i)=>{const el=fs[i];if(!el)return;
+    if(el.type==='checkbox')el.checked=!!v;else el.value=v;});
+  const off=$('insQ').value.indexOf('مكتب مرخّص')===0;
+  ['lbOff','tdOff','lbLic','tdLic'].forEach(id=>$(id).style.display=off?'':'none');
+  renderLog();refreshRows();
+  return true;
+}
+function expFile(){
+  const defs={};Object.keys(SYS).forEach(k=>defs[k]={items:SYS[k].items,reads:SYS[k].reads});
+  const data={v:41,sys:CUR,seq:SEQ,marks:MARKS,vals:VALS,reports:REPORTS,defs,
+    fields:staticFields().map(el=>el.type==='checkbox'?(el.checked?1:0):el.value)};
+  const blob=new Blob([JSON.stringify(data,null,1)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='جولة-فحص-'+SYS[CUR].code+'-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();URL.revokeObjectURL(a.href);
+}
+function impFile(){$('fpick').click()}
+$('fpick').addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      let raw=rd.result, d=null;
+      if(/^\s*[{[]/.test(raw)) d=JSON.parse(raw);
+      else{
+        const m=raw.match(/<script id="SAVED"[^>]*>([\s\S]*?)<\/script>/);
+        if(m) d=JSON.parse(m[1].replace(/\\u003c/g,'<'));
+      }
+      if(!d||!d.reports){alert('الملف لا يحتوي بيانات جولة');return;}
+      REPORTS=d.reports;SEQ=d.seq||REPORTS.length;MARKS=d.marks||{};VALS=d.vals||{};
+      if(d.defs)Object.keys(d.defs).forEach(k=>{if(SYS[k]){SYS[k].items=d.defs[k].items;SYS[k].reads=d.defs[k].reads;}});
+      const tab=document.querySelector(`.tab[data-sys="${d.sys||'s01'}"]`);
+      if(tab)tab.click(); else render('s01');
+      const fs=staticFields();
+      (d.fields||[]).forEach((v,i)=>{const el=fs[i];if(!el)return;
+        if(el.type==='checkbox')el.checked=!!v;else el.value=v;});
+      renderLog();refreshRows();
+      alert('تم فتح الجولة — عدد البلاغات: '+AR(REPORTS.length));
+    }catch(err){alert('تعذّر قراءة الملف')}
+  };
+  rd.readAsText(f);e.target.value='';
+});
+
+function applyCns(){
+  const on=document.body.classList.contains('cns');
+  document.querySelectorAll('td.ed').forEach(td=>td.contentEditable=on?'true':'false');
+  document.querySelectorAll('.refv').forEach(i=>{i.readOnly=!on;i.placeholder=on?'أدخل القيمة المعتمدة':'لم تُعتمد بعد';});
+}
+function purge(){
+  const p=CUR+'-';
+  Object.keys(MARKS).forEach(k=>{if(k.indexOf(p)===0)delete MARKS[k]});
+  Object.keys(VALS).forEach(k=>{if(k.indexOf(p)===0)delete VALS[k]});
+  REPORTS=REPORTS.filter(r=>r.row.indexOf(p)!==0);
+  renderLog();
+}
+function addRow(t){
+  if(t==='r')SYS[CUR].reads.push('قراءة جديدة');
+  else SYS[CUR].items.push(['بند جديد','—']);
+  render(CUR);
+}
+function delRow(t,i){
+  if(!confirm('حذف هذا السطر؟ سيُعاد ترقيم بقية أسطر هذا النظام، وتُمسح علاماته وبلاغاته.'))return;
+  if(t==='r')SYS[CUR].reads.splice(i,1); else SYS[CUR].items.splice(i,1);
+  purge(); render(CUR);
+}
+function togCns(){
+  const on=document.body.classList.toggle('cns');
+  applyCns();
+  $('cnsBtn').textContent=on?'إنهاء وضع المكتب الاستشاري':'وضع المكتب الاستشاري — تعديل البنود والقيم';
+}
+$('insQ').addEventListener('change',e=>{
+  const off=e.target.value.indexOf('مكتب مرخّص')===0;
+  ['lbOff','tdOff','lbLic','tdLic'].forEach(id=>$(id).style.display=off?'':'none');
+});
+
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected','false'));
+  t.setAttribute('aria-selected','true');render(t.dataset.sys);window.scrollTo({top:0,behavior:'smooth'});}));
+$('ov').addEventListener('click',e=>{if(e.target.id==='ov')closeM()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeM()});
+
+
+let SVT=null;
+function touch(){DIRTY=true;startRound();clearTimeout(SVT);SVT=setTimeout(()=>{autoSave();DIRTY=false;},600)}
+document.addEventListener('input',touch,true);
+document.addEventListener('change',touch,true);
+['uu','pp'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()}));
+if(!loadSelf()&&!autoLoad())render('s01');
+DIRTY=false;
+</script>
+</body>
+</html>

@@ -26,6 +26,18 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--ink);line-h
 .link .title{font-weight:700;font-size:15px;color:var(--green)}
 .link .desc{font-size:12px;color:var(--muted);margin-top:2px}
 .link .arrow{color:var(--muted);font-size:20px}
+.sub-links{max-height:0;overflow:hidden;transition:max-height 0.3s ease}
+.sub-links.open{max-height:200px}
+.sub-link{display:flex;align-items:center;gap:12px;padding:12px 20px 12px 40px;background:#fafaf8;text-decoration:none;color:var(--ink);border-top:1px solid var(--line);transition:background 0.15s}
+.sub-link:hover{background:var(--tint)}
+.sub-link .icon{width:32px;height:32px;background:var(--tint);border:2px solid var(--line);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.sub-link:hover .icon{border-color:var(--gold);background:#fdf9ec}
+.sub-link .text{flex:1}
+.sub-link .title{font-weight:600;font-size:13px;color:var(--green)}
+.sub-link .desc{font-size:11px;color:var(--muted);margin-top:1px}
+.sub-link .arrow{color:var(--muted);font-size:16px}
+.toggle-arrow{cursor:pointer;transition:transform 0.3s}
+.toggle-arrow.rotated{transform:rotate(-90deg)}
 </style>
 </head>
 <body>
@@ -45,7 +57,15 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--ink);line-h
 <div class="section">
 <div class="section-title">النموذج التفاعلي</div>
 <div class="links">
-<a href="inspection-form.html" class="link"><div class="icon">📝</div><div class="text"><div class="title">نموذج الفحص</div><div class="desc">نموذج الفحص التفاعلي للموقع</div></div><div class="arrow">←</div></a>
+<div class="link" style="cursor:pointer" onclick="document.getElementById('subForms').classList.toggle('open');this.querySelector('.toggle-arrow').classList.toggle('rotated')">
+<div class="icon">📝</div>
+<div class="text"><div class="title">نموذج الفحص</div><div class="desc">نموذج الفحص التفاعلي للموقع</div></div>
+<div class="arrow toggle-arrow">←</div>
+</div>
+</div>
+<div class="sub-links" id="subForms">
+<a href="inspection-form.html" class="sub-link"><div class="icon">🏢</div><div class="text"><div class="title">نموذج فحص المركز</div><div class="desc">٧ أنظمة</div></div><div class="arrow">←</div></a>
+<a href="fire-inspection.html" class="sub-link"><div class="icon" style="border-color:#9b1c1c;background:#fdf3f3">🔥</div><div class="text"><div class="title" style="color:#9b1c1c">أنظمة الحماية لكامل المبنى</div><div class="desc">١٢ نظام</div></div><div class="arrow">←</div></a>
 </div>
 </div>
 <div class="section">
