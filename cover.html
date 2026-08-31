@@ -3,171 +3,343 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>الغلاف — حزمة السلامة والصحة المهنية</title>
+<title>الغلاف — نموذج تشغيلي للسلامة</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'IBM Plex Sans Arabic', sans-serif; direction: rtl; background: #EFE9DC; }
+body {
+  font-family: 'IBM Plex Sans Arabic', sans-serif;
+  direction: rtl;
+  background: #1A2E23;
+  min-height: 100vh;
+}
 .kufi { font-family: 'Noto Kufi Arabic', sans-serif; }
+
+.cover {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 48px;
+  background: linear-gradient(180deg, #1E3329 0%, #162620 100%);
+  min-height: 100vh;
+  color: #FFFFFF;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.logo {
+  width: 52px;
+  height: 52px;
+  background: #FFFFFF;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo span {
+  color: #1E3329;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.org-info {
+  text-align: right;
+}
+
+.org-name {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.org-sub {
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 2px;
+}
+
+.regulation {
+  background: rgba(255,255,255,0.08);
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+/* العنوان الرئيسي */
+.title-section {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.title-label {
+  font-size: 14px;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 8px;
+}
+
+.title-main {
+  font-size: 42px;
+  font-weight: 900;
+  line-height: 1.3;
+  margin-bottom: 10px;
+}
+
+.title-sub {
+  font-size: 15px;
+  opacity: 0.8;
+}
+
+/* الأقسام */
+.section-box {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 16px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.section-num {
+  width: 26px;
+  height: 26px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.section-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #C9A227;
+}
+
+.section-content {
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+/* الأرقام */
+.numbers-row {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.number-card {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 16px 24px;
+  text-align: center;
+  min-width: 90px;
+}
+
+.number-value {
+  font-size: 32px;
+  font-weight: 900;
+  color: #81C784;
+  line-height: 1;
+}
+
+.number-label {
+  font-size: 11px;
+  color: rgba(255,255,255,0.7);
+  margin-top: 6px;
+}
+
+/* التحويلات */
+.transforms {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.transform-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.transform-from {
+  color: rgba(255,255,255,0.5);
+  font-weight: 500;
+}
+
+.transform-arrow {
+  color: #C9A227;
+  font-size: 16px;
+}
+
+.transform-to {
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+/* الغاية */
+.purpose-box {
+  background: linear-gradient(135deg, rgba(201,162,39,0.15) 0%, rgba(201,162,39,0.08) 100%);
+  border: 1px solid rgba(201,162,39,0.3);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.purpose-label {
+  font-size: 12px;
+  color: #C9A227;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.purpose-text {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.purpose-sub {
+  font-size: 13px;
+  opacity: 0.85;
+  margin-top: 8px;
+}
+
+/* المطلوب */
+.cta-box {
+  background: linear-gradient(135deg, #C9A227 0%, #A67C00 100%);
+  border-radius: 12px;
+  padding: 24px 32px;
+  text-align: center;
+  color: #1A1A1A;
+  margin-bottom: 24px;
+}
+
+.cta-label {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.7;
+  margin-bottom: 8px;
+}
+
+.cta-text {
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.cta-note {
+  font-size: 13px;
+  margin-top: 10px;
+  opacity: 0.85;
+}
+
+/* Footer */
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  font-size: 13px;
+  color: rgba(255,255,255,0.7);
+}
+
+@media print {
+  body { background: white; }
+  .cover {
+    max-width: 100%;
+    min-height: 100vh;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
 </style>
 </head>
 <body>
 
-<!-- الغلاف -->
-<div style="background: linear-gradient(180deg, #1E3329 0%, #0F1A14 100%); padding: 48px 64px 40px; color: #FFFFFF;">
+<div class="cover">
   <!-- Header -->
-  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px;">
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <div style="width: 48px; height: 48px; background: #FFFFFF; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-        <span style="color: #2D4A3E; font-size: 24px; font-weight: 900;">IPA</span>
+  <div class="header">
+    <div class="logo-section">
+      <div class="logo">
+        <span>IPA</span>
       </div>
-      <div>
-        <div style="font-weight: 700; font-size: 15px;">معهد الإدارة العامة</div>
-        <div style="font-size: 13px; opacity: 0.8;">مبنى الملز</div>
+      <div class="org-info">
+        <div class="org-name">معهد الإدارة العامة</div>
+        <div class="org-sub">مبنى الملز — الرياض</div>
       </div>
     </div>
-    <div style="background: rgba(255,255,255,0.15); padding: 8px 16px; border-radius: 6px; font-size: 13px;">
-      لائحة رقم ٥-٤٦-٢
+    <div class="regulation">لائحة رقم ٥-٤٦-٢</div>
+  </div>
+
+  <!-- العنوان -->
+  <div class="title-section" style="text-align: right;">
+    <div class="kufi" style="font-size: 42px; font-weight: 900; color: rgba(255,255,255,0.6); line-height: 1.3;">المنتج</div>
+    <div class="kufi" style="font-size: 42px; font-weight: 900; line-height: 1.3; margin-bottom: 4px;">نموذج تشغيلي</div>
+    <h1 class="kufi title-main">للسلامة والصحة المهنية</h1>
+    <div class="title-sub" style="margin-bottom: 16px;">صُمم خصيصاً لمعهد الإدارة العامة</div>
+    <div style="font-size: 14px; color: rgba(255,255,255,0.85); margin-bottom: 12px;">
+      <span style="color: #C9A227; font-weight: 700;">يحوّل السلامة</span>
+      <span style="margin: 0 8px;">من مركز <span style="color: #C9A227;">←</span> <strong>شبكة</strong></span>
+      <span style="opacity: 0.5;">|</span>
+      <span style="margin: 0 8px;">من تخصص <span style="color: #C9A227;">←</span> <strong>سلوك</strong></span>
+      <span style="opacity: 0.5;">|</span>
+      <span style="margin: 0 8px;">من استدعاء <span style="color: #C9A227;">←</span> <strong>وجود</strong></span>
+    </div>
+    <div style="font-size: 14px; color: rgba(255,255,255,0.75); line-height: 1.7;">
+      لسد الفجوة الزمنية بين الاكتشاف والاستجابة.<br>
+      <span style="color: #C9A227;">لتكون ثانية الاكتشاف الأولى هي ثانية التدخل نفسها.</span>
     </div>
   </div>
 
-  <!-- Title -->
-  <h1 class="kufi" style="font-weight: 900; font-size: 36px; line-height: 1.4; margin: 0 0 16px;">
-    معهد الإدارة يحوّل السلامة والصحة المهنية
-  </h1>
-  <div style="font-size: 22px; font-weight: 600; margin-bottom: 16px;">
-    من قسم إلى شبكة — ومن تخصص إلى سلوك — ومن استدعاء إلى وجود — ومن كلفة إلى عائد
-  </div>
-  <div style="font-size: 15px; color: rgba(255,255,255,0.75); margin-bottom: 32px; padding-right: 16px; border-right: 2px solid #C9A227;">
-    المعهد لا يُدرّس الامتثال — بل تحقيق الغايات بجودةٍ وتميّز وكلفةٍ أقل
-  </div>
-
-  <!-- Purpose + Scope -->
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px;">
-    <div style="background: rgba(255,255,255,0.1); border-radius: 10px; padding: 20px; border-right: 4px solid #C9A227;">
-      <div style="font-size: 13px; color: #C9A227; font-weight: 700; margin-bottom: 6px;">الغاية</div>
-      <div style="font-size: 15px; font-weight: 700; line-height: 1.7; margin-bottom: 10px;">إلغاء الفجوة الزمنية بين اكتشاف الحالة الطارئة والاستجابة الأولية.</div>
+  <!-- ① لماذا -->
+  <div class="section-box">
+    <div class="section-header">
+      <div class="section-num">١</div>
+      <div class="section-label">لماذا المنتج</div>
     </div>
-    <div style="background: rgba(255,255,255,0.1); border-radius: 10px; padding: 20px; border-right: 4px solid #FFFFFF;">
-      <div style="font-size: 13px; color: #FFFFFF; font-weight: 700; margin-bottom: 6px;">النطاق</div>
-      <div style="font-size: 15px; line-height: 1.8;">مبنى الملز — (<strong>٧</strong>) أدوار و(<strong>٣</strong>) أقبية · (<strong>١٠٠</strong>) قاعة · (<strong>٦٥٠</strong>) مكتب إداري · (<strong>١٬٢٠٠</strong>) مركبة يومياً · (<strong>٣٬٠٠٠</strong>) شاغل يومياً، نصفهم متدربون غرباء على المبنى</div>
+    <div class="section-content">
+      <span class="kufi" style="font-size: 18px; font-weight: 800;">لأن اللائحة إلزامية.</span>
+      <span style="opacity: 0.7; margin-right: 16px;">لائحة مسؤول السلامة — المديرية العامة للدفاع المدني</span>
     </div>
   </div>
 
-  <!-- المُعد -->
-  <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.2); display: flex; justify-content: space-between; align-items: flex-end;">
+  <!-- Footer -->
+  <div class="footer">
     <div>
-      <div style="font-size: 11px; color: rgba(255,255,255,0.5); margin-bottom: 4px;">المُعد</div>
-      <div style="font-size: 14px; color: #FFFFFF; font-weight: 600;">مسؤول السلامة / محمد الرشيدي</div>
+      <span style="opacity: 0.6;">المُعد</span>
+      <span style="margin-right: 8px; font-weight: 600; color: #FFFFFF;">مسؤول السلامة بالمعهد / محمد سويد الرشيدي</span>
     </div>
-    <div style="font-size: 13px; color: rgba(255,255,255,0.7);">١٤٤٨/١/١ هـ</div>
-  </div>
-</div>
-
-<!-- أدوات التشغيل -->
-<div style="background: #F8F9FA; padding: 40px 64px;">
-  <!-- المنهجية -->
-  <div style="margin-bottom: 28px;">
-    <div class="kufi" style="font-weight: 800; font-size: 16px; color: #2D4A3E; margin-bottom: 12px;">منهجية الإعداد وأدوات التشغيل</div>
-    <div style="background: #2D4A3E; color: white; border-radius: 10px; padding: 18px 24px; font-size: 14px; line-height: 1.9;">
-      قارنّا <strong style="color: #C9A227;">١٦ مادة</strong> من اللائحة بالواقع ← حددنا الفجوات ← وضعنا لها حلولاً جاهزة لسدّها: تقسيم المبنى إلى <strong style="color: #C9A227;">٨+١</strong>: ثمانية أصناف من المواقع + مركز السلامة، لكل موقع خطط وفرق ونماذج فحص وإجراءات مكتوبة مسبقاً
-    </div>
-  </div>
-
-  <!-- 4 بطاقات -->
-  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
-    <div style="background: #FFFFFF; border-radius: 10px; padding: 20px 16px; border-top: 4px solid #2D4A3E;">
-      <div class="kufi" style="font-weight: 700; font-size: 15px; color: #2D4A3E; margin-bottom: 12px;"><span style="font-weight: 800; font-size: 28px; margin-left: 6px;">٨+١</span> أصناف مواقع</div>
-      <div style="font-size: 11.5px; line-height: 1.7; color: #5A5A5A;">
-        قاعات · مكاتب إدارية · أقبية · مركز بيانات · أماكن تقديم الأغذية والمشروبات · نقاط وغرف الكهرباء · نقاط وغرف التكييف · مناطق التخزين
-        <div style="margin-top: 8px; color: #2D4A3E; font-weight: 600;">+ مركز سلامة يوفر إدارة حية ومباشرة</div>
-      </div>
-    </div>
-    <div style="background: #FFFFFF; border-radius: 10px; padding: 20px 16px; border-top: 4px solid #C9A227;">
-      <div class="kufi" style="font-weight: 700; font-size: 13px; color: #1A1A1A; margin-bottom: 10px;">كل موقع <span style="color: #8A6D10;">مستقل بجاهزيته</span> ومتصل <span style="color: #2D4A3E;">بمركز السلامة</span></div>
-      <div style="font-size: 11px; line-height: 1.85; color: #5A5A5A;">
-        لكل موقع حسب طبيعته ومخاطره:<br>
-        <strong style="color: #2D4A3E;">خطة سلامة</strong> · <strong style="color: #2D4A3E;">خطة طوارئ</strong> · <strong style="color: #2D4A3E;">نماذج فحص</strong><br>
-        <strong style="color: #2D4A3E;">فريق استجابة أولي</strong> من العاملين — موجود قبل الحاجة له<br>
-        <strong style="color: #8A6D10;">ومدعوم</strong> بفريق إسناد أمني · طبي · فني<br>
-        <strong style="color: #8A6D10;">وبقيادة وإدارة</strong> من المركز
-      </div>
-    </div>
-    <div style="background: #FFFFFF; border-radius: 10px; padding: 20px 16px; border-top: 4px solid #2D4A3E;">
-      <div class="kufi" style="font-weight: 700; font-size: 14px; color: #2D4A3E; margin-bottom: 8px;">لمنع الارتباك</div>
-      <div style="font-size: 12px; line-height: 1.7; color: #1A1A1A; margin-bottom: 8px;">
-        كل فرد في المبنى يعرف مسبقاً دوره في السلامة
-      </div>
-      <div style="font-size: 11px; color: #8A6D10; font-weight: 700; margin-bottom: 8px;">من · ماذا · كيف · متى</div>
-      <div style="font-size: 10.5px; line-height: 1.6; color: #5A5A5A;">
-        عبر خطط السلامة وخطط الاستجابة وبطاقات الأدوار
-      </div>
-    </div>
-    <div style="background: #2D4A3E; border-radius: 10px; padding: 20px 16px; color: white;">
-      <div class="kufi" style="font-weight: 700; font-size: 13px; margin-bottom: 10px;">ما سبق <span style="color: #C9A227;">مبني على:</span></div>
-      <div style="font-size: 12px; line-height: 1.9; opacity: 0.95; margin-bottom: 12px;">
-        سياسة · مبادئ · أهداف · معايير جاهزية
-      </div>
-      <div style="font-size: 12px; font-weight: 700; color: #C9A227;">جاهز للتفعيل</div>
-    </div>
-  </div>
-
-  <!-- الأرقام -->
-  <div style="display: flex; justify-content: center; gap: 32px; margin-top: 24px; padding-top: 20px; border-top: 1px solid #E0E0E0;">
-    <div style="text-align: center;">
-      <span class="kufi" style="font-weight: 800; font-size: 24px; color: #C9A227;">١٧</span>
-      <span style="font-size: 12px; color: #5A5A5A; margin-right: 6px;">خطة</span>
-    </div>
-    <div style="text-align: center;">
-      <span class="kufi" style="font-weight: 800; font-size: 24px; color: #2D4A3E;">٢١</span>
-      <span style="font-size: 12px; color: #5A5A5A; margin-right: 6px;">بطاقة دور</span>
-    </div>
-    <div style="text-align: center;">
-      <span class="kufi" style="font-weight: 800; font-size: 24px; color: #2D4A3E;">٧٨</span>
-      <span style="font-size: 12px; color: #5A5A5A; margin-right: 6px;">نظام فحص</span>
-    </div>
-  </div>
-</div>
-
-<!-- مسار الإعداد -->
-<div style="background: #FFFFFF; padding: 40px 64px; border-bottom: 1px solid #E5E7EB;">
-  <div class="kufi" style="font-weight: 800; font-size: 18px; color: #2D4A3E; margin-bottom: 24px;">
-    مسار الإعداد والاعتماد — ٦ مراحل
-  </div>
-  <div style="display: flex; align-items: center; justify-content: space-between; position: relative;">
-    <div style="position: absolute; top: 20px; right: 40px; left: 40px; height: 3px; background: #E5E7EB; z-index: 0;"></div>
-    <div style="position: absolute; top: 20px; right: 40px; width: 33%; height: 3px; background: #2D4A3E; z-index: 1;"></div>
-
-    <div style="text-align: center; z-index: 2; flex: 1;">
-      <div style="width: 40px; height: 40px; background: #2D4A3E; color: #FFF; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: 700;">✓</div>
-      <div style="font-size: 11px; font-weight: 600; color: #2D4A3E;">الإعداد</div>
-      <div style="font-size: 9px; color: #6B7280; margin-top: 2px;">مسؤول السلامة</div>
-    </div>
-    <div style="text-align: center; z-index: 2; flex: 1;">
-      <div style="width: 40px; height: 40px; background: #2D4A3E; color: #FFF; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: 700;">✓</div>
-      <div style="font-size: 11px; font-weight: 600; color: #2D4A3E;">العرض على الإدارة التنفيذية</div>
-      <div style="font-size: 9px; color: #6B7280; margin-top: 2px;">مسؤول السلامة</div>
-    </div>
-    <div style="text-align: center; z-index: 2; flex: 1;">
-      <div style="width: 40px; height: 40px; background: #C9A227; color: #FFF; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: 700;">●</div>
-      <div style="font-size: 11px; font-weight: 600; color: #C9A227;">استيفاء الملاحظات والمرئيات</div>
-      <div style="font-size: 9px; color: #6B7280; margin-top: 2px;">الإدارات التنفيذية · <span style="color: #C9A227; font-weight: 600;">خلال أسبوعين من تاريخ العرض</span></div>
-    </div>
-    <div style="text-align: center; z-index: 2; flex: 1;">
-      <div style="width: 40px; height: 40px; background: #E5E7EB; color: #9CA3AF; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: 700;">4</div>
-      <div style="font-size: 11px; font-weight: 500; color: #6B7280;">الحصول على الموافقة والدعم من الإدارة العليا</div>
-      <div style="font-size: 9px; color: #9CA3AF; margin-top: 2px;">مدير الشؤون الإدارية والهندسية</div>
-    </div>
-    <div style="text-align: center; z-index: 2; flex: 1;">
-      <div style="width: 40px; height: 40px; background: #E5E7EB; color: #9CA3AF; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: 700;">5</div>
-      <div style="font-size: 11px; font-weight: 500; color: #6B7280;">استكمال النواقص</div>
-      <div style="font-size: 9px; color: #9CA3AF; margin-top: 2px;">الإدارات المعنية</div>
-    </div>
-    <div style="text-align: center; z-index: 2; flex: 1;">
-      <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #DC2626, #B91C1C); color: #FFF; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: 700;">◆</div>
-      <div style="font-size: 11px; font-weight: 600; color: #DC2626;">الدفاع المدني</div>
-      <div style="font-size: 9px; color: #6B7280; margin-top: 2px;">الدفاع المدني</div>
-    </div>
+    <div>١٤٤٨/١/١ هـ</div>
   </div>
 </div>
 
