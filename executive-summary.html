@@ -6,11 +6,11 @@
 <title>الملخص التنفيذي — حزمة السلامة</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;500;600;700;800;900&family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  font-family: 'IBM Plex Sans Arabic', sans-serif;
+  font-family: Arial, sans-serif;
   direction: rtl;
   background: #FBFAF6;
   color: #16261F;
@@ -19,7 +19,7 @@ body {
 .kufi { font-family: 'Noto Kufi Arabic', sans-serif; }
 
 .page {
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 40px 48px;
   background: #FFFFFF;
@@ -218,23 +218,100 @@ body {
 /* البطاقات الأربع */
 .four-cards {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+  grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+  gap: 0;
+  align-items: stretch;
   margin: 20px 0;
+}
+
+.card-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #C9A227;
+  font-size: 20px;
+  font-weight: 900;
+  padding: 0 4px;
 }
 
 .card {
   background: #FFFFFF;
   border: 1px solid #DCD5C4;
   border-radius: 10px;
-  padding: 14px 12px;
+  padding: 12px 10px;
   border-top: 4px solid #2D4A3E;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
 }
 
 .card:last-child {
   background: #2D4A3E;
   color: #FFFFFF;
   border: none;
+}
+
+.card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* الهرم */
+.pyramid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.pyramid-level {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #FFFFFF;
+  padding: 5px 8px;
+}
+
+.pyramid-level.l1 { width: 65px; background: #1E3329; }
+.pyramid-level.l2 { width: 80px; background: #2D4A3E; }
+.pyramid-level.l3 { width: 95px; background: #3D6A5E; }
+.pyramid-level.l4 { width: 115px; background: #C9A227; color: #1A1A1A; font-weight: 800; }
+
+.pyramid-arrow {
+  color: #C9A227;
+  font-size: 9px;
+  line-height: 1;
+}
+
+/* شبكة الأصناف */
+.zones-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 2px;
+}
+
+.zone-item {
+  background: #F5F3ED;
+  border: 1px solid #E2DBCB;
+  border-radius: 3px;
+  padding: 4px 3px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #33373E;
+  text-align: center;
+}
+
+.zone-item.center {
+  background: #1E5620;
+  color: #FFFFFF;
+  border: none;
+  font-weight: 700;
 }
 
 .card-number {
@@ -576,24 +653,8 @@ body {
             <span style="border: 1px dashed #A32020; background: rgba(163,32,32,0.06); border-radius: 999px; padding: 2px 11px; font-size: 12px; font-weight: 800; color: #A32020;">تنقطع</span>
           </span>
         </div>
-        <!-- حجم المسؤولية والسبب الجذري -->
+        <!-- السبب الجذري -->
         <div style="margin-top: 16px; padding: 16px 18px; background: #FFFFFF; border: 1px solid #DCD5C4; border-top: 3px solid #8A6D10;">
-          <!-- حجم المسؤولية -->
-          <div style="margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid #EDE9DE;">
-            <div class="kufi" style="font-size: 14px; color: #8A6D10; font-weight: 800; letter-spacing: 1px; margin-bottom: 10px;">حجم المسؤولية</div>
-            <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; font-size: 13px; color: #16261F;">
-              <span><span class="kufi" style="font-size: 22px; font-weight: 900; color: #1E5620;">٧</span> أدوار و<span class="kufi" style="font-size: 22px; font-weight: 900; color: #1E5620;">٣</span> أقبية</span>
-              <span><span class="kufi" style="font-size: 22px; font-weight: 900; color: #1E5620;">١٠٠</span> قاعة</span>
-              <span><span class="kufi" style="font-size: 22px; font-weight: 900; color: #1E5620;">٦٥٠</span> مكتب</span>
-              <span><span class="kufi" style="font-size: 22px; font-weight: 900; color: #1E5620;">١٬٢٠٠</span> مركبة</span>
-              <span><span class="kufi" style="font-size: 22px; font-weight: 900; color: #1E5620;">٣٬٠٠٠</span> شاغل</span>
-            </div>
-            <div style="font-size: 12px; color: #55503F; text-align: center; margin-top: 6px;">أكثر من نصفهم متدربون لا يعرفون المبنى</div>
-          </div>
-          <!-- السؤال -->
-          <div style="margin-bottom: 12px;">
-            <span class="kufi" style="font-size: 14px; font-weight: 800; color: #16261F;">ما الذي جعل هذا الحجم من المسؤولية... <span style="color: #A32020;">بلا خطط سلامة، ولا خطط طوارئ، ولا ضمان جاهزية؟</span></span>
-          </div>
           <div style="font-size: 14px; line-height: 1.7; color: #24312A; margin-bottom: 12px;">
             <strong>السبب الجذري ليس غياب دعم الإدارة العليا، ولا إدارة محددة، ولا أفراد.</strong>
           </div>
@@ -621,50 +682,89 @@ body {
     <div class="section-content">
       <div></div>
       <div>
-        <!-- الأرقام -->
-        <div class="numbers-row">
-          <div class="number-item">
-            <div class="number-value kufi">٩</div>
-            <div class="number-label">خطط سلامة</div>
-          </div>
-          <div class="number-item">
-            <div class="number-value kufi">٨</div>
-            <div class="number-label">خطط استجابة</div>
-          </div>
-          <div class="number-item">
-            <div class="number-value kufi">٢١</div>
-            <div class="number-label">بطاقة دور</div>
-          </div>
-          <div class="number-item">
-            <div class="number-value kufi">٧٨</div>
-            <div class="number-label">نظام فحص</div>
-          </div>
-          <div class="number-item">
-            <div class="number-value kufi">١٦</div>
-            <div class="number-label">مادة مطابَقة</div>
-          </div>
-        </div>
       </div>
     </div>
   </div>
 
+  <!-- عنوان البطاقات -->
+  <div style="text-align:center;margin:16px 0 10px;">
+    <span class="kufi" style="font-size:13px;font-weight:800;color:#1E5620;">مخرجات الحل — نظام</span>
+  </div>
+
   <!-- البطاقات الأربع -->
   <div class="four-cards">
+    <!-- البطاقة ١: البنية -->
     <div class="card">
-      <div class="card-title kufi">أصناف المواقع (٨+١)</div>
-      <div class="card-text">قاعات · مكاتب إدارية · أقبية · مركز بيانات · أماكن تقديم الأغذية والمشروبات · نقاط وغرف الكهرباء · نقاط وغرف التكييف · مناطق التخزين<br><strong style="color: #2D4A3E;">+ مركز سلامة يوفر إدارة حية ومباشرة</strong></div>
+      <div class="card-title kufi">مبني على:</div>
+      <div class="card-content">
+        <div class="pyramid">
+          <div class="pyramid-level l1">سياسة</div>
+          <div class="pyramid-arrow">▼</div>
+          <div class="pyramid-level l2">٣ مبادئ</div>
+          <div class="pyramid-arrow">▼</div>
+          <div class="pyramid-level l3">٣ أهداف</div>
+          <div class="pyramid-arrow">▼</div>
+          <div class="pyramid-level l4">٨ معايير</div>
+        </div>
+      </div>
     </div>
+
+    <div class="card-arrow">←</div>
+
+    <!-- البطاقة ٢: التقسيم -->
     <div class="card">
-      <div class="card-title kufi">كل موقع مستقل بجاهزيته وحسب مخاطره</div>
-      <div class="card-text">له مسؤول · خطة سلامة · خطة طوارئ · نماذج فحص<br>فريق استجابة أولي <strong style="color: #2D4A3E;">ومتصل</strong> بمركز السلامة وبفريق إسناد (أمني · طبي · فني) + قيادة</div>
+      <div class="card-title kufi">نتج عنه تقسيم المبنى إلى ٨ أصناف رئيسية + مركز سلامة</div>
+      <div class="card-content">
+        <div class="zones-grid">
+          <div class="zone-item">قاعات</div>
+          <div class="zone-item">مكاتب إدارية</div>
+          <div class="zone-item">أقبية</div>
+          <div class="zone-item">مركز بيانات</div>
+          <div class="zone-item center">مركز السلامة</div>
+          <div class="zone-item">أماكن الأغذية</div>
+          <div class="zone-item">غرف الكهرباء</div>
+          <div class="zone-item">غرف التكييف</div>
+          <div class="zone-item">مناطق التخزين</div>
+        </div>
+        <div style="font-size:11px;color:#8A6D10;text-align:center;margin-top:4px;">لكل صنف تفرعات</div>
+      </div>
     </div>
+
+    <div class="card-arrow">←</div>
+
+    <!-- البطاقة ٣: التفاصيل -->
     <div class="card">
-      <div class="card-title kufi">لمنع الارتباك</div>
-      <div class="card-text">كل فرد تحت مظلة المعهد — أياً كانت صفته — يعرف مسبقاً دوره بالسلامة<br><strong style="color: #8A6D10;">من · ماذا · كيف · متى</strong><br>عبر خطط السلامة وخطط الاستجابة وبطاقات الأدوار</div>
+      <div class="card-title kufi">لكل تفرع:</div>
+      <div class="card-content">
+        <div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center;margin-bottom:6px;">
+          <div style="background:#F5F3ED;border:1px solid #E2DBCB;border-radius:3px;padding:4px 6px;font-size:11px;font-weight:600;color:#1E3329;">خطة سلامة</div>
+          <div style="background:#F5F3ED;border:1px solid #E2DBCB;border-radius:3px;padding:4px 6px;font-size:11px;font-weight:600;color:#1E3329;">خطة طوارئ</div>
+          <div style="background:#F5F3ED;border:1px solid #E2DBCB;border-radius:3px;padding:4px 6px;font-size:11px;font-weight:600;color:#1E3329;">نماذج فحص</div>
+          <div style="background:#F5F3ED;border:1px solid #E2DBCB;border-radius:3px;padding:4px 6px;font-size:11px;font-weight:600;color:#1E3329;">مسؤول</div>
+          <div style="background:#F5F3ED;border:1px solid #E2DBCB;border-radius:3px;padding:4px 6px;font-size:11px;font-weight:600;color:#1E3329;">فريق استجابة أولي</div>
+        </div>
+        <div style="text-align:center;font-size:11px;color:#8A6D10;margin:6px 0;">↓ يسنده ↓</div>
+        <div style="display:flex;justify-content:center;gap:4px;margin-bottom:6px;">
+          <div style="background:#2D4A3E;border-radius:3px;padding:4px 8px;font-size:11px;font-weight:700;color:#FFF;">أمني</div>
+          <div style="background:#2D4A3E;border-radius:3px;padding:4px 8px;font-size:11px;font-weight:700;color:#FFF;">طبي</div>
+          <div style="background:#2D4A3E;border-radius:3px;padding:4px 8px;font-size:11px;font-weight:700;color:#FFF;">فني</div>
+        </div>
+        <div style="text-align:center;font-size:11px;color:#5A5548;line-height:1.4;">وبدعم وتنسيق قيادي وإداري من<br><strong style="color:#1E5620;">مركز السلامة</strong></div>
+      </div>
     </div>
+
+    <div class="card-arrow">←</div>
+
+    <!-- البطاقة ٤: النتيجة -->
     <div class="card">
-      <div class="card-title kufi">كل ما سبق سُبُل مرسومة</div>
-      <div class="card-text">صُمِّمت بناءً على طبيعة عمل المعهد ومنتجاته<br>لبناء نظام له سياسة · مبادئ · أهداف · معايير جاهزية<br><strong style="background: #1E5620; color: #FFFFFF; padding: 2px 8px; border-radius: 4px;">وقابل للتوسع دون إعادة بناء</strong> — لتُضاف له لاحقاً الصحة والسلامة غير المادية التي تُسهم بتحقيق أثر منتجات المعهد</div>
+      <div class="card-title kufi">أصبح لدينا</div>
+      <div class="card-content">
+        <div style="font-size:11px;line-height:1.5;margin-bottom:10px;">
+          نظام سلامة يغطي كامل المبنى ويضمن جاهزيته ويوفر لكل فرد تحت مظلة المعهد — أياً كانت صفته — أن يعرف مسبقاً دوره بالسلامة
+        </div>
+        <div style="display:inline-block;background:#C9A227;color:#1A1A1A;padding:5px 12px;border-radius:4px;font-size:11px;font-weight:800;" class="kufi">ماذا يعمل · من يُبلغ · كيف · متى</div>
+        <div style="display:inline-block;background:#1E5620;color:#FFF;padding:4px 10px;border-radius:3px;font-size:10px;font-weight:700;margin-top:8px;">جاهز للتفعيل</div>
+      </div>
     </div>
   </div>
 
