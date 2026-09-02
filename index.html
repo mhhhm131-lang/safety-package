@@ -146,6 +146,24 @@ body {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
+.location-card.center-hub {
+  background: linear-gradient(135deg, var(--green) 0%, var(--green-2) 100%);
+  border: 2px solid var(--gold);
+  color: #fff;
+}
+.location-card.center-hub .code {
+  color: var(--gold);
+}
+.location-card.center-hub .name {
+  color: #fff;
+}
+.location-card.center-hub .files {
+  color: rgba(255,255,255,0.85);
+}
+.location-card.center-hub:hover {
+  background: linear-gradient(135deg, var(--green-2) 0%, var(--green) 100%);
+  box-shadow: 0 6px 20px rgba(15,61,46,0.3);
+}
 .location-card .code {
   font-size: 11px;
   color: var(--gold);
@@ -174,6 +192,132 @@ body {
   padding: 20px;
   font-size: 12px;
   color: var(--muted);
+}
+.radial-container {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.radial-diagram {
+  max-width: 650px;
+  width: 100%;
+  font-family: 'Cairo', sans-serif;
+}
+.scenario-controls {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.scenario-btn {
+  background: var(--green);
+  color: #fff;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 25px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(15,61,46,0.3);
+}
+.scenario-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(15,61,46,0.4);
+}
+.scenario-btn.secondary {
+  background: var(--line);
+  color: var(--ink);
+  box-shadow: none;
+}
+.team-group {
+  transition: opacity 0.5s ease;
+}
+.team-group circle {
+  transition: all 0.3s ease;
+}
+.emergency-pulse {
+  animation: emergencyPulse 0.8s ease-in-out infinite;
+}
+@keyframes emergencyPulse {
+  0%, 100% { r: 55; opacity: 1; }
+  50% { r: 65; opacity: 0.5; }
+}
+.scenario-panel {
+  background: var(--paper);
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  padding: 20px 24px;
+  max-width: 500px;
+  width: 100%;
+  min-height: 90px;
+}
+.scenario-step {
+  animation: fadeIn 0.4s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.step-badge {
+  display: inline-block;
+  background: var(--green);
+  color: #fff;
+  padding: 4px 14px;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.step-badge.danger {
+  background: #c62828;
+}
+.step-badge.warning {
+  background: #ef6c00;
+}
+.step-badge.success {
+  background: #2e7d32;
+}
+.step-badge.external {
+  background: #5d4037;
+}
+.step-text {
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--ink);
+}
+.step-text strong {
+  color: var(--green);
+}
+.core-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: linear-gradient(135deg, var(--green) 0%, var(--green-2) 100%);
+  color: #fff;
+  padding: 14px 24px;
+  border-radius: 25px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 10px;
+  box-shadow: 0 4px 15px rgba(15,61,46,0.3);
+}
+.core-message strong {
+  color: var(--gold);
+}
+.core-icon {
+  font-size: 18px;
+}
+@media (max-width: 600px) {
+  .radial-container { padding: 15px 10px; }
+  .radial-diagram { max-width: 100%; }
+  .scenario-panel { padding: 16px; }
+  .scenario-btn { padding: 10px 20px; font-size: 14px; }
+  .core-message { font-size: 12px; padding: 12px 16px; }
 }
 </style>
 </head>
@@ -234,16 +378,6 @@ body {
     </div>
     <div class="location-grid">
 
-      <a href="HZ-00-safety-center/index.html" class="location-card">
-        <div class="code">HZ-00</div>
-        <div class="name">مركز السلامة</div>
-        <div class="files">
-          <span>📋 خطة سلامة</span>
-          <span>📝 نموذج فحص</span>
-          <span>👥 ٤ أدوار</span>
-        </div>
-      </a>
-
       <a href="HZ-01-basement/index.html" class="location-card">
         <div class="code">HZ-01</div>
         <div class="name">القبو ومواقف السيارات</div>
@@ -283,6 +417,16 @@ body {
         <div class="files">
           <span>📋 خطة سلامة</span>
           <span>🚨 خطة طوارئ</span>
+          <span>📝 نموذج فحص</span>
+          <span>👥 ٤ أدوار</span>
+        </div>
+      </a>
+
+      <a href="HZ-00-safety-center/index.html" class="location-card center-hub">
+        <div class="code">HZ-00</div>
+        <div class="name">مركز السلامة</div>
+        <div class="files">
+          <span>📋 خطة سلامة</span>
           <span>📝 نموذج فحص</span>
           <span>👥 ٤ أدوار</span>
         </div>
@@ -351,6 +495,307 @@ body {
       </a>
     </div>
   </div>
+
+  <div class="section">
+    <div class="section-title">
+      <span class="num">٤</span>
+      كيف تعمل المنظومة
+    </div>
+    <p style="padding: 0 20px; color: var(--muted); font-size: 13px; margin-bottom: 16px;">انقر على "ابدأ السيناريو" لمشاهدة تسلسل الاستجابة عند حدوث طارئ</p>
+
+    <div class="scenario-controls">
+      <button id="startScenario" class="scenario-btn">ابدأ السيناريو</button>
+      <button id="resetScenario" class="scenario-btn secondary" style="display:none;">إعادة</button>
+    </div>
+
+    <div class="radial-container">
+      <svg viewBox="0 0 800 700" class="radial-diagram" id="systemDiagram">
+        <defs>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="4" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <radialGradient id="centerGrad" cx="50%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#1b5c46"/>
+            <stop offset="100%" stop-color="#0f3d2e"/>
+          </radialGradient>
+          <marker id="arrowRed" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#c62828"/>
+          </marker>
+          <marker id="arrowGold" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#b8912f"/>
+          </marker>
+          <marker id="arrowGreen" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#0f3d2e"/>
+          </marker>
+        </defs>
+
+        <!-- الحلقة الخارجية - الدفاع المدني -->
+        <circle cx="400" cy="320" r="280" fill="none" stroke="#c9c4bd" stroke-width="2" stroke-dasharray="12 8" id="externalRing"/>
+
+        <!-- حلقة الإسناد -->
+        <circle cx="400" cy="320" r="220" fill="none" stroke="#1b5c46" stroke-width="22" opacity="0.2" id="supportRing"/>
+
+        <!-- حلقة القيادة -->
+        <circle cx="400" cy="320" r="170" fill="none" stroke="#0f3d2e" stroke-width="22" opacity="0.25" id="commandRing"/>
+
+        <!-- المركز -->
+        <g id="centerGroup">
+          <circle cx="400" cy="320" r="80" fill="url(#centerGrad)" id="centerCircle"/>
+          <circle cx="400" cy="320" r="70" fill="url(#centerGrad)"/>
+          <text x="400" y="308" text-anchor="middle" font-size="14" font-weight="800" fill="#b8912f">مركز السلامة</text>
+          <text x="400" y="326" text-anchor="middle" font-size="11" fill="#a0c4b8">يكتشف ويوجّه</text>
+          <text x="400" y="342" text-anchor="middle" font-size="10" fill="#7a9e92">الثانية صفر</text>
+        </g>
+
+        <!-- فريق الموقع (داخل حلقة القيادة) -->
+        <g id="siteTeam" class="team-group" opacity="0.4">
+          <g id="coordinator">
+            <circle cx="400" cy="200" r="26" fill="#fff" stroke="#0f3d2e" stroke-width="2"/>
+            <text x="400" y="198" text-anchor="middle" font-size="9" font-weight="700" fill="#0f3d2e">المنسق</text>
+            <text x="400" y="210" text-anchor="middle" font-size="8" fill="#6b6560">ينسّق</text>
+          </g>
+          <g id="paramedic">
+            <circle cx="290" cy="260" r="26" fill="#fff" stroke="#2e7d32" stroke-width="2"/>
+            <text x="290" y="258" text-anchor="middle" font-size="9" font-weight="700" fill="#2e7d32">المسعف</text>
+            <text x="290" y="270" text-anchor="middle" font-size="8" fill="#6b6560">يُسعف</text>
+          </g>
+          <g id="rescuer">
+            <circle cx="290" cy="380" r="26" fill="#fff" stroke="#1565c0" stroke-width="2"/>
+            <text x="290" y="378" text-anchor="middle" font-size="9" font-weight="700" fill="#1565c0">المنقذ</text>
+            <text x="290" y="390" text-anchor="middle" font-size="8" fill="#6b6560">يُنقذ</text>
+          </g>
+          <g id="firefighter">
+            <circle cx="400" cy="440" r="26" fill="#fff" stroke="#c62828" stroke-width="2"/>
+            <text x="400" y="438" text-anchor="middle" font-size="9" font-weight="700" fill="#c62828">الإطفائي</text>
+            <text x="400" y="450" text-anchor="middle" font-size="8" fill="#6b6560">يُطفئ</text>
+          </g>
+        </g>
+
+        <!-- فريق الإسناد -->
+        <g id="supportTeam" class="team-group" opacity="0.4">
+          <g id="security">
+            <circle cx="510" cy="200" r="26" fill="#fff" stroke="#5d4037" stroke-width="2"/>
+            <text x="510" y="198" text-anchor="middle" font-size="9" font-weight="700" fill="#5d4037">الأمن</text>
+            <text x="510" y="210" text-anchor="middle" font-size="8" fill="#6b6560">يعزل</text>
+          </g>
+          <g id="doctor">
+            <circle cx="560" cy="320" r="26" fill="#fff" stroke="#7b1fa2" stroke-width="2"/>
+            <text x="560" y="318" text-anchor="middle" font-size="9" font-weight="700" fill="#7b1fa2">الطبيب</text>
+            <text x="560" y="330" text-anchor="middle" font-size="8" fill="#6b6560">يُعالج</text>
+          </g>
+          <g id="technician">
+            <circle cx="510" cy="440" r="26" fill="#fff" stroke="#ef6c00" stroke-width="2"/>
+            <text x="510" y="438" text-anchor="middle" font-size="9" font-weight="700" fill="#ef6c00">الفني</text>
+            <text x="510" y="450" text-anchor="middle" font-size="8" fill="#6b6560">يتحكم</text>
+          </g>
+        </g>
+
+        <!-- موقع الحدث (مثال: المكاتب) -->
+        <g id="incidentLocation">
+          <circle cx="130" cy="320" r="45" fill="#fdf9ec" stroke="#b8912f" stroke-width="3" id="locationCircle"/>
+          <text x="130" y="315" text-anchor="middle" font-size="13" font-weight="800" fill="#0f3d2e">المكاتب</text>
+          <text x="130" y="332" text-anchor="middle" font-size="10" fill="#6b6560">موقع الحدث</text>
+        </g>
+
+        <!-- أيقونة الطوارئ -->
+        <g id="emergencyIcon" style="display:none;">
+          <circle cx="130" cy="320" r="55" fill="none" stroke="#c62828" stroke-width="3" class="emergency-pulse"/>
+          <text x="130" y="285" text-anchor="middle" font-size="20">🔥</text>
+        </g>
+
+        <!-- الدفاع المدني -->
+        <g id="civilDefense" opacity="0.4">
+          <circle cx="700" cy="320" r="35" fill="#c62828" stroke="#fff" stroke-width="2"/>
+          <text x="700" y="315" text-anchor="middle" font-size="9" font-weight="700" fill="#fff">الدفاع</text>
+          <text x="700" y="328" text-anchor="middle" font-size="9" font-weight="700" fill="#fff">المدني</text>
+        </g>
+
+        <!-- سهام التسلسل (مخفية في البداية) -->
+        <g id="flowArrows" style="display:none;">
+          <!-- سهم من الموقع للفريق الأولي -->
+          <path id="arrow1a" d="M175,320 L260,320" stroke="#c62828" stroke-width="2.5" fill="none" marker-end="url(#arrowRed)" stroke-dasharray="100" stroke-dashoffset="100"/>
+          <!-- سهم متزامن من الموقع للمركز -->
+          <path id="arrow1b" d="M165,290 L320,290 L340,305" stroke="#b8912f" stroke-width="2" fill="none" marker-end="url(#arrowGold)" stroke-dasharray="200" stroke-dashoffset="200" stroke-linecap="round"/>
+          <!-- سهم من المركز للإسناد -->
+          <path id="arrow2" d="M470,320 L520,320" stroke="#0f3d2e" stroke-width="2.5" fill="none" marker-end="url(#arrowGreen)" stroke-dasharray="50" stroke-dashoffset="50"/>
+          <!-- سهم للدفاع المدني -->
+          <path id="arrow3" d="M600,320 L655,320" stroke="#c62828" stroke-width="2.5" fill="none" marker-end="url(#arrowRed)" stroke-dasharray="50" stroke-dashoffset="50"/>
+        </g>
+
+        <!-- نص "متزامن" -->
+        <text id="simultaneousText" x="240" y="275" text-anchor="middle" font-size="10" font-weight="700" fill="#b8912f" style="display:none;">تدخل + بلاغ معاً</text>
+
+        <!-- التسميات -->
+        <text x="400" y="140" text-anchor="middle" font-size="11" font-weight="700" fill="#0f3d2e">فريق الموقع</text>
+        <text x="540" y="155" text-anchor="middle" font-size="11" font-weight="700" fill="#1b5c46">فريق الإسناد</text>
+        <text x="700" y="380" text-anchor="middle" font-size="10" fill="#6b6560">يصل خلال ٥-١٥ دقيقة</text>
+        <text x="400" y="640" text-anchor="middle" font-size="12" fill="#6b6560" font-weight="600">المبنى كله — ٨ مواقع × ٤ أدوار = ٣٢ مستجيب أولي</text>
+      </svg>
+
+      <!-- صندوق الشرح المتحرك -->
+      <div class="scenario-panel" id="scenarioPanel">
+        <div class="scenario-step" id="step0">
+          <div class="step-badge">الوضع الطبيعي</div>
+          <div class="step-text">كل موقع فيه ٤ موظفين مدرّبين <strong>(منسق · مسعف · منقذ · إطفائي)</strong> — هم زملاء يعملون هناك أصلاً</div>
+        </div>
+        <div class="scenario-step" id="step1" style="display:none;">
+          <div class="step-badge danger">الثانية صفر</div>
+          <div class="step-text"><strong>حريق!</strong> الفريق الأولي يكتشف ← <strong>يتدخل فوراً + يُبلّغ المركز</strong> في نفس اللحظة</div>
+        </div>
+        <div class="scenario-step" id="step2" style="display:none;">
+          <div class="step-badge warning">الثانية صفر (متزامن)</div>
+          <div class="step-text"><strong>المركز يُنادي الجميع:</strong> أمن ← طبيب ← فني ← قيادة — الكل يتحرك معاً</div>
+        </div>
+        <div class="scenario-step" id="step3" style="display:none;">
+          <div class="step-badge">٥-٣٠ ثانية</div>
+          <div class="step-text"><strong>الفريق الأولي يعمل:</strong> المنسق يُخلي · المسعف يُسعف · الإطفائي يُكافح · المنقذ يبحث</div>
+        </div>
+        <div class="scenario-step" id="step4" style="display:none;">
+          <div class="step-badge success">٣٠ ث - ٣ د</div>
+          <div class="step-text"><strong>الإسناد والقيادة يصلون:</strong> الأمن يعزل، الفني يتحكم، الطبيب يعالج، القيادة تقيّم وتقرر</div>
+        </div>
+        <div class="scenario-step" id="step5" style="display:none;">
+          <div class="step-badge external">٥-١٥ دقيقة (إن لزم)</div>
+          <div class="step-text"><strong>الدفاع المدني يصل</strong> لمسرح مُهيَّأ: منطقة معزولة، مصابون مُسعَفون، معلومات جاهزة</div>
+        </div>
+      </div>
+
+      <!-- الرسالة الجوهرية -->
+      <div class="core-message">
+        <span class="core-icon">⚡</span>
+        <span>لا فجوة زمنية — المستجيب الأول <strong>موجود في الموقع أصلاً</strong></span>
+      </div>
+    </div>
+  </div>
+
+<script>
+let currentStep = 0;
+const totalSteps = 5;
+
+document.getElementById('startScenario').addEventListener('click', function() {
+  this.style.display = 'none';
+  document.getElementById('resetScenario').style.display = 'inline-block';
+  runScenario();
+});
+
+document.getElementById('resetScenario').addEventListener('click', function() {
+  currentStep = 0;
+  resetScenario();
+  document.getElementById('startScenario').style.display = 'inline-block';
+  this.style.display = 'none';
+});
+
+function runScenario() {
+  const steps = [
+    () => { showStep(1); activateEmergencyAndTeam(); },
+    () => { showStep(2); activateCenterBroadcast(); },
+    () => { showStep(3); activateSiteTeamWorking(); },
+    () => { showStep(4); activateSupportAndCommand(); },
+    () => { showStep(5); activateCivilDefense(); }
+  ];
+
+  let i = 0;
+  function nextStep() {
+    if (i < steps.length) {
+      steps[i]();
+      i++;
+      setTimeout(nextStep, 2800);
+    }
+  }
+  nextStep();
+}
+
+function showStep(n) {
+  for (let i = 0; i <= totalSteps; i++) {
+    document.getElementById('step' + i).style.display = i === n ? 'block' : 'none';
+  }
+}
+
+function activateEmergencyAndTeam() {
+  document.getElementById('emergencyIcon').style.display = 'block';
+  document.getElementById('locationCircle').style.stroke = '#c62828';
+  document.getElementById('flowArrows').style.display = 'block';
+  document.getElementById('simultaneousText').style.display = 'block';
+  // الفريق الأولي يتدخل + يُبلّغ المركز في نفس اللحظة
+  document.getElementById('siteTeam').style.opacity = '1';
+  document.querySelectorAll('#siteTeam circle').forEach(c => {
+    c.style.filter = 'url(#glow)';
+    c.style.strokeWidth = '3';
+  });
+  animateArrow('arrow1a');
+  animateArrow('arrow1b');
+  document.getElementById('centerCircle').style.filter = 'url(#glow)';
+}
+
+function activateCenterBroadcast() {
+  // المركز يُنادي الجميع
+  document.getElementById('supportTeam').style.opacity = '1';
+  document.getElementById('supportRing').style.opacity = '0.5';
+  document.getElementById('commandRing').style.opacity = '0.6';
+  animateArrow('arrow2');
+}
+
+function activateSiteTeamWorking() {
+  // الفريق الأولي يعمل بشكل كامل
+  document.querySelectorAll('#siteTeam circle').forEach(c => {
+    c.style.stroke = '#0f3d2e';
+    c.style.strokeWidth = '4';
+  });
+}
+
+function activateSupportAndCommand() {
+  // الإسناد والقيادة يصلون
+  document.querySelectorAll('#supportTeam circle').forEach(c => {
+    c.style.filter = 'url(#glow)';
+    c.style.strokeWidth = '3';
+  });
+}
+
+function activateCivilDefense() {
+  document.getElementById('civilDefense').style.opacity = '1';
+  document.querySelector('#civilDefense circle').style.filter = 'url(#glow)';
+  animateArrow('arrow3');
+}
+
+function animateArrow(id) {
+  const arrow = document.getElementById(id);
+  if (arrow) {
+    arrow.style.transition = 'stroke-dashoffset 1s ease-out';
+    arrow.style.strokeDashoffset = '0';
+  }
+}
+
+function resetScenario() {
+  showStep(0);
+  document.getElementById('emergencyIcon').style.display = 'none';
+  document.getElementById('simultaneousText').style.display = 'none';
+  document.getElementById('locationCircle').style.stroke = '#b8912f';
+  document.getElementById('flowArrows').style.display = 'none';
+  document.getElementById('siteTeam').style.opacity = '0.4';
+  document.getElementById('supportTeam').style.opacity = '0.4';
+  document.getElementById('supportRing').style.opacity = '0.2';
+  document.getElementById('commandRing').style.opacity = '0.25';
+  document.getElementById('civilDefense').style.opacity = '0.4';
+  document.getElementById('centerCircle').style.filter = 'none';
+  document.querySelectorAll('#siteTeam circle').forEach(c => {
+    c.style.filter = 'none';
+    c.style.strokeWidth = '2';
+    c.style.stroke = '';
+  });
+  document.querySelectorAll('#supportTeam circle, #civilDefense circle').forEach(c => {
+    c.style.filter = 'none';
+    c.style.strokeWidth = '2';
+  });
+  ['arrow1a','arrow1b','arrow2','arrow3'].forEach(id => {
+    const a = document.getElementById(id);
+    if (a) {
+      a.style.transition = 'none';
+      a.style.strokeDashoffset = '200';
+    }
+  });
+}
+</script>
 
 </div>
 
