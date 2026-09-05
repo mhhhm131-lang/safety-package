@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>الرؤية — السلامة والصحة المهنية</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'IBM Plex Sans Arabic', sans-serif;
+  direction: rtl;
+  background: #1A2E23;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.kufi { font-family: 'Noto Kufi Arabic', sans-serif; }
+
+.vision-container {
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 40px;
+  text-align: center;
+  color: #FFFFFF;
+  position: relative;
+}
+
+/* الشعار */
+.logo-section {
+  margin-bottom: 48px;
+  opacity: 0;
+  animation: fadeInDown 0.8s ease forwards;
+}
+
+.logo {
+  width: 72px;
+  height: 72px;
+  background: #FFFFFF;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+.logo span {
+  color: #1E3329;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.org-name {
+  font-weight: 700;
+  font-size: 18px;
+  color: rgba(255,255,255,0.9);
+}
+
+.org-sub {
+  font-size: 14px;
+  color: rgba(255,255,255,0.6);
+  margin-top: 4px;
+}
+
+/* عنوان الرؤية */
+.vision-label {
+  display: inline-block;
+  background: rgba(201,162,39,0.2);
+  border: 1px solid rgba(201,162,39,0.4);
+  color: #C9A227;
+  padding: 8px 24px;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin-bottom: 32px;
+  opacity: 0;
+  animation: fadeInUp 0.8s ease 0.3s forwards;
+}
+
+/* نص الرؤية */
+.vision-text {
+  opacity: 0;
+  animation: fadeInUp 0.8s ease 0.5s forwards;
+}
+
+.vision-main {
+  font-size: 42px;
+  font-weight: 900;
+  line-height: 1.5;
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, #FFFFFF 0%, #E8F5E9 50%, #C9A227 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.vision-sub {
+  font-size: 20px;
+  line-height: 1.8;
+  color: rgba(255,255,255,0.85);
+  max-width: 700px;
+  margin: 0 auto 48px;
+}
+
+.vision-highlight {
+  color: #C9A227;
+  font-weight: 700;
+}
+
+/* المبادئ */
+.principles {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 56px;
+  opacity: 0;
+  animation: fadeInUp 0.8s ease 0.7s forwards;
+}
+
+.principle {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  padding: 20px 28px;
+  min-width: 200px;
+}
+
+.principle-num {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #C9A227 0%, #A67C00 100%);
+  color: #1A1A1A;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 900;
+  margin-bottom: 12px;
+}
+
+.principle-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(255,255,255,0.9);
+}
+
+/* زر الدخول */
+.enter-section {
+  opacity: 0;
+  animation: fadeInUp 0.8s ease 0.9s forwards;
+}
+
+.enter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #C9A227 0%, #A67C00 100%);
+  color: #1A1A1A;
+  padding: 18px 48px;
+  border-radius: 50px;
+  font-family: 'Noto Kufi Arabic', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 32px rgba(201,162,39,0.3);
+}
+
+.enter-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(201,162,39,0.4);
+}
+
+.enter-btn .arrow {
+  font-size: 24px;
+  transition: transform 0.3s ease;
+}
+
+.enter-btn:hover .arrow {
+  transform: translateX(-6px);
+}
+
+/* الخلفية المتحركة */
+.bg-glow {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(201,162,39,0.08) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  animation: pulse 4s ease-in-out infinite;
+}
+
+.bg-pattern {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+}
+
+/* الأنيميشن */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+/* التجاوب */
+@media (max-width: 768px) {
+  .vision-container {
+    padding: 24px;
+  }
+
+  .vision-main {
+    font-size: 28px;
+  }
+
+  .vision-sub {
+    font-size: 16px;
+  }
+
+  .principles {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .principle {
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+@media print {
+  body { background: white; }
+  .vision-container { color: #1A1A1A; }
+  .vision-main {
+    background: none;
+    -webkit-text-fill-color: #1E3329;
+  }
+  .bg-glow, .bg-pattern { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-pattern"></div>
+<div class="bg-glow"></div>
+
+<div class="content">
+  <div class="vision-container">
+
+    <!-- الشعار -->
+    <div class="logo-section">
+      <div class="logo">
+        <span>IPA</span>
+      </div>
+      <div class="org-name">معهد الإدارة العامة</div>
+      <div class="org-sub">مبنى الملز — الرياض</div>
+    </div>
+
+    <!-- عنوان الرؤية -->
+    <div class="vision-label kufi">الرؤية</div>
+
+    <!-- نص الرؤية -->
+    <div class="vision-text">
+      <h1 class="vision-main kufi">
+        نموذج تشغيلي سعودي<br>
+        للسلامة والصحة المهنية
+      </h1>
+      <p class="vision-sub">
+        يُبنى للمعهد — وينتشر بـ<span class="vision-highlight">جودته</span> و<span class="vision-highlight">سهولته</span>
+      </p>
+    </div>
+
+    <!-- المبادئ -->
+    <div class="principles">
+      <div class="principle">
+        <div class="principle-num kufi">١</div>
+        <div class="principle-text">سلامة الإنسان أولاً</div>
+      </div>
+      <div class="principle">
+        <div class="principle-num kufi">٢</div>
+        <div class="principle-text">المسؤولية بالصلاحية</div>
+      </div>
+      <div class="principle">
+        <div class="principle-num kufi">٣</div>
+        <div class="principle-text">التنفيذ بالتوثيق</div>
+      </div>
+    </div>
+
+    <!-- زر الدخول -->
+    <div class="enter-section">
+      <a href="index.html" class="enter-btn">
+        <span>الدخول للمنظومة</span>
+        <span class="arrow">←</span>
+      </a>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
