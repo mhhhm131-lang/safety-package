@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>قنوات الإبلاغ — مركز السلامة</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--green:#0f3d2e;--green-2:#1b5c46;--gold:#b8912f;--red:#c62828;--ink:#12100e;--muted:#6b6560;--line:#c9c4bd;--paper:#fff;--bg:#e9e6e0;--tint:#f4f2ee}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--ink);line-height:1.6}
+
+/* نمط الملصق للطباعة */
+.poster{
+  max-width:210mm;
+  min-height:297mm;
+  margin:0 auto;
+  background:var(--paper);
+  padding:24px;
+  box-shadow:0 4px 20px rgba(0,0,0,0.1);
+}
+
+/* الرأس */
+.poster-header{
+  background:linear-gradient(135deg,var(--green) 0%,var(--green-2) 100%);
+  color:#fff;
+  padding:28px 24px;
+  border-radius:12px;
+  text-align:center;
+  margin-bottom:20px;
+}
+.poster-header .icon{font-size:48px;margin-bottom:8px;}
+.poster-header h1{font-size:28px;font-weight:900;margin-bottom:4px;}
+.poster-header .subtitle{font-size:14px;opacity:0.9;}
+
+/* التنبيه */
+.alert{
+  background:linear-gradient(135deg,#FFF3E0 0%,#FFE0B2 100%);
+  border:2px solid var(--gold);
+  border-radius:10px;
+  padding:16px 20px;
+  margin-bottom:20px;
+  text-align:center;
+}
+.alert-text{font-size:15px;font-weight:700;color:var(--ink);}
+
+/* قنوات الإبلاغ */
+.channels{display:flex;flex-direction:column;gap:16px;margin-bottom:20px;}
+
+.channel{
+  background:var(--tint);
+  border:2px solid var(--line);
+  border-radius:12px;
+  padding:20px;
+  display:flex;
+  align-items:center;
+  gap:16px;
+}
+.channel:hover{border-color:var(--gold);}
+
+.channel-icon{
+  width:64px;
+  height:64px;
+  background:var(--green);
+  border-radius:12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:28px;
+  color:#fff;
+  flex-shrink:0;
+}
+.channel.whatsapp .channel-icon{background:#25D366;}
+.channel.email .channel-icon{background:#1565C0;}
+.channel.formal .channel-icon{background:var(--gold);}
+.channel.qr .channel-icon{background:var(--ink);font-size:32px;}
+
+.channel-content{flex:1;}
+.channel-title{font-size:16px;font-weight:800;color:var(--green);margin-bottom:4px;}
+.channel-value{font-size:18px;font-weight:700;color:var(--ink);direction:ltr;text-align:right;}
+.channel-note{font-size:12px;color:var(--muted);margin-top:4px;}
+
+/* QR Code */
+.qr-section{
+  background:var(--ink);
+  border-radius:12px;
+  padding:24px;
+  text-align:center;
+  color:#fff;
+  margin-bottom:20px;
+}
+.qr-title{font-size:16px;font-weight:700;margin-bottom:12px;color:var(--gold);}
+.qr-placeholder{
+  width:150px;
+  height:150px;
+  background:#fff;
+  border-radius:8px;
+  margin:0 auto 12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  color:var(--muted);
+}
+.qr-note{font-size:13px;opacity:0.9;}
+
+/* التذييل */
+.poster-footer{
+  background:var(--tint);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:16px 20px;
+  text-align:center;
+}
+.poster-footer .org{font-size:14px;font-weight:700;color:var(--green);margin-bottom:4px;}
+.poster-footer .unit{font-size:13px;color:var(--muted);}
+
+/* طباعة */
+@media print{
+  body{background:#fff;}
+  .poster{box-shadow:none;padding:16px;}
+  .back-link{display:none;}
+}
+
+/* رابط العودة */
+.back-link{
+  display:block;
+  max-width:210mm;
+  margin:20px auto;
+  padding:12px 20px;
+  background:var(--paper);
+  border-radius:8px;
+  text-align:center;
+}
+.back-link a{color:var(--green);text-decoration:none;font-weight:600;}
+.back-link a:hover{text-decoration:underline;}
+</style>
+</head>
+<body>
+
+<div class="back-link">
+  <a href="index.html">→ العودة لمركز السلامة</a>
+</div>
+
+<div class="poster">
+
+  <!-- الرأس -->
+  <div class="poster-header">
+    <div class="icon">🚨</div>
+    <h1>قنوات الإبلاغ عن المخاطر والحوادث</h1>
+    <div class="subtitle">للإبلاغ الفوري عن أي خطر أو حادث أو ملاحظة تتعلق بالسلامة</div>
+  </div>
+
+  <!-- التنبيه -->
+  <div class="alert">
+    <div class="alert-text">في الحالات الطارئة — اتصل أولاً ثم أبلغ</div>
+  </div>
+
+  <!-- قنوات الإبلاغ -->
+  <div class="channels">
+
+    <!-- الاتصال والواتساب -->
+    <div class="channel whatsapp">
+      <div class="channel-icon">📱</div>
+      <div class="channel-content">
+        <div class="channel-title">اتصال أو واتساب</div>
+        <div class="channel-value">0505498966</div>
+        <div class="channel-note">للحالات العاجلة والتواصل المباشر مع مركز السلامة</div>
+        <div style="display:flex;gap:10px;margin-top:10px;">
+          <a href="tel:+966505498966" style="flex:1;background:#0f3d2e;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;text-align:center;">📞 اتصال</a>
+          <a href="https://wa.me/966505498966" style="flex:1;background:#25D366;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;text-align:center;">💬 واتساب</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- البريد الإلكتروني -->
+    <div class="channel email">
+      <div class="channel-icon">✉</div>
+      <div class="channel-content">
+        <div class="channel-title">البريد الإلكتروني</div>
+        <div class="channel-value">alrashidim@ipa.edu.sa</div>
+        <div class="channel-note">للملاحظات والبلاغات غير العاجلة — يُرد خلال يوم عمل</div>
+        <div style="margin-top:10px;">
+          <a href="mailto:alrashidim@ipa.edu.sa" style="display:inline-block;background:#1565C0;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;">✉ إرسال إيميل</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- الاتصالات الإدارية -->
+    <div class="channel formal">
+      <div class="channel-icon">📄</div>
+      <div class="channel-content">
+        <div class="channel-title">خطاب رسمي</div>
+        <div class="channel-value">عبر نظام الاتصالات الإدارية</div>
+        <div class="channel-note">للمخاطبات الرسمية الموجهة لمركز السلامة أو الإدارة</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- QR Code -->
+  <div class="qr-section">
+    <div class="qr-title">امسح الرمز للتواصل عبر واتساب</div>
+    <div id="qrcode" style="display:flex;justify-content:center;margin-bottom:12px;"></div>
+    <div class="qr-note">يفتح محادثة واتساب مباشرة مع مركز السلامة</div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    new QRCode(document.getElementById("qrcode"), {
+      text: "https://wa.me/966505498966",
+      width: 150,
+      height: 150,
+      colorDark: "#0f3d2e",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  </script>
+
+  <!-- التذييل -->
+  <div class="poster-footer">
+    <div class="org">معهد الإدارة العامة</div>
+    <div class="unit">مركز السلامة — مبنى الملز</div>
+  </div>
+
+</div>
+
+</body>
+</html>
