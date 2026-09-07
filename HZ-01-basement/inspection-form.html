@@ -280,6 +280,8 @@ body.fromDash #dvInbox,body.fromDash .dv-sec.wait{display:none}
 #ov .note-w{background:#f5f8fa;border:1px solid var(--blue);color:var(--blue);font-weight:700;padding:6px 10px;margin-top:8px;font-size:12px}
 #ov .note-r{background:#f0eaf3;border:1px solid #5b2d6b;color:#5b2d6b;font-weight:700;padding:6px 10px;margin-top:8px;font-size:12px}
 /* ===== /MODAL-V3 ===== */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}#logWrap,#dvLog{overflow-x:auto}
+@media(max-width:680px){.tw>table{min-width:560px}#logWrap table,#dvLog table{min-width:640px}}
 </style>
 </head>
 <body>
@@ -339,7 +341,6 @@ body.fromDash #dvInbox,body.fromDash .dv-sec.wait{display:none}
   <input type="file" id="fpick" accept=".json,.html" hidden>
   <button class="print" onclick="window.print()">طباعة</button>
   <button class="print" style="background:#fff;color:var(--green)" onclick="newRound()">جولة جديدة</button>
-  <button class="print" style="background:#fff;color:var(--red)" onclick="clearAll()">مسح الجولة</button>
 </nav>
 
 <div class="inbox" id="inbox" style="display:none">
@@ -787,6 +788,14 @@ function doLogin(){
   /* المكتب الاستشاري يدخل ووضع الاعتماد مفعّل */
   if(ROLE==='cons'&&!document.body.classList.contains('cns'))togCns();
   drawInbox();startRound();
+  setTimeout(checkRoundAge,400);
+}
+/* جولة مفتوحة من يوم سابق: يُسأل من يعلّم البنود عن بدء جولة جديدة */
+function checkRoundAge(){
+  if(['tech','cons','safety'].indexOf(ROLE)<0)return;
+  const d=$('dtRound').value,t=nowD().d;
+  if(!d||d>=t||!Object.keys(MARKS).some(k=>MARKS[k]))return;
+  if(confirm('الجولة الحالية مفتوحة منذ '+AR(d)+' واليوم '+AR(t)+'.\n\nبدء جولة جديدة؟ تُحفظ نتائج الجولة السابقة في سجل الجولات، وتبقى البلاغات ومساراتها.'))newRoundNow();
 }
 function logout(){try{localStorage.removeItem('ipa-session')}catch(e){}location.reload()}
 function applyRole(){
@@ -870,8 +879,8 @@ const byOverdue=(a,b)=>{const x=overdue(a),y=overdue(b);return (y===null?-1e9:y)
 function ibRow(r,done){
   return `<div class="ib-row${done?' done':''}">
       ${dispBadge(r)}${leftBadge(r)}${roleBadges(r)}
-      <div class="t"><b>${r.id}</b> — ${r.item}
-        <div class="muted">${r.sys} · ${r.sev}${r.due!=='—'?' · المهلة '+r.due:''}${r.need&&r.need!=='—'?' · المطلوب: '+r.need:''}</div></div>
+      <div class="t"><b>${escH(r.id)}</b> — ${escH(r.item)}${r.itemDeleted?' <span class="badge b-esc">بند محذوف</span>':''}
+        <div class="muted">${escH(r.sys)} · ${escH(r.sev)}${r.due!=='—'?' · المهلة '+escH(r.due):''}${r.need&&r.need!=='—'?' · المطلوب: '+escH(r.need):''}</div></div>
       <button class="go" onclick="jump('${r.row}')">${done?'عرض':'فتح البلاغ'}</button>
     </div>`;
 }
@@ -940,6 +949,9 @@ function logRounds(){
 function newRound(){
   if(!$('dtRound').value){alert('لا توجد جولة قائمة — ابدأ بوضع العلامات.');return;}
   if(!confirm('إقفال الجولة الحالية وبدء جولة جديدة؟\n\nتُحفظ نتائج هذه الجولة في سجل الجولات لكل نظام، وتبقى البلاغات ومساراتها كما هي، وتُمسح علامات ✓/✗ والقيم المقاسة لبدء الفحص من جديد.'))return;
+  newRoundNow();
+}
+function newRoundNow(){
   logRounds();
   MARKS={};Object.keys(VALS).forEach(k=>{if(/\|act$/.test(k))delete VALS[k]});
   $('dtRound').value='';$('tStart').value='';$('tEnd').value='';
@@ -947,8 +959,16 @@ function newRound(){
 }
 function autoSave(){
   logRounds();
-  try{localStorage.setItem(AKEY,JSON.stringify(snapshot()))}catch(e){}
+  try{localStorage.setItem(AKEY,JSON.stringify(snapshot()));saveOk(true);return true;}catch(e){saveOk(false,e);return false;}
 }
+/* فشل الحفظ لا يُبتلع: شريط ظاهر حتى ينجح الحفظ */
+function saveOk(ok,e){
+  let b=$('saveWarn');
+  if(ok){if(b)b.remove();return;}
+  if(!b){b=document.createElement('div');b.id='saveWarn';b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99;background:#9b1c1c;color:#fff;font-weight:700;padding:8px 14px;text-align:center;font-size:13px';document.body.appendChild(b);}
+  b.textContent='⚠ تعذّر حفظ البيانات على هذا الجهاز ('+(e&&/quota/i.test(e.name||'')?'مخزن المتصفح ممتلئ':'خطأ في المتصفح')+') — احفظ النموذج بالبيانات الآن ولا تغلق الصفحة';
+}
+window.addEventListener('beforeunload',e=>{if(DIRTY){e.preventDefault();e.returnValue='';}});
 function autoLoad(){
   let d=null;
   try{d=JSON.parse(localStorage.getItem(AKEY))}catch(e){}
@@ -962,9 +982,7 @@ function applyData(d){
   if(tab){document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected','false'));
     tab.setAttribute('aria-selected','true');render(d.sys);}
   else render('p01');
-  const fs=staticFields();
-  (d.fields||[]).forEach((v,i)=>{const el=fs[i];if(!el)return;
-    if(el.type==='checkbox')el.checked=!!v;else el.value=v;});
+  restoreFields(d);
   const off=$('insQ').value.indexOf('مكتب مرخّص')===0;
   ['lbOff','tdOff','lbLic','tdLic'].forEach(id=>$(id).style.display=off?'':'none');
   renderLog();refreshRows();drawInbox();
@@ -1009,8 +1027,8 @@ function render(key){
       <td class="cell"><span class="muted">—</span><button class="del" onclick="delRow('i',${i})">حذف</button></td></tr>`).join('');
 
   const noReads=s.reads.length===0;
-  $('secReads').style.display=noReads?'none':'';
-  $('readsWrap').style.display=noReads?'none':'';
+  if($('secReads'))$('secReads').style.display=noReads?'none':'';
+  if($('readsWrap'))$('readsWrap').style.display=noReads?'none':'';
   document.querySelectorAll('td.ed').forEach(td=>{
     td.addEventListener('blur',()=>{
       const i=+td.dataset.i, v=td.textContent.trim(), S=SYS[CUR];
@@ -1040,9 +1058,10 @@ function render(key){
   if(ROLE)lockByRole();
 }
 function rowInfo(id){
-  const p=id.split('-'); const s=SYS[p[0]];
-  if(p[1]==='r')return {txt:s.reads[+p[2]],ref:'قراءة مقاسة',sys:s.name};
-  const it=s.items[+p[2]];
+  const p=id.split('-'); const s=SYS[p[0]]||{reads:[],items:[],name:''};
+  const delInfo=()=>{const r=REPORTS.find(x=>x.row===id);return {txt:(r&&r.item)||'بند محذوف',ref:(r&&r.ref)||'—',sys:s.name};};
+  if(p[1]==='r'){const t=s.reads[+p[2]];return t===undefined?delInfo():{txt:t,ref:'قراءة مقاسة',sys:s.name};}
+  const it=s.items[+p[2]];if(!it)return delInfo();
   return {txt:strip(it[0]),ref:strip(it[1]),sys:s.name};
 }
 function paintRow(tr){
@@ -1058,7 +1077,7 @@ function openM(rowId,isEdit){
   const inf=rowInfo(rowId);
   EDIT=isEdit?REPORTS.find(r=>r.row===rowId):null;
   $('mItem').textContent=inf.txt;
-  $('mMeta').innerHTML=`${inf.sys} · ${$('loc').value||'الموقع (يُحدَّد)'} <span class="lawref">· ${inf.ref}</span>`;
+  $('mMeta').innerHTML=`${escH(inf.sys)} · ${escH($('loc').value||'الموقع (يُحدَّد)')} <span class="lawref">· ${escH(inf.ref)}</span>`;
   $('mId').textContent=EDIT?EDIT.id:'ب — '+AR(String(SEQ+1).padStart(2,'0'));
   $('ov').dataset.row=rowId;
   resetM(); if(EDIT) fillM(EDIT);
@@ -1566,29 +1585,29 @@ function renderLog(){
    <th style="width:132px">الحالة</th><th style="width:126px">لدى مَن الآن</th><th style="width:58px">م٧</th>
   </tr></thead><tbody>${REPORTS.map(r=>`<tr>
    <td class="c"><b>${r.id}</b></td>
-   <td>${r.item}<div class="muted">${r.desc}${r.oos?' · <b style="color:var(--red)">خارج الخدمة</b>':''}${r.need&&r.need!=='—'?' · المطلوب: '+r.need:''}</div></td>
-   <td>${r.finder}</td><td class="c">${r.sev}</td><td class="c">${r.due}${dueBadge(r)?'<div style="margin-top:3px">'+dueBadge(r)+'</div>':''}</td>
-   <td class="c"><span class="badge ${r.cls}">${r.status}</span>
+   <td>${escH(r.item)}${r.itemDeleted?' <span class="badge b-esc">بند محذوف</span>':''}<div class="muted">${escH(r.desc)}${r.oos?' · <b style="color:var(--red)">خارج الخدمة</b>':''}${r.need&&r.need!=='—'?' · المطلوب: '+escH(r.need):''}</div></td>
+   <td>${escH(r.finder)}</td><td class="c">${escH(r.sev)}</td><td class="c">${escH(r.due)}${dueBadge(r)?'<div style="margin-top:3px">'+dueBadge(r)+'</div>':''}</td>
+   <td class="c"><span class="badge ${r.cls}">${escH(r.status)}</span>
      ${r.path&&r.path!=='إداري'?'<div style="margin-top:3px"><span class="badge b-watch">تصعيد رقابي</span></div>':''}</td>
-   <td>${r.owner}</td><td class="c muted">${r.m7}</td></tr>`).join('')}</tbody></table>`;
+   <td>${escH(r.owner)}</td><td class="c muted">${escH(r.m7)}</td></tr>`).join('')}</tbody></table>`;
   $('dvLog').innerHTML=$('logWrap').innerHTML;
   $('printDetails').innerHTML='<h2>ملحق · تفاصيل البلاغات ومسار التصعيد</h2>'+REPORTS.map(r=>{
     const lvOf=L=>Object.keys(L||{}).map(Number).sort().map(n=>`<div class="r"><span>المستوى ${AR(n)} — ${LNAME[n]}</span><span>${L[n].up?'↑ صُعّد':(L[n].back?'↩ وُفِّر المطلوب وأُعيد للفني':'✓ أُغلق')} · ${escH(L[n].note||'—')} · ${escH(L[n].by||'')} ${escH(L[n].date||'')}</span></div>`).join('');
     const lv=(r.hist||[]).map((H,i)=>`<div class="r"><span><b>دورة سابقة ${AR(i+1)}</b> — ${H.why==='back'?'أُعيد للفني':'قبل إعادة الفتح'}${H.at?' · '+escH(H.at):''}</span><span></span></div>`+lvOf(histLv(H))).join('')+((r.hist||[]).length?`<div class="r"><span><b>الدورة الحالية</b>${r.cycleAt?' · منذ '+escH(r.cycleAt):''}</span><span></span></div>`:'')+lvOf(r.levels);
-    const w=r.watch.map(o=>`<div class="r"><span>متابعة ${o.d||''}</span><span>${o.w||''} — ${o.r||''} — الرد: ${o.p||''}</span></div>`).join('');
-    return `<div class="pd"><h4>${r.id} — ${r.item} <span class="badge ${r.cls}">${r.status}</span></h4>
-      <div class="r"><span>النظام</span><span>${r.sys} · ${r.ref}</span></div>
-      <div class="r"><span>من اكتشف العطل</span><span>${r.finder} — ${r.finderName}</span></div>
-      <div class="r"><span>الملاحظة</span><span>${r.desc}</span></div>
+    const w=(r.watch||[]).map(o=>`<div class="r"><span>متابعة ${escH(o.d||'')}</span><span>${escH(o.w||'')} — ${escH(o.r||'')} — الرد: ${escH(o.p||'')}</span></div>`).join('');
+    return `<div class="pd"><h4>${escH(r.id)} — ${escH(r.item)}${r.itemDeleted?' (بند محذوف)':''} <span class="badge ${r.cls}">${escH(r.status)}</span></h4>
+      <div class="r"><span>النظام</span><span>${escH(r.sys)} · ${escH(r.ref)}</span></div>
+      <div class="r"><span>من اكتشف العطل</span><span>${escH(r.finder)} — ${escH(r.finderName)}</span></div>
+      <div class="r"><span>الملاحظة</span><span>${escH(r.desc)}</span></div>
       <div class="r"><span>وقت الاكتشاف</span><span>${r.when||'—'}</span></div>
       <div class="r"><span>إرسال البلاغ</span><span>${r.sent?'أُرسل لمدير المرافق والصيانة ونسخة لمسؤول السلامة — '+r.sent:'<b style="color:var(--red)">لم يُرسل</b>'}</span></div>
       <div class="r"><span>الفئة والمهلة</span><span>${r.sev} — ${r.due}</span></div>
       ${r.oos?`<div class="r"><span>خروج عن الخدمة</span><span>من ${r.oosFrom||'—'} إلى ${r.oosTo||'—'}</span></div>`:''}
-      <div class="r"><span>المطلوب</span><span>${r.need}</span></div>
+      <div class="r"><span>المطلوب</span><span>${escH(r.need)}</span></div>
       ${lv||'<div class="r"><span>مسار التنفيذ</span><span>لم يُسجَّل قرار</span></div>'}
       ${w?'<div class="r"><span><b>لوحة مسؤول السلامة</b></span><span></span></div>'+w:''}
-      ${r.stuck?`<div class="r"><span>تصعيد رقابي</span><span>${r.why||'—'}</span></div>`:''}
-      <div class="r"><span>مسار الوصول للإدارة العليا</span><span>${r.path}</span></div>
+      ${r.stuck?`<div class="r"><span>تصعيد رقابي</span><span>${escH(r.why||'—')}</span></div>`:''}
+      <div class="r"><span>مسار الوصول للإدارة العليا</span><span>${escH(r.path)}</span></div>
       <div class="r"><span>شرط المادة السابعة</span><span>${r.m7}</span></div>
       <div class="r"><span>توقيع مسؤول السلامة</span><span>&nbsp;</span></div></div>`;}).join('');
 }
@@ -1601,7 +1620,15 @@ function staticFields(){
 function snapshot(){
   const defs={};Object.keys(SYS).forEach(k=>defs[k]={items:SYS[k].items,reads:SYS[k].reads,name:SYS[k].name,code:SYS[k].code,sched:SYS[k].sched});
   return {v:41,sys:CUR,seq:SEQ,marks:MARKS,vals:VALS,rounds:ROUNDS,reports:REPORTS,defs,
-    fields:staticFields().map(el=>el.type==='checkbox'?(el.checked?1:0):el.value)};
+    fields:staticFields().map(el=>el.type==='checkbox'?(el.checked?1:0):el.value),fieldIds:staticFields().map(el=>el.id||'')};
+}
+/* استعادة الحقول الثابتة: بالمعرّف حيث وُجد، وبالترتيب فقط إذا تطابق العدد — ولا تُكتب قيمة في حقل من نوع آخر */
+function restoreFields(d){
+  const fs=staticFields(),ids=d.fieldIds||[],byIndex=!d.fieldIds||fs.length===(d.fields||[]).length;
+  (d.fields||[]).forEach((v,i)=>{let el=null;
+    if(ids[i])el=document.getElementById(ids[i]);else if(byIndex)el=fs[i];
+    if(!el||(el.type==='checkbox')!==(typeof v==='number'))return;
+    if(el.type==='checkbox')el.checked=!!v;else el.value=v;});
 }
 function saveSelf(){
   const doc=document.documentElement.cloneNode(true);
@@ -1626,9 +1653,7 @@ function loadSelf(){
   if(tab){document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected','false'));
     tab.setAttribute('aria-selected','true');render(d.sys);}
   else render('p01');
-  const fs=staticFields();
-  (d.fields||[]).forEach((v,i)=>{const el=fs[i];if(!el)return;
-    if(el.type==='checkbox')el.checked=!!v;else el.value=v;});
+  restoreFields(d);
   const off=$('insQ').value.indexOf('مكتب مرخّص')===0;
   ['lbOff','tdOff','lbLic','tdLic'].forEach(id=>$(id).style.display=off?'':'none');
   renderLog();refreshRows();
@@ -1657,13 +1682,15 @@ $('fpick').addEventListener('change',e=>{
         if(m) d=JSON.parse(m[1].replace(/\\u003c/g,'<'));
       }
       if(!d||!d.reports){alert('الملف لا يحتوي بيانات جولة');return;}
+      const myPre=Object.keys(SYS)[0].charAt(0),filePre=(Object.keys(d.defs||{})[0]||d.sys||(d.reports[0]||{}).row||'').charAt(0);
+      if(filePre&&filePre!==myPre){alert('هذا الملف يخص نموذج مكان آخر — افتحه من نموذجه');return;}
+      if(d.v&&d.v<41){alert('الملف من إصدار أقدم من النموذج ولا يمكن استيراده');return;}
+      if(REPORTS.length&&!confirm('يوجد على هذا الجهاز '+AR(REPORTS.length)+' بلاغ لهذا المكان. استبدالها ببيانات الملف ('+AR(d.reports.length)+' بلاغ)؟\nلا يمكن التراجع إلا بنسخة احتياطية.'))return;
       REPORTS=d.reports;SEQ=d.seq||REPORTS.length;MARKS=d.marks||{};VALS=d.vals||{};ROUNDS=d.rounds||{};
       if(d.defs)Object.keys(d.defs).forEach(k=>{if(SYS[k]){SYS[k].items=d.defs[k].items;SYS[k].reads=d.defs[k].reads;}});
       const tab=document.querySelector(`.tab[data-sys="${d.sys||'p01'}"]`);
       if(tab)tab.click(); else render('p01');
-      const fs=staticFields();
-      (d.fields||[]).forEach((v,i)=>{const el=fs[i];if(!el)return;
-        if(el.type==='checkbox')el.checked=!!v;else el.value=v;});
+      restoreFields(d);
       renderLog();refreshRows();drawInbox();
       alert('تم فتح الجولة — عدد البلاغات: '+AR(REPORTS.length));
     }catch(err){alert('تعذّر قراءة الملف')}
@@ -1676,11 +1703,16 @@ function applyCns(){
   document.querySelectorAll('td.ed').forEach(td=>td.contentEditable=on?'true':'false');
   document.querySelectorAll('.refv').forEach(i=>{i.readOnly=!on;i.placeholder=on?'أدخل القيمة المعتمدة':'لم تُعتمد بعد';});
 }
-function purge(){
-  const p=CUR+'-';
-  Object.keys(MARKS).forEach(k=>{if(k.indexOf(p)===0)delete MARKS[k]});
-  Object.keys(VALS).forEach(k=>{if(k.indexOf(p)===0)delete VALS[k]});
-  REPORTS=REPORTS.filter(r=>r.row.indexOf(p)!==0);
+/* حذف سطر: تُزاح مفاتيح الأسطر التالية، وتبقى بلاغات السطر المحذوف في السجل بعلامة «بند محذوف» */
+function shiftRows(t,i){
+  const pre=CUR+'-'+t+'-';
+  const rekey=obj=>{const out={};Object.keys(obj).forEach(k=>{
+    if(k.indexOf(pre)!==0){out[k]=obj[k];return;}
+    const m=k.slice(pre.length).match(/^(\d+)(.*)$/);if(!m){out[k]=obj[k];return;}
+    const j=+m[1];if(j===i)return;out[j>i?pre+(j-1)+m[2]:k]=obj[k];});return out;};
+  MARKS=rekey(MARKS);VALS=rekey(VALS);
+  REPORTS.forEach(r=>{if(String(r.row).indexOf(pre)!==0)return;const j=+String(r.row).slice(pre.length);if(isNaN(j))return;
+    if(j===i){r.row=pre+'x'+Date.now().toString(36);r.itemDeleted=stamp();}else if(j>i)r.row=pre+(j-1);});
   renderLog();
 }
 function addRow(t){
@@ -1689,9 +1721,9 @@ function addRow(t){
   render(CUR);
 }
 function delRow(t,i){
-  if(!confirm('حذف هذا السطر؟ سيُعاد ترقيم بقية أسطر هذا النظام، وتُمسح علاماته وبلاغاته.'))return;
+  if(!confirm('حذف هذا السطر؟ يُعاد ترقيم بقية الأسطر، وتبقى بلاغاته في السجل بعلامة «بند محذوف».'))return;
   if(t==='r')SYS[CUR].reads.splice(i,1); else SYS[CUR].items.splice(i,1);
-  purge(); render(CUR);
+  shiftRows(t,i); render(CUR); autoSave();
 }
 function togCns(){
   const on=document.body.classList.toggle('cns');
@@ -1711,11 +1743,13 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeM()});
 
 
 let SVT=null;
-function touch(){DIRTY=true;startRound();clearTimeout(SVT);SVT=setTimeout(()=>{autoSave();DIRTY=false;},600)}
+function touch(){DIRTY=true;startRound();clearTimeout(SVT);SVT=setTimeout(()=>{if(autoSave())DIRTY=false;},600)}
 document.addEventListener('input',touch,true);
 document.addEventListener('change',touch,true);
 ['uu','pp'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()}));
 if(!loadSelf()&&!autoLoad())render('p01');
+/* الجداول داخل حاوية تتمرر أفقياً على الشاشات الضيقة */
+document.querySelectorAll('main.sheet table').forEach(t=>{if(t.closest('.tw')||t.closest('#logWrap')||t.closest('#printDetails')||t.closest('#ov'))return;const w=document.createElement('div');w.className='tw';t.parentNode.insertBefore(w,t);w.appendChild(t);});
 /* ===== الدخول الموحّد من اللوحة (dashboard.html): جلسة قائمة = لا دخول ثانٍ ===== */
 (function(){
   let s=null;try{s=JSON.parse(localStorage.getItem('ipa-session'))}catch(e){}
