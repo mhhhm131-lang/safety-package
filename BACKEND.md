@@ -545,7 +545,10 @@ safety-package/            ← المستودع الحالي
 10. **البوابة:** القصة تمر كاملة على النسخة المنشورة من جهازين. رفع.
 
 **المرحلة ١ — الحوكمة**
-1. نقل `Auth` (User, UserProfile, Role, UserRole)، `Organization` (OrganizationUnit)، `System` (AuditLog).
+
+*حقائق من جرد OHSMS (٢٠٢٦-٠٩-٠٨) تحكم هذه المرحلة:* الدور يُحسم دائماً من `user_profiles.role` (نص)؛ جدولا `roles`/`user_roles` غير مستخدمين إلا في البذرة → **لا يُنقلان**. `HasAuditLog` غير مستخدم في أي نموذج؛ التدوين يدوي عبر `AuditLogService` في البلاغات فقط → نربطه بالنماذج عندنا. جدول `notifications` المخصص يتعارض مع جدول Laravel `Notifiable` (قناة database) → يُسمّى عندنا `app_notifications`. `is_active=false` لا يمنع الدخول في OHSMS → عندنا يمنع (منفّذ في المرحلة ٠). الخروج عندهم GET → عندنا POST. ثلاث نسخ متضاربة لمصفوفات الأدوار (PermissionRegistry / sidebar / topbar / UserProfile::ROLES) → مصدر واحد. صندوق الوارد جاهز: `Notification` + `NotificationController` (list/mark-read/mark-all/count) + جرس في `partials/topbar` + استطلاع كل ٦٠ ث في `public/js/ohsms.js`. البريد: لا Mailable في OHSMS؛ `MAIL_MAILER=log` افتراضياً → نبنيه بـ Laravel Mail القياسي. الشاشات: `layouts/app.blade.php` (٩٣٢ سطراً، Bootstrap 5.3.3 RTL + Bootstrap Icons + خط Cairo من CDN، ألوان من `TenantSettings` → ثوابت عندنا)، `partials/sidebar` (٨٧٣) و`topbar` (١٧٦).
+
+1. نقل `Auth` (UserProfile فقط، بلا Role/UserRole)، `Organization` (OrganizationUnit)، `System` (AuditLog, Notification→`app_notifications`, NotificationController, UserService, SystemController: المستخدمون/الهيكل/سجل التدقيق فقط)، و`Core`: `CheckPermission`, `AuditLogService`, `NotificationService`, `AppliesOrgUnitScope` (بلا `scopeToContext`), `ModuleServiceProvider` (alias `permission` + `audit.logger`). اللاي أوت والقائمة الجانبية والجرس.
 2. `PermissionRegistry` بجدول ٤-٣ كاملاً: أدوار OHSMS بمقابلها العربي + أدوار المعهد. حذف `superuser` فقط.
 3. جدول `places` (٩) ببذرة. `organization_units` ببذرة الـ ٣٢ مع مكان كل وحدة.
 4. شاشة إدارة المستخدمين لمسؤول السلامة: إنشاء، دور، إدارة، مكان، تعطيل، إعادة كلمة المرور.
@@ -712,7 +715,7 @@ safety-package/            ← المستودع الحالي
 | # | الفجوة | متى تُسدّ |
 |---|---|---|
 | ١ | وحدتا المشاريع والعمال لم تُجردا حقلاً حقلاً | أول خطوة في المرحلة ٦ |
-| ٢ | وحدة الرسائل والإشعارات في OHSMS لم تُفحص؛ هل فيها صندوق وارد جاهز؟ | أول خطوة في المرحلة ١ |
+| ~~٢~~ | ~~وحدة الإشعارات~~ | ✅ فُحصت ٢٠٢٦-٠٩-٠٨: صندوق وارد جاهز (جدول + متحكم + جرس + استطلاع). البريد يُبنى. انظر ملاحظات المرحلة ١ |
 | ٣ | ربط أماكننا التسعة (أصناف) بطوابق المبنى الفعلية | المرحلة ٤ بسؤال المستخدم |
 | ٤ | فريقنا الأولي أربعة أدوار؛ فرق OHSMS سبعة أنواع. المقابلة | المرحلة ٤ بسؤال المستخدم |
 | ٥ | أسماء الموظفين وبريدهم للحسابات | المرحلة ١ من المستخدم |
