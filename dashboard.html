@@ -221,6 +221,51 @@ button{font-family:inherit}
 .pill.ok{background:rgba(62,207,142,.15);color:var(--green)}.pill.no{background:rgba(255,92,92,.15);color:var(--red)}.pill.na{background:rgba(255,255,255,.06);color:var(--muted)}
 .mark{display:inline-block;width:22px;text-align:center;font-weight:900;border-radius:6px}
 .mark.ok{color:var(--green)}.mark.no{color:var(--red)}.mark.na{color:var(--dim)}.mark.none{color:var(--dim)}
+/* ===== جاهزية المكان: الخطط والفريق الأولي ===== */
+.rd{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px}
+.rdc{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;position:relative;overflow:hidden;min-height:96px}
+.rdc::after{content:"";position:absolute;inset:auto 0 0 0;height:3px;background:var(--rc,var(--dim))}
+.rdc.ok{--rc:var(--green)}.rdc.warn{--rc:var(--amber)}.rdc.bad{--rc:var(--red)}
+.rdc .l{font-size:11px;color:var(--muted)}
+.rdc .v{font-size:14px;font-weight:900;margin-top:2px}
+.rdc.ok .v{color:var(--green)}.rdc.warn .v{color:var(--amber)}.rdc.bad .v{color:var(--red)}
+.rdc .d{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.5}
+.team{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.tm{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.tm .r{font-size:11px;color:var(--gold);font-weight:700}
+.tm .n{font-size:14px;font-weight:900;margin-top:2px}
+.tm .n.none{color:var(--dim);font-weight:400}
+.tm .m{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.6}
+.tm .m b{color:var(--ink);font-weight:700}
+.flowline{display:flex;align-items:center;gap:0;margin:12px 0 4px;flex-wrap:wrap}
+.fstep{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted);padding:6px 12px;border:1px solid var(--line2);border-radius:20px;background:var(--panel)}
+.fstep i{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--line2);display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:10px;color:var(--dim)}
+.fstep.done{border-color:var(--green);color:var(--ink)}
+.fstep.done i{background:var(--green);border-color:var(--green);color:#0c1712;font-weight:900}
+.fstep.cur{border-color:var(--gold);color:var(--gold2)}
+.fstep.cur i{border-color:var(--gold);color:var(--gold)}
+.fsep{width:22px;height:2px;background:var(--line2)}
+.fstep small{color:var(--dim);font-size:10.5px}
+.fstep button{background:var(--gold);color:#1a1509;border:0;border-radius:14px;padding:2px 10px;font-weight:700;font-size:11px;cursor:pointer;margin-inline-start:4px}
+.editl{font-size:11.5px;font-weight:700;color:var(--gold2);background:transparent;border:1px solid var(--gold);padding:5px 12px;border-radius:8px;cursor:pointer;margin-inline-start:auto}
+.editl:hover{background:var(--gold);color:#1a1509}
+/* نافذة تحرير بيانات المكان */
+.pm{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:50;display:none;align-items:flex-start;justify-content:center;overflow:auto;padding:30px 14px}
+.pm.on{display:flex}
+.pmb{width:100%;max-width:820px;background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:20px 22px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.pmb h2{font-size:16px;font-weight:900;margin-bottom:2px}
+.pmb .sub{font-size:11.5px;color:var(--muted);margin-bottom:14px}
+.pmb h3{font-size:12.5px;font-weight:900;color:var(--gold);margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px 10px}
+.fg label{display:block;font-size:10.5px;color:var(--muted);margin-bottom:2px}
+.fg input,.fg select{width:100%;font-family:inherit;font-size:12.5px;padding:7px 9px;border:1px solid var(--line2);border-radius:7px;background:var(--bg2);color:var(--ink)}
+.fg input:focus{outline:0;border-color:var(--gold)}
+.fg input[readonly]{opacity:.6}
+.trow{display:grid;grid-template-columns:90px 1.4fr 1fr 1fr 1fr;gap:8px;align-items:end;margin-bottom:6px}
+.trow .r{font-size:12px;font-weight:900;color:var(--gold2);padding-bottom:8px}
+.pmf{display:flex;gap:8px;margin-top:18px;align-items:center;flex-wrap:wrap}
+.pmf .hint{font-size:11px;color:var(--muted);margin-inline-start:auto}
+@media(max-width:820px){.rd,.team{grid-template-columns:1fr 1fr}.trow{grid-template-columns:1fr 1fr}}
 @media(max-width:820px){.sysr,.sysh{grid-template-columns:1fr 1fr}.sysh{display:none}.two{grid-template-columns:1fr}}
 @media(max-width:820px){.hero{grid-template-columns:1fr}.mosaic{grid-template-columns:repeat(2,1fr)}.state .big .v{font-size:60px}}
 @media(max-width:560px){.seg{grid-template-columns:repeat(2,1fr)}.mosaic{grid-template-columns:1fr}.rep{grid-template-columns:1fr}.go{text-align:center}}
@@ -260,6 +305,7 @@ button{font-family:inherit}
 
 <!-- ============ ملف المكان / ملف النظام ============ -->
 <div class="wrap" id="pf" hidden></div>
+<div class="pm" id="pm"><div class="pmb" id="pmb"></div></div>
 
 <div class="wrap" id="main">
 
@@ -606,6 +652,7 @@ function renderPlace(hz,sysId){
       <div class="sum">${S.length?`<b>${AR(okN)}</b> من ${AR(S.length)} نظاماً فُحص في موعده وسليم${lateN?` · <b style="color:var(--red)">${AR(lateN)}</b> فحصه متأخر أو لم يُفحص`:''}${faultN?` · <b style="color:var(--amber)">${AR(faultN)}</b> في آخر فحصه ✗`:''}`:'لم تُفتح جولة لهذا المكان بعد'}</div></div>
       <div class="acts">${links}</div></div>
     <div class="seg" style="margin-bottom:22px">${K.map(k=>`<div class="k ${k.cls}${k.v?'':' zero'}" style="cursor:default"><div class="v">${AR(k.v)}</div><div class="l">${k.l}</div></div>`).join('')}</div>
+    ${readiness(hz,S)}
     <div class="h"><h2>الأنظمة</h2><span class="cnt">${AR(S.length)}</span><em>انقر النظام لبنوده وجولاته وبلاغاته</em></div>
     ${S.some(s=>!s.def.name)?'<div class="empty" style="margin-bottom:10px">بيانات هذا المكان محفوظة بإصدار أقدم لا يحمل أسماء الأنظمة ودورياتها — افتح نموذج الفحص مرة واحدة وضع أي علامة، فتُحدَّث تلقائياً</div>':''}
     ${S.length?`<div class="sysh"><span>النظام</span><span>آخر فحص</span><span>المستحق القادم</span><span>نتيجة آخر فحص</span><span>مفتوح</span><span></span></div><div class="sysl">${S.map(s=>sysRow(s,hz)).join('')}</div>`:'<div class="empty"><b>لا بيانات</b>افتح نموذج الفحص وسجّل جولة، أو استورد ملف جولة</div>'}
@@ -645,6 +692,83 @@ function renderSystem(hz,placeName,s){
     <div class="cards">${repRows||'<div class="empty calm"><b>لا بلاغات على هذا النظام</b></div>'}</div>`;
   return true;
 }
+/* ================= بيانات المكان: الخطتان والفريق الأولي (ترشيح ← اعتماد ← إحالة) ================= */
+const PKEY='ipa-place', TEAM=['المنسق','المسعف','المنقذ','الإطفائي'];
+const today=()=>new Date().toISOString().slice(0,10);
+function placeAll(){try{return JSON.parse(localStorage.getItem(PKEY))||{}}catch(e){return {}}}
+function placeGet(hz){const p=placeAll()[hz]||{};p.plans=p.plans||{};p.team=p.team||[];p.nom=p.nom||{};p.appr=p.appr||{};p.hr=p.hr||{};return p;}
+function placeSave(hz,p){const a=placeAll();a[hz]=p;try{localStorage.setItem(PKEY,JSON.stringify(a))}catch(e){}}
+const canEdit=()=>ROLE==='safety'||ROLE==='adm';
+function daysSince(d){const t=toDate(d);return t?Math.floor((Date.now()-t)/DAY):null;}
+function readiness(hz,S){
+  const p=placeGet(hz),pl=p.plans;
+  const named=p.team.filter(t=>t&&t.name).length;
+  const inspOk=S.filter(x=>x.st==='ok').length;
+  const drillD=daysSince(pl.drill);
+  const C=[
+    {l:'خطة السلامة',cls:pl.sa?'ok':'bad',v:pl.sa?'معتمدة':'غير معتمدة',d:pl.sa?'بتاريخ '+fmtD(pl.sa)+(pl.saBy?' · '+esc(pl.saBy):''):'تُعتمد بقرار الإدارة العليا'},
+    {l:'خطة الاستجابة',cls:!pl.ra?'bad':(drillD===null||drillD>365?'warn':'ok'),v:!pl.ra?'غير معتمدة':(drillD===null?'معتمدة — بلا تمرين':(drillD>365?'معتمدة — التمرين قديم':'معتمدة ومُمرَّنة')),d:(pl.ra?'اعتُمدت '+fmtD(pl.ra):'')+(pl.drill?' · آخر تمرين '+fmtD(pl.drill):' · لم يُنفَّذ تمرين')},
+    {l:'نماذج الفحص',cls:!S.length?'bad':(inspOk===S.length?'ok':'warn'),v:!S.length?'لم تُفعَّل':AR(inspOk)+' من '+AR(S.length)+' في موعده',d:S.length?'تُحسب تلقائياً من سجل الجولات':'افتح النموذج وسجّل أول جولة'},
+    {l:'الفريق الأولي',cls:p.hr.date?'ok':(p.appr.date?'ok':(p.nom.date?'warn':'bad')),v:p.hr.date?'معتمد ومُحال للموارد البشرية':(p.appr.date?'معتمد':(p.nom.date?'مرشَّح — بانتظار الاعتماد':'لم يُرشَّح')),d:AR(named)+' من ٤ أدوار بأسماء'+(p.nom.by?' · ترشيح: '+esc(p.nom.by):'')}
+  ];
+  const steps=[
+    {t:'ترشيح مدير الإدارة',done:!!p.nom.date,sub:p.nom.date?esc(p.nom.by||'')+' · '+fmtD(p.nom.date):'مسؤول السلامة يسجّله',act:canEdit()&&!p.nom.date?`<button onclick="openPlaceEdit('${hz}')">تسجيل الترشيح</button>`:''},
+    {t:'اعتماد مدير الشؤون الإدارية والهندسية',done:!!p.appr.date,sub:p.appr.date?fmtD(p.appr.date):(p.nom.date?'بانتظار الاعتماد':''),act:ROLE==='adm'&&p.nom.date&&!p.appr.date?`<button onclick="approveTeam('${hz}')">اعتماد</button>`:''},
+    {t:'إحالة للموارد البشرية',done:!!p.hr.date,sub:p.hr.date?fmtD(p.hr.date):(p.appr.date?'بانتظار الإحالة':''),act:canEdit()&&p.appr.date&&!p.hr.date?`<button onclick="referHR('${hz}')">تسجيل الإحالة</button>`:''}
+  ];
+  const cur=steps.findIndex(s=>!s.done);
+  return `<div class="h"><h2>الجاهزية</h2><em>الخطتان والفحص والفريق — ما فُعّل فعلاً لا ما وُثّق</em>${canEdit()?`<button class="editl" onclick="openPlaceEdit('${hz}')">تحرير بيانات المكان</button>`:''}</div>
+    <div class="rd">${C.map(c=>`<div class="rdc ${c.cls}"><div class="l">${c.l}</div><div class="v">${c.v}</div><div class="d">${c.d}</div></div>`).join('')}</div>
+    <div class="team">${TEAM.map((r,i)=>{const t=p.team[i]||{};const tr=daysSince(t.trained);return `<div class="tm"><div class="r">${r}</div><div class="n${t.name?'':' none'}">${t.name?esc(t.name):'لم يُسمَّ بعد'}</div><div class="m">${t.dept?esc(t.dept)+'<br>':''}${t.phone?'<b>'+esc(t.phone)+'</b><br>':''}${t.trained?'تدريب '+fmtD(t.trained)+(t.trainer?' · '+esc(t.trainer):'')+(tr!==null&&tr>730?' <span style="color:var(--amber)">· يحتاج تجديداً</span>':''):(t.name?'<span style="color:var(--amber)">لم يُدرَّب</span>':'')}</div></div>`}).join('')}</div>
+    <div class="flowline">${steps.map((s,i)=>`${i?'<span class="fsep"></span>':''}<span class="fstep${s.done?' done':(i===cur?' cur':'')}"><i>${s.done?'✓':AR(i+1)}</i>${s.t}${s.sub?' <small>'+s.sub+'</small>':''}${s.act}</span>`).join('')}</div>`;
+}
+function approveTeam(hz){
+  const p=placeGet(hz);if(!p.team.filter(t=>t&&t.name).length){alert('لا أسماء في الترشيح');return;}
+  if(!confirm('اعتماد ترشيح الفريق الأولي لهذا المكان؟'))return;
+  p.appr={by:'مدير الشؤون الإدارية والهندسية',date:today()};placeSave(hz,p);route();
+}
+function referHR(hz){
+  const p=placeGet(hz);if(!confirm('تسجيل إحالة التكليف إلى إدارة الموارد البشرية بتاريخ اليوم؟'))return;
+  p.hr={date:today()};placeSave(hz,p);route();
+}
+function openPlaceEdit(hz){
+  if(!canEdit())return;
+  const p=placeGet(hz),pl=p.plans,f=FORMS.find(x=>x.hz===hz);
+  const inp=(id,v,type,ph)=>`<input id="${id}" type="${type||'text'}" value="${esc(v||'')}"${ph?' placeholder="'+ph+'"':''}>`;
+  $('pmb').innerHTML=`<h2>بيانات المكان — ${esc(f.name)}</h2><div class="sub">${hz} · يعبّئها مسؤول السلامة أو مدير الشؤون الإدارية والهندسية · تُحفظ على هذا الجهاز إلى حين الربط</div>
+    <h3>الخطتان</h3>
+    <div class="fg">
+      <div><label>اعتماد خطة السلامة</label>${inp('e_sa',pl.sa,'date')}</div>
+      <div><label>المعتمِد</label>${inp('e_saBy',pl.saBy,'text','الإدارة العليا')}</div>
+      <div><label>اعتماد خطة الاستجابة</label>${inp('e_ra',pl.ra,'date')}</div>
+      <div><label>آخر تمرين على الخطة</label>${inp('e_drill',pl.drill,'date')}</div>
+    </div>
+    <h3>الترشيح</h3>
+    <div class="fg">
+      <div><label>المدير المرشِّح</label>${inp('e_nomBy',p.nom.by,'text','مدير الإدارة التي يعمل بها الفريق')}</div>
+      <div><label>إدارته</label>${inp('e_nomDept',p.nom.dept,'text','مثال: الإدارة المالية')}</div>
+      <div><label>تاريخ الترشيح</label>${inp('e_nomDate',p.nom.date||today(),'date')}</div>
+    </div>
+    <h3>الفريق الأولي — أربعة أدوار</h3>
+    <div class="trow" style="margin-bottom:0"><span></span><label>الاسم</label><label>الإدارة</label><label>الهاتف</label><label>تاريخ التدريب · الجهة</label></div>
+    ${TEAM.map((r,i)=>{const t=p.team[i]||{};return `<div class="trow"><span class="r">${r}</span>${inp('t_n'+i,t.name)}${inp('t_d'+i,t.dept)}${inp('t_p'+i,t.phone,'tel')}<div style="display:flex;gap:6px">${inp('t_t'+i,t.trained,'date')}${inp('t_r'+i,t.trainer,'text','الدفاع المدني')}</div></div>`}).join('')}
+    <div class="pmf"><button class="btn btn-main" onclick="savePlace('${hz}')">حفظ</button><button class="btn btn-gh" onclick="closePlaceEdit()">إلغاء</button><span class="hint">${p.appr.date?'تعديل الأسماء بعد الاعتماد يُلغي الاعتماد ويعيد المسار إلى الترشيح':'بعد الحفظ يظهر الترشيح لمدير الشؤون الإدارية والهندسية لاعتماده'}</span></div>`;
+  $('pm').classList.add('on');
+}
+function closePlaceEdit(){$('pm').classList.remove('on');}
+function savePlace(hz){
+  const p=placeGet(hz),v=id=>($(id).value||'').trim();
+  const team=TEAM.map((r,i)=>({role:r,name:v('t_n'+i),dept:v('t_d'+i),phone:v('t_p'+i),trained:v('t_t'+i),trainer:v('t_r'+i)}));
+  const changed=JSON.stringify(team.map(t=>t.name))!==JSON.stringify((p.team||[]).map(t=>t&&t.name||''));
+  if(p.appr.date&&changed){if(!confirm('تغيّرت الأسماء بعد الاعتماد. سيُلغى الاعتماد والإحالة ويعود المسار إلى الترشيح. متابعة؟'))return;p.appr={};p.hr={};}
+  p.plans={sa:v('e_sa'),saBy:v('e_saBy'),ra:v('e_ra'),drill:v('e_drill')};
+  p.team=team;
+  const named=team.some(t=>t.name);
+  p.nom=named?{by:v('e_nomBy'),dept:v('e_nomDept'),date:v('e_nomDate')||today()}:{};
+  placeSave(hz,p);closePlaceEdit();route();
+}
+$('pm').addEventListener('click',e=>{if(e.target.id==='pm')closePlaceEdit();});
+
 function route(){
   if(!ROLE)return;
   const h=location.hash.replace(/^#/,''),q={};
