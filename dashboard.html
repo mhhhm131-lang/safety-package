@@ -359,9 +359,13 @@ button{font-family:inherit}
     <button class="btn btn-gh" onclick="$('fpick').click()">استيراد جولات من أجهزة أخرى</button>
     <input type="file" id="fpick" accept=".json,.html" multiple hidden>
     <button class="btn btn-gh" onclick="load()">تحديث</button>
+    <span style="width:1px;height:22px;background:var(--line2)"></span>
+    <button class="btn btn-gh" onclick="backupAll()">نسخة احتياطية للمبنى</button>
+    <button class="btn btn-gh" onclick="$('bpick').click()">استعادة نسخة</button>
+    <input type="file" id="bpick" accept=".json" hidden>
     <span class="upd" id="upd2"></span>
   </div>
-  <div class="note"><b>مصدر البيانات:</b> ما فُتح من نماذج على هذا الجهاز يظهر تلقائياً. بلاغات الفنيين على أجهزة أخرى تصل باستيراد ملف الجولة (HTML أو JSON) الذي يحفظه النموذج بزر «حفظ النموذج بالبيانات». عند ربط النظام بحسابات المعهد تُستبدل هذه الآلية بالمزامنة الآلية.</div>
+  <div class="note"><b>مصدر البيانات:</b> ما فُتح من نماذج على هذا الجهاز يظهر تلقائياً. بلاغات الفنيين على أجهزة أخرى تصل باستيراد ملف الجولة (HTML أو JSON) الذي يحفظه النموذج بزر «حفظ النموذج بالبيانات». عند ربط النظام بحسابات المعهد تُستبدل هذه الآلية بالمزامنة الآلية.<br><b>النسخة الاحتياطية:</b> ملف واحد يحمل بيانات المبنى كلها (النماذج العشرة وجولاتها وبلاغاتها وبيانات الأماكن). البيانات في المتصفح تضيع بمسح واحد، فاحفظ نسخة في نهاية كل يوم عمل إلى حين الربط.</div>
 </div>
 
 <div class="footer">حزمة السلامة والصحة المهنية — معهد الإدارة العامة</div>
@@ -857,6 +861,37 @@ $('fpick').addEventListener('change',e=>{
     };
     rd.readAsText(f);
   });
+});
+
+/* ================= نسخة احتياطية للمبنى: كل مفاتيح ipa-* في ملف واحد ================= */
+const BK_SKIP={[SESSION]:1};
+function backupAll(){
+  const data={};let n=0;
+  Object.keys(localStorage).forEach(k=>{if(k.indexOf('ipa-')!==0||BK_SKIP[k])return;try{data[k]=JSON.parse(localStorage.getItem(k));n++}catch(e){}});
+  if(!n){alert('لا بيانات على هذا الجهاز لحفظها');return;}
+  const forms=FORMS.filter(f=>data[f.key]).length,reps=FORMS.reduce((a,f)=>a+((data[f.key]||{}).reports||[]).length,0);
+  const bk={ipaBackup:1,v:1,at:new Date().toISOString(),by:USER,building:'مبنى الملز',forms,reports:reps,data};
+  const blob=new Blob([JSON.stringify(bk)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='نسخة-احتياطية-السلامة-'+bk.at.slice(0,10)+'.json';a.click();URL.revokeObjectURL(a.href);
+  $('upd').textContent='حُفظت نسخة احتياطية: '+AR(forms)+' نموذج · '+AR(reps)+' بلاغ · '+stamp();
+}
+function restoreAll(bk){
+  if(!bk||bk.ipaBackup!==1||!bk.data){alert('الملف ليس نسخة احتياطية لهذا النظام');return false;}
+  const keys=Object.keys(bk.data).filter(k=>k.indexOf('ipa-')===0&&!BK_SKIP[k]);
+  const cur=Object.keys(localStorage).filter(k=>k.indexOf('ipa-')===0&&!BK_SKIP[k]);
+  const when=fmtD(String(bk.at||'').slice(0,10));
+  if(!confirm(`استعادة نسخة ${when} (${AR(bk.forms||0)} نموذج · ${AR(bk.reports||0)} بلاغ)؟\n\nستحل محل بيانات هذا الجهاز الحالية (${AR(cur.length)} مفتاح). لا يمكن التراجع إلا بنسخة احتياطية أخرى.`))return false;
+  cur.forEach(k=>localStorage.removeItem(k));
+  keys.forEach(k=>{try{localStorage.setItem(k,JSON.stringify(bk.data[k]))}catch(e){}});
+  return true;
+}
+$('bpick').addEventListener('change',e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{let bk=null;try{bk=JSON.parse(rd.result)}catch(e){}
+    if(restoreAll(bk)){load();alert('تمت الاستعادة');}};
+  rd.readAsText(f);
 });
 
 window.addEventListener('storage',e=>{if(ROLE&&e.key&&e.key.indexOf('ipa-')===0&&e.key!==SESSION)load();});
