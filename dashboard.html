@@ -330,6 +330,12 @@ button{font-family:inherit}
     <div class="cards" id="qBody"></div>
   </div>
 
+  <!-- مهامي: الجولات المستحقة على دوري -->
+  <div id="secT">
+    <div class="h"><h2>مهامي</h2><span class="cnt" id="tN">٠</span><em id="tHint">الجولات المستحقة على دورك من الجدول الدوري لكل نظام</em><span class="new" id="tLater"></span></div>
+    <div class="cards" id="tBody"></div>
+  </div>
+
   <!-- بلاغاتي -->
   <div id="secM">
     <div class="h"><h2>بلاغاتي</h2><span class="cnt" id="mN">٠</span><em>قررتَ فيها ولم تُغلق بعد</em><span class="new" id="mHint"></span></div>
@@ -525,20 +531,24 @@ function draw(){
     :(ALL.length?'<div class="empty calm"><b>لا شيء بانتظار قرارك الآن</b></div>'
     :'<div class="empty"><b>لا بيانات بعد</b>افتح نموذج فحص وسجّل بلاغاً، أو استورد ملف جولة من جهاز آخر</div>');
 
+  /* مهامي */
+  const T=drawTasks();
+
   /* الحالة الآن */
   const S=$('state');
   let word,glow,wc;
-  if(ROLE==='cons'){word='بنود الفحص وقيمها المرجعية';glow='rgba(217,178,90,.18)';wc='var(--gold)';}
+  if(ROLE==='cons'){word=T.late?'جولات مستحقة على المكتب':'بنود الفحص وقيمها المرجعية';glow=T.late?'rgba(255,177,74,.2)':'rgba(217,178,90,.18)';wc=T.late?'var(--amber)':'var(--gold)';}
   else if(qod){word='تأخر يستوجب قرارك';glow='rgba(255,92,92,.22)';wc='var(--red)';}
   else if(q.length){word='ينتظر قرارك';glow='rgba(255,177,74,.2)';wc='var(--amber)';}
+  else if(T.late){word='جولات متأخرة عليك';glow='rgba(255,177,74,.2)';wc='var(--amber)';}
   else if(decision&&openOd){word='المسار متأخر عند غيرك';glow='rgba(255,177,74,.18)';wc='var(--amber)';}
   else if(!ALL.length){word='لا بيانات بعد';glow='rgba(255,255,255,.06)';wc='var(--muted)';}
   else{word='لا شيء عالق عندك';glow='rgba(62,207,142,.2)';wc='var(--green)';}
   S.style.setProperty('--glow',glow);S.style.setProperty('--wc',wc);
   $('sWord').textContent=word;
-  if(ROLE==='cons'){$('sN').textContent=AR(open.length);$('sT').innerHTML='<b>بلاغ مفتوح في المبنى</b>للاطلاع — لا قرار مطلوب منك';}
+  if(ROLE==='cons'){$('sN').textContent=AR(T.due);$('sT').innerHTML='<b>جولة مستحقة على المكتب</b>'+(T.late?AR(T.late)+' متأخرة أو لم تُنفَّذ':'خلال أسبوع');}
   else{$('sN').textContent=AR(q.length);$('sT').innerHTML='<b>'+(ROLE==='safety'?'بلاغ مفتوح تتابعه':'بلاغ بانتظار قرارك')+'</b>'+(qnew?AR(qnew)+' تغيّر منذ آخر مرة':'مرتّبة بالأشد تأخراً');}
-  $('sSub').innerHTML=[qod?`<span><b>${AR(qod)}</b> متجاوز المهلة</span>`:'',`<span>${AR(open.length)} مفتوح في المبنى</span>`,openOd?`<span>${AR(openOd)} متجاوز في المبنى</span>`:''].filter(Boolean).join('');
+  $('sSub').innerHTML=[qod?`<span><b>${AR(qod)}</b> متجاوز المهلة</span>`:'',WHO_ROLE[ROLE]&&ROLE!=='cons'?`<span>${T.late?'<b>'+AR(T.late)+'</b> جولة متأخرة عليك':AR(T.due)+' جولة مستحقة عليك'}</span>`:'',`<span>${AR(open.length)} مفتوح في المبنى</span>`,openOd?`<span>${AR(openOd)} متجاوز في المبنى</span>`:''].filter(Boolean).join('');
 
   /* المسار — أين تقف البلاغات */
   const cnt={1:0,2:0,3:0,4:0},od={1:0,2:0,3:0,4:0};
@@ -692,6 +702,47 @@ function renderSystem(hz,placeName,s){
     <div class="cards">${repRows||'<div class="empty calm"><b>لا بلاغات على هذا النظام</b></div>'}</div>`;
   return true;
 }
+/* ================= مهامي: الجولات المستحقة على دوري ================= */
+const WHO_ROLE={tech:['الفني'],fm:['المرافق والصيانة'],safety:['مسؤول السلامة','المناوب','المشرف'],cons:['المكتب']};
+const FREQ_ALL=Object.assign({'فصلي':91},FREQ_D);
+function taskOwner(who){return Object.keys(WHO_ROLE).filter(r=>WHO_ROLE[r].some(w=>(who||'').indexOf(w)>=0));}
+/* كل مهمة: مكان × نظام × سطر جدول دوري له دورية معروفة */
+function myTasks(){
+  const out=[],mine=WHO_ROLE[ROLE];if(!mine)return out;
+  const today=new Date();today.setHours(0,0,0,0);
+  HZ_ORDER.forEach(hz=>systemsOf(hz).forEach(s=>(s.def.sched||[]).forEach(sc=>{
+    const freq=(sc[0]||'').trim(),days=FREQ_ALL[freq];if(!days)return;
+    if(taskOwner(sc[2]).indexOf(ROLE)<0)return;
+    const withF=s.rounds.filter(r=>r.f===freq),last=(withF.length?withF:s.rounds.filter(r=>!r.f))[0]||null;
+    const lt=last?toDate(last.d):null,next=lt?new Date(lt.getTime()+days*DAY):null;
+    const left=next?Math.round((next-today)/DAY):null;   /* سالب = متأخرة */
+    out.push({hz,s,freq,days,task:sc[1],who:sc[2],last,next,left});
+  })));
+  return out;
+}
+function taskRow(t){
+  const late=t.left!==null&&t.left<0,soon=t.left!==null&&t.left>=0&&t.left<=7;
+  const cls=t.left===null?'od':(late?'od':(soon?'warn':''));
+  const st=t.left===null?'<span class="tag t-red">لم تُنفَّذ بعد</span>':(late?`<span class="tag t-red">متأخرة ${AR(-t.left)} يوم</span>`:(t.left===0?'<span class="tag t-amb">تستحق اليوم</span>':`<span class="tag t-amb">خلال ${AR(t.left)} يوم</span>`));
+  return `<div class="rep ${cls}"><div>
+      <div class="top1"><span class="loc">${t.hz} · ${esc(t.s.f.name)}</span>${st}<span class="tag t-dim">${esc(t.freq)}</span></div>
+      <div class="ttl"><b>${esc(t.s.name)}</b>${esc(t.task)}</div>
+      <div class="meta">${t.last?'آخر تنفيذ '+fmtD(t.last.d)+(t.last.n?' · '+esc(t.last.n):''):'لا تنفيذ مسجّل في سجل الجولات'}${t.next?' · المستحق '+fmtD(t.next.toISOString().slice(0,10)):''}</div>
+    </div><a class="go" href="${t.s.f.file}#sys=${t.s.k}">افتح النموذج</a></div>`;
+}
+function drawTasks(){
+  const all=myTasks();
+  $('secT').style.display=WHO_ROLE[ROLE]?'':'none';
+  if(!WHO_ROLE[ROLE])return {due:0,late:0};
+  const due=all.filter(t=>t.left===null||t.left<=7).sort((a,b)=>(a.left===null?-1e9:a.left)-(b.left===null?-1e9:b.left));
+  const late=due.filter(t=>t.left===null||t.left<0).length,later=all.length-due.length;
+  $('tN').textContent=AR(due.length);$('tN').className='cnt'+(late?' red':'');
+  $('tHint').textContent=late?AR(late)+' منها متأخرة أو لم تُنفَّذ':'الجولات المستحقة على دورك خلال أسبوع';
+  $('tLater').innerHTML=later?`<span class="kv" style="font-size:11px;color:var(--muted)">و${AR(later)} مهمة لاحقة في موعدها</span>`:'';
+  $('tBody').innerHTML=due.length?due.map(taskRow).join(''):(all.length?'<div class="empty calm"><b>لا جولات مستحقة عليك هذا الأسبوع</b></div>':'<div class="empty">لا مهام بعد — تُشتق من الأنظمة التي فُتحت نماذجها</div>');
+  return {due:due.length,late};
+}
+
 /* ================= بيانات المكان: الخطتان والفريق الأولي (ترشيح ← اعتماد ← إحالة) ================= */
 const PKEY='ipa-place', TEAM=['المنسق','المسعف','المنقذ','الإطفائي'];
 const today=()=>new Date().toISOString().slice(0,10);

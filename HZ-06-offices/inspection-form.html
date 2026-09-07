@@ -926,7 +926,7 @@ function logRounds(){
     if(!ok&&!no&&!na)return;
     const L=ROUNDS[k]=ROUNDS[k]||[];
     let e=L.find(x=>x.d===d&&(x.s||'')===st);if(!e){e={d,s:st};L.push(e);}
-    Object.assign(e,{t:$('tEnd').value||'',q:$('insQ').value,n:$('insN').value||'',ok,no,na,tot:SYS[k].items.length+SYS[k].reads.length});
+    Object.assign(e,{t:$('tEnd').value||'',q:$('insQ').value,n:$('insN').value||'',f:(k===CUR?$('freq').value:(e.f||'')),ok,no,na,tot:SYS[k].items.length+SYS[k].reads.length});
   });
 }
 function newRound(){
@@ -1712,6 +1712,8 @@ if(!loadSelf()&&!autoLoad())render('o01');
   $('userbar').insertBefore(a,$('dvBack'));
   const h=location.hash.match(/open=([^&]+)/);
   if(h){const row=decodeURIComponent(h[1]);if(REPORTS.some(r=>r.row===row)){if(document.body.classList.contains('dv'))toggleDview();setTimeout(()=>jump(row),80);}}
+  const hs=location.hash.match(/sys=([^&]+)/);
+  if(hs&&SYS[hs[1]]){const tab=document.querySelector('.tab[data-sys="'+hs[1]+'"]');if(tab){if(document.body.classList.contains('dv'))toggleDview();tab.click();}}
 })();
 DIRTY=false;
 </script>
