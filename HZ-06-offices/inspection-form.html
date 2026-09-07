@@ -693,7 +693,7 @@ function doLogin(){
   if(ROLE==='cons'&&!document.body.classList.contains('cns'))togCns();
   drawInbox();startRound();
 }
-function logout(){location.reload()}
+function logout(){try{localStorage.removeItem('ipa-session')}catch(e){}location.reload()}
 function applyRole(){
   document.body.dataset.role=ROLE;
   /* وضع المكتب الاستشاري متاح له وحده */
@@ -1433,6 +1433,17 @@ document.addEventListener('input',touch,true);
 document.addEventListener('change',touch,true);
 ['uu','pp'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()}));
 if(!loadSelf()&&!autoLoad())render('o01');
+/* ===== الدخول الموحّد من اللوحة (dashboard.html): جلسة قائمة = لا دخول ثانٍ ===== */
+(function(){
+  let s=null;try{s=JSON.parse(localStorage.getItem('ipa-session'))}catch(e){}
+  if(!s||!USERS[s.u])return;
+  $('uu').value=s.u;$('pp').value=USERS[s.u].p;doLogin();
+  const a=document.createElement('a');a.href='../dashboard.html';a.textContent='← اللوحة';
+  a.style.cssText='color:#fff;font-weight:700;text-decoration:none;border:1px solid rgba(255,255,255,.4);padding:2px 10px;border-radius:2px';
+  $('userbar').insertBefore(a,$('dvBack'));
+  const h=location.hash.match(/open=([^&]+)/);
+  if(h){const row=decodeURIComponent(h[1]);if(REPORTS.some(r=>r.row===row))setTimeout(()=>jump(row),80);}
+})();
 DIRTY=false;
 </script>
 </body>
