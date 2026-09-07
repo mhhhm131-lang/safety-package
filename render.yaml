@@ -1,0 +1,51 @@
+# منظومة السلامة — معهد الإدارة العامة — النشر على Render
+# الأسرار لا تُكتب هنا: APP_KEY يولّده Render، وDB_URL من القاعدة.
+databases:
+  - name: ipa-safety-db
+    databaseName: ipa_safety
+    user: ipa_safety
+    plan: free
+
+services:
+  - type: web
+    name: ipa-safety
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    branch: main
+    healthCheckPath: /up
+    envVars:
+      - key: APP_NAME
+        value: "منظومة السلامة"
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_LOCALE
+        value: ar
+      - key: APP_FALLBACK_LOCALE
+        value: ar
+      - key: APP_TIMEZONE
+        value: Asia/Riyadh
+      - key: APP_KEY
+        generateValue: true
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_URL
+        fromDatabase:
+          name: ipa-safety-db
+          property: connectionString
+      - key: SESSION_DRIVER
+        value: database
+      - key: SESSION_SECURE_COOKIE
+        value: "true"
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: RUN_MIGRATIONS
+        value: "true"
+      - key: SEED_DEMO
+        value: "false"
