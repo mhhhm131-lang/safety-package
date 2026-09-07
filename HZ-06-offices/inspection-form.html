@@ -272,6 +272,14 @@ body.fromDash #inbox{display:none!important}
 body.fromDash #dvInbox,body.fromDash .dv-sec.wait{display:none}
 @media(max-width:680px){#ov #forkBox{grid-template-columns:1fr}}
 /* ===== /MODAL-V2 ===== */
+
+/* ===== MODAL-V3 ===== */
+.ib-new{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:var(--red);white-space:nowrap}
+.ib-new::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block}
+.ib-row.done .go{border-color:var(--muted);color:var(--muted)}
+#ov .note-w{background:#f5f8fa;border:1px solid var(--blue);color:var(--blue);font-weight:700;padding:6px 10px;margin-top:8px;font-size:12px}
+#ov .note-r{background:#f0eaf3;border:1px solid #5b2d6b;color:#5b2d6b;font-weight:700;padding:6px 10px;margin-top:8px;font-size:12px}
+/* ===== /MODAL-V3 ===== */
 </style>
 </head>
 <body>
@@ -312,6 +320,8 @@ body.fromDash #dvInbox,body.fromDash .dv-sec.wait{display:none}
   <div id="dvBody">
     <div class="dv-sec wait">بانتظار قرارك <span id="dvN"></span></div>
     <div id="dvInbox"></div>
+    <div class="dv-sec" id="dvDoneH">بلاغاتي</div>
+    <div id="dvDone"></div>
     <div class="dv-sec">سجل بلاغات الجولة</div>
     <div id="dvLog"></div></div>
 </div>
@@ -334,6 +344,8 @@ body.fromDash #dvInbox,body.fromDash .dv-sec.wait{display:none}
 <div class="inbox" id="inbox" style="display:none">
   <div class="ib-h">صندوق الوارد — <span id="ibRole"></span></div>
   <div id="ibBody"></div>
+  <div class="ib-h" id="ibDoneH">بلاغاتي</div>
+  <div id="ibDone"></div>
 </div>
 
 <main class="sheet">
@@ -846,12 +858,12 @@ function dueBadge(r){const o=overdue(r);if(o===null)return '';
   if(o>=0)return `<span class="badge b-open">⏰ متجاوز المهلة منذ ${AR(Math.floor(o))} س</span>`;
   return `<span class="muted">متبقٍ ${AR(Math.ceil(-o))} س</span>`;}
 const byOverdue=(a,b)=>{const x=overdue(a),y=overdue(b);return (y===null?-1e9:y)-(x===null?-1e9:x);};
-function ibRow(r){
-  return `<div class="ib-row">
-      ${dispBadge(r)}${leftBadge(r)}
+function ibRow(r,done){
+  return `<div class="ib-row${done?' done':''}">
+      ${dispBadge(r)}${leftBadge(r)}${roleBadges(r)}
       <div class="t"><b>${r.id}</b> — ${r.item}
         <div class="muted">${r.sys} · ${r.sev}${r.due!=='—'?' · المهلة '+r.due:''}${r.need&&r.need!=='—'?' · المطلوب: '+r.need:''}</div></div>
-      <button class="go" onclick="jump('${r.row}')">فتح البلاغ</button>
+      <button class="go" onclick="jump('${r.row}')">${done?'عرض':'فتح البلاغ'}</button>
     </div>`;
 }
 function drawInbox(){
@@ -859,8 +871,9 @@ function drawInbox(){
   const list=myItems().sort(byOverdue);
   $('inbox').style.display='';
   $('ibRole').innerHTML=USERSN(ROLE)+(list.length?`<span class="ib-n">${AR(list.length)}</span>`:'');
-  $('ibBody').innerHTML=list.length?list.map(ibRow).join('')
+  $('ibBody').innerHTML=list.length?list.map(r=>ibRow(r)).join('')
     :'<div class="ib-empty">لا شيء بانتظار قرارك الآن</div>';
+  drawDone();
   drawDview();
 }
 
@@ -876,8 +889,9 @@ function drawDview(){
   const list=myItems().sort(byOverdue);
   const od=list.filter(r=>overdue(r)>=0).length;
   $('dvN').innerHTML=(list.length?`<span class="ib-n">${AR(list.length)}</span>`:'')+(od?` <span class="badge b-open">${AR(od)} متجاوز المهلة</span>`:'');
-  $('dvInbox').innerHTML=list.length?list.map(ibRow).join('')
+  $('dvInbox').innerHTML=list.length?list.map(r=>ibRow(r)).join('')
     :'<div class="ib-empty">لا شيء بانتظار قرارك الآن</div>';
+  drawDone();
 }
 function toggleDview(){
   const on=document.body.classList.toggle('dvForm');
@@ -1021,9 +1035,47 @@ function openM(rowId,isEdit){
   $('ov').classList.add('on');document.body.style.overflow='hidden';
   renderModalForRole();$('ov').scrollTop=0;
 }
-function closeM(){$('ov').classList.remove('on');document.body.style.overflow=''}
+function closeM(){const rr=REPORTS.find(r=>r.row===$('ov').dataset.row);if(rr)markSeen(rr);$('ov').classList.remove('on');document.body.style.overflow='';drawInbox();}
 
 
+
+/* ===== MODAL-V3: بلاغاتي · نقطة جديد · متابعة مسؤول السلامة للمخاطَب · صُعّد رقابياً فوقك ===== */
+const SEENKEY='ipa-seen', RLVL={tech:1,fm:2,adm:3,exec:4};
+function sigOf(r){return JSON.stringify([Object.keys(r.levels||{}).sort(),r.status,r.path,!!r.reopen,(r.watch||[]).filter(o=>o.w||o.r||o.p).length,(r.hist||[]).length,r.oosTo||'']);}
+function seenMap(){try{return JSON.parse(localStorage.getItem(SEENKEY))||{}}catch(e){return {}}}
+function markSeen(r){if(!ROLE||!r)return;const m=seenMap();(m[ROLE]=m[ROLE]||{})[AKEY+'|'+r.row]=sigOf(r);try{localStorage.setItem(SEENKEY,JSON.stringify(m))}catch(e){}}
+function isNew(r){const s=(seenMap()[ROLE]||{})[AKEY+'|'+r.row];return s!==undefined&&s!==sigOf(r);}
+/* آخر مخاطبة من مسؤول السلامة موجّهة إلى دور بعينه */
+function watchFor(r,lvl){return (r.watch||[]).filter(o=>o.w===LNAME[lvl]&&(o.r||o.p)).slice(-1)[0];}
+/* بلاغاتي: قررتُ فيها وخرجت من يدي ولم تُغلق */
+function myDone(){
+  const lv=RLVL[ROLE]; if(!lv)return [];
+  const mine=myItems();
+  return REPORTS.filter(r=>{
+    if(isClosed(r)||mine.indexOf(r)>=0)return false;
+    if(ROLE==='tech')return !!r.sent;
+    /* وصلني: قررتُ فيه، أو صُعّد إليّ، أو وصل الإدارة رقابياً */
+    const reached=L=>!!(L&&(L[lv]||(L[lv-1]&&L[lv-1].up)))||(lv===4&&!!r.path&&r.path!=='إداري');
+    return reached(r.levels)||(r.hist||[]).some(reached);
+  });
+}
+function roleBadges(r){
+  const lv=RLVL[ROLE]; let h='';
+  if(lv&&watchFor(r,lv))h+=' <span class="badge b-watch">متابعة من مسؤول السلامة</span>';
+  if(lv&&lv>1&&lv<4&&r.path&&r.path!=='إداري'&&!isClosed(r))h+=' <span class="badge b-watch">صُعّد رقابياً فوقك</span>';
+  if(r.reopen&&!Object.keys(r.levels||{}).length)h+=' <span class="badge b-esc">↩ أُعيد فتحه — الإصلاح السابق غير كافٍ</span>';
+  if(isNew(r))h+=' <span class="ib-new">جديد</span>';
+  return h;
+}
+const byNewThenOverdue=(a,b)=>(isNew(b)-isNew(a))||byOverdue(a,b);
+function drawDone(){
+  const list=myDone().sort(byNewThenOverdue);
+  const html=list.length?list.map(r=>ibRow(r,true)).join(''):'<div class="ib-empty">لا بلاغات قيد المتابعة عند غيرك</div>';
+  const n=list.length?`<span class="ib-n" style="background:var(--green-2)">${AR(list.length)}</span>`:'';
+  const nw=list.filter(isNew).length;
+  ['ibDone','dvDone'].forEach(id=>{const e=$(id);if(e)e.innerHTML=html;});
+  ['ibDoneH','dvDoneH'].forEach(id=>{const e=$(id);if(e)e.innerHTML='بلاغاتي — قيد المتابعة عند غيري '+n+(nw?` <span class="ib-new">${AR(nw)} تغيّر بعد قرارك</span>`:'');});
+}
 /* ================= MODAL-V2 · طبقة العرض حسب الدور (لا تغيّر البيانات) ================= */
 const escH=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 /* الحالة المعروضة: ٤ عناوين فقط — النص المخزّن في السجل لا يتغير */
@@ -1044,6 +1096,9 @@ function fillCard(){
   const backFrom=(r.backFrom&&!(r.levels&&r.levels[1]))?r.backFrom:0;
   if(backFrom){const L=r.levels&&r.levels[backFrom];note.innerHTML='<div class="back-note">↩ أُعيد إليك للتنفيذ — وفّر المطلوب '+LNAME[backFrom]+(L&&L.note?': «'+escH(L.note)+'»':'')+'</div>';}
   else if(r.reopen&&!Object.keys(r.levels||{}).length)note.innerHTML='<div class="back-note">↩ أُعيد فتح البلاغ من مسؤول السلامة — الإصلاح السابق غير كافٍ</div>';
+  const myL=RLVL[ROLE], wf=myL?watchFor(r,myL):null;
+  if(wf)note.innerHTML+='<div class="note-w">⚠ متابعة من مسؤول السلامة '+escH(wf.d)+': '+escH(wf.r||'')+(wf.p?' — الرد المسجّل: '+escH(wf.p):'')+'</div>';
+  if(myL&&myL>1&&myL<4&&r.path&&r.path!=='إداري'&&!isClosed(r))note.innerHTML+='<div class="note-r">⚠ صُعّد رقابياً فوقك إلى الإدارة العليا'+(r.why?' — '+escH(r.why):'')+'</div>';
   const tags=[r.sev&&r.sev!=='—'?'<span class="badge b-esc">'+escH(r.sev)+'</span>':'',
     r.due&&r.due!=='—'?'<span class="badge b-watch">المهلة '+escH(r.due)+'</span>':'',
     r.oos?'<span class="badge b-open">خارج الخدمة'+(r.oosFrom?' منذ '+escH(r.oosFrom):'')+'</span>':'',
@@ -1053,6 +1108,8 @@ function fillCard(){
     +'<div class="kv"><span>الملاحظة</span><span>'+escH(r.desc||'—')+'</span></div>'
     +(r.need&&r.need!=='—'?'<div class="kv"><span>المطلوب</span><span><b>'+escH(r.need)+'</b></span></div>':'')
     +'<div class="kv"><span>اكتُشف</span><span>'+escH(r.when||'—')+(o!==null?(o>=0?' · <b style="color:var(--red)">متجاوز المهلة منذ '+AR(Math.floor(o))+' س</b>':' · متبقٍ '+AR(Math.ceil(-o))+' س'):'')+'</span></div>'
+    +(function(){const ks=Object.keys(r.levels||{}).map(Number).sort();const n=ks[ks.length-1];if(!n)return '';const L=r.levels[n];
+        return '<div class="kv"><span>آخر قرار</span><span>'+LNAME[n]+' — '+(L.up?'صعّد':L.back?'أعاد للفني':n===4?'قرار نهائي':'أغلق')+(L.note?': <b>'+escH(L.note)+'</b>':'')+(L.date?' <span class="muted">'+escH(L.date)+'</span>':'')+'</span></div>';})()
     +'<div class="kv"><span>اكتشفه</span><span>'+escH(r.finder||'')+(r.finderName&&r.finderName!=='—'?' — '+escH(r.finderName):'')+'</span></div>';
 }
 function pathHTML(){
@@ -1451,7 +1508,7 @@ function saveM(keepOpen){
     m7:M7OK?'تحقق':'لم يتحقق'};
   if(EDIT&&EDIT.hist)rec.hist=EDIT.hist;
   if(rec.reopen){
-    if(closed&&Object.keys(rec.levels).length){rec.hist=(rec.hist||[]).concat([rec.levels]);rec.levels={};rec.backFrom=0;STATE.levels={};STATE.closedAt=null;}
+    if(closed&&Object.keys(rec.levels).length){rec.hist=(rec.hist||[]).concat([rec.levels]);rec.levels={};rec.backFrom=0;rec.path='إداري';rec.stuck=false;rec.why='';STATE.levels={};STATE.closedAt=null;STATE.path='إداري';}
     if(!Object.keys(rec.levels).length){rec.status='أُعيد فتحه — إصلاح غير كافٍ';rec.cls='b-open';rec.owner=LNAME[1];}
     else rec.reopen=false;
   }

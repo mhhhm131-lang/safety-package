@@ -105,6 +105,9 @@ a{color:inherit}
 .b-esc{background:#fdf6ea;color:var(--amber);border:1px solid var(--amber)}
 .b-done{background:#eef5f1;color:var(--green);border:1px solid var(--green-2)}
 .b-watch{background:#f0eaf3;color:#5b2d6b;border:1px solid #5b2d6b}
+.ib-new{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:var(--red);white-space:nowrap}
+.ib-new::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block}
+.row.done .go{border-color:var(--muted);color:var(--muted)}
 .empty{padding:22px 16px;text-align:center;color:var(--muted);font-size:12px}
 .empty b{color:var(--green);display:block;font-size:14px;margin-bottom:3px}
 
@@ -186,6 +189,12 @@ a{color:inherit}
   <div class="section" id="secQ">
     <div class="st wait">بانتظار قرارك <span class="n" id="qN">٠</span><em id="qHint"></em></div>
     <div id="qBody"></div>
+  </div>
+
+  <!-- بلاغاتي -->
+  <div class="section" id="secM">
+    <div class="st">بلاغاتي — قيد المتابعة عند غيري <span class="n" id="mN">٠</span><em id="mHint">بلاغات قررتَ فيها ولم تُغلق بعد — النقطة الحمراء: تغيّر شيء بعد قرارك</em></div>
+    <div id="mBody"></div>
   </div>
 
   <!-- الأرقام الأربعة -->
@@ -291,6 +300,27 @@ function mine(r){
   if(R==='safety') return !closed;
   return false;
 }
+/* بلاغاتي: قررتُ فيها وخرجت من يدي ولم تُغلق — نفس منطق النماذج */
+const RLVL={tech:1,fm:2,adm:3,exec:4}, SEENKEY='ipa-seen';
+function mineDone(r){
+  const lv=RLVL[ROLE]; if(!lv||isClosed(r)||mine(r))return false;
+  if(ROLE==='tech')return !!r.sent;
+  /* وصلني: قررتُ فيه، أو صُعّد إليّ، أو وصل الإدارة رقابياً */
+  const reached=L=>!!(L&&(L[lv]||(L[lv-1]&&L[lv-1].up)))||(lv===4&&!!r.path&&r.path!=='إداري');
+  return reached(r.levels)||(r.hist||[]).some(reached);
+}
+function sigOf(r){return JSON.stringify([Object.keys(r.levels||{}).sort(),r.status,r.path,!!r.reopen,(r.watch||[]).filter(o=>o.w||o.r||o.p).length,(r.hist||[]).length,r.oosTo||'']);}
+function isNew(r){let m={};try{m=JSON.parse(localStorage.getItem(SEENKEY))||{}}catch(e){}const s=(m[ROLE]||{})[r._f.key+'|'+r.row];return s!==undefined&&s!==sigOf(r);}
+function watchFor(r,lvl){return (r.watch||[]).filter(o=>o.w===LNAME[lvl]&&(o.r||o.p)).slice(-1)[0];}
+function roleBadges(r){
+  const lv=RLVL[ROLE]; let h='';
+  if(lv&&watchFor(r,lv))h+=' <span class="badge b-watch">متابعة من مسؤول السلامة</span>';
+  if(lv&&lv>1&&lv<4&&r.path&&r.path!=='إداري'&&!isClosed(r))h+=' <span class="badge b-watch">صُعّد رقابياً فوقك</span>';
+  if(r.reopen&&!Object.keys(r.levels||{}).length)h+=' <span class="badge b-esc">↩ أُعيد فتحه — الإصلاح السابق غير كافٍ</span>';
+  if(isNew(r))h+=' <span class="ib-new">جديد</span>';
+  return h;
+}
+const byNewThenOverdue=(a,b)=>(isNew(b)-isNew(a))||byOverdue(a,b);
 
 /* ================= تحميل البيانات من النماذج العشرة ================= */
 let ALL=[],HAS={};
@@ -317,13 +347,13 @@ function dispStatus(r){
   if(r.reopen||(r.backFrom&&!(r.levels&&r.levels[1])))return {t:'↩ أُعيد للفني',cls:'b-esc'};
   return {t:'مفتوح لدى '+esc(r.owner||''),cls:r.cls||'b-esc'};
 }
-function row(r){
+function row(r,done){
   const d=dispStatus(r), o=overdue(r);
-  return `<div class="row">
-    <span class="badge ${d.cls}">${d.t}</span>${o!==null&&o<0?dueBadge(r):''}
+  return `<div class="row${done?' done':''}">
+    <span class="badge ${d.cls}">${d.t}</span>${o!==null&&o<0?dueBadge(r):''}${roleBadges(r)}
     <div class="t"><span class="loc">${r._f.hz} · ${esc(r._f.name)}</span><b>${esc(r.id)}</b> — ${esc(r.item)}
       <div class="muted">${esc(r.sys)} · ${esc(r.sev)}${r.due&&r.due!=='—'?' · المهلة '+esc(r.due):''}${r.need&&r.need!=='—'?' · المطلوب: '+esc(r.need):''}${r.oos?' · <b style="color:var(--red)">خارج الخدمة</b>':''}${r.path&&r.path!=='إداري'?' · <span class="badge b-watch">تصعيد رقابي</span>':''}</div></div>
-    <a class="go" href="${link(r)}">فتح البلاغ</a>
+    <a class="go" href="${link(r)}">${done?'عرض':'فتح البلاغ'}</a>
   </div>`;
 }
 let KSEL='';
@@ -331,14 +361,21 @@ function draw(){
   const decision=['fm','adm','exec','safety'].indexOf(ROLE)>=0;
   const open=ALL.filter(r=>!isClosed(r));
   /* بانتظار قرارك */
-  const q=ALL.filter(mine).sort(byOverdue);
+  const q=ALL.filter(mine).sort(byNewThenOverdue);
   const qod=q.filter(r=>overdue(r)>=0).length;
   $('secQ').style.display=(ROLE==='cons')?'none':'';
   $('qN').textContent=AR(q.length);
   $('qHint').textContent=qod?AR(qod)+' منها متجاوز المهلة':'';
-  $('qBody').innerHTML=q.length?q.map(row).join('')
+  $('qBody').innerHTML=q.length?q.map(r=>row(r)).join('')
     :(ALL.length?'<div class="empty"><b>لا شيء بانتظار قرارك الآن</b></div>'
     :'<div class="empty"><b>لا بيانات بعد</b>افتح نموذج فحص وسجّل بلاغاً، أو استورد ملف جولة من جهاز آخر</div>');
+
+  /* بلاغاتي — للفني وأدوار القرار (مسؤول السلامة يرى الكل أصلاً) */
+  const md=ALL.filter(mineDone).sort(byNewThenOverdue), mnew=md.filter(isNew).length;
+  $('secM').style.display=RLVL[ROLE]?'':'none';
+  $('mN').textContent=AR(md.length);
+  $('mHint').innerHTML=mnew?`<span class="ib-new" style="color:#fff">${AR(mnew)} تغيّر بعد قرارك</span>`:'بلاغات قررتَ فيها ولم تُغلق بعد';
+  $('mBody').innerHTML=md.length?md.map(r=>row(r,true)).join(''):'<div class="empty">لا بلاغات قيد المتابعة عند غيرك</div>';
 
   /* الأرقام الأربعة + لدى من الآن: لأدوار القرار ومسؤول السلامة */
   ['secK','secO'].forEach(id=>$(id).style.display=decision?'':'none');
@@ -353,7 +390,7 @@ function draw(){
     let list=[];
     if(KSEL==='open')list=open; else if(KSEL==='od')list=open.filter(r=>overdue(r)>=0);
     else if(KSEL==='a')list=open.filter(r=>r.imp==='none'); else if(KSEL==='reg')list=open.filter(r=>r.path&&r.path!=='إداري');
-    $('kBody').innerHTML=KSEL?(list.length?list.sort(byOverdue).map(row).join(''):'<div class="empty">لا بلاغات في هذا التصنيف</div>'):'';
+    $('kBody').innerHTML=KSEL?(list.length?list.sort(byOverdue).map(r=>row(r)).join(''):'<div class="empty">لا بلاغات في هذا التصنيف</div>'):'';
 
     /* لدى من الآن */
     const cnt={1:0,2:0,3:0,4:0},od={1:0,2:0,3:0,4:0};
