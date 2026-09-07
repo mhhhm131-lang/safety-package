@@ -351,6 +351,12 @@ button{font-family:inherit}
   <!-- إدارتي: لمدير الإدارة -->
   <div id="secD" style="display:none"></div>
 
+  <!-- بلاغات الشاغلين: سجل مركز السلامة -->
+  <div id="secO" style="display:none">
+    <div class="h"><h2>بلاغات الشاغلين</h2><span class="cnt" id="oN">٠</span><em id="oHint">سجل مركز السلامة — ما يصل من الشاغلين بلا دخول</em><a href="report.html" class="editl" style="text-decoration:none">صفحة البلاغ ←</a></div>
+    <div class="cards" id="oBody"></div>
+  </div>
+
   <!-- بانتظار قرارك -->
   <div id="secQ">
     <div class="h"><h2 id="qTitle">بانتظار قرارك</h2><span class="cnt" id="qN">٠</span><em id="qHint"></em></div>
@@ -571,6 +577,8 @@ function draw(){
 
   /* مهامي */
   const T=drawTasks();
+  /* بلاغات الشاغلين */
+  const O=drawOcc();
 
   /* مدير الإدارة: شاشة «إدارتي» بدل قوائم القرار */
   const isDept=ROLE==='dept';
@@ -583,6 +591,7 @@ function draw(){
   let word,glow,wc;
   if(isDept){const st=D?D.st:'none';word=DEPT?'فريق إدارتك: '+UST[st][1]:'اختر إدارتك';glow=st==='none'?'rgba(255,92,92,.18)':(st==='nom'?'rgba(255,177,74,.2)':'rgba(62,207,142,.2)');wc=st==='none'?'var(--red)':(st==='nom'?'var(--amber)':'var(--green)');}
   else if(ROLE==='cons'){word=T.late?'جولات مستحقة على المكتب':'بنود الفحص وقيمها المرجعية';glow=T.late?'rgba(255,177,74,.2)':'rgba(217,178,90,.18)';wc=T.late?'var(--amber)':'var(--gold)';}
+  else if(ROLE==='safety'&&O.n){word=AR(O.n)+' بلاغ شاغل جديد في المركز';glow='rgba(255,92,92,.22)';wc='var(--red)';}
   else if(qod){word='تأخر يستوجب قرارك';glow='rgba(255,92,92,.22)';wc='var(--red)';}
   else if(q.length){word='ينتظر قرارك';glow='rgba(255,177,74,.2)';wc='var(--amber)';}
   else if(T.late){word='جولات متأخرة عليك';glow='rgba(255,177,74,.2)';wc='var(--amber)';}
@@ -594,7 +603,7 @@ function draw(){
   if(isDept){$('sN').textContent=AR(D?D.named:0);$('sT').innerHTML='<b>من ٤ أدوار بأسماء</b>'+(DEPT?esc(deptName(DEPT)):'');}
   else if(ROLE==='cons'){$('sN').textContent=AR(T.due);$('sT').innerHTML='<b>جولة مستحقة على المكتب</b>'+(T.late?AR(T.late)+' متأخرة أو لم تُنفَّذ':'خلال أسبوع');}
   else{$('sN').textContent=AR(q.length);$('sT').innerHTML='<b>'+(ROLE==='safety'?'بلاغ مفتوح تتابعه':'بلاغ بانتظار قرارك')+'</b>'+(qnew?AR(qnew)+' تغيّر منذ آخر مرة':'مرتّبة بالأشد تأخراً');}
-  $('sSub').innerHTML=[qod?`<span><b>${AR(qod)}</b> متجاوز المهلة</span>`:'',WHO_ROLE[ROLE]&&ROLE!=='cons'?`<span>${T.late?'<b>'+AR(T.late)+'</b> جولة متأخرة عليك':AR(T.due)+' جولة مستحقة عليك'}</span>`:'',`<span>${AR(open.length)} مفتوح في المبنى</span>`,openOd?`<span>${AR(openOd)} متجاوز في المبنى</span>`:''].filter(Boolean).join('');
+  $('sSub').innerHTML=[qod?`<span><b>${AR(qod)}</b> متجاوز المهلة</span>`:'',O.open?`<span>${O.n?'<b>'+AR(O.n)+'</b> جديد من ':''}${AR(O.open)} بلاغ شاغل مفتوح</span>`:'',WHO_ROLE[ROLE]&&ROLE!=='cons'?`<span>${T.late?'<b>'+AR(T.late)+'</b> جولة متأخرة عليك':AR(T.due)+' جولة مستحقة عليك'}</span>`:'',`<span>${AR(open.length)} مفتوح في المبنى</span>`,openOd?`<span>${AR(openOd)} متجاوز في المبنى</span>`:''].filter(Boolean).join('');
 
   /* المسار — أين تقف البلاغات */
   const cnt={1:0,2:0,3:0,4:0},od={1:0,2:0,3:0,4:0};
@@ -713,7 +722,8 @@ function renderPlace(hz,sysId){
     ${S.some(s=>!s.def.name)?'<div class="empty" style="margin-bottom:10px">بيانات هذا المكان محفوظة بإصدار أقدم لا يحمل أسماء الأنظمة ودورياتها — افتح نموذج الفحص مرة واحدة وضع أي علامة، فتُحدَّث تلقائياً</div>':''}
     ${S.length?`<div class="sysh"><span>النظام</span><span>آخر فحص</span><span>المستحق القادم</span><span>نتيجة آخر فحص</span><span>مفتوح</span><span></span></div><div class="sysl">${S.map(s=>sysRow(s,hz)).join('')}</div>`:'<div class="empty"><b>لا بيانات</b>افتح نموذج الفحص وسجّل جولة، أو استورد ملف جولة</div>'}
     <div class="h"><h2>البلاغات المفتوحة في المكان</h2><span class="cnt${open.filter(r=>overdue(r)>=0).length?' red':''}">${AR(open.length)}</span></div>
-    <div class="cards">${open.length?open.sort(byOverdue).map(r=>row(r)).join(''):'<div class="empty calm"><b>لا بلاغات مفتوحة</b></div>'}</div>`;
+    <div class="cards">${open.length?open.sort(byOverdue).map(r=>row(r)).join(''):'<div class="empty calm"><b>لا بلاغات مفتوحة</b></div>'}</div>
+    ${(()=>{const oc=occOpen().filter(o=>o.hz===hz);return oc.length?`<div class="h"><h2>بلاغات الشاغلين عن المكان</h2><span class="cnt">${AR(oc.length)}</span></div><div class="cards">${oc.map(occRow).join('')}</div>`:''})()}`;
   return true;
 }
 function faultDays(r){
@@ -978,6 +988,52 @@ function saveUnit(hz,uid){
 }
 $('pm').addEventListener('click',e=>{if(e.target.id==='pm')closePlaceEdit();});
 
+/* ================= بلاغات الشاغلين: سجل مركز السلامة ================= */
+const OKEY='ipa-occ';
+function occAll(){try{return JSON.parse(localStorage.getItem(OKEY))||{seq:0,reports:[]}}catch(e){return {seq:0,reports:[]}}}
+function occSave(o){try{localStorage.setItem(OKEY,JSON.stringify(o))}catch(e){}}
+const OST={new:['t-red','جديد — لم يُنظر فيه'],assigned:['t-amb','محال إلى الفني'],linked:['t-pur','مربوط ببلاغ فحص'],closed:['t-grn','مُغلق']};
+function occLinked(o){if(!o.link)return null;return ALL.find(r=>r._f.key===o.link.key&&r.row===o.link.row)||null;}
+function occState(o){if(o.status==='linked'){const r=occLinked(o);if(r&&isClosed(r))return 'closed';}return o.status||'new';}
+const occOpen=()=>occAll().reports.filter(o=>occState(o)!=='closed');
+function occRow(o){
+  const st=occState(o),S=OST[st],lr=occLinked(o),age=o.ts?Math.floor((Date.now()-o.ts)/36e5):null;
+  const me=USERS[USER]?USERS[USER].n:'';
+  const acts=ROLE==='safety'?[
+    st==='new'?`<button class="btn btn-main" style="padding:5px 12px;font-size:11px" onclick="occAssign('${o.id}')">إحالة إلى الفني</button>`:'',
+    st!=='closed'&&st!=='linked'?`<button class="btn btn-gh" style="padding:5px 12px;font-size:11px" onclick="occClose('${o.id}')">إغلاق بملاحظة</button>`:''
+  ].join(''):'';
+  return `<div class="rep ${st==='new'?'od':(st==='assigned'?'warn':(st==='closed'?'done':'back'))}"><div>
+      <div class="top1"><span class="loc">${esc(o.hz||'—')} · ${esc(o.place||'')}</span><span class="tag ${S[0]}">${S[1]}</span>${age!==null&&st!=='closed'?`<span class="tag t-dim">منذ ${age<1?'أقل من ساعة':AR(age)+' س'}</span>`:''}</div>
+      <div class="ttl"><b>${esc(o.id)}</b>${esc(o.desc)}</div>
+      <div class="meta">${esc(o.at)}${o.loc?' · '+esc(o.loc):''}${o.name?' · المبلّغ: '+esc(o.name):''}${o.phone?' · '+esc(o.phone):''}${o.img?' · <a href="#" onclick="occImg(\'${o.id}\');return false" style="color:var(--gold2)">صورة</a>':''}</div>
+      ${o.note?`<div class="meta">ملاحظة المركز: <b style="color:var(--ink)">${esc(o.note)}</b>${o.by?' — '+esc(o.by):''}${o.doneAt?' · '+esc(o.doneAt):''}</div>`:''}
+      ${lr?`<div class="meta">بلاغ الفحص: <b style="color:var(--ink)">${esc(lr.id)}</b> ${stateTag(lr)}${(()=>{const o2=overdue(lr);return o2!==null&&o2>=0?' <span class="tag t-red">متجاوز المهلة</span>':''})()}</div>`:''}
+    </div><div style="display:flex;flex-direction:column;gap:6px">${lr?`<a class="go" href="${link(lr)}">فتح بلاغ الفحص</a>`:''}${acts}</div></div>`;
+}
+function drawOcc(){
+  const show=['safety','adm','exec','fm'].indexOf(ROLE)>=0;
+  $('secO').style.display=show?'':'none';if(!show)return {n:0,open:0};
+  const all=occAll().reports.slice().sort((a,b)=>(b.ts||0)-(a.ts||0)),open=all.filter(o=>occState(o)!=='closed'),nw=open.filter(o=>occState(o)==='new').length;
+  $('oN').textContent=AR(open.length);$('oN').className='cnt'+(nw?' red':'');
+  $('oHint').textContent=nw?AR(nw)+' جديد لم يُنظر فيه':(open.length?'قيد المتابعة':'سجل مركز السلامة — ما يصل من الشاغلين بلا دخول');
+  const closed=all.length-open.length;
+  $('oBody').innerHTML=(open.length?open.map(occRow).join(''):'<div class="empty calm"><b>لا بلاغات شاغلين مفتوحة</b></div>')+(closed?`<div class="empty" style="margin-top:8px">و${AR(closed)} بلاغ مُغلق في السجل</div>`:'');
+  return {n:nw,open:open.length};
+}
+function occAssign(id){
+  const a=occAll(),o=a.reports.find(x=>x.id===id);if(!o)return;
+  const note=prompt('إحالة البلاغ إلى فني المكان. ملاحظة للفني (اختياري):','');if(note===null)return;
+  o.status='assigned';o.note=note.trim();o.by=USERS[USER]?USERS[USER].n:'';o.assignedAt=stamp();occSave(a);load();
+}
+function occClose(id){
+  const a=occAll(),o=a.reports.find(x=>x.id===id);if(!o)return;
+  const note=prompt('إغلاق البلاغ — ما الذي تم أو سبب الإغلاق (يُقيَّد في السجل):','');if(note===null)return;
+  if(!note.trim()){alert('اكتب سبب الإغلاق');return;}
+  o.status='closed';o.note=note.trim();o.by=USERS[USER]?USERS[USER].n:'';o.doneAt=stamp();occSave(a);load();
+}
+function occImg(id){const o=occAll().reports.find(x=>x.id===id);if(!o||!o.img)return;$('pmb').innerHTML=`<h2>${esc(o.id)} — صورة البلاغ</h2><img src="${o.img}" style="max-width:100%;border-radius:8px;margin-top:10px"><div class="pmf"><button class="btn btn-gh" onclick="closePlaceEdit()">إغلاق</button></div>`;$('pm').classList.add('on');}
+
 /* ================= مدير الإدارة: اختيار إدارته، وشاشة «إدارتي» ================= */
 function openDeptPick(){
   const A=deptsAll().filter(d=>!/^v-/.test(d.id));
@@ -1026,6 +1082,7 @@ $('fpick').addEventListener('change',e=>{
         let raw=rd.result,d=null;
         if(/^\s*[{[]/.test(raw))d=JSON.parse(raw);
         else{const m=raw.match(/<script id="SAVED"[^>]*>([\s\S]*?)<\/script>/);if(m)d=JSON.parse(m[1].replace(/\\u003c/g,'<'));}
+        if(d&&d.ipaOcc===1){const cur=occAll();let n=0;(d.reports||[]).forEach(o=>{if(!cur.reports.some(x=>x.id===o.id&&x.at===o.at)){o.dev=false;cur.reports.push(o);n++;}});occSave(cur);msgs.push('✓ بلاغات شاغلين من «'+f.name+'»: '+AR(n)+' جديد');return;}
         if(!d||!Array.isArray(d.reports))throw 0;
         const pre=(d.defs&&Object.keys(d.defs)[0]||d.sys||(d.reports[0]||{}).row||'').charAt(0);
         const F=FORMS.find(x=>x.pre===pre);

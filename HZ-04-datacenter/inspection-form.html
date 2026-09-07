@@ -282,6 +282,10 @@ body.fromDash #dvInbox,body.fromDash .dv-sec.wait{display:none}
 /* ===== /MODAL-V3 ===== */
 .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}#logWrap,#dvLog{overflow-x:auto}
 @media(max-width:680px){.tw>table{min-width:560px}#logWrap table,#dvLog table{min-width:640px}}
+.occbar{max-width:1020px;margin:14px auto 0;background:#fff7e6;border:1px solid var(--gold);border-inline-start:5px solid var(--gold);padding:10px 14px;font-size:12px}
+.occbar .occ-h{font-weight:700;color:var(--green);margin-bottom:6px}.occbar .occ-h span{background:var(--red);color:#fff;border-radius:10px;padding:0 8px;font-size:11px}
+.occbar .occ-r{padding:6px 0;border-top:1px dotted var(--line);display:flex;gap:10px;align-items:center;flex-wrap:wrap}.occbar .occ-r.sel{background:#fdf9ec}.occbar .occ-r div{flex:1;min-width:200px}
+@media print{.occbar{display:none}}
 </style>
 </head>
 <body>
@@ -350,6 +354,7 @@ body.fromDash #dvInbox,body.fromDash .dv-sec.wait{display:none}
   <div id="ibDone"></div>
 </div>
 
+<div id="occBar" class="occbar" hidden></div>
 <main class="sheet">
   <header class="head">
     <div>
@@ -799,8 +804,23 @@ function doLogin(){
   /* المكتب الاستشاري يدخل ووضع الاعتماد مفعّل */
   if(ROLE==='cons'&&!document.body.classList.contains('cns'))togCns();
   drawInbox();startRound();
-  setTimeout(checkRoundAge,400);
+  setTimeout(checkRoundAge,400);drawOcc();
 }
+/* ===== بلاغات الشاغلين (سجل مركز السلامة) المحالة إلى هذا المكان ===== */
+const OKEY='ipa-occ', MYHZ=(location.pathname.match(/HZ-\d\d/)||[''])[0];
+let OCC_SEL='';
+function occAll(){try{return JSON.parse(localStorage.getItem(OKEY))||{seq:0,reports:[]}}catch(e){return {seq:0,reports:[]}}}
+function drawOcc(){
+  const bar=$('occBar');if(!bar)return;
+  if(['tech','safety'].indexOf(ROLE)<0||!MYHZ){bar.hidden=true;return;}
+  const list=occAll().reports.filter(o=>o.hz===MYHZ&&(o.status==='assigned'||o.status==='new'));
+  bar.hidden=!list.length;if(!list.length)return;
+  bar.innerHTML='<div class="occ-h">بلاغات شاغلين لهذا المكان <span>'+AR(list.length)+'</span>'+(ROLE==='tech'?' — اختر البلاغ هنا، ثم علّم البند المطابق ✗ وافتح عليه بلاغاً':'')+'</div>'
+    +list.map(o=>'<div class="occ-r'+(OCC_SEL===o.id?' sel':'')+'"><b>'+escH(o.id)+'</b> · '+escH(o.at)+(o.loc?' · '+escH(o.loc):'')+'<div>'+escH(o.desc)+(o.note?' <span class="muted">— ملاحظة المركز: '+escH(o.note)+'</span>':'')+'</div>'
+      +(ROLE==='tech'?'<button type="button" class="act" onclick="occPick(\''+o.id+'\')">'+(OCC_SEL===o.id?'✓ مختار — افتح بلاغاً على البند':'اربطه بالبلاغ التالي')+'</button>':'')+'</div>').join('');
+}
+function occPick(id){OCC_SEL=OCC_SEL===id?'':id;drawOcc();}
+function occLink(id,row){const a=occAll();const o=a.reports.find(x=>x.id===id);if(!o)return;o.status='linked';o.link={key:AKEY,row};o.linkedAt=stamp();try{localStorage.setItem(OKEY,JSON.stringify(a))}catch(e){}OCC_SEL='';drawOcc();}
 /* جولة مفتوحة من يوم سابق: يُسأل من يعلّم البنود عن بدء جولة جديدة */
 function checkRoundAge(){
   if(['tech','cons','safety'].indexOf(ROLE)<0)return;
@@ -1092,6 +1112,7 @@ function openM(rowId,isEdit){
   $('mId').textContent=EDIT?EDIT.id:'ب — '+AR(String(SEQ+1).padStart(2,'0'));
   $('ov').dataset.row=rowId;
   resetM(); if(EDIT) fillM(EDIT);
+  if(!EDIT&&OCC_SEL){const o=occAll().reports.find(x=>x.id===OCC_SEL);if(o){$('mDesc').value='بلاغ شاغل '+o.id+(o.loc?' ('+o.loc+')':'')+': '+o.desc;$('mWhen').value=o.at||'';STATE.occ=o.id;}}
   lockModalByRole();
   $('ov').classList.add('on');document.body.style.overflow='hidden';
   renderModalForRole();$('ov').scrollTop=0;
@@ -1255,7 +1276,7 @@ function sendMain(){
 }
 $('ov').addEventListener('click',e=>{if(e.target.closest('.opt'))setTimeout(refreshHint,0);});
 function resetM(){
-  STATE={levels:{},closedAt:null,path:'إداري',backFrom:0,fork:'',hist:[],cycleAt:''};
+  STATE={levels:{},closedAt:null,path:'إداري',backFrom:0,fork:'',hist:[],cycleAt:'',occ:''};
   $('mDesc').value='';$('mOos').checked=false;$('blkOos').classList.remove('on');
   $('ov').querySelectorAll('.opt').forEach(o=>{o.classList.remove('sel');o.querySelector('input').checked=false});
   $('ov').querySelectorAll('textarea').forEach(t=>t.value='');
@@ -1281,7 +1302,7 @@ function fillM(r){
   STATE.levels=JSON.parse(JSON.stringify(r.levels||{}));
   if(r.levels&&r.levels[1]&&r.levels[1].up)showEsc(true);
   STATE.path=r.path||'إداري';STATE.closedAt=null;STATE.backFrom=r.backFrom||0;
-  STATE.hist=JSON.parse(JSON.stringify(r.hist||[]));STATE.cycleAt=r.cycleAt||'';
+  STATE.hist=JSON.parse(JSON.stringify(r.hist||[]));STATE.cycleAt=r.cycleAt||'';STATE.occ=r.occ||'';
   Object.keys(STATE.levels).map(Number).sort().forEach(n=>{
     const L=STATE.levels[n],l=$('ov').querySelector(`.lvl[data-lvl="${n}"]`);if(!l)return;
     l.classList.add('show');
@@ -1559,7 +1580,7 @@ function saveM(keepOpen){
     sys:inf.sys,item:inf.txt,ref:inf.ref,
     finder,finderName:($('insN').value||'—')+($('offN').value?' — '+$('offN').value:''),desc:$('mDesc').value||'—',
     imp:imp?imp.dataset.imp:'',sev:imp?imp.dataset.sev:'—',due:imp?imp.dataset.due:'—',
-    when:$('mWhen').value,sent:SENT,cycleAt:STATE.cycleAt||'',
+    when:$('mWhen').value,sent:SENT,cycleAt:STATE.cycleAt||'',occ:STATE.occ||'',
     oos:$('mOos').checked,oosFrom:$('oosFrom').value,oosTo:$('oosTo').value,
     need:$('needTxt').value||'—',path:STATE.path,
     levels:STATE.levels,watch:watchLines(),
@@ -1580,6 +1601,7 @@ function saveM(keepOpen){
   }
   const i=REPORTS.findIndex(r=>r.row===row);
   if(i>=0)REPORTS[i]=rec;else REPORTS.push(rec);
+  if(rec.occ&&!EDIT)occLink(rec.occ,rec.row);
   refreshRows();renderLog();drawInbox();autoSave();
   if(keepOpen===true){ $('mId').textContent=rec.id; EDIT=rec; return; }
   closeM();
