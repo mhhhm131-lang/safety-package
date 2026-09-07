@@ -843,7 +843,7 @@ function myItems(){
     if(R==='tech')   return !closed&&(last===0||!!r.backFrom);
     if(R==='fm')     return !closed&&last===1&&r.levels[1].up;
     if(R==='adm')    return !closed&&last===2&&r.levels[2].up;
-    if(R==='exec')   return !closed&&((last===3&&r.levels[3].up)||(r.path&&r.path!=='إداري'&&last<4));
+    if(R==='exec')   return !closed&&((last===3&&r.levels[3].up)||(r.path&&r.path!=='إداري'&&last>0&&last<4&&!!r.levels[last].up));
     if(R==='safety') return !closed;
     return false;
   });
@@ -856,7 +856,7 @@ function isClosed(r){const L=r.levels||{};return Object.keys(L).some(n=>!L[n].up
 /* الساعات بعد انتهاء المهلة (موجب = متأخر، سالب = متبقٍ)، أو null إن لم تنطبق */
 function overdue(r){
   if(isClosed(r))return null;const h=DUE_H[r.due];if(!h)return null;
-  const d=parseStamp(r.when)||parseStamp(r.sent);if(!d)return null;
+  const d=parseStamp(r.cycleAt)||parseStamp(r.when)||parseStamp(r.sent);if(!d)return null;
   return (Date.now()-d.getTime())/36e5-h;
 }
 function dueBadge(r){const o=overdue(r);if(o===null)return '';
@@ -1068,6 +1068,7 @@ function closeM(){const rr=REPORTS.find(r=>r.row===$('ov').dataset.row);if(rr)ma
 
 /* ===== MODAL-V3: بلاغاتي · نقطة جديد · متابعة مسؤول السلامة للمخاطَب · صُعّد رقابياً فوقك ===== */
 const SEENKEY='ipa-seen', RLVL={tech:1,fm:2,adm:3,exec:4};
+const histLv=H=>(H&&H.levels)||H||{};
 function sigOf(r){return JSON.stringify([Object.keys(r.levels||{}).sort(),r.status,r.path,!!r.reopen,(r.watch||[]).filter(o=>o.w||o.r||o.p).length,(r.hist||[]).length,r.oosTo||'']);}
 function seenMap(){try{return JSON.parse(localStorage.getItem(SEENKEY))||{}}catch(e){return {}}}
 function markSeen(r){if(!ROLE||!r)return;const m=seenMap();(m[ROLE]=m[ROLE]||{})[AKEY+'|'+r.row]=sigOf(r);try{localStorage.setItem(SEENKEY,JSON.stringify(m))}catch(e){}}
@@ -1083,7 +1084,7 @@ function myDone(){
     if(ROLE==='tech')return !!r.sent;
     /* وصلني: قررتُ فيه، أو صُعّد إليّ، أو وصل الإدارة رقابياً */
     const reached=L=>!!(L&&(L[lv]||(L[lv-1]&&L[lv-1].up)))||(lv===4&&!!r.path&&r.path!=='إداري');
-    return reached(r.levels)||(r.hist||[]).some(reached);
+    return reached(r.levels)||(r.hist||[]).some(H=>reached(histLv(H)));
   });
 }
 function roleBadges(r){
@@ -1121,7 +1122,7 @@ function fillCard(){
   if(!r)return;
   const d=dispStatus(r); st.className='badge '+d.cls; st.textContent=d.t;
   const backFrom=(r.backFrom&&!(r.levels&&r.levels[1]))?r.backFrom:0;
-  if(backFrom){const L=r.levels&&r.levels[backFrom];note.innerHTML='<div class="back-note">↩ أُعيد إليك للتنفيذ — وفّر المطلوب '+LNAME[backFrom]+(L&&L.note?': «'+escH(L.note)+'»':'')+'</div>';}
+  if(backFrom){const HL=histLv((r.hist||[]).slice(-1)[0]),L=(r.levels&&r.levels[backFrom])||HL[backFrom];note.innerHTML='<div class="back-note">↩ أُعيد إليك للتنفيذ — وفّر المطلوب '+LNAME[backFrom]+(L&&L.note?': «'+escH(L.note)+'»':'')+'</div>';}
   else if(r.reopen&&!Object.keys(r.levels||{}).length)note.innerHTML='<div class="back-note">↩ أُعيد فتح البلاغ من مسؤول السلامة — الإصلاح السابق غير كافٍ</div>';
   const myL=RLVL[ROLE], wf=myL?watchFor(r,myL):null;
   if(wf)note.innerHTML+='<div class="note-w">⚠ متابعة من مسؤول السلامة '+escH(wf.d)+': '+escH(wf.r||'')+(wf.p?' — الرد المسجّل: '+escH(wf.p):'')+'</div>';
@@ -1142,12 +1143,13 @@ function fillCard(){
 function pathHTML(){
   const lv=L=>Object.keys(L||{}).map(Number).sort().map(n=>'<div class="r"><span>المستوى '+AR(n)+' — '+LNAME[n]+'</span><span>'+(L[n].up?'↑ صُعّد':(L[n].back?'↩ وُفِّر المطلوب وأُعيد للفني':'✓ أُغلق'))+' · '+escH(L[n].note||'—')+' · '+escH(L[n].by||'')+' '+escH(L[n].date||'')+'</span></div>').join('');
   let h='';
-  if(EDIT&&EDIT.hist&&EDIT.hist.length)h+=EDIT.hist.map((H,i)=>'<div class="r"><span><b>مسار سابق '+AR(i+1)+'</b> (قبل إعادة الفتح)</span><span></span></div>'+lv(H)).join('')+'<div class="r"><span><b>بعد إعادة الفتح</b></span><span></span></div>';
+  const HH=STATE.hist&&STATE.hist.length?STATE.hist:(EDIT&&EDIT.hist)||[];
+  if(HH.length)h+=HH.map((H,i)=>'<div class="r"><span><b>دورة سابقة '+AR(i+1)+'</b> ('+(H.why==='back'?'أُعيد للفني وبدأت دورة جديدة':'قبل إعادة الفتح')+(H.at?' — '+escH(H.at):'')+')</span><span></span></div>'+lv(histLv(H))).join('')+'<div class="r"><span><b>الدورة الحالية</b>'+(STATE.cycleAt?' <span class="muted">منذ '+escH(STATE.cycleAt)+'</span>':'')+'</span><span></span></div>';
   h+=lv(STATE.levels);
   const w=watchLines().map(o=>'<div class="r"><span>متابعة '+escH(o.d)+'</span><span>'+escH(o.w)+' — '+escH(o.r)+(o.p?' — الرد: '+escH(o.p):'')+'</span></div>').join('');
   if(w)h+='<div class="r"><span><b>متابعة مسؤول السلامة</b></span><span></span></div>'+w;
   if(STATE.path&&STATE.path!=='إداري')h+='<div class="r"><span>مسار الوصول</span><span>'+escH(STATE.path)+'</span></div>';
-  const n=Object.keys(STATE.levels||{}).length+(EDIT&&EDIT.hist?EDIT.hist.reduce((a,H)=>a+Object.keys(H).length,0):0);
+  const n=Object.keys(STATE.levels||{}).length+HH.reduce((a,H)=>a+Object.keys(histLv(H)).length,0);
   $('pathSum').textContent='عرض المسار'+(n?' ('+AR(n)+' '+(n===1?'خطوة':'خطوات')+')':'');
   return h||'<div class="muted">لم يُسجَّل قرار بعد</div>';
 }
@@ -1219,7 +1221,7 @@ function sendMain(){
 }
 $('ov').addEventListener('click',e=>{if(e.target.closest('.opt'))setTimeout(refreshHint,0);});
 function resetM(){
-  STATE={levels:{},closedAt:null,path:'إداري',backFrom:0,fork:''};
+  STATE={levels:{},closedAt:null,path:'إداري',backFrom:0,fork:'',hist:[],cycleAt:''};
   $('mDesc').value='';$('mOos').checked=false;$('blkOos').classList.remove('on');
   $('ov').querySelectorAll('.opt').forEach(o=>{o.classList.remove('sel');o.querySelector('input').checked=false});
   $('ov').querySelectorAll('textarea').forEach(t=>t.value='');
@@ -1245,6 +1247,7 @@ function fillM(r){
   STATE.levels=JSON.parse(JSON.stringify(r.levels||{}));
   if(r.levels&&r.levels[1]&&r.levels[1].up)showEsc(true);
   STATE.path=r.path||'إداري';STATE.closedAt=null;STATE.backFrom=r.backFrom||0;
+  STATE.hist=JSON.parse(JSON.stringify(r.hist||[]));STATE.cycleAt=r.cycleAt||'';
   Object.keys(STATE.levels).map(Number).sort().forEach(n=>{
     const L=STATE.levels[n],l=$('ov').querySelector(`.lvl[data-lvl="${n}"]`);if(!l)return;
     l.classList.add('show');
@@ -1385,8 +1388,10 @@ function backToTech(from){
   l1.querySelector('.lvl-n').className='lvl-n act';
   const st=l1.querySelector('.lvl-s');st.className='lvl-s';
   st.textContent='أُعيد للتنفيذ — وُفِّر المطلوب من المستوى '+AR(from);
-  delete STATE.levels[1];
-  STATE.backFrom=from;
+  /* دورة جديدة: يُؤرشف المسار كله (بقرار الإعادة وتوقيع الفني السابق) وتبدأ المهلة من الآن */
+  STATE.hist=(STATE.hist||[]).concat([{levels:JSON.parse(JSON.stringify(STATE.levels)),why:'back',at:stamp()}]);
+  STATE.levels={};
+  STATE.backFrom=from;STATE.cycleAt=stamp();
 }
 function saveLvl(n){
   const l=$('ov').querySelector(`.lvl[data-lvl="${n}"]`);
@@ -1520,7 +1525,7 @@ function saveM(keepOpen){
     sys:inf.sys,item:inf.txt,ref:inf.ref,
     finder,finderName:($('insN').value||'—')+($('offN').value?' — '+$('offN').value:''),desc:$('mDesc').value||'—',
     imp:imp?imp.dataset.imp:'',sev:imp?imp.dataset.sev:'—',due:imp?imp.dataset.due:'—',
-    when:$('mWhen').value,sent:SENT,
+    when:$('mWhen').value,sent:SENT,cycleAt:STATE.cycleAt||'',
     oos:$('mOos').checked,oosFrom:$('oosFrom').value,oosTo:$('oosTo').value,
     need:$('needTxt').value||'—',path:STATE.path,
     levels:STATE.levels,watch:watchLines(),
@@ -1533,9 +1538,9 @@ function saveM(keepOpen){
     cls:closed?'b-done':(backFrom?'b-esc':(last>=2?'b-open':'b-esc')),
     backFrom,
     m7:M7OK?'تحقق':'لم يتحقق'};
-  if(EDIT&&EDIT.hist)rec.hist=EDIT.hist;
+  if(STATE.hist&&STATE.hist.length)rec.hist=STATE.hist;
   if(rec.reopen){
-    if(closed&&Object.keys(rec.levels).length){rec.hist=(rec.hist||[]).concat([rec.levels]);rec.levels={};rec.backFrom=0;rec.path='إداري';rec.stuck=false;rec.why='';STATE.levels={};STATE.closedAt=null;STATE.path='إداري';}
+    if(closed&&Object.keys(rec.levels).length){rec.hist=(rec.hist||[]).concat([{levels:rec.levels,why:'reopen',at:stamp()}]);rec.cycleAt=stamp();rec.levels={};rec.backFrom=0;rec.path='إداري';rec.stuck=false;rec.why='';STATE.levels={};STATE.hist=rec.hist;STATE.cycleAt=rec.cycleAt;STATE.closedAt=null;STATE.path='إداري';}
     if(!Object.keys(rec.levels).length){rec.status='أُعيد فتحه — إصلاح غير كافٍ';rec.cls='b-open';rec.owner=LNAME[1];}
     else rec.reopen=false;
   }
@@ -1564,7 +1569,8 @@ function renderLog(){
    <td>${r.owner}</td><td class="c muted">${r.m7}</td></tr>`).join('')}</tbody></table>`;
   $('dvLog').innerHTML=$('logWrap').innerHTML;
   $('printDetails').innerHTML='<h2>ملحق · تفاصيل البلاغات ومسار التصعيد</h2>'+REPORTS.map(r=>{
-    const lv=Object.keys(r.levels).map(Number).sort().map(n=>`<div class="r"><span>المستوى ${AR(n)} — ${LNAME[n]}</span><span>${r.levels[n].up?'↑ صُعّد':(r.levels[n].back?'↩ وُفِّر المطلوب وأُعيد للفني':'✓ أُغلق')} · ${r.levels[n].note||'—'} · ${r.levels[n].by||''} ${r.levels[n].date||''}</span></div>`).join('');
+    const lvOf=L=>Object.keys(L||{}).map(Number).sort().map(n=>`<div class="r"><span>المستوى ${AR(n)} — ${LNAME[n]}</span><span>${L[n].up?'↑ صُعّد':(L[n].back?'↩ وُفِّر المطلوب وأُعيد للفني':'✓ أُغلق')} · ${escH(L[n].note||'—')} · ${escH(L[n].by||'')} ${escH(L[n].date||'')}</span></div>`).join('');
+    const lv=(r.hist||[]).map((H,i)=>`<div class="r"><span><b>دورة سابقة ${AR(i+1)}</b> — ${H.why==='back'?'أُعيد للفني':'قبل إعادة الفتح'}${H.at?' · '+escH(H.at):''}</span><span></span></div>`+lvOf(histLv(H))).join('')+((r.hist||[]).length?`<div class="r"><span><b>الدورة الحالية</b>${r.cycleAt?' · منذ '+escH(r.cycleAt):''}</span><span></span></div>`:'')+lvOf(r.levels);
     const w=r.watch.map(o=>`<div class="r"><span>متابعة ${o.d||''}</span><span>${o.w||''} — ${o.r||''} — الرد: ${o.p||''}</span></div>`).join('');
     return `<div class="pd"><h4>${r.id} — ${r.item} <span class="badge ${r.cls}">${r.status}</span></h4>
       <div class="r"><span>النظام</span><span>${r.sys} · ${r.ref}</span></div>

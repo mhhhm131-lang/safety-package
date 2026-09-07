@@ -353,7 +353,7 @@ button{font-family:inherit}
 
   <!-- بانتظار قرارك -->
   <div id="secQ">
-    <div class="h"><h2>بانتظار قرارك</h2><span class="cnt" id="qN">٠</span><em id="qHint"></em></div>
+    <div class="h"><h2 id="qTitle">بانتظار قرارك</h2><span class="cnt" id="qN">٠</span><em id="qHint"></em></div>
     <div class="cards" id="qBody"></div>
   </div>
 
@@ -456,7 +456,7 @@ function parseStamp(s){const m=EN(s).match(/(\d{4})\/(\d{2})\/(\d{2})\D+(\d{2}):
 function isClosed(r){const L=r.levels||{};return Object.keys(L).some(n=>!L[n].up&&!L[n].back);}
 function overdue(r){
   if(isClosed(r))return null;const h=DUE_H[r.due];if(!h)return null;
-  const d=parseStamp(r.when)||parseStamp(r.sent);if(!d)return null;
+  const d=parseStamp(r.cycleAt)||parseStamp(r.when)||parseStamp(r.sent);if(!d)return null;
   return (Date.now()-d.getTime())/36e5-h;
 }
 const byOverdue=(a,b)=>{const x=overdue(a),y=overdue(b);return (y===null?-1e9:y)-(x===null?-1e9:x);};
@@ -475,7 +475,7 @@ function mine(r){
   if(R==='tech')   return !closed&&(last===0||!!r.backFrom);
   if(R==='fm')     return !closed&&last===1&&r.levels[1].up;
   if(R==='adm')    return !closed&&last===2&&r.levels[2].up;
-  if(R==='exec')   return !closed&&((last===3&&r.levels[3].up)||(r.path&&r.path!=='إداري'&&last<4));
+  if(R==='exec')   return !closed&&((last===3&&r.levels[3].up)||(r.path&&r.path!=='إداري'&&last>0&&last<4&&!!r.levels[last].up));
   if(R==='safety') return !closed;
   return false;
 }
@@ -484,7 +484,7 @@ function mineDone(r){
   const lv=RLVL[ROLE]; if(!lv||isClosed(r)||mine(r))return false;
   if(ROLE==='tech')return !!r.sent;
   const reached=L=>!!(L&&(L[lv]||(L[lv-1]&&L[lv-1].up)))||(lv===4&&!!r.path&&r.path!=='إداري');
-  return reached(r.levels)||(r.hist||[]).some(reached);
+  return reached(r.levels)||(r.hist||[]).some(H=>reached((H&&H.levels)||H||{}));
 }
 function sigOf(r){return JSON.stringify([Object.keys(r.levels||{}).sort(),r.status,r.path,!!r.reopen,(r.watch||[]).filter(o=>o.w||o.r||o.p).length,(r.hist||[]).length,r.oosTo||'']);}
 function isNew(r){let m={};try{m=JSON.parse(localStorage.getItem(SEENKEY))||{}}catch(e){}const s=(m[ROLE]||{})[r._f.key+'|'+r.row];return s!==undefined&&s!==sigOf(r);}
@@ -562,6 +562,7 @@ function draw(){
   const q=ALL.filter(mine).sort(byNewThenOverdue);
   const qod=q.filter(r=>overdue(r)>=0).length, qnew=q.filter(isNew).length;
   $('secQ').style.display=(ROLE==='cons')?'none':'';
+  $('qTitle').textContent=ROLE==='safety'?'قيد المتابعة — كل بلاغ مفتوح':'بانتظار قرارك';
   $('qN').textContent=AR(q.length);$('qN').className='cnt'+(qod?' red':'');
   $('qHint').textContent=qod?AR(qod)+' منها متجاوز المهلة':'';
   $('qBody').innerHTML=q.length?q.map(r=>row(r)).join('')
@@ -644,7 +645,7 @@ function draw(){
 function pick(k){KSEL=(KSEL===k)?'':k;draw();}
 
 /* ================= ملف المكان وملف النظام ================= */
-const FREQ_D={'يومي':1,'أسبوعي':7,'نصف شهري':15,'شهري':30,'ربع سنوي':91,'نصف سنوي':182,'سنوي':365};
+const FREQ_D={'يومي':1,'أسبوعي':7,'نصف شهري':15,'شهري':30,'ربع سنوي':91,'فصلي':91,'نصف سنوي':182,'سنوي':365};
 const DAY=864e5;
 const fmtD=s=>s?AR(String(s).replace(/-/g,'/')):'—';
 function toDate(s){if(!s)return null;const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s);return m?new Date(+m[1],+m[2]-1,+m[3]):parseStamp(s);}
@@ -749,7 +750,7 @@ function renderSystem(hz,placeName,s){
 }
 /* ================= مهامي: الجولات المستحقة على دوري ================= */
 const WHO_ROLE={tech:['الفني'],fm:['المرافق والصيانة'],safety:['مسؤول السلامة','المناوب','المشرف'],cons:['المكتب']};
-const FREQ_ALL=Object.assign({'فصلي':91},FREQ_D);
+const FREQ_ALL=FREQ_D;
 function taskOwner(who){return Object.keys(WHO_ROLE).filter(r=>WHO_ROLE[r].some(w=>(who||'').indexOf(w)>=0));}
 /* كل مهمة: مكان × نظام × سطر جدول دوري له دورية معروفة */
 function myTasks(){
@@ -867,10 +868,11 @@ function placeGet(hz){
 }
 function placeSave(hz,p){const a=placeAll();a[hz]=p;try{localStorage.setItem(PKEY,JSON.stringify(a))}catch(e){}}
 function unitList(hz,p){
-  if(hz===HUB)return deptsAll().filter(d=>d.place===HUB).map(d=>({uid:d.id,dept:d.id,label:d.name,mgr:d.mgr}));
-  const d=deptsAll().find(x=>x.place===hz),u=p.units._||{};
-  const dd=u.dept?deptById(u.dept):d;
-  return [{uid:'_',dept:dd?dd.id:'',label:dd?dd.name:'الإدارة المشغّلة للمكان',mgr:dd?dd.mgr:''}];
+  const ds=deptsAll().filter(d=>d.place===hz);
+  if(hz===HUB)return ds.map(d=>({uid:d.id,dept:d.id,label:d.name,mgr:d.mgr}));
+  if(!ds.length){const u=p.units._||{};const dd=u.dept?deptById(u.dept):null;return [{uid:'_',dept:dd?dd.id:'',label:dd?dd.name:'الإدارة المشغّلة للمكان',mgr:dd?dd.mgr:''}];}
+  /* إدارة أو أكثر تشغل المكان: وحدة لكل إدارة، والوحدة القديمة «_» تبقى للأولى */
+  return ds.map((d,i)=>({uid:(i===0&&p.units._&&!p.units[d.id])?'_':d.id,dept:d.id,label:d.name,mgr:d.mgr}));
 }
 function unitGet(p,uid){return p.units[uid]||(p.units[uid]={team:[],nom:{},appr:{},hr:{}});}
 const canPlans=()=>ROLE==='safety'||ROLE==='adm';
@@ -910,16 +912,16 @@ function readiness(hz,S){
   const inspOk=S.filter(x=>x.st==='ok').length,drillD=daysSince(pl.drill);
   const states=units.map(un=>unitState(unitGet(p,un.uid)));
   const okN=states.filter(s=>s==='appr'||s==='hr').length,nomN=states.filter(s=>s==='nom').length;
-  let t4;
-  if(hz===HUB)t4={cls:!units.length?'bad':(okN===units.length?'ok':(okN||nomN?'warn':'bad')),v:AR(okN)+' من '+AR(units.length)+' إدارة لها فريق معتمد',d:(nomN?AR(nomN)+' مرشَّح بانتظار الاعتماد · ':'')+'فريق لكل إدارة في المكاتب'};
+  let t4;const multi=hz===HUB||units.length>1;
+  if(multi)t4={cls:!units.length?'bad':(okN===units.length?'ok':(okN||nomN?'warn':'bad')),v:AR(okN)+' من '+AR(units.length)+' إدارة لها فريق معتمد',d:(nomN?AR(nomN)+' مرشَّح بانتظار الاعتماد · ':'')+'فريق لكل إدارة تشغل المكان'};
   else{const u=unitGet(p,units[0].uid),st=unitState(u);t4={cls:UST[st][0],v:UST[st][1],d:AR(u.team.filter(t=>t&&t.name).length)+' من ٤ أدوار بأسماء'+(u.nom.by?' · ترشيح: '+esc(u.nom.by):'')};}
   const C=[
     {l:'خطة السلامة',cls:pl.sa?'ok':'bad',v:pl.sa?'معتمدة':'غير معتمدة',d:pl.sa?'بتاريخ '+fmtD(pl.sa)+(pl.saBy?' · '+esc(pl.saBy):''):'تُعتمد بقرار الإدارة العليا'},
     {l:'خطة الاستجابة',cls:!pl.ra?'bad':(drillD===null||drillD>365?'warn':'ok'),v:!pl.ra?'غير معتمدة':(drillD===null?'معتمدة — بلا تمرين':(drillD>365?'معتمدة — التمرين قديم':'معتمدة ومُمرَّنة')),d:(pl.ra?'اعتُمدت '+fmtD(pl.ra):'')+(pl.drill?' · آخر تمرين '+fmtD(pl.drill):' · لم يُنفَّذ تمرين')},
     {l:'نماذج الفحص',cls:!S.length?'bad':(inspOk===S.length?'ok':'warn'),v:!S.length?'لم تُفعَّل':AR(inspOk)+' من '+AR(S.length)+' في موعده',d:S.length?'تُحسب تلقائياً من سجل الجولات':'افتح النموذج وسجّل أول جولة'},
-    Object.assign({l:hz===HUB?'الفرق الأولية':'الفريق الأولي'},t4)
+    Object.assign({l:multi?'الفرق الأولية':'الفريق الأولي'},t4)
   ];
-  const teams=hz===HUB
+  const teams=multi
     ?`<div class="h" style="margin-top:14px"><h2>الفرق الأولية بحسب الإدارة</h2><span class="cnt">${AR(units.length)}</span><em>كل إدارة ترشّح فريقها الأربعة · <a href="#depts" style="color:var(--gold2)">الإدارات والهيكل</a></em></div>${units.map(un=>unitRow(hz,un,unitGet(p,un.uid))).join('')||'<div class="empty">لا إدارات مسجّلة في هذا المكان</div>'}`
     :unitFull(hz,units[0],unitGet(p,units[0].uid));
   return `<div class="h"><h2>الجاهزية</h2><em>الخطتان والفحص والفريق — ما فُعّل فعلاً لا ما وُثّق</em>${canPlans()?`<button class="editl" onclick="openPlansEdit('${hz}')">تحرير الخطتين</button>`:''}</div>
@@ -1002,16 +1004,16 @@ function renderMyDept(){
   return {named:u.team.filter(t=>t&&t.name).length,st:unitState(u)};
 }
 
-function route(){
+function route(scroll){
   if(!ROLE)return;
   const h=location.hash.replace(/^#/,''),q={};
   h.split('&').forEach(p=>{const i=p.indexOf('=');if(i>0)q[decodeURIComponent(p.slice(0,i))]=decodeURIComponent(p.slice(i+1));});
   const ok=q.place?renderPlace(q.place,q.sys):(('depts' in q)||h==='depts')?renderDepts():false;
   $('pf').hidden=!ok;$('main').hidden=ok;
   if((q.place||h==='depts')&&!ok)location.hash='';
-  window.scrollTo({top:0});
+  if(scroll===true)window.scrollTo({top:0});
 }
-window.addEventListener('hashchange',route);
+window.addEventListener('hashchange',()=>route(true));
 
 /* ================= استيراد جولات من أجهزة أخرى ================= */
 $('fpick').addEventListener('change',e=>{
