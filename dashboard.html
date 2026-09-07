@@ -309,9 +309,18 @@ function stamp(){const d=new Date(),p=n=>String(n).padStart(2,'0');return AR(`${
 
 /* ================= الرسم ================= */
 function link(r){return r._f.file+'#open='+encodeURIComponent(r.row);}
+/* الحالة المعروضة: ٤ عناوين فقط — نفس دالة النماذج، والنص المخزّن لا يتغير */
+function dispStatus(r){
+  if(isClosed(r))return {t:'مُغلق',cls:'b-done'};
+  const o=overdue(r);
+  if(o!==null&&o>=0)return {t:'⏰ متجاوز المهلة منذ '+AR(Math.floor(o))+' س — لدى '+esc(r.owner||''),cls:'b-open'};
+  if(r.reopen||(r.backFrom&&!(r.levels&&r.levels[1])))return {t:'↩ أُعيد للفني',cls:'b-esc'};
+  return {t:'مفتوح لدى '+esc(r.owner||''),cls:r.cls||'b-esc'};
+}
 function row(r){
+  const d=dispStatus(r), o=overdue(r);
   return `<div class="row">
-    <span class="badge ${r.cls}">${esc(r.status)}</span>${dueBadge(r)}
+    <span class="badge ${d.cls}">${d.t}</span>${o!==null&&o<0?dueBadge(r):''}
     <div class="t"><span class="loc">${r._f.hz} · ${esc(r._f.name)}</span><b>${esc(r.id)}</b> — ${esc(r.item)}
       <div class="muted">${esc(r.sys)} · ${esc(r.sev)}${r.due&&r.due!=='—'?' · المهلة '+esc(r.due):''}${r.need&&r.need!=='—'?' · المطلوب: '+esc(r.need):''}${r.oos?' · <b style="color:var(--red)">خارج الخدمة</b>':''}${r.path&&r.path!=='إداري'?' · <span class="badge b-watch">تصعيد رقابي</span>':''}</div></div>
     <a class="go" href="${link(r)}">فتح البلاغ</a>

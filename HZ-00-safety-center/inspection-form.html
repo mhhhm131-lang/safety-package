@@ -213,6 +213,65 @@ body.dv.dvForm #dview{display:none}
 .sign3 .h{font-weight:700;color:var(--green);font-size:11.5px;margin-bottom:4px}
 .sign3 span{display:block;color:var(--muted);font-size:10px;margin-bottom:24px}
 @media(max-width:680px){.sign3{grid-template-columns:1fr}.sign3 div{border-inline-start:1px solid var(--line)}}
+
+/* ===== MODAL-V2 ===== طبقة العرض: لكل دور شاشته — الـ DOM القديم يبقى كطبقة بيانات */
+#ov .sec,#ov .lvl-h,#ov .sig,#ov .btn-sm,#ov .lockmsg,#ov .roflag,#ov .sendbox,#ov #gNext,#ov #gBtn,#ov #whenBox,#ov #oosSection>label.k,#ov .gate>b,#ov .gate>br,#ov .blk[data-close]>.muted,#ov .blk[data-close]>h4{display:none!important}
+#ov .lvl,#ov .lvl-b{border:0;margin:0;padding:0}
+#ov .m7{display:none}
+body[data-role="exec"] #ov .m7,body[data-role="safety"] #ov .m7{display:flex}
+body[data-role="tech"] #ov .ref,body[data-role="tech"] #ov .lawref{display:none}
+#ov .m-head .badge{font-size:10.5px}
+#ov .mc{border:1px solid var(--line);border-inline-start:5px solid var(--gold);background:#fcfbf9;padding:10px 12px}
+#ov .mc .ro{background:transparent;border:0;padding:0;font-weight:700;font-size:13px}
+#ov .mc .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+#ov .mc .kv{display:flex;gap:8px;padding:4px 0;border-top:1px dotted var(--line);margin-top:6px;font-size:12px}
+#ov .mc .kv span:first-child{color:var(--muted);min-width:72px;flex:none}
+#ov .back-note{background:#fdf6ea;border:1px solid var(--amber);color:var(--amber);font-weight:700;padding:6px 10px;margin-top:8px;font-size:12px}
+#ov .q{font-size:14px;font-weight:900;color:var(--green);margin:16px 0 8px}
+#ov #forkBox{grid-template-columns:1fr 1fr;gap:12px}
+#ov .fork-btn{font-family:inherit;text-align:start;background:#fff;border:2px solid var(--line);padding:14px 16px;cursor:pointer;border-radius:4px}
+#ov .fork-btn:hover{border-color:var(--gold);background:#fdf9ec}
+#ov .fork-btn .t{display:block;font-size:14px;font-weight:900;color:var(--green)}
+#ov .fork-btn.esc .t{color:var(--red)}
+#ov .fork-btn .d{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+#ov #chosen{gap:10px;align-items:center;margin-top:14px;font-size:12.5px;font-weight:700;color:var(--green)}
+#ov #chosen a{color:var(--muted);font-size:11px;font-weight:400}
+#ov #pathBox{margin-top:10px;font-size:12px}
+#ov #pathBox summary{cursor:pointer;color:var(--green);font-weight:700}
+#ov #pathBox .r{display:flex;gap:8px;padding:3px 0;border-bottom:1px dotted var(--line)}
+#ov #pathBox .r span:first-child{color:var(--muted);min-width:150px;flex:none}
+#ov #gateSteps{margin:6px 0 10px}
+#ov .stp{display:flex;gap:10px;align-items:center;padding:6px 0;border-bottom:1px dotted var(--line);font-size:12px}
+#ov .stp-n{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--muted);color:var(--muted);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none}
+#ov .stp.done .stp-n{background:var(--green);border-color:var(--green);color:#fff}
+#ov .stp-s{margin-inline-start:auto;color:var(--muted);font-size:11px;text-align:end}
+#ov .stp.done .stp-s{color:var(--green);font-weight:700}
+#ov .savebar{gap:10px}
+#ov #actHint{flex:1;font-size:11.5px;color:var(--muted)}
+#ov .savebar .btn-main{width:auto;flex:none;min-width:150px;margin:0}
+#ov .lvl textarea{margin-top:9px}
+#ov .gate-txt{display:none}
+#ov #escOnly>.muted:first-child{font-size:12.5px;font-weight:700;color:var(--green);margin:12px 0 6px}
+/* مصفوفة الظهور — الافتراضي مخفي، وكل عرض يُظهر ما يخصه */
+#ov #forkBox,#ov #chosen,#ov #mgrQ,#ov #pathBox,#ov #closeOnly,#ov #mCardX,#ov #descBox,#ov .lvl,#ov #escOnly,#ov #watchBox,#ov #gateSteps,#ov #reopenWrap{display:none}
+#ov[data-view="tech-fork"] #forkBox{display:grid}
+#ov[data-view="tech-close"] #chosen,#ov[data-view="tech-esc"] #chosen{display:flex}
+#ov[data-view="tech-close"] #descBox,#ov[data-view="tech-esc"] #descBox{display:block}
+#ov[data-view="tech-close"] .lvl[data-lvl="1"],#ov[data-view="tech-close"] .lvl[data-lvl="1"] .lvl-b,#ov[data-view="tech-close"] .lvl[data-lvl="1"] .blk[data-close]{display:block}
+#ov[data-view="tech-close"] .lvl[data-lvl="1"] .opts{display:none}
+#ov[data-view="tech-esc"] #escOnly{display:block}
+#ov[data-view="mgr"] #mCardX,#ov[data-view="mgr"] #pathBox,#ov[data-view="mgr"] #mgrQ,#ov[data-view="mgr"] .lvl.cur,#ov[data-view="mgr"] .lvl.cur .lvl-b{display:block}
+#ov[data-view="safety"] #mCardX,#ov[data-view="safety"] #pathBox,#ov[data-view="safety"] #watchBox,#ov[data-view="safety"] #gateSteps{display:block}
+#ov[data-view="safety"] #reopenWrap.show{display:inline-flex}
+#ov[data-view="view"] #mCardX,#ov[data-view="view"] #pathBox{display:block}
+#ov[data-view="view"] #watchBox.has{display:block;pointer-events:none;opacity:.85}
+#ov[data-view="view"] #watchBox.has .gate,#ov[data-view="view"] #watchBox.has .btn-w,#ov[data-view="view"] #watchBox.has #reopenWrap{display:none}
+#ov[data-view="view"] #closeOnly{display:inline-block}
+#ov[data-view="view"] #saveMain,#ov[data-view="view"] #cancelBtn,#ov[data-view="tech-fork"] #saveMain{display:none}
+body.fromDash #inbox{display:none!important}
+body.fromDash #dvInbox,body.fromDash .dv-sec.wait{display:none}
+@media(max-width:680px){#ov #forkBox{grid-template-columns:1fr}}
+/* ===== /MODAL-V2 ===== */
 </style>
 </head>
 <body>
@@ -419,19 +478,30 @@ body.dv.dvForm #dview{display:none}
  <div class="modal">
   <div class="m-head">
     <h3 id="mTitle">وحدة الإبلاغ والتصعيد</h3>
-    <span class="id" id="mId">ب — ٠٠</span>
+    <span class="id" id="mId">ب — ٠٠</span><span class="badge" id="mState" style="display:none"></span>
     <button class="m-close" onclick="closeM()">إغلاق ✕</button>
   </div>
   <div class="m-body">
 
     <div class="sec">أ · بيانات البلاغ</div>
-    <div class="ro" id="mItem"></div>
-    <div class="muted" style="margin-top:4px" id="mMeta"></div>
+    <div class="mc" id="mCard">
+      <div class="ro" id="mItem"></div>
+      <div class="muted" id="mMeta"></div>
+      <div id="mNote"></div>
+      <div id="mCardX"></div>
+    </div>
+    <details id="pathBox"><summary id="pathSum">عرض المسار</summary><div id="pathBody"></div></details>
+    <div class="q" id="forkQ" style="display:none"></div>
+    <div id="forkBox">
+      <button type="button" class="fork-btn" onclick="pickFork('close')"><span class="t">✓ عولجت موقعياً</span><span class="d">إبلاغ للسجل — عولجت الملاحظة موقعياً وأُغلق البلاغ</span></button>
+      <button type="button" class="fork-btn esc" onclick="pickFork('esc')"><span class="t">↑ تعذّرت المعالجة</span><span class="d">تصعيد لمدير المرافق والصيانة — تعذّرت المعالجة — حدّدتُ المطلوب وأصعّد</span></button>
+    </div>
+    <div id="chosen"><b id="chosenT"></b><a href="#" onclick="pickFork('');return false">تغيير</a></div>
 
-    <div class="fl">وصف الملاحظة</div>
-    <textarea id="mDesc" rows="2" placeholder="ما الذي شوهد بالضبط؟"></textarea>
-    <div class="fl">وقت الاكتشاف <span class="muted">— تُحسب منه المهلة</span></div>
-    <input type="text" id="mWhen" placeholder="التاريخ والساعة">
+    <div id="descBox"><div class="fl">وصف الملاحظة</div>
+    <textarea id="mDesc" rows="2" placeholder="ما الذي شوهد بالضبط؟"></textarea></div>
+    <div id="whenBox"><div class="fl">وقت الاكتشاف <span class="muted">— تُحسب منه المهلة</span></div>
+    <input type="text" id="mWhen" placeholder="التاريخ والساعة"></div>
 
     <div class="sec">ب · قرار المعالجة</div>
 
@@ -505,15 +575,16 @@ body.dv.dvForm #dview{display:none}
 
     <div class="sec hidesec" id="secD">د · مسار التصعيد الإداري <span style="font-weight:400;opacity:.85">— كل مستوى: يوفّر المطلوب ويغلق، أو يصعّد</span></div>
 
+    <div class="q" id="mgrQ">هل توفّر المطلوب؟</div>
     <!-- المستوى ٢ -->
     <div class="lvl hidesec" data-lvl="2">
       <div class="lvl-h"><span class="lvl-n">٢</span><span class="lvl-t">مدير المرافق والصيانة</span><span class="lvl-s">—</span></div>
       <div class="lvl-b">
         <div class="opts">
-          <div class="opt" data-ld="back"><input type="radio" name="l2"><span class="t">وفّرتُ المطلوب — يعود للفني للتنفيذ</span><span class="d">← الفني المنفّذ</span></div>
-          <div class="opt" data-ld="up"><input type="radio" name="l2"><span class="t">لم أستطع توفير المطلوب وأصعّد</span><span class="d">← مدير الشؤون الإدارية والهندسية</span></div>
+          <div class="opt" data-ld="back"><input type="radio" name="l2"><span class="t">نعم — وفّرتُ المطلوب، يعود للفني للتنفيذ</span><span class="d">← الفني المنفّذ</span></div>
+          <div class="opt" data-ld="up"><input type="radio" name="l2"><span class="t">لا — لم أستطع توفيره وأصعّد</span><span class="d">← مدير الشؤون الإدارية والهندسية</span></div>
         </div>
-        <textarea rows="2" placeholder="ما وُفِّر / سبب تعذّر التوفير والمطلوب من المستوى الأعلى" style="margin-top:9px"></textarea>
+        <textarea rows="2" placeholder="السبب / ما وُفِّر" style="margin-top:9px"></textarea>
         <div class="sig"><input type="text" placeholder="الاسم"><input type="text" placeholder="التاريخ"></div>
         <button class="btn btn-sm" onclick="commitLvl(2)">تثبيت القرار وإرساله</button>
       </div>
@@ -524,10 +595,10 @@ body.dv.dvForm #dview{display:none}
       <div class="lvl-h"><span class="lvl-n">٣</span><span class="lvl-t">مدير الشؤون الإدارية والهندسية</span><span class="lvl-s">—</span></div>
       <div class="lvl-b">
         <div class="opts">
-          <div class="opt" data-ld="back"><input type="radio" name="l3"><span class="t">وفّرتُ المطلوب — يعود للفني للتنفيذ</span><span class="d">← الفني المنفّذ</span></div>
-          <div class="opt" data-ld="up"><input type="radio" name="l3"><span class="t">لم أستطع توفير المطلوب وأصعّد</span><span class="d">← الإدارة العليا</span></div>
+          <div class="opt" data-ld="back"><input type="radio" name="l3"><span class="t">نعم — وفّرتُ المطلوب، يعود للفني للتنفيذ</span><span class="d">← الفني المنفّذ</span></div>
+          <div class="opt" data-ld="up"><input type="radio" name="l3"><span class="t">لا — لم أستطع توفيره وأصعّد</span><span class="d">← الإدارة العليا</span></div>
         </div>
-        <textarea rows="2" placeholder="ما وُفِّر / سبب تعذّر التوفير والمطلوب من الإدارة العليا" style="margin-top:9px"></textarea>
+        <textarea rows="2" placeholder="السبب / ما وُفِّر" style="margin-top:9px"></textarea>
         <div class="sig"><input type="text" placeholder="الاسم"><input type="text" placeholder="التاريخ"></div>
         <button class="btn btn-sm" onclick="commitLvl(3)">تثبيت القرار وإرساله</button>
       </div>
@@ -538,7 +609,7 @@ body.dv.dvForm #dview{display:none}
       <div class="lvl-h"><span class="lvl-n">٤</span><span class="lvl-t">الإدارة العليا <span class="muted">(الجهات العليا المختصة — التعريف ٤)</span></span><span class="lvl-s">—</span></div>
       <div class="lvl-b">
         <div class="opts">
-          <div class="opt" data-ld="back"><input type="radio" name="l4"><span class="t">وفّرتُ المطلوب — يعود للفني للتنفيذ</span><span class="d">← الفني المنفّذ</span></div>
+          <div class="opt" data-ld="back"><input type="radio" name="l4"><span class="t">نعم — وفّرتُ المطلوب، يعود للفني للتنفيذ</span><span class="d">← الفني المنفّذ</span></div>
           <div class="opt" data-ld="stop"><input type="radio" name="l4"><span class="t">قرار بعدم التنفيذ حالياً</span><span class="d">يُوثَّق</span></div>
         </div>
         <div class="muted" style="margin-top:9px">القرار النهائي</div>
@@ -559,14 +630,15 @@ body.dv.dvForm #dview{display:none}
       <button class="btn btn-w" onclick="addWatch()">+ إضافة سطر متابعة</button>
 
       <div class="gate">
+        <div id="gateSteps"></div>
         <label class="k"><input type="checkbox" id="gStuck"> المسار متوقف — تجاوز المهلة أو لم يُتخذ قرار ولم يُصعَّد</label><br>
-        <b>تسلسل التصعيد الرقابي:</b> مخاطبة المتأخر، ثم رئيسه المباشر، ثم الإدارة العليا — كل مخاطبة سطر متابعة موثَّق.
-        <div id="gNext" style="margin-top:6px;font-weight:700;color:var(--green)"></div>
+        <span class="gate-txt"><b>تسلسل التصعيد الرقابي:</b> مخاطبة المتأخر، ثم رئيسه المباشر، ثم الإدارة العليا — كل مخاطبة سطر متابعة موثَّق.
+        </span><div id="gNext" style="margin-top:6px;font-weight:700;color:var(--green)"></div>
         <textarea id="gWhy" rows="2" placeholder="سبب التصعيد الرقابي: عند أي مستوى توقف المسار، ومنذ متى" style="margin-top:8px"></textarea>
         <button class="btn btn-r" id="gBtn" disabled onclick="watchEscalate()">تصعيد رقابي إلى الإدارة العليا</button>
       </div>
 
-      <label class="k" style="margin-top:11px"><input type="checkbox" id="reopen"> إعادة فتح البلاغ — الإصلاح المُبلَّغ غير كافٍ</label>
+      <label class="k" id="reopenWrap" style="margin-top:11px"><input type="checkbox" id="reopen"> إعادة فتح البلاغ — الإصلاح المُبلَّغ غير كافٍ</label>
     </div>
 
     <div class="m7" id="m7box"><span>⚠</span>
@@ -575,8 +647,10 @@ body.dv.dvForm #dview{display:none}
     </div>
 
     <div class="savebar">
-      <button class="btn btn-main" id="saveMain" style="margin:0" onclick="saveM()">حفظ المتابعة وإغلاق النافذة</button>
-      <button class="btn btn-gh" style="margin:0" onclick="closeM()">إلغاء</button>
+      <div id="actHint"></div>
+      <button class="btn btn-main" id="saveMain" style="margin:0" onclick="sendMain()">إرسال</button>
+      <button class="btn btn-gh" id="cancelBtn" style="margin:0" onclick="closeM()">إلغاء</button>
+      <button class="btn btn-gh" id="closeOnly" style="margin:0" onclick="closeM()">إغلاق</button>
     </div>
   </div>
  </div>
@@ -741,7 +815,7 @@ function lockModalByRole(){
   const w=document.querySelector('.watchbox');
   if(w)w.classList.toggle('ro-lock',ROLE!=='safety');
   /* زر الحفظ السفلي لمسؤول السلامة وحده — بقية الأدوار زرها واحد داخل مستواها */
-  const sm=$('saveMain');if(sm)sm.style.display=(ROLE==='safety')?'':'none';
+  renderModalForRole();
 }
 
 
@@ -777,7 +851,7 @@ function dueBadge(r){const o=overdue(r);if(o===null)return '';
 const byOverdue=(a,b)=>{const x=overdue(a),y=overdue(b);return (y===null?-1e9:y)-(x===null?-1e9:x);};
 function ibRow(r){
   return `<div class="ib-row">
-      <span class="badge ${r.cls}">${r.status}</span>${dueBadge(r)}
+      ${dispBadge(r)}${leftBadge(r)}
       <div class="t"><b>${r.id}</b> — ${r.item}
         <div class="muted">${r.sys} · ${r.sev}${r.due!=='—'?' · المهلة '+r.due:''}${r.need&&r.need!=='—'?' · المطلوب: '+r.need:''}</div></div>
       <button class="go" onclick="jump('${r.row}')">فتح البلاغ</button>
@@ -932,8 +1006,8 @@ function rowInfo(id){
 function paintRow(tr){
   const id=tr.dataset.row,rep=REPORTS.find(r=>r.row===id),cell=tr.querySelector('.cell');
   const no=tr.querySelector('input[data-r="no"]').checked;
-  if(rep){cell.innerHTML=`<span class="badge ${rep.cls}">${rep.status}</span> <span class="muted">${rep.id}</span>
-    <button class="act" style="border-color:var(--green);color:var(--green)" onclick="openM('${id}',true)">عرض / تعديل</button>`;return;}
+  if(rep){cell.innerHTML=`${dispBadge(rep)} <span class="muted">${rep.id}</span>
+    <button class="act" style="border-color:var(--green);color:var(--green)" onclick="openM('${id}',true)">عرض</button>`;return;}
   cell.innerHTML=no?`<button class="act" onclick="openM('${id}',false)">فتح بلاغ</button>`:`<span class="muted">—</span>`;
 }
 function refreshRows(){document.querySelectorAll('#reads tr,#items tr').forEach(paintRow)}
@@ -942,17 +1016,129 @@ function openM(rowId,isEdit){
   const inf=rowInfo(rowId);
   EDIT=isEdit?REPORTS.find(r=>r.row===rowId):null;
   $('mItem').textContent=inf.txt;
-  $('mMeta').textContent=`${inf.sys} · ${$('loc').value||'الموقع (يُحدَّد)'} · ${inf.ref}`;
+  $('mMeta').innerHTML=`${inf.sys} · ${$('loc').value||'الموقع (يُحدَّد)'} <span class="lawref">· ${inf.ref}</span>`;
   $('mId').textContent=EDIT?EDIT.id:'ب — '+AR(String(SEQ+1).padStart(2,'0'));
   $('ov').dataset.row=rowId;
   resetM(); if(EDIT) fillM(EDIT);
   lockModalByRole();
   $('ov').classList.add('on');document.body.style.overflow='hidden';
+  renderModalForRole();$('ov').scrollTop=0;
 }
 function closeM(){$('ov').classList.remove('on');document.body.style.overflow=''}
 
+
+/* ================= MODAL-V2 · طبقة العرض حسب الدور (لا تغيّر البيانات) ================= */
+const escH=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* الحالة المعروضة: ٤ عناوين فقط — النص المخزّن في السجل لا يتغير */
+function dispStatus(r){
+  if(isClosed(r))return {t:'مُغلق',cls:'b-done'};
+  const o=overdue(r);
+  if(o!==null&&o>=0)return {t:'⏰ متجاوز المهلة منذ '+AR(Math.floor(o))+' س — لدى '+(r.owner||''),cls:'b-open'};
+  if(r.reopen||(r.backFrom&&!(r.levels&&r.levels[1])))return {t:'↩ أُعيد للفني',cls:'b-esc'};
+  return {t:'مفتوح لدى '+(r.owner||''),cls:r.cls||'b-esc'};
+}
+function dispBadge(r){const d=dispStatus(r);return '<span class="badge '+d.cls+'">'+d.t+'</span>';}
+function leftBadge(r){const o=overdue(r);return (o!==null&&o<0)?' <span class="muted">متبقٍ '+AR(Math.ceil(-o))+' س</span>':'';}
+function fillCard(){
+  const r=EDIT, x=$('mCardX'), note=$('mNote'), st=$('mState');
+  st.style.display=r?'':'none'; note.innerHTML=''; x.innerHTML='';
+  if(!r)return;
+  const d=dispStatus(r); st.className='badge '+d.cls; st.textContent=d.t;
+  const backFrom=(r.backFrom&&!(r.levels&&r.levels[1]))?r.backFrom:0;
+  if(backFrom){const L=r.levels&&r.levels[backFrom];note.innerHTML='<div class="back-note">↩ أُعيد إليك للتنفيذ — وفّر المطلوب '+LNAME[backFrom]+(L&&L.note?': «'+escH(L.note)+'»':'')+'</div>';}
+  else if(r.reopen&&!Object.keys(r.levels||{}).length)note.innerHTML='<div class="back-note">↩ أُعيد فتح البلاغ من مسؤول السلامة — الإصلاح السابق غير كافٍ</div>';
+  const tags=[r.sev&&r.sev!=='—'?'<span class="badge b-esc">'+escH(r.sev)+'</span>':'',
+    r.due&&r.due!=='—'?'<span class="badge b-watch">المهلة '+escH(r.due)+'</span>':'',
+    r.oos?'<span class="badge b-open">خارج الخدمة'+(r.oosFrom?' منذ '+escH(r.oosFrom):'')+'</span>':'',
+    r.path&&r.path!=='إداري'?'<span class="badge b-watch">تصعيد رقابي</span>':''].join('');
+  const o=overdue(r);
+  x.innerHTML=(tags?'<div class="tags">'+tags+'</div>':'')
+    +'<div class="kv"><span>الملاحظة</span><span>'+escH(r.desc||'—')+'</span></div>'
+    +(r.need&&r.need!=='—'?'<div class="kv"><span>المطلوب</span><span><b>'+escH(r.need)+'</b></span></div>':'')
+    +'<div class="kv"><span>اكتُشف</span><span>'+escH(r.when||'—')+(o!==null?(o>=0?' · <b style="color:var(--red)">متجاوز المهلة منذ '+AR(Math.floor(o))+' س</b>':' · متبقٍ '+AR(Math.ceil(-o))+' س'):'')+'</span></div>'
+    +'<div class="kv"><span>اكتشفه</span><span>'+escH(r.finder||'')+(r.finderName&&r.finderName!=='—'?' — '+escH(r.finderName):'')+'</span></div>';
+}
+function pathHTML(){
+  const lv=L=>Object.keys(L||{}).map(Number).sort().map(n=>'<div class="r"><span>المستوى '+AR(n)+' — '+LNAME[n]+'</span><span>'+(L[n].up?'↑ صُعّد':(L[n].back?'↩ وُفِّر المطلوب وأُعيد للفني':'✓ أُغلق'))+' · '+escH(L[n].note||'—')+' · '+escH(L[n].by||'')+' '+escH(L[n].date||'')+'</span></div>').join('');
+  let h='';
+  if(EDIT&&EDIT.hist&&EDIT.hist.length)h+=EDIT.hist.map((H,i)=>'<div class="r"><span><b>مسار سابق '+AR(i+1)+'</b> (قبل إعادة الفتح)</span><span></span></div>'+lv(H)).join('')+'<div class="r"><span><b>بعد إعادة الفتح</b></span><span></span></div>';
+  h+=lv(STATE.levels);
+  const w=watchLines().map(o=>'<div class="r"><span>متابعة '+escH(o.d)+'</span><span>'+escH(o.w)+' — '+escH(o.r)+(o.p?' — الرد: '+escH(o.p):'')+'</span></div>').join('');
+  if(w)h+='<div class="r"><span><b>متابعة مسؤول السلامة</b></span><span></span></div>'+w;
+  if(STATE.path&&STATE.path!=='إداري')h+='<div class="r"><span>مسار الوصول</span><span>'+escH(STATE.path)+'</span></div>';
+  const n=Object.keys(STATE.levels||{}).length+(EDIT&&EDIT.hist?EDIT.hist.reduce((a,H)=>a+Object.keys(H).length,0):0);
+  $('pathSum').textContent='عرض المسار'+(n?' ('+AR(n)+' '+(n===1?'خطوة':'خطوات')+')':'');
+  return h||'<div class="muted">لم يُسجَّل قرار بعد</div>';
+}
+/* خطوات التصعيد الرقابي — نفس قواعد gateCheck معروضةً كقائمة */
+function paintSteps(){
+  const box=$('gateSteps');if(!box)return;
+  const n=curOwner(), lines=watchLines(), has=k=>lines.some(o=>o.w===LNAME[k]&&(o.r||o.p));
+  if(!n){box.innerHTML='<div class="muted">البلاغ مغلق — لا تصعيد رقابي. إن كان الإصلاح غير كافٍ فأعد فتحه أدناه.</div>';refreshHint();return;}
+  if(n===4){box.innerHTML='<div class="stp done"><span class="stp-n">✓</span><span>البلاغ لدى الإدارة العليا — تُخاطَب مباشرة ولا تصعيد فوقها</span></div>';refreshHint();return;}
+  const steps=[[n,'مخاطبة المتأخر'],[n+1,'مخاطبة رئيسه المباشر']].filter(s=>s[0]<4);
+  let i=0;
+  box.innerHTML='<div class="fl">التصعيد الرقابي — بالتسلسل</div>'+steps.map(s=>{i++;const ok=has(s[0]);
+      return '<div class="stp'+(ok?' done':'')+'"><span class="stp-n">'+AR(i)+'</span><span>'+s[1]+': <b>'+LNAME[s[0]]+'</b></span><span class="stp-s">'+(ok?'✓ وُثِّقت':'○ أضف سطر متابعة بهذه الجهة مع الرد')+'</span></div>';}).join('')
+    +'<div class="stp'+(!$('gBtn').disabled?' done':'')+'"><span class="stp-n">'+AR(i+1)+'</span><span>التصعيد إلى الإدارة العليا</span><span class="stp-s">'+($('gBtn').disabled?'غير جاهز — أكمل ما سبق وعلّم توقّف المسار واكتب السبب':'جاهز — يُنفَّذ بزر إرسال')+'</span></div>';
+  refreshHint();
+}
+function pickFork(kind){
+  STATE.fork=kind;
+  const l1=$('ov').querySelector('.lvl[data-lvl="1"]');
+  if(kind){const o=l1.querySelector('.opt[data-ld="'+(kind==='close'?'close':'up')+'"]');if(o)o.click();}
+  else{l1.querySelectorAll('.opt').forEach(x=>{x.classList.remove('sel');x.querySelector('input').checked=false});showEsc(false);}
+  renderModalForRole();
+}
+function refreshHint(){
+  const v=$('ov').dataset.view, cur=+($('ov').dataset.cur||0), h=$('actHint'); if(!h)return;
+  let t='';
+  if(v==='tech-fork')t='اختر ما حدث مع الملاحظة';
+  else if(v==='tech-close')t='نسخة تلقائية إلى: مدير المرافق والصيانة · مسؤول السلامة · سجل السلامة';
+  else if(v==='tech-esc')t='سيُرسل إلى: مدير المرافق والصيانة · نسخة: مسؤول السلامة · سجل السلامة';
+  else if(v==='mgr'){
+    const l=$('ov').querySelector('.lvl[data-lvl="'+cur+'"]'), sel=l&&l.querySelector('.opt.sel'), ld=sel?sel.dataset.ld:'';
+    t=ld==='back'?'سيُعاد إلى: الفني المنفّذ للتنفيذ · نسخة: مسؤول السلامة'
+     :ld==='up'?'سيُصعَّد إلى: '+LNAME[Math.min(cur+1,4)]+' · نسخة: مسؤول السلامة'
+     :ld==='stop'?'يُوثَّق القرار النهائي · نسخة: مسؤول السلامة · سجل السلامة'
+     :'اختر قرارك ثم اضغط إرسال';
+  }else if(v==='safety')t=$('gBtn').disabled?'حفظ المتابعة والتوصية في البلاغ':'⚠ تصعيد رقابي إلى الإدارة العليا — وحفظ';
+  h.textContent=t;
+}
+function renderModalForRole(){
+  const ov=$('ov'); if(!ov||!ov.classList.contains('on'))return;
+  const n=curOwner(), own=OWNER[ROLE]||[];
+  const regExec=(ROLE==='exec'&&STATE.path!=='إداري'&&n>0&&n<4);
+  let v='view', cur=0;
+  if(ROLE==='safety')v='safety';
+  else if(ROLE==='tech'&&n===1&&!STATE.levels[1])v=STATE.fork?'tech-'+STATE.fork:'tech-fork';
+  else if(own.indexOf(String(n))>=0||regExec){v='mgr';cur=regExec?4:n;if(regExec&&!STATE.levels[4])unlock(4);}
+  ov.dataset.view=v; ov.dataset.cur=cur;
+  ov.querySelectorAll('.lvl').forEach(l=>l.classList.toggle('cur',+l.dataset.lvl===cur));
+  $('mTitle').textContent=v==='tech-fork'||v==='tech-close'||v==='tech-esc'?(EDIT?'البلاغ':'بلاغ جديد'):v==='mgr'?'قرارك مطلوب':v==='safety'?'متابعة البلاغ':'عرض البلاغ';
+  const closed=!n;
+  $('reopenWrap').classList.toggle('show',closed||!!$('reopen').checked);
+  $('watchBox').classList.toggle('has',watchLines().some(o=>o.w||o.r||o.p));
+  $('chosenT').textContent=STATE.fork==='close'?'✓ عولجت موقعياً':STATE.fork==='esc'?'↑ تعذّرت المعالجة':'';
+  if(v==='safety')$('pathBox').open=true;
+  fillCard(); $('pathBody').innerHTML=pathHTML(); paintSteps(); refreshHint();
+}
+function sendMain(){
+  const v=$('ov').dataset.view, cur=+($('ov').dataset.cur||0);
+  if(v==='tech-close'||v==='tech-esc')return sendReport();
+  if(v==='mgr'){
+    const l=$('ov').querySelector('.lvl[data-lvl="'+cur+'"]'), sel=l&&l.querySelector('.opt.sel');
+    if(sel&&sel.dataset.ld==='up'&&!l.querySelector('textarea').value.trim()&&!confirm('لم تكتب سبب التصعيد — إرسال بدون سبب؟'))return;
+    return commitLvl(cur);
+  }
+  if(v==='safety'){
+    if(!$('gBtn').disabled){if(!$('gWhy').value.trim()){alert('اكتب سبب التصعيد الرقابي أولاً');return;}watchEscalate();closeM();return;}
+    return saveM();
+  }
+}
+$('ov').addEventListener('click',e=>{if(e.target.closest('.opt'))setTimeout(refreshHint,0);});
 function resetM(){
-  STATE={levels:{},closedAt:null,path:'إداري',backFrom:0};
+  STATE={levels:{},closedAt:null,path:'إداري',backFrom:0,fork:''};
   $('mDesc').value='';$('mOos').checked=false;$('blkOos').classList.remove('on');
   $('ov').querySelectorAll('.opt').forEach(o=>{o.classList.remove('sel');o.querySelector('input').checked=false});
   $('ov').querySelectorAll('textarea').forEach(t=>t.value='');
@@ -992,7 +1178,7 @@ function fillM(r){
     const st=l.querySelector('.lvl-s');st.className='lvl-s '+(L.up?'up':'done');
     st.textContent=n===4?'✓ قرار نهائي':(L.up?'↑ صُعّد':'✓ أُغلق');
     lockLvl(n);
-    if(L.up)unlock(n+1); else STATE.closedAt=n;
+    if(L.up)unlock(n+1); else if(!L.back)STATE.closedAt=n;
   });
   if(r.backFrom&&!(r.levels&&r.levels[1])){
     const l1=$('ov').querySelector('.lvl[data-lvl="1"]');
@@ -1071,6 +1257,7 @@ function gateCheck(){
     :(missing.length?'الخطوة التالية: مخاطبة '+LNAME[missing[0]]+(missing[0]===n?' (المتأخر)':' (رئيس المتأخر)')
     :'اكتملت المخاطبات — يُفعَّل التصعيد عند تعليم توقّف المسار'));
   $('gBtn').disabled=!($('gStuck').checked && n>0 && n<4 && !missing.length);
+  paintSteps();
 }
 function watchEscalate(){
   if(!$('gWhy').value.trim()){alert('اكتب سبب التصعيد الرقابي أولاً');return;}
@@ -1100,10 +1287,7 @@ function showEsc(on){
   ['secE','watchBox'].forEach(id=>$(id).classList.toggle('show',on||!!STATE.closedAt));
   if(!on)$('ov').querySelectorAll('.lvl[data-lvl="2"],.lvl[data-lvl="3"],.lvl[data-lvl="4"]')
     .forEach(l=>l.classList.remove('show'));
-  /* إظهار زر الإرسال المناسب */
-  const closeBox=$('sendBoxClose'), escBox=$('sendBoxEsc');
-  if(closeBox)closeBox.style.display=on?'none':'';
-  if(escBox)escBox.style.display=on?'':'none';
+  renderModalForRole();
 }
 function backToTech(from){
   const l1=$('ov').querySelector('.lvl[data-lvl="1"]');
@@ -1268,7 +1452,12 @@ function saveM(keepOpen){
     cls:closed?'b-done':(backFrom?'b-esc':(last>=2?'b-open':'b-esc')),
     backFrom,
     m7:M7OK?'تحقق':'لم يتحقق'};
-  if(rec.reopen){rec.status='أُعيد فتحه — إصلاح غير كافٍ';rec.cls='b-open';rec.owner=LNAME[1];}
+  if(EDIT&&EDIT.hist)rec.hist=EDIT.hist;
+  if(rec.reopen){
+    if(closed&&Object.keys(rec.levels).length){rec.hist=(rec.hist||[]).concat([rec.levels]);rec.levels={};rec.backFrom=0;STATE.levels={};STATE.closedAt=null;}
+    if(!Object.keys(rec.levels).length){rec.status='أُعيد فتحه — إصلاح غير كافٍ';rec.cls='b-open';rec.owner=LNAME[1];}
+    else rec.reopen=false;
+  }
   const i=REPORTS.findIndex(r=>r.row===row);
   if(i>=0)REPORTS[i]=rec;else REPORTS.push(rec);
   refreshRows();renderLog();drawInbox();autoSave();
@@ -1440,12 +1629,12 @@ if(!loadSelf()&&!autoLoad())render('c01');
 (function(){
   let s=null;try{s=JSON.parse(localStorage.getItem('ipa-session'))}catch(e){}
   if(!s||!USERS[s.u])return;
-  $('uu').value=s.u;$('pp').value=USERS[s.u].p;doLogin();
+  $('uu').value=s.u;$('pp').value=USERS[s.u].p;doLogin();document.body.classList.add('fromDash');
   const a=document.createElement('a');a.href='../dashboard.html';a.textContent='← اللوحة';
   a.style.cssText='color:#fff;font-weight:700;text-decoration:none;border:1px solid rgba(255,255,255,.4);padding:2px 10px;border-radius:2px';
   $('userbar').insertBefore(a,$('dvBack'));
   const h=location.hash.match(/open=([^&]+)/);
-  if(h){const row=decodeURIComponent(h[1]);if(REPORTS.some(r=>r.row===row))setTimeout(()=>jump(row),80);}
+  if(h){const row=decodeURIComponent(h[1]);if(REPORTS.some(r=>r.row===row)){if(document.body.classList.contains('dv'))toggleDview();setTimeout(()=>jump(row),80);}}
 })();
 DIRTY=false;
 </script>
