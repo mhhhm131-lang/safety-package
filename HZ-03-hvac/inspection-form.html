@@ -338,6 +338,7 @@ body.fromDash #dvInbox,body.fromDash .dv-sec.wait{display:none}
   <button class="print" style="background:#fff;color:var(--green)" onclick="impFile()">استيراد بيانات</button>
   <input type="file" id="fpick" accept=".json,.html" hidden>
   <button class="print" onclick="window.print()">طباعة</button>
+  <button class="print" style="background:#fff;color:var(--green)" onclick="newRound()">جولة جديدة</button>
   <button class="print" style="background:#fff;color:var(--red)" onclick="clearAll()">مسح الجولة</button>
 </nav>
 
@@ -927,7 +928,29 @@ function jump(row){
 
 /* ================= الحفظ التلقائي ================= */
 const AKEY='ipa-hvac-form-v10';
+/* ===== سجل الجولات: سطر لكل نظام في كل جولة، حتى السليمة (م٥) ===== */
+function logRounds(){
+  const d=$('dtRound').value,st=$('tStart').value||'';if(!d)return;
+  Object.keys(SYS).forEach(k=>{
+    const p=k+'-';let ok=0,no=0,na=0;
+    Object.keys(MARKS).forEach(r=>{if(r.indexOf(p)!==0||!MARKS[r])return;
+      if(MARKS[r]==='ok')ok++;else if(MARKS[r]==='no')no++;else na++;});
+    if(!ok&&!no&&!na)return;
+    const L=ROUNDS[k]=ROUNDS[k]||[];
+    let e=L.find(x=>x.d===d&&(x.s||'')===st);if(!e){e={d,s:st};L.push(e);}
+    Object.assign(e,{t:$('tEnd').value||'',q:$('insQ').value,n:$('insN').value||'',ok,no,na,tot:SYS[k].items.length+SYS[k].reads.length});
+  });
+}
+function newRound(){
+  if(!$('dtRound').value){alert('لا توجد جولة قائمة — ابدأ بوضع العلامات.');return;}
+  if(!confirm('إقفال الجولة الحالية وبدء جولة جديدة؟\n\nتُحفظ نتائج هذه الجولة في سجل الجولات لكل نظام، وتبقى البلاغات ومساراتها كما هي، وتُمسح علامات ✓/✗ والقيم المقاسة لبدء الفحص من جديد.'))return;
+  logRounds();
+  MARKS={};Object.keys(VALS).forEach(k=>{if(/\|act$/.test(k))delete VALS[k]});
+  $('dtRound').value='';$('tStart').value='';$('tEnd').value='';
+  autoSave();render(CUR);
+}
 function autoSave(){
+  logRounds();
   try{localStorage.setItem(AKEY,JSON.stringify(snapshot()))}catch(e){}
 }
 function autoLoad(){
@@ -937,7 +960,7 @@ function autoLoad(){
   return applyData(d);
 }
 function applyData(d){
-  REPORTS=d.reports;SEQ=d.seq||REPORTS.length;MARKS=d.marks||{};VALS=d.vals||{};
+  REPORTS=d.reports;SEQ=d.seq||REPORTS.length;MARKS=d.marks||{};VALS=d.vals||{};ROUNDS=d.rounds||{};
   if(d.defs)Object.keys(d.defs).forEach(k=>{if(SYS[k]){SYS[k].items=d.defs[k].items;SYS[k].reads=d.defs[k].reads;}});
   const tab=document.querySelector(`.tab[data-sys="${d.sys||'a01'}"]`);
   if(tab){document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected','false'));
@@ -958,7 +981,7 @@ function clearAll(){
 
 /* ================= الحالة ================= */
 let DIRTY=false,SENT='';
-let CUR='a01',REPORTS=[],SEQ=0,EDIT=null,M7OK=false,STATE={},MARKS={},VALS={};
+let CUR='a01',REPORTS=[],SEQ=0,EDIT=null,M7OK=false,STATE={},MARKS={},VALS={},ROUNDS={};
 const $=id=>document.getElementById(id);
 const strip=s=>String(s).replace(/<[^>]*>/g,'').trim();
 const AR=n=>String(n).replace(/[0-9]/g,d=>'٠١٢٣٤٥٦٧٨٩'[d]);
@@ -1571,8 +1594,8 @@ function staticFields(){
     .filter(el=>!el.closest('#reads')&&!el.closest('#items')&&!el.closest('#logWrap')&&!el.closest('#printDetails'));
 }
 function snapshot(){
-  const defs={};Object.keys(SYS).forEach(k=>defs[k]={items:SYS[k].items,reads:SYS[k].reads});
-  return {v:41,sys:CUR,seq:SEQ,marks:MARKS,vals:VALS,reports:REPORTS,defs,
+  const defs={};Object.keys(SYS).forEach(k=>defs[k]={items:SYS[k].items,reads:SYS[k].reads,name:SYS[k].name,code:SYS[k].code,sched:SYS[k].sched});
+  return {v:41,sys:CUR,seq:SEQ,marks:MARKS,vals:VALS,rounds:ROUNDS,reports:REPORTS,defs,
     fields:staticFields().map(el=>el.type==='checkbox'?(el.checked?1:0):el.value)};
 }
 function saveSelf(){
@@ -1592,7 +1615,7 @@ function loadSelf(){
   let d=null;
   try{d=JSON.parse($('SAVED').textContent)}catch(e){}
   if(!d||!d.reports)return false;
-  REPORTS=d.reports;SEQ=d.seq||REPORTS.length;MARKS=d.marks||{};VALS=d.vals||{};
+  REPORTS=d.reports;SEQ=d.seq||REPORTS.length;MARKS=d.marks||{};VALS=d.vals||{};ROUNDS=d.rounds||{};
   if(d.defs)Object.keys(d.defs).forEach(k=>{if(SYS[k]){SYS[k].items=d.defs[k].items;SYS[k].reads=d.defs[k].reads;}});
   const tab=document.querySelector(`.tab[data-sys="${d.sys||'a01'}"]`);
   if(tab){document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected','false'));
@@ -1607,8 +1630,8 @@ function loadSelf(){
   return true;
 }
 function expFile(){
-  const defs={};Object.keys(SYS).forEach(k=>defs[k]={items:SYS[k].items,reads:SYS[k].reads});
-  const data={v:41,sys:CUR,seq:SEQ,marks:MARKS,vals:VALS,reports:REPORTS,defs,
+  const defs={};Object.keys(SYS).forEach(k=>defs[k]={items:SYS[k].items,reads:SYS[k].reads,name:SYS[k].name,code:SYS[k].code,sched:SYS[k].sched});
+  const data={v:41,sys:CUR,seq:SEQ,marks:MARKS,vals:VALS,rounds:ROUNDS,reports:REPORTS,defs,
     fields:staticFields().map(el=>el.type==='checkbox'?(el.checked?1:0):el.value)};
   const blob=new Blob([JSON.stringify(data,null,1)],{type:'application/json'});
   const a=document.createElement('a');
@@ -1629,7 +1652,7 @@ $('fpick').addEventListener('change',e=>{
         if(m) d=JSON.parse(m[1].replace(/\\u003c/g,'<'));
       }
       if(!d||!d.reports){alert('الملف لا يحتوي بيانات جولة');return;}
-      REPORTS=d.reports;SEQ=d.seq||REPORTS.length;MARKS=d.marks||{};VALS=d.vals||{};
+      REPORTS=d.reports;SEQ=d.seq||REPORTS.length;MARKS=d.marks||{};VALS=d.vals||{};ROUNDS=d.rounds||{};
       if(d.defs)Object.keys(d.defs).forEach(k=>{if(SYS[k]){SYS[k].items=d.defs[k].items;SYS[k].reads=d.defs[k].reads;}});
       const tab=document.querySelector(`.tab[data-sys="${d.sys||'a01'}"]`);
       if(tab)tab.click(); else render('a01');

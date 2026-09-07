@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>لوحة البلاغات والتصعيد — حزمة السلامة</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c1712;--bg2:#10201a;--panel:#152922;--panel2:#1b332a;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.16);
+  --ink:#eae6de;--muted:#9aa39c;--dim:#6f7a73;
+  --gold:#d9b25a;--gold2:#f0d28a;--green:#3ecf8e;--red:#ff5c5c;--amber:#ffb14a;--purple:#c58cf0;--blue:#6fb3ff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--bg)}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;font-size:13.5px;min-height:100vh}
+a{color:inherit}
+button{font-family:inherit}
+::selection{background:var(--gold);color:#111}
+
+/* ===== الدخول ===== */
+.login{position:fixed;inset:0;background:radial-gradient(1200px 600px at 70% -10%,#1d3a2e 0%,var(--bg) 60%);z-index:90;overflow:auto;padding:40px 16px;display:flex;align-items:flex-start;justify-content:center}
+.login.off{display:none}
+.lbox{max-width:460px;width:100%;background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:28px 28px 22px;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.lseal{width:52px;height:52px;border:2px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--gold);font-weight:900;font-size:22px;margin:0 auto 14px}
+.login h1{font-size:18px;text-align:center;font-weight:900}
+.lsub{font-size:12px;color:var(--muted);text-align:center;margin-top:4px}
+.lwarn{border:1px dashed var(--gold);background:rgba(217,178,90,.06);font-size:11.5px;padding:9px 12px;margin:16px 0;border-radius:8px;color:var(--muted)}
+.lwarn b{color:var(--gold)}
+.lf{margin-bottom:10px}
+.lf label{display:block;font-size:11.5px;color:var(--muted);margin-bottom:4px}
+.lf input{width:100%;font-family:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--line2);border-radius:8px;background:var(--bg2);color:var(--ink)}
+.lf input:focus{outline:0;border-color:var(--gold);box-shadow:0 0 0 3px rgba(217,178,90,.15)}
+.lerr{color:var(--red);font-size:12px;font-weight:700;min-height:18px;margin-top:4px}
+.lusers{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:18px}
+.lusers th,.lusers td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:start}
+.lusers th{color:var(--gold);font-size:11px;font-weight:700}
+.lusers tr:hover td{background:rgba(255,255,255,.03)}
+.lnote{font-size:10.5px;color:var(--dim);margin-top:10px;text-align:center}
+.mono{font-family:"IBM Plex Mono",monospace;direction:ltr;display:inline-block;font-weight:700;color:var(--gold2)}
+.lback{display:block;text-align:center;color:var(--muted);margin-top:14px;font-size:12px;text-decoration:none}
+.lback:hover{color:var(--ink)}
+
+/* ===== الأزرار ===== */
+.btn{font-weight:700;font-size:12.5px;border:0;padding:9px 18px;border-radius:8px;cursor:pointer;transition:all .15s}
+.btn-main{background:var(--gold);color:#1a1509}
+.btn-main:hover{background:var(--gold2)}
+.btn-gh{background:transparent;border:1px solid var(--line2);color:var(--ink)}
+.btn-gh:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ===== الشريط العلوي ===== */
+.top{position:sticky;top:0;z-index:20;background:rgba(12,23,18,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .in{max-width:1100px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:14px}
+.brand i{width:28px;height:28px;border:1.5px solid var(--gold);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:var(--gold);font-style:normal;font-size:13px}
+.brand small{font-weight:400;color:var(--muted);font-size:11.5px}
+.who{margin-inline-start:auto;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+.who b{color:var(--ink);background:var(--panel2);border:1px solid var(--line2);padding:3px 12px;border-radius:20px;font-size:12px}
+.who button{background:transparent;border:1px solid var(--line2);color:var(--muted);font-weight:700;font-size:11.5px;padding:4px 12px;border-radius:20px;cursor:pointer}
+.who button:hover{border-color:var(--red);color:var(--red)}
+.who a{color:var(--muted);text-decoration:none;font-size:12px}
+.who a:hover{color:var(--ink)}
+
+.wrap{max-width:1100px;margin:0 auto;padding:22px 20px 70px}
+
+/* ===== الحالة الآن (Hero) ===== */
+.hero{display:grid;grid-template-columns:1.1fr 1fr;gap:18px;margin-bottom:22px}
+.state{position:relative;overflow:hidden;border-radius:16px;padding:26px 28px;background:var(--panel);border:1px solid var(--line2);min-height:190px}
+.state::before{content:"";position:absolute;inset:0;background:radial-gradient(500px 220px at 90% 0%,var(--glow,rgba(62,207,142,.18)) 0%,transparent 70%);pointer-events:none}
+.state .lbl{font-size:12px;color:var(--muted);letter-spacing:.3px}
+.state .word{font-size:26px;font-weight:900;margin-top:2px;color:var(--wc,var(--green))}
+.state .big{display:flex;align-items:baseline;gap:12px;margin-top:10px}
+.state .big .v{font-size:74px;font-weight:900;line-height:1;color:var(--ink);letter-spacing:-1px}
+.state .big .t{font-size:14px;color:var(--muted);line-height:1.5}
+.state .big .t b{display:block;color:var(--ink);font-size:15px}
+.state .sub{margin-top:12px;font-size:12px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap}
+.state .sub span b{color:var(--red)}
+.state .hint{position:absolute;bottom:12px;inset-inline-start:28px;font-size:11px;color:var(--dim)}
+
+/* المسار — أين تقف البلاغات */
+.flow{border-radius:16px;padding:22px 24px 18px;background:var(--panel);border:1px solid var(--line2)}
+.flow .lbl{font-size:12px;color:var(--muted);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.flow .lbl b{color:var(--ink);font-size:13px}
+.rail{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:0}
+.rail::before{content:"";position:absolute;top:26px;right:12.5%;left:12.5%;height:2px;background:var(--line2)}
+.st{position:relative;text-align:center;font-size:11.5px;color:var(--muted)}
+.st .c{width:52px;height:52px;border-radius:50%;margin:0 auto 8px;background:var(--bg2);border:2px solid var(--line2);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:var(--ink);position:relative;transition:all .2s}
+.st.has .c{border-color:var(--gold);color:var(--gold2)}
+.st.od .c{border-color:var(--red);color:var(--red);box-shadow:0 0 0 0 rgba(255,92,92,.5);animation:pulse 1.8s infinite}
+.st.me .c::after{content:"أنت";position:absolute;top:-10px;inset-inline-end:-8px;background:var(--gold);color:#1a1509;font-size:9.5px;font-weight:900;padding:0 6px;border-radius:10px;line-height:16px}
+.st.zero .c{color:var(--dim)}
+.st .n{font-weight:700;color:var(--ink);display:block}
+.st .od-t{color:var(--red);font-size:10.5px;font-weight:700}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,92,92,.45)}70%{box-shadow:0 0 0 12px rgba(255,92,92,0)}100%{box-shadow:0 0 0 0 rgba(255,92,92,0)}}
+
+/* ===== العناوين ===== */
+.h{display:flex;align-items:center;gap:12px;margin:26px 0 12px}
+.h h2{font-size:15px;font-weight:900}
+.h em{font-style:normal;font-size:11.5px;color:var(--muted)}
+.h .cnt{background:var(--panel2);border:1px solid var(--line2);color:var(--ink);font-size:11.5px;font-weight:700;padding:0 10px;border-radius:20px;line-height:20px}
+.h .cnt.red{background:rgba(255,92,92,.12);border-color:var(--red);color:var(--red)}
+.h .new{margin-inline-start:auto}
+
+/* ===== بطاقة البلاغ مع فتيل الزمن ===== */
+.cards{display:grid;gap:10px}
+.rep{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px 12px 14px;position:relative;overflow:hidden;transition:border-color .15s,transform .15s}
+.rep:hover{border-color:var(--line2);transform:translateY(-1px)}
+.rep::before{content:"";position:absolute;top:0;bottom:0;inset-inline-start:0;width:4px;background:var(--edge,var(--gold))}
+.rep.od{--edge:var(--red)}.rep.warn{--edge:var(--amber)}.rep.ok{--edge:var(--green)}.rep.back{--edge:var(--blue)}.rep.done{--edge:var(--dim);opacity:.85}
+.rep .top1{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11.5px;color:var(--muted)}
+.rep .loc{color:var(--gold2);font-weight:700}
+.rep .ttl{font-size:14px;font-weight:700;margin-top:2px;color:var(--ink)}
+.rep .ttl b{color:var(--gold2);font-weight:700;margin-inline-end:6px}
+.rep .meta{font-size:11.5px;color:var(--muted);margin-top:2px}
+.rep .meta .oos{color:var(--red);font-weight:700}
+.fuse{margin-top:8px;display:flex;align-items:center;gap:10px;font-size:11px;color:var(--muted)}
+.fuse .bar{flex:1;height:6px;background:rgba(255,255,255,.07);border-radius:4px;overflow:hidden;position:relative}
+.fuse .bar i{display:block;height:100%;border-radius:4px;background:var(--green)}
+.fuse.warn .bar i{background:var(--amber)}
+.fuse.od .bar i{background:var(--red);animation:blink 1.6s infinite}
+.fuse .txt{white-space:nowrap;font-weight:700;min-width:110px;text-align:start}
+.fuse.od .txt{color:var(--red)}.fuse.warn .txt{color:var(--amber)}
+@keyframes blink{50%{opacity:.55}}
+.tag{display:inline-block;font-size:10.5px;font-weight:700;padding:0 8px;border-radius:20px;line-height:18px;border:1px solid}
+.t-red{color:var(--red);border-color:rgba(255,92,92,.5);background:rgba(255,92,92,.08)}
+.t-amb{color:var(--amber);border-color:rgba(255,177,74,.5);background:rgba(255,177,74,.08)}
+.t-grn{color:var(--green);border-color:rgba(62,207,142,.5);background:rgba(62,207,142,.08)}
+.t-pur{color:var(--purple);border-color:rgba(197,140,240,.5);background:rgba(197,140,240,.08)}
+.t-blu{color:var(--blue);border-color:rgba(111,179,255,.5);background:rgba(111,179,255,.08)}
+.t-dim{color:var(--muted);border-color:var(--line2)}
+.newdot{display:inline-flex;align-items:center;gap:5px;color:var(--red);font-weight:900;font-size:10.5px}
+.newdot::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 8px var(--red)}
+.go{font-size:12px;font-weight:700;border:1px solid var(--gold);color:var(--gold2);background:transparent;padding:8px 16px;border-radius:8px;text-decoration:none;white-space:nowrap;transition:all .15s}
+.go:hover{background:var(--gold);color:#1a1509}
+.rep.done .go{border-color:var(--line2);color:var(--muted)}
+.rep.done .go:hover{background:var(--panel2);color:var(--ink)}
+.empty{padding:24px 16px;text-align:center;color:var(--muted);font-size:12.5px;border:1px dashed var(--line2);border-radius:12px}
+.empty b{color:var(--ink);display:block;font-size:14px;margin-bottom:2px}
+.empty.calm b{color:var(--green)}
+
+/* ===== الأرقام الأربعة كشريط ===== */
+.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line2);border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+.seg .k{background:var(--panel);padding:14px 16px;cursor:pointer;transition:background .15s;position:relative}
+.seg .k:hover{background:var(--panel2)}
+.seg .k.on{background:var(--panel2)}
+.seg .k.on::after{content:"";position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--kc,var(--gold))}
+.seg .v{font-size:34px;font-weight:900;line-height:1.1;color:var(--kc,var(--ink))}
+.seg .k.zero .v{color:var(--dim)}
+.seg .l{font-size:12.5px;font-weight:700;margin-top:2px}
+.seg .d{font-size:10.5px;color:var(--muted)}
+.seg .k.red{--kc:var(--red)}.seg .k.amb{--kc:var(--amber)}.seg .k.pur{--kc:var(--purple)}.seg .k.gld{--kc:var(--gold)}
+#kBody{margin-top:10px}
+
+/* ===== الأماكن: فسيفساء ===== */
+.mosaic{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tile{position:relative;border-radius:14px;padding:14px 16px;background:var(--panel);border:1px solid var(--line);min-height:112px;display:flex;flex-direction:column;overflow:hidden;transition:all .15s}
+.tile:hover{border-color:var(--line2);transform:translateY(-2px)}
+.tile::after{content:"";position:absolute;inset:auto 0 0 0;height:3px;background:var(--tc,transparent)}
+.tile.calm{--tc:var(--green)}.tile.busy{--tc:var(--amber)}.tile.late{--tc:var(--red)}.tile.none{--tc:transparent}
+.tile.hub{background:linear-gradient(135deg,#1f3d30,#152922);border:1px solid var(--gold)}
+.tile .code{font-size:10.5px;color:var(--gold);font-weight:700}
+.tile .name{font-size:15px;font-weight:900;margin-top:0;line-height:1.3}
+.tile .stat{margin-top:auto;padding-top:8px;font-size:11.5px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tile .stat b{font-size:20px;font-weight:900;color:var(--ink);line-height:1}
+.tile.late .stat b{color:var(--red)}.tile.busy .stat b{color:var(--amber)}
+.tile .stat .a{color:#fff;background:var(--red);font-size:10px;font-weight:700;padding:0 7px;border-radius:10px}
+.tile .lk{position:absolute;top:12px;inset-inline-end:12px;display:flex;gap:6px}
+.tile .lk a{font-size:10.5px;color:var(--muted);text-decoration:none;border:1px solid var(--line2);padding:1px 9px;border-radius:20px}
+.tile .lk a:hover{border-color:var(--gold);color:var(--gold)}
+.tile .dim{color:var(--dim);font-size:11.5px}
+
+.tools{display:flex;gap:10px;align-items:center;margin-top:30px;padding-top:16px;border-top:1px solid var(--line);font-size:11.5px;color:var(--dim);flex-wrap:wrap}
+.tools .upd{margin-inline-start:auto}
+.note{font-size:11.5px;color:var(--muted);margin-top:14px;line-height:1.7}
+.note b{color:var(--gold)}
+.footer{text-align:center;padding:20px;font-size:12px;color:var(--dim)}
+
+/* ===== ملف المكان وملف النظام ===== */
+.crumb{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-bottom:14px;flex-wrap:wrap}
+.crumb a{color:var(--gold2);text-decoration:none;font-weight:700}
+.crumb a:hover{text-decoration:underline}
+.crumb b{color:var(--ink)}
+.pfh{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.pfh .code{font-size:11.5px;color:var(--gold);font-weight:700}
+.pfh h1{font-size:26px;font-weight:900;line-height:1.2}
+.pfh .sum{font-size:12.5px;color:var(--muted);margin-top:4px}
+.pfh .sum b{color:var(--ink)}
+.pfh .acts{margin-inline-start:auto;display:flex;gap:8px;flex-wrap:wrap}
+.pfh .acts a{font-size:12px;font-weight:700;color:var(--gold2);border:1px solid var(--gold);padding:6px 14px;border-radius:8px;text-decoration:none}
+.pfh .acts a:hover{background:var(--gold);color:#1a1509}
+.sysl{display:grid;gap:8px}
+.sysr{display:grid;grid-template-columns:1.4fr 1fr 1fr 1.2fr .7fr auto;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;position:relative;overflow:hidden;cursor:pointer;transition:all .15s;text-decoration:none;color:inherit}
+.sysr:hover{border-color:var(--line2);transform:translateY(-1px)}
+.sysr::before{content:"";position:absolute;top:0;bottom:0;inset-inline-start:0;width:4px;background:var(--edge,var(--dim))}
+.sysr.ok{--edge:var(--green)}.sysr.late{--edge:var(--red)}.sysr.fault{--edge:var(--amber)}.sysr.none{--edge:var(--dim)}
+.sysr .nm{font-size:14px;font-weight:700}
+.sysr .nm small{display:block;font-size:10.5px;color:var(--muted);font-weight:400}
+.sysr .kv{font-size:11px;color:var(--muted)}
+.sysr .kv b{display:block;font-size:12.5px;color:var(--ink);font-weight:700}
+.sysr.late .kv.due b{color:var(--red)}
+.ready{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
+.ready .bar{flex:1;height:6px;background:rgba(255,255,255,.07);border-radius:4px;overflow:hidden}
+.ready .bar i{display:block;height:100%;background:var(--green)}
+.ready.bad .bar i{background:var(--amber)}
+.ready b{color:var(--ink);white-space:nowrap}
+.sysr .rep{display:block;text-align:center;font-size:18px;font-weight:900;color:var(--dim);background:transparent;border:0;padding:0}
+.sysr .rep.on{color:var(--red)}
+.sysh{display:grid;grid-template-columns:1.4fr 1fr 1fr 1.2fr .7fr auto;gap:12px;padding:0 16px 4px;font-size:10.5px;color:var(--dim)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.panel h3{font-size:13px;font-weight:900;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.panel h3 em{font-style:normal;font-weight:400;font-size:11px;color:var(--muted)}
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{font-size:10.5px;color:var(--dim);font-weight:700;text-align:start;padding:4px 8px;border-bottom:1px solid var(--line2)}
+.tbl td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:last-child td{border-bottom:0}
+.tbl .c{text-align:center}
+.tbl .ok{color:var(--green);font-weight:700}.tbl .no{color:var(--red);font-weight:700}.tbl .na{color:var(--dim)}
+.tbl .mut{color:var(--muted);font-size:11px}
+.pill{display:inline-block;min-width:22px;text-align:center;font-weight:900;border-radius:6px;padding:0 6px;font-size:11.5px}
+.pill.ok{background:rgba(62,207,142,.15);color:var(--green)}.pill.no{background:rgba(255,92,92,.15);color:var(--red)}.pill.na{background:rgba(255,255,255,.06);color:var(--muted)}
+.mark{display:inline-block;width:22px;text-align:center;font-weight:900;border-radius:6px}
+.mark.ok{color:var(--green)}.mark.no{color:var(--red)}.mark.na{color:var(--dim)}.mark.none{color:var(--dim)}
+@media(max-width:820px){.sysr,.sysh{grid-template-columns:1fr 1fr}.sysh{display:none}.two{grid-template-columns:1fr}}
+@media(max-width:820px){.hero{grid-template-columns:1fr}.mosaic{grid-template-columns:repeat(2,1fr)}.state .big .v{font-size:60px}}
+@media(max-width:560px){.seg{grid-template-columns:repeat(2,1fr)}.mosaic{grid-template-columns:1fr}.rep{grid-template-columns:1fr}.go{text-align:center}}
+</style>
+</head>
+<body>
+
+<!-- ============ الدخول ============ -->
+<div class="login" id="login">
+  <div class="lbox">
+    <div class="lseal">س</div>
+    <h1>تسجيل الدخول — العمل اليومي</h1>
+    <p class="lsub">معهد الإدارة العامة — مبنى الملز · نماذج الفحص والبلاغات والتصعيد</p>
+    <div class="lwarn"><b>واجهة عرض.</b> الدخول هنا لتوضيح الأدوار فقط. في النظام الفعلي يدخل كل مستخدم بحسابه الوظيفي في المعهد، ويُشتق دوره من نظام الصلاحيات.</div>
+    <div class="lf"><label>اسم المستخدم</label><input type="text" id="uu" autocomplete="off" placeholder="salama"></div>
+    <div class="lf"><label>كلمة المرور</label><input type="password" id="pp" autocomplete="off" placeholder="1234"></div>
+    <div id="lerr" class="lerr"></div>
+    <button class="btn btn-main" style="width:100%;margin-top:6px;padding:12px" onclick="doLogin()">دخول</button>
+    <table class="lusers"><thead><tr><th>الدور</th><th>اسم المستخدم</th><th>كلمة المرور</th></tr></thead><tbody>
+      <tr><td>الفني المنفّذ</td><td class="mono">fani</td><td class="mono">1234</td></tr>
+      <tr><td>مدير المرافق والصيانة</td><td class="mono">marafiq</td><td class="mono">1234</td></tr>
+      <tr><td>مدير الشؤون الإدارية والهندسية</td><td class="mono">shuon</td><td class="mono">1234</td></tr>
+      <tr><td>الإدارة العليا</td><td class="mono">idara</td><td class="mono">1234</td></tr>
+      <tr><td>مسؤول السلامة</td><td class="mono">salama</td><td class="mono">1234</td></tr>
+      <tr><td>المكتب الاستشاري</td><td class="mono">maktab</td><td class="mono">1234</td></tr>
+    </tbody></table>
+    <div class="lnote">بيانات الدخول معروضة عمداً — هذه واجهة عرض لا نظام مؤمَّن.</div>
+    <a class="lback" href="index.html">→ العودة إلى المنظومة</a>
+  </div>
+</div>
+
+<!-- ============ اللوحة ============ -->
+<div class="top"><div class="in">
+  <div class="brand"><i>س</i>لوحة البلاغات والتصعيد <small>· مبنى الملز</small></div>
+  <div class="who"><span id="uHint"></span><b id="uRole">—</b><button onclick="logout()">خروج ⎋</button><a href="index.html">المنظومة ←</a></div>
+</div></div>
+
+<!-- ============ ملف المكان / ملف النظام ============ -->
+<div class="wrap" id="pf" hidden></div>
+
+<div class="wrap" id="main">
+
+  <!-- الحالة الآن -->
+  <div class="hero">
+    <div class="state" id="state">
+      <div class="lbl">الحالة الآن</div>
+      <div class="word" id="sWord">—</div>
+      <div class="big"><div class="v" id="sN">٠</div><div class="t" id="sT"></div></div>
+      <div class="sub" id="sSub"></div>
+      <div class="hint" id="upd"></div>
+    </div>
+    <div class="flow" id="flow">
+      <div class="lbl"><b>أين تقف البلاغات المفتوحة</b><span id="flowN"></span></div>
+      <div class="rail" id="rail"></div>
+    </div>
+  </div>
+
+  <!-- بانتظار قرارك -->
+  <div id="secQ">
+    <div class="h"><h2>بانتظار قرارك</h2><span class="cnt" id="qN">٠</span><em id="qHint"></em></div>
+    <div class="cards" id="qBody"></div>
+  </div>
+
+  <!-- بلاغاتي -->
+  <div id="secM">
+    <div class="h"><h2>بلاغاتي</h2><span class="cnt" id="mN">٠</span><em>قررتَ فيها ولم تُغلق بعد</em><span class="new" id="mHint"></span></div>
+    <div class="cards" id="mBody"></div>
+  </div>
+
+  <!-- الأرقام الأربعة -->
+  <div id="secK">
+    <div class="h"><h2>صورة المبنى</h2><em>انقر رقماً لعرض بلاغاته</em></div>
+    <div class="seg" id="kpis"></div>
+    <div class="cards" id="kBody"></div>
+  </div>
+
+  <!-- الأماكن -->
+  <div id="secL">
+    <div class="h"><h2>الأماكن (٨+١)</h2><em>انقر المكان لملفه الكامل: أنظمته وجولاته وبلاغاته · الشريط السفلي: أخضر لا شيء مفتوح · برتقالي مفتوح · أحمر متجاوز</em></div>
+    <div class="mosaic" id="grid"></div>
+  </div>
+
+  <div class="tools">
+    <button class="btn btn-gh" onclick="$('fpick').click()">استيراد جولات من أجهزة أخرى</button>
+    <input type="file" id="fpick" accept=".json,.html" multiple hidden>
+    <button class="btn btn-gh" onclick="load()">تحديث</button>
+    <span class="upd" id="upd2"></span>
+  </div>
+  <div class="note"><b>مصدر البيانات:</b> ما فُتح من نماذج على هذا الجهاز يظهر تلقائياً. بلاغات الفنيين على أجهزة أخرى تصل باستيراد ملف الجولة (HTML أو JSON) الذي يحفظه النموذج بزر «حفظ النموذج بالبيانات». عند ربط النظام بحسابات المعهد تُستبدل هذه الآلية بالمزامنة الآلية.</div>
+</div>
+
+<div class="footer">حزمة السلامة والصحة المهنية — معهد الإدارة العامة</div>
+
+<script>
+/* ================= الأماكن والنماذج (٨+١ — مركز السلامة له نموذجان) ================= */
+const FORMS=[
+ {hz:'HZ-01',name:'القبو ومواقف السيارات',key:'ipa-park-form-v10',  pre:'p',file:'HZ-01-basement/inspection-form.html',    lbl:'نموذج الفحص'},
+ {hz:'HZ-02',name:'غرف الكهرباء',          key:'ipa-elec-form-v10',  pre:'e',file:'HZ-02-electrical/inspection-form.html',  lbl:'نموذج الفحص'},
+ {hz:'HZ-03',name:'غرف التكييف',           key:'ipa-hvac-form-v10',  pre:'a',file:'HZ-03-hvac/inspection-form.html',        lbl:'نموذج الفحص'},
+ {hz:'HZ-04',name:'مركز البيانات',         key:'ipa-dc-form-v10',    pre:'d',file:'HZ-04-datacenter/inspection-form.html',  lbl:'نموذج الفحص'},
+ {hz:'HZ-00',name:'مركز السلامة',          key:'ipa-center-form-v10',pre:'c',file:'HZ-00-safety-center/inspection-form.html',lbl:'الجاهزية (٧)'},
+ {hz:'HZ-00',name:'مركز السلامة',          key:'ipa-fire-form-v41',  pre:'s',file:'HZ-00-safety-center/fire-inspection.html',lbl:'الحريق (١٢)'},
+ {hz:'HZ-05',name:'المطاعم',               key:'ipa-food-form-v10',  pre:'f',file:'HZ-05-restaurants/inspection-form.html', lbl:'نموذج الفحص'},
+ {hz:'HZ-06',name:'المكاتب الإدارية',      key:'ipa-office-form-v10',pre:'o',file:'HZ-06-offices/inspection-form.html',     lbl:'نموذج الفحص'},
+ {hz:'HZ-07',name:'القاعات التدريبية',     key:'ipa-halls-form-v10', pre:'h',file:'HZ-07-halls/inspection-form.html',       lbl:'نموذج الفحص'},
+ {hz:'HZ-08',name:'المخازن',               key:'ipa-store-form-v10', pre:'t',file:'HZ-08-storage/inspection-form.html',     lbl:'نموذج الفحص'}
+];
+const HZ_ORDER=['HZ-01','HZ-02','HZ-03','HZ-04','HZ-00','HZ-05','HZ-06','HZ-07','HZ-08'];
+const LNAME={1:'الفني المنفّذ',2:'مدير المرافق والصيانة',3:'مدير الشؤون الإدارية والهندسية',4:'الإدارة العليا'};
+const LSHORT={1:'الفني',2:'المرافق والصيانة',3:'الشؤون الإدارية',4:'الإدارة العليا'};
+const USERS={
+ fani:{p:'1234',r:'tech',n:'الفني المنفّذ',h:'يسجّل البلاغ ويرسله، ويقرر: أصلحتُ أم تعذّر'},
+ marafiq:{p:'1234',r:'fm',n:'مدير المرافق والصيانة',h:'يقرر في المستوى الثاني: يوفّر المطلوب أو يصعّد'},
+ shuon:{p:'1234',r:'adm',n:'مدير الشؤون الإدارية والهندسية',h:'يقرر في المستوى الثالث'},
+ idara:{p:'1234',r:'exec',n:'الإدارة العليا',h:'القرار النهائي — وبإبلاغها يتحقق شرط المادة السابعة'},
+ salama:{p:'1234',r:'safety',n:'مسؤول السلامة',h:'يراقب ويتابع ويوصي، ويصعّد رقابياً عند توقّف المسار'},
+ maktab:{p:'1234',r:'cons',n:'المكتب الاستشاري',h:'يعتمد بنود الفحص والقراءات وقيمها المرجعية'}
+};
+const SESSION='ipa-session';
+const $=id=>document.getElementById(id);
+const AR=n=>String(n).replace(/[0-9]/g,d=>'٠١٢٣٤٥٦٧٨٩'[d]);
+const EN=s=>String(s||'').replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ================= الدخول ================= */
+let ROLE='',USER='';
+function doLogin(){
+  const u=($('uu').value||'').trim().toLowerCase(),p=$('pp').value,U=USERS[u];
+  if(!U||U.p!==p){$('lerr').textContent='اسم المستخدم أو كلمة المرور غير صحيحة';return;}
+  try{localStorage.setItem(SESSION,JSON.stringify({u,r:U.r,n:U.n,at:Date.now()}))}catch(e){}
+  enter(u);
+}
+function enter(u){
+  const U=USERS[u];ROLE=U.r;USER=u;
+  $('lerr').textContent='';$('login').classList.add('off');
+  $('uRole').textContent=U.n;$('uHint').textContent=U.h;
+  load();
+}
+function logout(){try{localStorage.removeItem(SESSION)}catch(e){}location.reload()}
+['uu','pp'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()}));
+
+/* ================= المهلة والتأخر — نفس حساب النماذج ================= */
+const DUE_H={'فوري':1,'٢٤ ساعة':24,'٧٢ ساعة':72};
+function parseStamp(s){const m=EN(s).match(/(\d{4})\/(\d{2})\/(\d{2})\D+(\d{2}):(\d{2})/);return m?new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5]):null;}
+function isClosed(r){const L=r.levels||{};return Object.keys(L).some(n=>!L[n].up&&!L[n].back);}
+function overdue(r){
+  if(isClosed(r))return null;const h=DUE_H[r.due];if(!h)return null;
+  const d=parseStamp(r.when)||parseStamp(r.sent);if(!d)return null;
+  return (Date.now()-d.getTime())/36e5-h;
+}
+const byOverdue=(a,b)=>{const x=overdue(a),y=overdue(b);return (y===null?-1e9:y)-(x===null?-1e9:x);};
+function lastLvl(r){const lv=Object.keys(r.levels||{}).map(Number).sort();return lv.length?lv[lv.length-1]:0;}
+/* من يملك البلاغ الآن: ١..٤ */
+function holder(r){
+  if(isClosed(r))return 0;
+  const last=lastLvl(r);
+  const backFrom=(r.backFrom&&!(r.levels&&r.levels[1]))?r.backFrom:0;
+  if(r.reopen||backFrom||!last)return 1;
+  return Math.min(last+1,4);
+}
+/* نفس منطق صندوق الوارد في النماذج */
+function mine(r){
+  const R=ROLE,last=lastLvl(r),closed=isClosed(r);
+  if(R==='tech')   return !closed&&(last===0||!!r.backFrom);
+  if(R==='fm')     return !closed&&last===1&&r.levels[1].up;
+  if(R==='adm')    return !closed&&last===2&&r.levels[2].up;
+  if(R==='exec')   return !closed&&((last===3&&r.levels[3].up)||(r.path&&r.path!=='إداري'&&last<4));
+  if(R==='safety') return !closed;
+  return false;
+}
+const RLVL={tech:1,fm:2,adm:3,exec:4}, SEENKEY='ipa-seen';
+function mineDone(r){
+  const lv=RLVL[ROLE]; if(!lv||isClosed(r)||mine(r))return false;
+  if(ROLE==='tech')return !!r.sent;
+  const reached=L=>!!(L&&(L[lv]||(L[lv-1]&&L[lv-1].up)))||(lv===4&&!!r.path&&r.path!=='إداري');
+  return reached(r.levels)||(r.hist||[]).some(reached);
+}
+function sigOf(r){return JSON.stringify([Object.keys(r.levels||{}).sort(),r.status,r.path,!!r.reopen,(r.watch||[]).filter(o=>o.w||o.r||o.p).length,(r.hist||[]).length,r.oosTo||'']);}
+function isNew(r){let m={};try{m=JSON.parse(localStorage.getItem(SEENKEY))||{}}catch(e){}const s=(m[ROLE]||{})[r._f.key+'|'+r.row];return s!==undefined&&s!==sigOf(r);}
+function watchFor(r,lvl){return (r.watch||[]).filter(o=>o.w===LNAME[lvl]&&(o.r||o.p)).slice(-1)[0];}
+function roleBadges(r){
+  const lv=RLVL[ROLE]; let h='';
+  if(lv&&watchFor(r,lv))h+=' <span class="tag t-pur">متابعة من مسؤول السلامة</span>';
+  if(lv&&lv>1&&lv<4&&r.path&&r.path!=='إداري'&&!isClosed(r))h+=' <span class="tag t-pur">صُعّد رقابياً فوقك</span>';
+  if(r.reopen&&!Object.keys(r.levels||{}).length)h+=' <span class="tag t-blu">↩ أُعيد فتحه — الإصلاح السابق غير كافٍ</span>';
+  if(isNew(r))h+=' <span class="newdot">جديد</span>';
+  return h;
+}
+const byNewThenOverdue=(a,b)=>(isNew(b)-isNew(a))||byOverdue(a,b);
+
+/* ================= تحميل البيانات من النماذج العشرة ================= */
+let ALL=[],HAS={},DATA={};
+function load(){
+  ALL=[];HAS={};DATA={};
+  FORMS.forEach(f=>{
+    let d=null;try{d=JSON.parse(localStorage.getItem(f.key))}catch(e){}
+    if(!d||!Array.isArray(d.reports))return;
+    HAS[f.key]=true;DATA[f.key]=d;
+    d.reports.forEach(r=>ALL.push(Object.assign({},r,{_f:f})));
+  });
+  const u='آخر تحديث: '+stamp()+' · '+AR(ALL.length)+' بلاغ من '+AR(Object.keys(HAS).length)+' نموذج';
+  $('upd').textContent=u;$('upd2').textContent=u;
+  draw();route();
+}
+function stamp(){const d=new Date(),p=n=>String(n).padStart(2,'0');return AR(`${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} — ${p(d.getHours())}:${p(d.getMinutes())}`);}
+
+/* ================= الرسم ================= */
+function link(r){return r._f.file+'#open='+encodeURIComponent(r.row);}
+/* فتيل الزمن: كم استُهلك من المهلة */
+function fuse(r){
+  const o=overdue(r),h=DUE_H[r.due];
+  if(o===null||!h)return '';
+  const frac=Math.max(0,Math.min(1,(h+o)/h));
+  const cls=o>=0?'od':(frac>=.6?'warn':'');
+  const txt=o>=0?'متجاوز منذ '+AR(Math.floor(o))+' س':'متبقٍ '+AR(Math.ceil(-o))+' س من '+esc(r.due);
+  return `<div class="fuse ${cls}"><div class="bar"><i style="width:${Math.round(frac*100)}%"></i></div><span class="txt">${txt}</span></div>`;
+}
+function stateTag(r){
+  if(isClosed(r))return '<span class="tag t-grn">مُغلق</span>';
+  if(r.reopen||(r.backFrom&&!(r.levels&&r.levels[1])))return '<span class="tag t-blu">↩ أُعيد للفني</span>';
+  return '<span class="tag t-dim">لدى '+esc(r.owner||'')+'</span>';
+}
+function repCls(r,done){
+  if(done)return 'done';
+  if(isClosed(r))return 'ok';
+  const o=overdue(r);
+  if(o!==null&&o>=0)return 'od';
+  if(r.reopen||(r.backFrom&&!(r.levels&&r.levels[1])))return 'back';
+  if(o!==null&&(DUE_H[r.due]+o)/DUE_H[r.due]>=.6)return 'warn';
+  return '';
+}
+function row(r,done,extra){
+  return `<div class="rep ${repCls(r,done)}">
+    <div>
+      <div class="top1"><span class="loc">${r._f.hz} · ${esc(r._f.name)}</span>${stateTag(r)}${r.path&&r.path!=='إداري'?' <span class="tag t-pur">تصعيد رقابي</span>':''}${roleBadges(r)}</div>
+      <div class="ttl"><b>${esc(r.id)}</b>${esc(r.item)}</div>
+      <div class="meta">${esc(r.sys)} · ${esc(r.sev)}${r.need&&r.need!=='—'?' · المطلوب: '+esc(r.need):''}${r.oos?' · <span class="oos">خارج الخدمة</span>':''}</div>
+      ${done?'':fuse(r)}${extra||''}
+    </div>
+    <a class="go" href="${link(r)}">${done?'عرض':'فتح البلاغ'}</a>
+  </div>`;
+}
+let KSEL='';
+function draw(){
+  const decision=['fm','adm','exec','safety'].indexOf(ROLE)>=0;
+  const open=ALL.filter(r=>!isClosed(r));
+  const openOd=open.filter(r=>overdue(r)>=0).length;
+
+  /* بانتظار قرارك */
+  const q=ALL.filter(mine).sort(byNewThenOverdue);
+  const qod=q.filter(r=>overdue(r)>=0).length, qnew=q.filter(isNew).length;
+  $('secQ').style.display=(ROLE==='cons')?'none':'';
+  $('qN').textContent=AR(q.length);$('qN').className='cnt'+(qod?' red':'');
+  $('qHint').textContent=qod?AR(qod)+' منها متجاوز المهلة':'';
+  $('qBody').innerHTML=q.length?q.map(r=>row(r)).join('')
+    :(ALL.length?'<div class="empty calm"><b>لا شيء بانتظار قرارك الآن</b></div>'
+    :'<div class="empty"><b>لا بيانات بعد</b>افتح نموذج فحص وسجّل بلاغاً، أو استورد ملف جولة من جهاز آخر</div>');
+
+  /* الحالة الآن */
+  const S=$('state');
+  let word,glow,wc;
+  if(ROLE==='cons'){word='بنود الفحص وقيمها المرجعية';glow='rgba(217,178,90,.18)';wc='var(--gold)';}
+  else if(qod){word='تأخر يستوجب قرارك';glow='rgba(255,92,92,.22)';wc='var(--red)';}
+  else if(q.length){word='ينتظر قرارك';glow='rgba(255,177,74,.2)';wc='var(--amber)';}
+  else if(decision&&openOd){word='المسار متأخر عند غيرك';glow='rgba(255,177,74,.18)';wc='var(--amber)';}
+  else if(!ALL.length){word='لا بيانات بعد';glow='rgba(255,255,255,.06)';wc='var(--muted)';}
+  else{word='لا شيء عالق عندك';glow='rgba(62,207,142,.2)';wc='var(--green)';}
+  S.style.setProperty('--glow',glow);S.style.setProperty('--wc',wc);
+  $('sWord').textContent=word;
+  if(ROLE==='cons'){$('sN').textContent=AR(open.length);$('sT').innerHTML='<b>بلاغ مفتوح في المبنى</b>للاطلاع — لا قرار مطلوب منك';}
+  else{$('sN').textContent=AR(q.length);$('sT').innerHTML='<b>'+(ROLE==='safety'?'بلاغ مفتوح تتابعه':'بلاغ بانتظار قرارك')+'</b>'+(qnew?AR(qnew)+' تغيّر منذ آخر مرة':'مرتّبة بالأشد تأخراً');}
+  $('sSub').innerHTML=[qod?`<span><b>${AR(qod)}</b> متجاوز المهلة</span>`:'',`<span>${AR(open.length)} مفتوح في المبنى</span>`,openOd?`<span>${AR(openOd)} متجاوز في المبنى</span>`:''].filter(Boolean).join('');
+
+  /* المسار — أين تقف البلاغات */
+  const cnt={1:0,2:0,3:0,4:0},od={1:0,2:0,3:0,4:0};
+  open.forEach(r=>{const h=holder(r);if(h){cnt[h]++;if(overdue(r)>=0)od[h]++;}});
+  const me=RLVL[ROLE]||0;
+  $('flowN').textContent=open.length?AR(open.length)+' مفتوح':'لا بلاغات مفتوحة';
+  $('rail').innerHTML=[1,2,3,4].map(n=>`<div class="st${cnt[n]?' has':' zero'}${od[n]?' od':''}${me===n?' me':''}"><div class="c">${AR(cnt[n])}</div><span class="n">${LSHORT[n]}</span>${od[n]?`<span class="od-t">${AR(od[n])} متأخر</span>`:''}</div>`).join('');
+
+  /* بلاغاتي */
+  const md=ALL.filter(mineDone).sort(byNewThenOverdue), mnew=md.filter(isNew).length;
+  $('secM').style.display=RLVL[ROLE]?'':'none';
+  $('mN').textContent=AR(md.length);
+  $('mHint').innerHTML=mnew?`<span class="newdot">${AR(mnew)} تغيّر بعد قرارك</span>`:'';
+  $('mBody').innerHTML=md.length?md.map(r=>row(r,true)).join(''):'<div class="empty">لا بلاغات قيد المتابعة عند غيرك</div>';
+
+  /* الأرقام الأربعة: لأدوار القرار ومسؤول السلامة */
+  $('secK').style.display=decision?'':'none';
+  if(decision){
+    const K=[
+      {k:'open', cls:'gld', v:open.length,                                   l:'بلاغ مفتوح',      d:'لم يُغلق بعد في أي مستوى'},
+      {k:'od',   cls:'red', v:openOd,                                        l:'متجاوز المهلة',   d:'انقضت مهلة الفئة ولم يُحسم'},
+      {k:'a',    cls:'amb', v:open.filter(r=>r.imp==='none').length,         l:'فئة أ — حماية معطّلة',d:'لا بديل — يستوجب إجراءات تعويضية'},
+      {k:'reg',  cls:'pur', v:open.filter(r=>r.path&&r.path!=='إداري').length,l:'تصعيد رقابي',     d:'رفعه مسؤول السلامة لتوقّف المسار'}
+    ];
+    $('kpis').innerHTML=K.map(k=>`<div class="k ${k.cls}${k.v?'':' zero'}${KSEL===k.k?' on':''}" onclick="pick('${k.k}')"><div class="v">${AR(k.v)}</div><div class="l">${k.l}</div><div class="d">${k.d}</div></div>`).join('');
+    let list=[];
+    if(KSEL==='open')list=open; else if(KSEL==='od')list=open.filter(r=>overdue(r)>=0);
+    else if(KSEL==='a')list=open.filter(r=>r.imp==='none'); else if(KSEL==='reg')list=open.filter(r=>r.path&&r.path!=='إداري');
+    $('kBody').innerHTML=KSEL?(list.length?list.sort(byOverdue).map(r=>row(r)).join(''):'<div class="empty">لا بلاغات في هذا التصنيف</div>'):'';
+  }
+
+  /* الأماكن */
+  $('grid').innerHTML=HZ_ORDER.map(hz=>{
+    const fs=FORMS.filter(f=>f.hz===hz);
+    const rs=ALL.filter(r=>r._f.hz===hz&&!isClosed(r));
+    const o=rs.length,d=rs.filter(r=>overdue(r)>=0).length,a=rs.filter(r=>r.imp==='none').length;
+    const has=fs.some(f=>HAS[f.key]);
+    const cls=!has?'none':(d?'late':(o?'busy':'calm'));
+    const stat=!has?'<span class="dim">لم تُفتح جولة بعد</span>'
+      :(o?`<b>${AR(o)}</b><span>مفتوح</span>${d?`<span style="color:var(--red);font-weight:700">${AR(d)} متجاوز</span>`:''}${a?`<span class="a">${AR(a)} فئة أ</span>`:''}`
+      :'<span style="color:var(--green);font-weight:700">لا بلاغات مفتوحة</span>');
+    return `<div class="tile ${cls}${hz==='HZ-00'?' hub':''}" onclick="location.hash='place=${hz}'">
+      <div class="code">${hz}</div><div class="name">${esc(fs[0].name)}</div>
+      <div class="lk">${fs.map(f=>`<a href="${f.file}" onclick="event.stopPropagation()">${f.lbl}</a>`).join('')}</div>
+      <div class="stat">${stat}</div></div>`;
+  }).join('');
+}
+function pick(k){KSEL=(KSEL===k)?'':k;draw();}
+
+/* ================= ملف المكان وملف النظام ================= */
+const FREQ_D={'يومي':1,'أسبوعي':7,'نصف شهري':15,'شهري':30,'ربع سنوي':91,'نصف سنوي':182,'سنوي':365};
+const DAY=864e5;
+const fmtD=s=>s?AR(String(s).replace(/-/g,'/')):'—';
+function toDate(s){if(!s)return null;const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s);return m?new Date(+m[1],+m[2]-1,+m[3]):parseStamp(s);}
+function freqDays(sched){let d=null;(sched||[]).forEach(r=>{const n=FREQ_D[(r[0]||'').trim()];if(n&&(d===null||n<d))d=n;});return d;}
+/* أنظمة المكان من بيانات نماذجه المحفوظة */
+function systemsOf(hz){
+  const out=[];
+  FORMS.filter(f=>f.hz===hz).forEach(f=>{
+    const d=DATA[f.key];if(!d||!d.defs)return;
+    Object.keys(d.defs).forEach(k=>{
+      const def=d.defs[k],rounds=((d.rounds||{})[k]||[]).slice().sort((a,b)=>(a.d+a.s)<(b.d+b.s)?1:-1);
+      const reps=ALL.filter(r=>r._f.key===f.key&&String(r.row).split('-')[0]===k);
+      const last=rounds[0]||null,days=freqDays(def.sched);
+      let next=null;if(last&&days){const t=toDate(last.d);if(t)next=new Date(t.getTime()+days*DAY);}
+      const today=new Date();today.setHours(0,0,0,0);
+      const st=!last?'none':(last.no>0?'fault':(next&&next<today?'late':'ok'));
+      out.push({k,f,def,rounds,reps,last,days,next,st,name:def.name||k,code:def.code||''});
+    });
+  });
+  return out;
+}
+const ST_T={ok:['t-grn','فُحص في موعده وسليم'],late:['t-red','فحص متأخر'],fault:['t-amb','في آخر فحص ✗'],none:['t-dim','لم يُفحص بعد']};
+function readyBar(s){
+  if(!s.last)return '<span class="kv">—</span>';
+  const t=s.last.ok+s.last.no,p=t?Math.round(s.last.ok/t*100):0;
+  return `<div class="ready${s.last.no?' bad':''}"><div class="bar"><i style="width:${p}%"></i></div><b>${AR(s.last.ok)}✓ ${s.last.no?AR(s.last.no)+'✗':''}</b></div>`;
+}
+function sysRow(s,hz){
+  const op=s.reps.filter(r=>!isClosed(r)).length;
+  return `<a class="sysr ${s.st}" href="#place=${hz}&sys=${s.f.key}:${s.k}">
+    <div class="nm">${esc(s.name)}<small>${esc(s.f.lbl)}${s.code?' · '+esc(s.code):''}</small></div>
+    <div class="kv">آخر فحص<b>${s.last?fmtD(s.last.d):'لم يُفحص'}</b></div>
+    <div class="kv due">المستحق القادم<b>${s.next?fmtD(s.next.toISOString().slice(0,10)):(s.days?'الآن':'—')}${s.days?' <span style="font-weight:400;color:var(--muted)">('+esc((s.def.sched||[]).map(r=>r[0]).filter(x=>FREQ_D[x]).sort((a,b)=>FREQ_D[a]-FREQ_D[b])[0]||'')+')</span>':''}</b></div>
+    ${readyBar(s)}
+    <span class="rep${op?' on':''}" title="بلاغات مفتوحة">${AR(op)}</span>
+    <span class="tag ${ST_T[s.st][0]}">${ST_T[s.st][1]}</span>
+  </a>`;
+}
+function renderPlace(hz,sysId){
+  const fs=FORMS.filter(f=>f.hz===hz);if(!fs.length)return false;
+  const P=$('pf');
+  const reps=ALL.filter(r=>r._f.hz===hz),open=reps.filter(r=>!isClosed(r));
+  const S=systemsOf(hz);
+  const links=fs.map(f=>`<a href="${f.file}">${f.lbl} ←</a>`).join('');
+  if(sysId){
+    const [key,k]=sysId.split(':');const s=S.find(x=>x.f.key===key&&x.k===k);
+    if(!s)return false;
+    return renderSystem(hz,fs[0].name,s);
+  }
+  const okN=S.filter(x=>x.st==='ok').length,lateN=S.filter(x=>x.st==='late'||x.st==='none').length,faultN=S.filter(x=>x.st==='fault').length;
+  const K=[
+    {cls:'gld',v:open.length,l:'بلاغ مفتوح'},
+    {cls:'red',v:open.filter(r=>overdue(r)>=0).length,l:'متجاوز المهلة'},
+    {cls:'amb',v:open.filter(r=>r.imp==='none').length,l:'فئة أ — حماية معطّلة'},
+    {cls:'',v:reps.filter(isClosed).length,l:'عطل أُصلح وأُغلق'}
+  ];
+  P.innerHTML=`
+    <div class="crumb"><a href="#">اللوحة</a><span>›</span><b>${esc(fs[0].name)}</b></div>
+    <div class="pfh"><div><div class="code">${hz}</div><h1>${esc(fs[0].name)}</h1>
+      <div class="sum">${S.length?`<b>${AR(okN)}</b> من ${AR(S.length)} نظاماً فُحص في موعده وسليم${lateN?` · <b style="color:var(--red)">${AR(lateN)}</b> فحصه متأخر أو لم يُفحص`:''}${faultN?` · <b style="color:var(--amber)">${AR(faultN)}</b> في آخر فحصه ✗`:''}`:'لم تُفتح جولة لهذا المكان بعد'}</div></div>
+      <div class="acts">${links}</div></div>
+    <div class="seg" style="margin-bottom:22px">${K.map(k=>`<div class="k ${k.cls}${k.v?'':' zero'}" style="cursor:default"><div class="v">${AR(k.v)}</div><div class="l">${k.l}</div></div>`).join('')}</div>
+    <div class="h"><h2>الأنظمة</h2><span class="cnt">${AR(S.length)}</span><em>انقر النظام لبنوده وجولاته وبلاغاته</em></div>
+    ${S.some(s=>!s.def.name)?'<div class="empty" style="margin-bottom:10px">بيانات هذا المكان محفوظة بإصدار أقدم لا يحمل أسماء الأنظمة ودورياتها — افتح نموذج الفحص مرة واحدة وضع أي علامة، فتُحدَّث تلقائياً</div>':''}
+    ${S.length?`<div class="sysh"><span>النظام</span><span>آخر فحص</span><span>المستحق القادم</span><span>نتيجة آخر فحص</span><span>مفتوح</span><span></span></div><div class="sysl">${S.map(s=>sysRow(s,hz)).join('')}</div>`:'<div class="empty"><b>لا بيانات</b>افتح نموذج الفحص وسجّل جولة، أو استورد ملف جولة</div>'}
+    <div class="h"><h2>البلاغات المفتوحة في المكان</h2><span class="cnt${open.filter(r=>overdue(r)>=0).length?' red':''}">${AR(open.length)}</span></div>
+    <div class="cards">${open.length?open.sort(byOverdue).map(r=>row(r)).join(''):'<div class="empty calm"><b>لا بلاغات مفتوحة</b></div>'}</div>`;
+  return true;
+}
+function faultDays(r){
+  const a=parseStamp(r.when)||parseStamp(r.sent);if(!a)return null;
+  const L=r.levels||{};const n=Object.keys(L).find(x=>!L[x].up&&!L[x].back);
+  const b=n?(toDate(L[n].date)||null):new Date();if(!b)return null;
+  return Math.max(0,Math.round((b-a)/DAY));
+}
+function renderSystem(hz,placeName,s){
+  const P=$('pf');const m=s.f&&DATA[s.f.key]||{};const marks=m.marks||{},vals=m.vals||{};
+  const mk=v=>v==='ok'?'<span class="mark ok">✓</span>':v==='no'?'<span class="mark no">✗</span>':v==='na'?'<span class="mark na">لا ينطبق</span>':'<span class="mark none">—</span>';
+  const items=(s.def.items||[]).map((it,i)=>`<tr><td class="c mut">${AR(i+1)}</td><td>${esc(it[0])}<div class="mut">${esc(it[1]||'')}</div></td><td class="c">${mk(marks[s.k+'-i-'+i])}</td></tr>`).join('');
+  const reads=(s.def.reads||[]).map((t,i)=>{const b=s.k+'-r-'+i;return `<tr><td class="c mut">${AR(i+1)}</td><td>${esc(t)}<div class="mut">المرجعية: ${esc(vals[b+'|ref']||'لم تُعتمد')} · المقاسة: ${esc(vals[b+'|act']||'—')}</div></td><td class="c">${mk(marks[b])}</td></tr>`}).join('');
+  const rounds=s.rounds.map(r=>`<tr><td>${fmtD(r.d)}${r.t?' <span class="mut">'+AR(r.t)+'</span>':''}</td><td>${esc(r.q||'')}${r.n?' · '+esc(r.n):''}</td><td class="c"><span class="pill ok">${AR(r.ok)}</span></td><td class="c"><span class="pill ${r.no?'no':'na'}">${AR(r.no)}</span></td><td class="c mut">${AR(r.na||0)} / ${AR(r.tot||0)}</td></tr>`).join('');
+  const sched=(s.def.sched||[]).map(r=>`<tr><td><b>${esc(r[0])}</b></td><td>${esc(r[1])}</td><td class="mut">${esc(r[2]||'')}</td></tr>`).join('');
+  const reps=s.reps.slice().sort((a,b)=>(isClosed(a)-isClosed(b))||byOverdue(a,b));
+  const repRows=reps.map(r=>{const d=faultDays(r);return row(r,isClosed(r),d!==null?`<div class="meta">${isClosed(r)?'بقي العطل':'مضى على العطل'} <b style="color:var(--ink)">${d?AR(d)+' يوم':'أقل من يوم'}</b>${r.oos?' · خرج عن الخدمة':''}</div>`:'');}).join('');
+  P.innerHTML=`
+    <div class="crumb"><a href="#">اللوحة</a><span>›</span><a href="#place=${hz}">${esc(placeName)}</a><span>›</span><b>${esc(s.name)}</b></div>
+    <div class="pfh"><div><div class="code">${hz} · ${esc(s.f.lbl)}${s.code?' · '+esc(s.code):''}</div><h1>${esc(s.name)}</h1>
+      <div class="sum"><span class="tag ${ST_T[s.st][0]}">${ST_T[s.st][1]}</span> &nbsp; آخر فحص <b>${s.last?fmtD(s.last.d):'—'}</b>${s.next?' · المستحق القادم <b>'+fmtD(s.next.toISOString().slice(0,10))+'</b>':''} · ${AR(s.rounds.length)} جولة مسجّلة · ${AR(s.reps.length)} بلاغ (${AR(s.reps.filter(r=>!isClosed(r)).length)} مفتوح)</div></div>
+      <div class="acts"><a href="${s.f.file}">${esc(s.f.lbl)} ←</a></div></div>
+    <div class="two">
+      <div class="panel"><h3>سجل الجولات <em>كل جولة سطر، حتى السليمة</em></h3>
+        ${rounds?`<table class="tbl"><tr><th>التاريخ</th><th>الفاحص</th><th class="c">✓</th><th class="c">✗</th><th class="c">لا ينطبق / البنود</th></tr>${rounds}</table>`:'<div class="empty">لم تُسجَّل جولة لهذا النظام بعد</div>'}</div>
+      <div class="panel"><h3>الجدول الدوري <em>من النموذج</em></h3>
+        ${sched?`<table class="tbl"><tr><th>الدورية</th><th>المهمة</th><th>مَن</th></tr>${sched}</table>`:'<div class="empty">—</div>'}</div>
+    </div>
+    <div class="h"><h2>البنود الآن</h2><em>علامات الجولة القائمة${m.fields?'':''}</em></div>
+    <div class="panel"><table class="tbl"><tr><th>#</th><th>البند</th><th class="c">العلامة</th></tr>${items}${reads?`<tr><th colspan="3" style="padding-top:12px">القراءات المقاسة</th></tr>${reads}`:''}</table></div>
+    <div class="h"><h2>بلاغات النظام</h2><span class="cnt">${AR(reps.length)}</span><em>المفتوح أولاً، ثم ما أُغلق — بمدة العطل ومساره</em></div>
+    <div class="cards">${repRows||'<div class="empty calm"><b>لا بلاغات على هذا النظام</b></div>'}</div>`;
+  return true;
+}
+function route(){
+  if(!ROLE)return;
+  const h=location.hash.replace(/^#/,''),q={};
+  h.split('&').forEach(p=>{const i=p.indexOf('=');if(i>0)q[decodeURIComponent(p.slice(0,i))]=decodeURIComponent(p.slice(i+1));});
+  const ok=q.place?renderPlace(q.place,q.sys):false;
+  $('pf').hidden=!ok;$('main').hidden=ok;
+  if(q.place&&!ok)location.hash='';
+  window.scrollTo({top:0});
+}
+window.addEventListener('hashchange',route);
+
+/* ================= استيراد جولات من أجهزة أخرى ================= */
+$('fpick').addEventListener('change',e=>{
+  const files=[...e.target.files];e.target.value='';
+  let done=0,msgs=[];
+  files.forEach(f=>{
+    const rd=new FileReader();
+    rd.onload=()=>{
+      try{
+        let raw=rd.result,d=null;
+        if(/^\s*[{[]/.test(raw))d=JSON.parse(raw);
+        else{const m=raw.match(/<script id="SAVED"[^>]*>([\s\S]*?)<\/script>/);if(m)d=JSON.parse(m[1].replace(/\\u003c/g,'<'));}
+        if(!d||!Array.isArray(d.reports))throw 0;
+        const pre=(d.defs&&Object.keys(d.defs)[0]||d.sys||(d.reports[0]||{}).row||'').charAt(0);
+        const F=FORMS.find(x=>x.pre===pre);
+        if(!F)throw 0;
+        let cur=null;try{cur=JSON.parse(localStorage.getItem(F.key))}catch(e){}
+        if(cur&&cur.reports&&cur.reports.length&&JSON.stringify(cur)!==JSON.stringify(d)){
+          if(!confirm(`«${f.name}»\n\nيوجد على هذا الجهاز جولة سابقة لـ ${F.hz} ${F.name} فيها ${AR(cur.reports.length)} بلاغ.\nاستبدالها بالملف المستورد؟`)){msgs.push('تُرك: '+f.name);return;}
+        }
+        localStorage.setItem(F.key,JSON.stringify(d));
+        msgs.push('✓ '+F.hz+' '+F.name+' ('+F.lbl+'): '+AR(d.reports.length)+' بلاغ');
+      }catch(err){msgs.push('✕ تعذّر قراءة: '+f.name);}
+      finally{if(++done===files.length){load();alert(msgs.join('\n'));}}
+    };
+    rd.readAsText(f);
+  });
+});
+
+window.addEventListener('storage',e=>{if(ROLE&&e.key&&e.key.indexOf('ipa-')===0&&e.key!==SESSION)load();});
+window.addEventListener('focus',()=>{if(ROLE)load();});
+
+/* جلسة قائمة؟ */
+(function(){
+  let s=null;try{s=JSON.parse(localStorage.getItem(SESSION))}catch(e){}
+  if(s&&USERS[s.u])enter(s.u);
+})();
+</script>
+</body>
+</html>
