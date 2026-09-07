@@ -771,7 +771,8 @@ const USERS={
  shuon:{p:'1234',r:'adm',n:'مدير الشؤون الإدارية والهندسية',h:'يقرر في المستوى الثالث'},
  idara:{p:'1234',r:'exec',n:'الإدارة العليا',h:'القرار النهائي — وبإبلاغها يتحقق شرط المادة السابعة'},
  salama:{p:'1234',r:'safety',n:'مسؤول السلامة',h:'يراقب ويتابع ويوصي، ويصعّد رقابياً عند توقّف المسار'},
- maktab:{p:'1234',r:'cons',n:'المكتب الاستشاري',h:'يعتمد بنود الفحص والقراءات وقيمها المرجعية'}
+ maktab:{p:'1234',r:'cons',n:'المكتب الاستشاري',h:'يعتمد بنود الفحص والقراءات وقيمها المرجعية'},
+ mudir:{p:'1234',r:'dept',n:'مدير إدارة',h:'يطّلع على نموذج فحص مكانه — بلا تعليم أو قرار'}
 };
 let ROLE='';
 function doLogin(){
@@ -805,7 +806,7 @@ function lockByRole(){
   });
   document.querySelectorAll('.act').forEach(b=>{
     if(b.id==='cnsBtn')return;
-    b.style.display=(ROLE==='cons')?'none':'';});
+    b.style.display=(ROLE==='cons'||ROLE==='dept')?'none':'';});
   lockModalByRole();
 }
 function lockModalByRole(){
@@ -875,7 +876,7 @@ function ibRow(r,done){
     </div>`;
 }
 function drawInbox(){
-  if(!ROLE||ROLE==='cons'){$('inbox').style.display='none';drawDview();return;}
+  if(!ROLE||ROLE==='cons'||ROLE==='dept'){$('inbox').style.display='none';drawDview();return;}
   const list=myItems().sort(byOverdue);
   $('inbox').style.display='';
   $('ibRole').innerHTML=USERSN(ROLE)+(list.length?`<span class="ib-n">${AR(list.length)}</span>`:'');
