@@ -371,6 +371,17 @@
   .gap-items-list { display: flex; flex-direction: column; gap: 0.5rem; }
   .gap-item-full { display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.6rem 0.75rem; background: rgba(255,255,255,0.08); border-radius: var(--radius-sm); font-size: 0.85rem; line-height: 1.5; }
   .gap-num { width: 1.25rem; height: 1.25rem; background: rgba(255,255,255,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; flex-shrink: 0; }
+
+  /* تخطيط الجوال — لا يمس المحتوى: الحواشي تضيق، والصفوف تلتف، والأعمدة تصير عموداً واحداً */
+  @media (max-width: 700px) {
+    [data-dc-tpl][style*="64px"] { padding-left: 14px !important; padding-right: 14px !important; }
+    [data-dc-tpl][style*="display: flex"], [data-dc-tpl][style*="display:flex"] { flex-wrap: wrap !important; }
+    [data-dc-tpl][style*="flex: 0 0 auto"], [data-dc-tpl][style*="flex:0 0 auto"] { flex: 1 1 100% !important; }
+    [data-dc-tpl][style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+    [data-dc-tpl][style*="min-width"] { min-width: 0 !important; }
+    [data-dc-tpl] img, [data-dc-tpl] svg { max-width: 100%; height: auto; }
+    [data-dc-tpl] table { display: block; overflow-x: auto; max-width: 100%; }
+  }
 </style>
 </helmet>
 

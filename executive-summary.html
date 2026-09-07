@@ -586,6 +586,15 @@ body {
   color: #6B6656;
 }
 
+/* الجوال: البطاقات الأربع عمود واحد والأسهم إلى الأسفل — لا يمس المحتوى */
+@media (max-width: 700px) {
+  .four-cards { grid-template-columns: 1fr; }
+  .card-arrow { transform: rotate(90deg); padding: 4px 0; }
+  .section-content { grid-template-columns: 1fr; }
+  .section-content > div { min-width: 0; }
+  .section-content [style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+}
+
 @media print {
   .page {
     max-width: 100%;
