@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>متطلبات الربط بنظام المعهد — حزمة السلامة</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--green:#0f3d2e;--green-2:#1b5c46;--gold:#b8912f;--red:#9b1c1c;--ink:#12100e;--muted:#6b6560;--line:#c9c4bd;--bg:#e9e6e0;--tint:#f4f2ee}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--ink);line-height:1.75;font-size:13px}
+.header{background:linear-gradient(135deg,var(--green),var(--green-2));color:#fff;padding:22px 24px;border-bottom:4px solid var(--gold)}
+.header .in{max-width:960px;margin:0 auto;display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.header h1{font-size:20px;font-weight:900}.header p{font-size:12px;opacity:.85}
+.header a{margin-inline-start:auto;color:#fff;text-decoration:none;font-size:12px;border:1px solid rgba(255,255,255,.4);padding:5px 12px;border-radius:3px}
+.wrap{max-width:960px;margin:0 auto;padding:22px 20px 60px}
+.lead{background:#fff;border-inline-start:5px solid var(--gold);padding:14px 18px;margin-bottom:20px;font-size:13.5px}
+.lead b{color:var(--green)}
+h2{font-size:15px;font-weight:900;color:var(--green);margin:22px 0 8px;padding-bottom:4px;border-bottom:2px solid var(--gold)}
+h2 span{font-weight:400;font-size:11.5px;color:var(--muted);margin-inline-start:8px}
+p{margin-bottom:8px}
+table{width:100%;border-collapse:collapse;background:#fff;font-size:12.5px;margin-bottom:10px}
+th,td{border:1px solid var(--line);padding:6px 10px;text-align:start;vertical-align:top}
+th{background:var(--tint);color:var(--green);font-size:11.5px}
+code{font-family:"IBM Plex Mono",Consolas,monospace;direction:ltr;display:inline-block;font-size:11.5px;background:var(--tint);padding:0 5px;border-radius:3px}
+ul{margin:0 18px 8px 0}
+li{margin-bottom:3px}
+.note{border:1px solid var(--gold);background:#fdfaf0;padding:10px 14px;font-size:12.5px;margin:10px 0}
+.note b{color:var(--green)}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:8px}
+.box{background:#fff;border:1px solid var(--line);border-top:4px solid var(--green);padding:12px 14px}
+.box b{display:block;color:var(--green);font-size:13.5px;margin-bottom:4px}
+.box small{color:var(--muted);font-size:11.5px}
+.footer{text-align:center;padding:20px;font-size:12px;color:var(--muted)}
+@media(max-width:700px){.three{grid-template-columns:1fr}}
+@media print{body{background:#fff}.header a{display:none}}
+</style>
+</head>
+<body>
+<div class="header"><div class="in"><div><h1>متطلبات الربط بنظام المعهد</h1><p>حزمة السلامة والصحة المهنية — وحدة الفحص والإبلاغ والتصعيد · صفحة واحدة لإدارة تقنية المعلومات</p></div><a href="index.html">→ المنظومة</a></div></div>
+
+<div class="wrap">
+<div class="lead"><b>الخلاصة:</b> الواجهة مكتملة وتعمل اليوم كاملة على المتصفح. الربط لا يضيف شاشات ولا يغيّر منطقاً، بل يستبدل <b>ثلاث آليات مؤقتة</b> بمقابلها المؤسسي: الدخول التجريبي بحسابات المعهد، والتخزين في متصفح الجهاز بمخزن مركزي، والاستيراد اليدوي بالمزامنة والإشعار. كل ما عدا ذلك يبقى كما هو.</div>
+
+<div class="three">
+  <div class="box"><b>١ · الحسابات والأدوار</b><small>ستة أدوار تُشتق من حساب الموظف في المعهد. لا كلمات مرور في النظام.</small></div>
+  <div class="box"><b>٢ · المخزن المركزي</b><small>ثلاثة عشر مفتاحاً لكل مبنى، تُقرأ وتُكتب كما هي. لا تغيير في بنية البيانات.</small></div>
+  <div class="box"><b>٣ · المزامنة والإشعار</b><small>ما يُحفظ على جهاز يظهر فوراً للجميع، ومن ينتظره قرار يُنبَّه.</small></div>
+</div>
+
+<h2>١ · الحسابات والأدوار <span>يستبدل شاشة الدخول التجريبية</span></h2>
+<p>الواجهة تقرأ الجلسة من كائن واحد: <code>{u, r, n, at}</code> أي اسم المستخدم، رمز الدور، الاسم الظاهر، وقت الدخول. المطلوب أن يملأه نظام الدخول الموحد (Active Directory / SSO) بدل شاشة الدخول الحالية.</p>
+<table><tr><th>رمز الدور</th><th>الدور</th><th>من في المعهد</th><th>ما يفعله في الواجهة</th></tr>
+<tr><td><code>tech</code></td><td>الفني المنفّذ</td><td>فنيو إدارة المرافق والصيانة</td><td>الفحص، فتح البلاغ، الإصلاح الموقعي أو التصعيد</td></tr>
+<tr><td><code>fm</code></td><td>مدير المرافق والصيانة</td><td>المستوى الثاني</td><td>يوفّر المطلوب أو يصعّد</td></tr>
+<tr><td><code>adm</code></td><td>مدير الشؤون الإدارية والهندسية</td><td>المستوى الثالث</td><td>يقرر، ويعتمد ترشيح الفرق الأولية</td></tr>
+<tr><td><code>exec</code></td><td>الإدارة العليا</td><td>المستوى الرابع</td><td>القرار النهائي، وبإبلاغها يتحقق شرط المادة السابعة</td></tr>
+<tr><td><code>safety</code></td><td>مسؤول السلامة</td><td>قسم الأمن والسلامة</td><td>المتابعة، التصعيد الرقابي، إعادة الفتح، بيانات الأماكن</td></tr>
+<tr><td><code>cons</code></td><td>المكتب الاستشاري</td><td>المكتب المرخّص المتعاقد</td><td>اعتماد بنود الفحص والقيم المرجعية، الجولات السنوية</td></tr></table>
+<div class="note"><b>هوية القرار:</b> كل قرار في مسار التصعيد يُحفظ باسم وتاريخ. بعد الربط يُملأ الاسم من الحساب تلقائياً ولا يُكتب يدوياً، فيصبح السجل حجة.</div>
+
+<h2>٢ · المخزن المركزي <span>يستبدل تخزين المتصفح</span></h2>
+<p>الواجهة تحفظ كل شيء في مفاتيح نصية بصيغة JSON. المطلوب خدمة تقرأ وتكتب المفتاح نفسه بالبنية نفسها، لكل مبنى.</p>
+<table><tr><th>المفتاح</th><th>المحتوى</th><th>من يكتبه</th></tr>
+<tr><td><code>ipa-*-form-v10</code> (٩) و<code>ipa-fire-form-v41</code></td><td>نموذج مكان: علامات الجولة القائمة، القراءات، <b>سجل الجولات لكل نظام</b> (لا يُمحى)، البلاغات بمساراتها الكاملة، تعريف الأنظمة وبنودها ودورياتها</td><td>النماذج العشرة</td></tr>
+<tr><td><code>ipa-place</code></td><td>بيانات الأماكن التسعة: اعتماد الخطتين، آخر تمرين، الفريق الأولي بمسار ترشيح ← اعتماد ← إحالة</td><td>اللوحة (مسؤول السلامة، مدير الشؤون)</td></tr>
+<tr><td><code>ipa-seen</code></td><td>ما اطّلع عليه كل دور (نقطة «جديد»)</td><td>لكل مستخدم على حدة</td></tr>
+<tr><td><code>ipa-session</code></td><td>الجلسة</td><td>نظام الدخول</td></tr></table>
+<p><b>نقاط التبديل في الكود</b> محصورة: في كل نموذج دالتا <code>autoSave()</code> و<code>autoLoad()</code>، وفي اللوحة <code>load()</code> و<code>placeGet()</code> و<code>placeSave()</code>. استبدال <code>localStorage</code> فيها بنداء الخدمة يكفي.</p>
+<div class="note"><b>قاعدة الاحتفاظ:</b> سجل الجولات ومسارات القرارات وسجل إعادة الفتح <b>إضافة فقط</b>. الخدمة لا تحذف سطراً منها، وتحتفظ بها للمدة التي تقررها لائحة مسؤول السلامة لسجل السلامة. أما علامات الجولة القائمة والقراءات فتُستبدل مع كل جولة، وهذا مقصود.</div>
+
+<h2>٣ · المزامنة والإشعار <span>يستبدل الاستيراد اليدوي</span></h2>
+<p><b>المزامنة:</b> اليوم تصل بلاغات جهاز آخر باستيراد ملف. بعد الربط، أي حفظ يُكتب في المخزن المركزي ويظهر للجميع عند التحديث. الواجهة تعيد القراءة تلقائياً عند العودة إليها، فلا يلزم أكثر من ذلك.</p>
+<p><b>الإشعار</b> هو ما يُلغي الفجوة الزمنية فعلاً. الأحداث التي يجب أن تُنبّه صاحبها، بالبوابة الداخلية أو البريد أو الجوال:</p>
+<table><tr><th>الحدث</th><th>من يُنبَّه</th><th>مصدره في البيانات</th></tr>
+<tr><td>بلاغ صُعّد إليك</td><td>المستوى التالي</td><td>سطر مستوى جديد بعلامة <code>up</code></td></tr>
+<tr><td>أُعيد إليك للتنفيذ / أُعيد فتحه</td><td>الفني</td><td>سطر مستوى بعلامة <code>back</code>، أو <code>reopen</code></td></tr>
+<tr><td>متابعة من مسؤول السلامة</td><td>المدير المخاطَب</td><td>سطر في <code>watch</code> موجّه إلى دوره</td></tr>
+<tr><td>تصعيد رقابي</td><td>الإدارة العليا، والمدير المتجاوَز</td><td><code>path</code> يتغيّر من «إداري»</td></tr>
+<tr><td>تجاوز المهلة</td><td>من عنده البلاغ، ومسؤول السلامة</td><td>مؤقّت في الخادم: وقت الإرسال + مهلة الفئة (فوري ١ س، ٢٤ س، ٧٢ س)</td></tr>
+<tr><td>جولة مستحقة أو متأخرة</td><td>الجهة المسؤولة في الجدول الدوري</td><td>آخر جولة للنظام + دوريته</td></tr></table>
+
+<h2>٤ · ما لا يتغير</h2>
+<ul>
+<li>الوثائق: السياسة، الخطط السبع عشرة، بطاقات الأدوار، الملخص التنفيذي.</li>
+<li>النماذج العشرة وبنودها الثمانية والسبعون ومنطق الإبلاغ والتصعيد الأربع مستويات.</li>
+<li>اللوحة وشاشاتها: بانتظار قرارك، مهامي، بلاغاتي، صورة المبنى، ملف المكان، ملف النظام.</li>
+<li>النسخة الاحتياطية للمبنى تبقى كخيار تصدير حتى بعد الربط.</li>
+</ul>
+
+<h2>٥ · خطوات التنفيذ</h2>
+<table><tr><th>#</th><th>الخطوة</th><th>المسؤول</th><th>الناتج</th></tr>
+<tr><td>١</td><td>ربط الدخول الموحد وإسناد الأدوار الستة للحسابات</td><td>تقنية المعلومات + الموارد البشرية</td><td>لا شاشة دخول تجريبية</td></tr>
+<tr><td>٢</td><td>خدمة قراءة وكتابة المفاتيح لكل مبنى، مع قاعدة الإضافة فقط</td><td>تقنية المعلومات</td><td>مخزن مركزي واحد</td></tr>
+<tr><td>٣</td><td>استبدال نقاط التبديل الخمس في الكود بنداء الخدمة</td><td>تقنية المعلومات + معدّ الحزمة</td><td>مزامنة آلية</td></tr>
+<tr><td>٤</td><td>الإشعارات الستة عبر البوابة الداخلية</td><td>تقنية المعلومات</td><td>إلغاء الفجوة الزمنية</td></tr>
+<tr><td>٥</td><td>تسمية الفرق الأولية في الأماكن الثمانية بأسماء أشخاص</td><td>مديرو الإدارات ← مدير الشؤون ← الموارد البشرية</td><td>«مَن» في «مَن يفعل ماذا»</td></tr></table>
+
+<div class="lead" style="margin-top:22px"><b>المطلوب:</b> قرار اعتماد، ثم تكليف تقنية المعلومات بالخطوات الأربع الأولى. جوهر النظام لا كلفة له، وما يحتاج عملاً تقنياً التزام قائم على المعهد قبل هذا المشروع.</div>
+</div>
+<div class="footer">حزمة السلامة والصحة المهنية — معهد الإدارة العامة</div>
+</body>
+</html>
