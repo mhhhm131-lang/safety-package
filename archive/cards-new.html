@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>البطاقات الأربع — تصميم جديد</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'IBM Plex Sans Arabic', sans-serif;
+  direction: rtl;
+  background: #EFE9DC;
+  color: #16261F;
+  line-height: 1.5;
+}
+.kufi { font-family: 'Noto Kufi Arabic', sans-serif; }
+
+.page {
+  max-width: 900px;
+  margin: 30px auto;
+  padding: 30px;
+  background: #FFFFFF;
+}
+
+/* البطاقات */
+.four-cards {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+  gap: 0;
+  align-items: stretch;
+}
+
+/* السهم بين البطاقات */
+.card-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #C9A227;
+  font-size: 22px;
+  font-weight: 900;
+  padding: 0 6px;
+}
+
+.card {
+  background: #FFFFFF;
+  border: 1px solid #DCD5C4;
+  border-radius: 10px;
+  padding: 14px 12px;
+  border-top: 4px solid #2D4A3E;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+}
+
+.card:last-child {
+  background: #2D4A3E;
+  color: #FFFFFF;
+  border: none;
+}
+
+.card-title {
+  font-size: 11px;
+  font-weight: 800;
+  margin-bottom: 10px;
+  color: #1E3329;
+}
+
+.card:last-child .card-title {
+  color: #C9A227;
+}
+
+.card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.card-text {
+  font-size: 11px;
+  line-height: 1.6;
+  color: #5A5A5A;
+}
+
+.card:last-child .card-text {
+  color: rgba(255,255,255,0.85);
+}
+
+/* البطاقة الأولى - الهرم */
+.pyramid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.pyramid-level {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #FFFFFF;
+  padding: 4px 6px;
+  text-align: center;
+}
+
+.pyramid-level.l1 {
+  width: 60px;
+  background: #1E3329;
+}
+
+.pyramid-level.l2 {
+  width: 75px;
+  background: #2D4A3E;
+}
+
+.pyramid-level.l3 {
+  width: 90px;
+  background: #3D6A5E;
+}
+
+.pyramid-level.l4 {
+  width: 110px;
+  background: #C9A227;
+  color: #1A1A1A;
+  font-weight: 800;
+}
+
+.pyramid-arrow {
+  color: #C9A227;
+  font-size: 10px;
+  line-height: 1;
+}
+
+/* البطاقة الثانية - الأصناف شبكة */
+.zones-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 3px;
+}
+
+.zone-item {
+  background: #F5F3ED;
+  border: 1px solid #E2DBCB;
+  border-radius: 3px;
+  padding: 4px 3px;
+  font-size: 8px;
+  font-weight: 600;
+  color: #33373E;
+  text-align: center;
+}
+
+.zone-item.center {
+  background: #1E5620;
+  color: #FFFFFF;
+  border: none;
+  font-weight: 700;
+}
+
+/* البطاقة الثالثة - التفاصيل */
+.details-list {
+  font-size: 10px;
+  line-height: 1.7;
+  color: #33373E;
+}
+
+.details-list strong {
+  color: #1E3329;
+}
+
+.support-chain {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #DCD5C4;
+}
+
+.support-badge {
+  background: #2D4A3E;
+  color: #FFFFFF;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.support-arrow {
+  color: #C9A227;
+  font-size: 10px;
+}
+
+/* البطاقة الرابعة - النتيجة */
+.result-main {
+  font-size: 11px;
+  line-height: 1.7;
+  margin-bottom: 10px;
+}
+
+.result-highlight {
+  display: inline-block;
+  background: #C9A227;
+  color: #1A1A1A;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 800;
+  margin-top: 6px;
+}
+
+.result-badge {
+  display: inline-block;
+  background: #1E5620;
+  color: #FFFFFF;
+  padding: 3px 8px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  margin-top: 8px;
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- عنوان خارجي -->
+  <div style="text-align:center;margin-bottom:12px;">
+    <span class="kufi" style="font-size:13px;font-weight:800;color:#1E5620;">مخرجات الحل — نظام</span>
+  </div>
+
+  <div class="four-cards">
+
+    <!-- البطاقة ١: البنية -->
+    <div class="card">
+      <div class="card-title kufi">مبني على:</div>
+      <div class="card-content">
+        <div class="pyramid">
+          <div class="pyramid-level l1">سياسة</div>
+          <div class="pyramid-arrow">▼</div>
+          <div class="pyramid-level l2">٣ مبادئ</div>
+          <div class="pyramid-arrow">▼</div>
+          <div class="pyramid-level l3">٣ أهداف</div>
+          <div class="pyramid-arrow">▼</div>
+          <div class="pyramid-level l4">٨ معايير</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- سهم ١←٢ -->
+    <div class="card-arrow">←</div>
+
+    <!-- البطاقة ٢: التقسيم -->
+    <div class="card">
+      <div class="card-title kufi">نتج عنه تقسيم المبنى إلى ٨ أصناف رئيسية + مركز سلامة</div>
+      <div class="card-content">
+        <div class="zones-grid">
+          <div class="zone-item">قاعات</div>
+          <div class="zone-item">مكاتب إدارية</div>
+          <div class="zone-item">أقبية</div>
+          <div class="zone-item">مركز بيانات</div>
+          <div class="zone-item center">مركز السلامة</div>
+          <div class="zone-item">أماكن تقديم الأغذية والمشروبات</div>
+          <div class="zone-item">نقاط وغرف الكهرباء</div>
+          <div class="zone-item">نقاط وغرف التكييف</div>
+          <div class="zone-item">مناطق التخزين</div>
+        </div>
+        <div style="font-size: 8px; color: #8A6D10; text-align: center; margin-top: 6px;">لكل صنف تفرعات · المركز للدعم والتنسيق</div>
+      </div>
+    </div>
+
+    <!-- سهم ٢←٣ -->
+    <div class="card-arrow">←</div>
+
+    <!-- البطاقة ٣: التفاصيل -->
+    <div class="card">
+      <div class="card-title kufi">لكل تفرع:</div>
+      <div class="card-content">
+        <div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center;margin-bottom:6px;">
+          <div style="background:#F5F3ED;border:1px solid #E2DBCB;border-radius:3px;padding:3px 6px;font-size:8px;font-weight:600;color:#1E3329;">خطة سلامة</div>
+          <div style="background:#F5F3ED;border:1px solid #E2DBCB;border-radius:3px;padding:3px 6px;font-size:8px;font-weight:600;color:#1E3329;">خطة طوارئ</div>
+          <div style="background:#F5F3ED;border:1px solid #E2DBCB;border-radius:3px;padding:3px 6px;font-size:8px;font-weight:600;color:#1E3329;">نماذج فحص</div>
+          <div style="background:#F5F3ED;border:1px solid #E2DBCB;border-radius:3px;padding:3px 6px;font-size:8px;font-weight:600;color:#1E3329;">مسؤول</div>
+          <div style="background:#F5F3ED;border:1px solid #E2DBCB;border-radius:3px;padding:3px 6px;font-size:8px;font-weight:600;color:#1E3329;">فريق استجابة أولي</div>
+        </div>
+        <div style="text-align:center;font-size:9px;color:#8A6D10;margin:6px 0;">↓ يسنده ↓</div>
+        <div style="display:flex;justify-content:center;gap:4px;margin-bottom:6px;">
+          <div style="background:#2D4A3E;border-radius:3px;padding:3px 8px;font-size:8px;font-weight:700;color:#FFF;">أمني</div>
+          <div style="background:#2D4A3E;border-radius:3px;padding:3px 8px;font-size:8px;font-weight:700;color:#FFF;">طبي</div>
+          <div style="background:#2D4A3E;border-radius:3px;padding:3px 8px;font-size:8px;font-weight:700;color:#FFF;">فني</div>
+        </div>
+        <div style="text-align:center;font-size:8px;color:#5A5548;line-height:1.4;">وبدعم وتنسيق قيادي وإداري من<br><strong style="color:#1E5620;">مركز السلامة</strong></div>
+      </div>
+    </div>
+
+    <!-- سهم ٣←٤ -->
+    <div class="card-arrow">←</div>
+
+    <!-- البطاقة ٤: النتيجة -->
+    <div class="card">
+      <div class="card-title kufi">أصبح لدينا</div>
+      <div class="card-content">
+        <div class="result-main">
+          نظام سلامة يغطي كامل المبنى ويضمن جاهزيته ويوفر لكل فرد تحت مظلة المعهد — أياً كانت صفته — أن يعرف مسبقاً دوره بالسلامة
+        </div>
+        <div class="result-highlight kufi">ماذا يعمل · من يُبلغ · كيف · متى</div>
+        <div class="result-badge">جاهز للتفعيل</div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

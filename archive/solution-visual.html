@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>قسم الحل — تصميم بصري</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'IBM Plex Sans Arabic', sans-serif;
+  direction: rtl;
+  background: #EFE9DC;
+  color: #16261F;
+  line-height: 1.5;
+}
+.kufi { font-family: 'Noto Kufi Arabic', sans-serif; }
+
+.page {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 40px;
+  background: #FFFFFF;
+}
+
+/* عنوان القسم */
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 3px solid #1E3329;
+  margin-bottom: 24px;
+}
+
+.section-label {
+  font-size: 14px;
+  font-weight: 900;
+  color: #1E5620;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #1E3329;
+}
+
+/* القسم الأول: البنية كهرم */
+.pyramid-section {
+  margin-bottom: 28px;
+}
+
+.pyramid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.pyramid-level {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 13px;
+  border-radius: 4px;
+}
+
+.pyramid-level.l1 { width: 140px; height: 36px; background: #1E3329; }
+.pyramid-level.l2 { width: 220px; height: 36px; background: #2D4A3E; }
+.pyramid-level.l3 { width: 300px; height: 36px; background: #3D6A5E; }
+.pyramid-level.l4 { width: 400px; height: 40px; background: #C9A227; color: #1A1A1A; font-weight: 800; }
+
+.pyramid-arrow {
+  color: #C9A227;
+  font-size: 16px;
+}
+
+.pyramid-label {
+  text-align: center;
+  font-size: 11px;
+  color: #5A5548;
+  margin-top: 8px;
+}
+
+/* القسم الثاني: خريطة المبنى */
+.building-section {
+  margin-bottom: 28px;
+}
+
+.building-label {
+  text-align: center;
+  font-size: 12px;
+  color: #5A5548;
+  margin-bottom: 12px;
+}
+
+.building-map {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 6px;
+  max-width: 380px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.zone {
+  background: #F5F3ED;
+  border: 1px solid #DCD5C4;
+  border-radius: 6px;
+  padding: 8px 6px;
+  text-align: center;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.zone:hover {
+  border-color: #2D4A3E;
+  background: #FFFFFF;
+}
+
+.zone-name {
+  font-size: 10px;
+  font-weight: 700;
+  color: #1E3329;
+}
+
+.zone-count {
+  font-size: 9px;
+  color: #8A6D10;
+  margin-top: 2px;
+}
+
+/* مركز السلامة */
+.zone.center {
+  grid-column: 2;
+  grid-row: 2;
+  background: linear-gradient(135deg, #1E5620 0%, #2D7A32 100%);
+  border: none;
+  color: #FFFFFF;
+}
+
+.zone.center .zone-name { color: #FFFFFF; font-size: 11px; font-weight: 800; }
+.zone.center .zone-count { color: #C9A227; }
+
+/* خطوط الاتصال */
+.connection-lines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+/* القسم الثالث: لكل موقع */
+.per-zone-section {
+  background: #F9F8F5;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.per-zone-title {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: #1E3329;
+  margin-bottom: 16px;
+}
+
+.per-zone-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pz-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #FFFFFF;
+  border: 1px solid #E2DBCB;
+  border-radius: 8px;
+  padding: 12px 16px;
+  min-width: 80px;
+}
+
+.pz-icon {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+.pz-text {
+  font-size: 10px;
+  font-weight: 600;
+  color: #33373E;
+  text-align: center;
+}
+
+.pz-arrow {
+  color: #C9A227;
+  font-size: 20px;
+}
+
+/* القسم الرابع: النتائج */
+.results-section {
+  margin-bottom: 24px;
+}
+
+.results-label {
+  text-align: center;
+  font-size: 12px;
+  color: #5A5548;
+  margin-bottom: 12px;
+}
+
+.results-visual {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.result-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #2D4A3E 0%, #1E3329 100%);
+  color: #FFFFFF;
+  position: relative;
+}
+
+.result-circle::after {
+  content: '';
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  border: 2px dashed #C9A227;
+  border-radius: 50%;
+}
+
+.result-value {
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.result-label {
+  font-size: 9px;
+  margin-top: 4px;
+  opacity: 0.9;
+}
+
+/* القسم الخامس: المقارنة */
+.compare-section {
+  margin-bottom: 24px;
+}
+
+.compare-visual {
+  display: grid;
+  grid-template-columns: 1fr 60px 1fr;
+  gap: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #E2DBCB;
+}
+
+.compare-side {
+  padding: 20px;
+  text-align: center;
+}
+
+.compare-side.old {
+  background: #F9F8F5;
+}
+
+.compare-side.new {
+  background: linear-gradient(180deg, rgba(30,86,32,0.1) 0%, rgba(30,86,32,0.02) 100%);
+}
+
+.compare-icon-big {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  margin: 0 auto 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+}
+
+.compare-side.old .compare-icon-big {
+  background: #DCD5C4;
+}
+
+.compare-side.new .compare-icon-big {
+  background: #1E5620;
+}
+
+.compare-title {
+  font-size: 14px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.compare-side.old .compare-title { color: #5A5548; }
+.compare-side.new .compare-title { color: #1E5620; }
+
+.compare-list {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #33373E;
+}
+
+.compare-result {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 2px dashed;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.compare-side.old .compare-result { border-color: #DCD5C4; color: #A32020; }
+.compare-side.new .compare-result { border-color: #1E5620; color: #1E5620; }
+
+.compare-middle {
+  background: #C9A227;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 900;
+  color: #1A1A1A;
+}
+
+/* القسم السادس: التحولات */
+.transforms-section {
+  background: #1E3329;
+  border-radius: 10px;
+  padding: 20px;
+  color: #FFFFFF;
+}
+
+.transforms-title {
+  text-align: center;
+  font-size: 12px;
+  opacity: 0.7;
+  margin-bottom: 16px;
+}
+
+.transforms-visual {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+.transform-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.transform-from-to {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.transform-circle {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.transform-circle.from {
+  background: rgba(255,255,255,0.1);
+  border: 2px dashed rgba(255,255,255,0.3);
+  color: rgba(255,255,255,0.5);
+  text-decoration: line-through;
+}
+
+.transform-circle.to {
+  background: #C9A227;
+  color: #1A1A1A;
+}
+
+.transform-arrow {
+  color: #C9A227;
+  font-size: 20px;
+}
+
+@media (max-width: 600px) {
+  .page { padding: 20px; margin: 20px; }
+  .building-map { grid-template-columns: repeat(2, 1fr); }
+  .zone.center { grid-column: span 2; grid-row: auto; }
+  .results-visual { gap: 8px; }
+  .result-circle { width: 65px; height: 65px; }
+  .result-value { font-size: 22px; }
+  .compare-visual { grid-template-columns: 1fr; }
+  .compare-middle { padding: 10px; }
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- عنوان القسم -->
+  <div class="section-header">
+    <div class="section-label kufi">الحل</div>
+    <div class="section-title kufi">نظام يغطي كامل المبنى وشاغليه — جاهز للتفعيل</div>
+  </div>
+
+  <!-- ١. البنية كهرم -->
+  <div class="pyramid-section">
+    <div class="pyramid-label" style="margin-bottom:12px;">مخرجات الحل — نظام يغطي كامل المبنى وشاغليه، مبني على:</div>
+    <div class="pyramid">
+      <div class="pyramid-level l1 kufi">سياسة</div>
+      <div class="pyramid-arrow">▼</div>
+      <div class="pyramid-level l2 kufi">٣ مبادئ</div>
+      <div class="pyramid-arrow">▼</div>
+      <div class="pyramid-level l3 kufi">٣ أهداف</div>
+      <div class="pyramid-arrow">▼</div>
+      <div class="pyramid-level l4 kufi">٨ معايير لجاهزية النظام</div>
+    </div>
+  </div>
+
+  <!-- ٢. خريطة المبنى -->
+  <div class="building-section">
+    <div class="building-label" style="line-height:1.8;">نتج عنها: تقسيم المبنى إلى ٨ أصناف رئيسية — لكل صنف تفرعات<br>+ مركز سلامة واحد للدعم والتنسيق والربط</div>
+    <div class="building-map">
+      <div class="zone">
+        <div class="zone-name">القاعات</div>
+      </div>
+      <div class="zone">
+        <div class="zone-name">المكاتب</div>
+      </div>
+      <div class="zone">
+        <div class="zone-name">الأقبية</div>
+      </div>
+      <div class="zone">
+        <div class="zone-name">الكهرباء</div>
+      </div>
+      <div class="zone center">
+        <div class="zone-name kufi">مركز السلامة</div>
+      </div>
+      <div class="zone">
+        <div class="zone-name">التكييف</div>
+      </div>
+      <div class="zone">
+        <div class="zone-name">مركز البيانات</div>
+      </div>
+      <div class="zone">
+        <div class="zone-name">الأغذية</div>
+      </div>
+      <div class="zone">
+        <div class="zone-name">التخزين</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ٣. لكل موقع -->
+  <div class="per-zone-section">
+    <div class="per-zone-title kufi">لكل تفرع:</div>
+    <div class="per-zone-flow">
+      <div class="pz-item">
+        <div class="pz-text">خطة سلامة</div>
+      </div>
+      <div class="pz-arrow">+</div>
+      <div class="pz-item">
+        <div class="pz-text">خطة طوارئ</div>
+      </div>
+      <div class="pz-arrow">+</div>
+      <div class="pz-item">
+        <div class="pz-text">نماذج فحص<br>الجاهزية</div>
+      </div>
+      <div class="pz-arrow">+</div>
+      <div class="pz-item">
+        <div class="pz-text">مسؤول</div>
+      </div>
+      <div class="pz-arrow">+</div>
+      <div class="pz-item">
+        <div class="pz-text">فريق استجابة<br>أولي</div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:#8A6D10;font-weight:600;">↓ يسنده ↓</div>
+    <div style="display:flex;justify-content:center;gap:16px;margin-top:10px;">
+      <div style="background:#2D4A3E;border-radius:6px;padding:8px 16px;font-size:11px;font-weight:700;color:#FFFFFF;">أمني</div>
+      <div style="background:#2D4A3E;border-radius:6px;padding:8px 16px;font-size:11px;font-weight:700;color:#FFFFFF;">طبي</div>
+      <div style="background:#2D4A3E;border-radius:6px;padding:8px 16px;font-size:11px;font-weight:700;color:#FFFFFF;">فني</div>
+    </div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:#5A5548;">وبدعم وتنسيق قيادي وإداري من</div>
+    <div style="display:flex;justify-content:center;margin-top:10px;">
+      <div style="background:linear-gradient(135deg, #1E5620 0%, #2D7A32 100%);border-radius:8px;padding:10px 24px;font-size:12px;font-weight:800;color:#FFFFFF;">◉ مركز السلامة</div>
+    </div>
+  </div>
+
+  <!-- ٤. النتائج -->
+  <div class="results-section">
+    <div class="results-label">فأصبح لدينا:</div>
+    <div class="results-visual">
+      <div class="result-circle">
+        <div class="result-value kufi">٩</div>
+        <div class="result-label">خطط سلامة</div>
+      </div>
+      <div class="result-circle">
+        <div class="result-value kufi">٨</div>
+        <div class="result-label">خطط استجابة</div>
+      </div>
+      <div class="result-circle">
+        <div class="result-value kufi">٢١</div>
+        <div class="result-label">بطاقة دور</div>
+      </div>
+      <div class="result-circle">
+        <div class="result-value kufi">٧٨</div>
+        <div class="result-label">نظام فحص</div>
+      </div>
+      <div class="result-circle">
+        <div class="result-value kufi">١٦</div>
+        <div class="result-label">مادة مطابقة</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ٥. المقارنة -->
+  <div class="compare-section">
+    <div class="compare-visual">
+      <div class="compare-side old">
+        <div class="compare-icon-big">⏳</div>
+        <div class="compare-title kufi">انتظار الوصول</div>
+        <div class="compare-list">
+          + تجهيزات<br>
+          + فريق متخصص<br>
+          + تكلفة
+        </div>
+        <div class="compare-result">الفجوة باقية</div>
+      </div>
+      <div class="compare-middle">VS</div>
+      <div class="compare-side new">
+        <div class="compare-icon-big">✓</div>
+        <div class="compare-title kufi">الوجود المسبق</div>
+        <div class="compare-list">
+          ✓ الموجودون يستجيبون<br>
+          ✓ من الثانية الأولى<br>
+          ✓ بلا كلفة إضافية
+        </div>
+        <div class="compare-result">الفجوة تُغلق</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ٦. التحولات -->
+  <div class="transforms-section">
+    <div class="transforms-title">التحول في طريقة التفكير</div>
+    <div class="transforms-visual">
+      <div class="transform-item">
+        <div class="transform-from-to">
+          <div class="transform-circle from">قسم</div>
+          <div class="transform-arrow">→</div>
+          <div class="transform-circle to">شبكة</div>
+        </div>
+      </div>
+      <div class="transform-item">
+        <div class="transform-from-to">
+          <div class="transform-circle from">تخصص</div>
+          <div class="transform-arrow">→</div>
+          <div class="transform-circle to">سلوك</div>
+        </div>
+      </div>
+      <div class="transform-item">
+        <div class="transform-from-to">
+          <div class="transform-circle from">استدعاء</div>
+          <div class="transform-arrow">→</div>
+          <div class="transform-circle to">وجود</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
