@@ -20,4 +20,19 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+        // مسؤول السلامة يرى نص الخطأ (بلا تتبع) ليُشخَّص الخلل على Render بلا وصول للسجلات.
+        $exceptions->render(function (\Throwable $e, Request $request) {
+            if (config('app.debug') || !$request->user() || $request->user()->role() !== 'system_admin') {
+                return null;
+            }
+            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface
+                || $e instanceof \Illuminate\Validation\ValidationException
+                || $e instanceof \Illuminate\Auth\AuthenticationException) {
+                return null;
+            }
+            $msg = class_basename($e).': '.mb_substr($e->getMessage(), 0, 600);
+            return $request->expectsJson()
+                ? response()->json(['message' => 'خطأ في الخادم', 'error' => $msg], 500)
+                : response('<!doctype html><meta charset="utf-8"><body dir="rtl" style="font-family:sans-serif;padding:24px"><h2>خطأ في الخادم</h2><pre dir="ltr" style="white-space:pre-wrap">'.e($msg).'</pre><a href="/app">← الرئيسية</a></body>', 500);
+        });
     })->create();
