@@ -47,5 +47,7 @@ services:
         value: stderr
       - key: RUN_MIGRATIONS
         value: "true"
+      # للمرحلة ٠ فقط: الحسابات التجريبية السبعة لتشغيل بوابة القصة على النسخة المنشورة.
+      # تُعاد إلى "false" عند قبول المرحلة ١ (إدارة الحسابات الحقيقية).
       - key: SEED_DEMO
-        value: "false"
+        value: "true"
