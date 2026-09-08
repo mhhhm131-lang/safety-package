@@ -122,7 +122,8 @@ class RiskTest extends TestCase
         $it = OrganizationUnit::where('code', 'it')->first();
         $group = AffectedGroup::first();
 
-        // ١) مديرة الموارد البشرية تفعّل الخطر لإدارتها وتسمّي المسؤول والمكان
+        // ١) مديرة الموارد البشرية تفعّل الخطر لإدارتها وتسمّي المسؤول والمكان (الشاشة تعرض حقل المكان)
+        $this->actingAs($hrMgr)->get("/app/risk/{$ref->id}/activate")->assertOk()->assertSee('name="place_id"', false)->assertSee('HZ-06');
         $this->actingAs($hrMgr)->post("/app/risk/{$ref->id}/activate", [
             'scope_type' => 'org_unit', 'organization_unit_id' => $hr->id, 'place_id' => Place::where('code', 'HZ-06')->value('id'),
             'severity' => 4, 'likelihood' => 3,
@@ -153,11 +154,17 @@ class RiskTest extends TestCase
         $this->actingAs($hrMgr)->get("/app/risk/{$active->id}/detail")->assertOk()->assertSee('حريق من أعمال اللحام');
         $this->actingAs($safety)->getJson("/app/risk/registry/tree/active/risk/{$active->id}")->assertOk()
             ->assertJsonPath('organization_unit', $hr->name)->assertJsonPath('place', 'المكاتب الإدارية');
+        // رابط «مخاطر المكان» من اللوحة: ?place=HZ-xx يحصر شجرة سجل الإدارة
+        $this->actingAs($safety)->getJson('/app/risk/registry/tree/active/categories?place=HZ-06')->assertOk()->assertJsonCount(1);
+        $this->actingAs($safety)->getJson('/app/risk/registry/tree/active/categories?place=HZ-01')->assertOk()->assertExactJson([]);
+        $this->actingAs($safety)->get('/app/risk/active?place=HZ-06')->assertOk()->assertSee('كل الأماكن')->assertSee('categories?place=HZ-06', false);
 
         // ٤) الاعتماد: خطر مرجعي جديد يُقدَّم ويُعتمد من الإدارة العليا (آلة الحالة + سجل الأحداث)
         $draft = app(RiskService::class)->createRisk($safety->id, ['title' => 'خطر جديد', 'description' => 'x', 'category_id' => $this->cat->id,
             'severity' => 2, 'likelihood' => 2], 'reference');
+        $this->actingAs($safety)->get('/app/risk/reference')->assertOk()->assertSee("/app/risk/{$draft->id}/submit", false);
         $this->actingAs($safety)->post("/app/risk/{$draft->id}/submit")->assertRedirect();
+        $this->actingAs($safety)->get('/app/risk/reference')->assertOk()->assertDontSee("/app/risk/{$draft->id}/submit", false);
         $this->assertSame('pending_approval', $draft->fresh()->status);
         $this->assertDatabaseHas('app_notifications', ['user_id' => $exec->id, 'type' => 'risk.approve']);
         $this->actingAs($hrMgr)->post("/app/risk/{$draft->id}/approve", ['note' => 'x'])->assertForbidden();

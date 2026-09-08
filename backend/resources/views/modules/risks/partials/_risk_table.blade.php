@@ -256,6 +256,13 @@
                                     <i class="bi bi-lightning"></i>
                                 </a>
                                 @endif
+                                {{-- المعهد: زر تقديم المسودة للاعتماد (المسار موجود في OHSMS بلا زر) --}}
+                                @if($can_edit && $registry_type !== 'master' && $risk->status === 'draft')
+                                <form method="POST" action="{{ route('risk.submit', $risk) }}" onsubmit="return confirm('تقديم هذا الخطر للاعتماد؟')">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-outline-warning w-100" title="تقديم للاعتماد"><i class="bi bi-send"></i></button>
+                                </form>
+                                @endif
                             </div>
                         </td>
                         @endif

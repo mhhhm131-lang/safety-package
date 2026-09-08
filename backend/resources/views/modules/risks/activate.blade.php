@@ -77,6 +77,15 @@
                             @endforeach
                         </select>
                     </div>
+                    <div class="col-md-6">
+                        <label class="form-label" style="color:var(--text-main);">المكان (المعهد)</label>
+                        <select name="place_id" class="form-select">
+                            <option value="">—</option>
+                            @foreach($places as $place)
+                                <option value="{{ $place->id }}" @selected(old('place_id', $risk->place_id ?? null) == $place->id)>{{ $place->code }} — {{ $place->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>

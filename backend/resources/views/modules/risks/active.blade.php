@@ -1,6 +1,11 @@
 @extends('layouts.app')
 
 @section('page_title', 'السجل الفعلي')
+@php
+    // المعهد: رابط «مخاطر المكان» من اللوحة يمرّر ?place=HZ-xx
+    $placeFilter = request('place') ? \App\Modules\Governance\Models\Place::where('code', request('place'))->first() : null;
+    $placeQ = $placeFilter ? '?place='.e($placeFilter->code) : '';
+@endphp
 
 @section('content')
 <div class="container-fluid" id="active-registry-app">
@@ -11,6 +16,7 @@
             <h4 class="mb-1" style="color: var(--text-main);">
                 <i class="bi bi-shield-check me-2" style="color: var(--accent);"></i>
                 السجل الفعلي
+                @if($placeFilter)<span class="badge bg-info ms-2" style="font-size:.7rem">{{ $placeFilter->code }} — {{ $placeFilter->name }}</span> <a href="{{ route('risk.active.index') }}" class="small" style="color:var(--text-muted)">كل الأماكن</a>@endif
             </h4>
             <p class="mb-0" style="color: var(--text-muted); font-size: 0.85rem;">
                 تصفّح هرمي: فئة رئيسية → اختر الفرعيات → اختر خطر → تفاصيل
@@ -142,9 +148,9 @@
 <script>
 (function () {
     const API = {
-        categories:    `{{ url('app/risk/registry/tree/active/categories') }}`,
-        subCategories: (catId)    => `{{ url('app/risk/registry/tree/active/sub-categories') }}/${catId}`,
-        risksBySub:    (subCatId) => `{{ url('app/risk/registry/tree/active/risks-by-sub-category') }}/${subCatId}`,
+        categories:    `{{ url('app/risk/registry/tree/active/categories') }}{{ $placeQ }}`,
+        subCategories: (catId)    => `{{ url('app/risk/registry/tree/active/sub-categories') }}/${catId}{{ $placeQ }}`,
+        risksBySub:    (subCatId) => `{{ url('app/risk/registry/tree/active/risks-by-sub-category') }}/${subCatId}{{ $placeQ }}`,
         riskDetail:    (id)       => `{{ url('app/risk/registry/tree/active/risk') }}/${id}`,
         editRisk:      (id)       => `{{ url('app/risk/active') }}/${id}/edit`,
     };

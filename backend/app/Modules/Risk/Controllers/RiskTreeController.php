@@ -48,7 +48,7 @@ class RiskTreeController extends Controller
     public function registryCategories(string $type): JsonResponse
     {
         $q = Risk::where('risk_type', $type)->whereNotNull('category_id');
-        if ($type === 'active') $this->scopeToUserOrgUnit($q);
+        if ($type === 'active') { $this->scopeToUserOrgUnit($q); $this->scopeToPlace($q); }
         $catIds = $q->distinct()->pluck('category_id');
         return response()->json(RiskCategory::whereIn('id', $catIds)->where('is_active', true)->orderBy('name')->get(['id', 'name', 'name_en']));
     }
@@ -56,7 +56,7 @@ class RiskTreeController extends Controller
     public function registrySubCategories(string $type, $categoryId): JsonResponse
     {
         $q = Risk::where('risk_type', $type)->where('category_id', (int) $categoryId)->whereNotNull('sub_category_id');
-        if ($type === 'active') $this->scopeToUserOrgUnit($q);
+        if ($type === 'active') { $this->scopeToUserOrgUnit($q); $this->scopeToPlace($q); }
         $subIds = $q->distinct()->pluck('sub_category_id');
         return response()->json(RiskSubCategory::whereIn('id', $subIds)->orderBy('name')->get(['id', 'name', 'is_universal']));
     }
@@ -64,7 +64,7 @@ class RiskTreeController extends Controller
     public function registryRisksBySubCategory(string $type, $subCatId): JsonResponse
     {
         $q = Risk::where('risk_type', $type)->where('sub_category_id', (int) $subCatId);
-        if ($type === 'active') $this->scopeToUserOrgUnit($q);
+        if ($type === 'active') { $this->scopeToUserOrgUnit($q); $this->scopeToPlace($q); }
         return response()->json($q->orderByDesc('risk_score')->limit(200)
             ->get(['id', 'code', 'title', 'severity', 'likelihood', 'risk_score', 'status', 'scope_type', 'organization_unit_id', 'place_id']));
     }
@@ -79,6 +79,14 @@ class RiskTreeController extends Controller
             'status' => $risk->status, 'status_label' => $risk->status_label, 'scope_type' => $risk->scope_type,
             'organization_unit' => $risk->organizationUnit?->name, 'place' => $risk->place?->name,
         ]);
+    }
+
+    /** المعهد: ?place=HZ-xx يحصر سجل الإدارة بمكان واحد (رابط «مخاطر المكان» من اللوحة). */
+    private function scopeToPlace($q): void
+    {
+        if ($code = request()->query('place')) {
+            $q->whereHas('place', fn ($p) => $p->where('code', $code));
+        }
     }
 
     private function pack(Risk $risk): array
