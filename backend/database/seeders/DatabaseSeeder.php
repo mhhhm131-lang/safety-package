@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             AffectedGroupsSeeder::class,
             RiskBookSeeder::class,
             RiskControlsSeeder::class,
+            EmergencySeeder::class,
         ]);
     }
 }

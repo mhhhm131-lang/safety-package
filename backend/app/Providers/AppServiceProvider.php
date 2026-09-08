@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Modules\Incident\Models\Incident;
 use App\Modules\Incident\Observers\IncidentObserver;
 use App\Modules\Risk\Models\Risk;
+use App\Modules\Emergency\Models\EmergencyIncident;
+use App\Policies\EmergencyPolicy;
 use App\Policies\IncidentPolicy;
 use App\Policies\RiskPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -30,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::policy(Risk::class, RiskPolicy::class);
         Gate::policy(Incident::class, IncidentPolicy::class);
+        Gate::policy(EmergencyIncident::class, EmergencyPolicy::class);
         Incident::observe(IncidentObserver::class);
 
         // الصفحات العامة لبلاغ الشاغل: ١٠ في الساعة لكل عنوان (OHSMS)

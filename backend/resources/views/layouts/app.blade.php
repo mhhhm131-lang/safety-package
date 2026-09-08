@@ -78,6 +78,21 @@
           <a href="{{ route('risk.approval.queue') }}" class="{{ request()->routeIs('risk.approval.*') ? 'active' : '' }}"><i class="bi bi-check2-square"></i>اعتماد المخاطر</a>
         @endif
       @endif
+      @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'emergency.view') || \App\Core\Permissions\PermissionRegistry::hasPermission($role, 'emergency.respond'))
+        <hr>
+        <div class="small text-muted px-2 mb-1">الطوارئ</div>
+        <a href="{{ route('emergency.dashboard') }}" class="{{ request()->routeIs('emergency.dashboard') ? 'active' : '' }}"><i class="bi bi-exclamation-octagon"></i>مركز الطوارئ</a>
+        <a href="{{ route('emergency.incidents.index') }}" class="{{ request()->routeIs('emergency.incidents.*') ? 'active' : '' }}"><i class="bi bi-broadcast"></i>الحالات الطارئة</a>
+        <a href="{{ route('emergency.teams.index') }}" class="{{ request()->routeIs('emergency.teams.*') ? 'active' : '' }}"><i class="bi bi-people-fill"></i>الفرق</a>
+        <a href="{{ route('emergency.drills.index') }}" class="{{ request()->routeIs('emergency.drills.*') ? 'active' : '' }}"><i class="bi bi-calendar-event"></i>التمارين</a>
+        <a href="{{ route('emergency.equipment.index') }}" class="{{ request()->routeIs('emergency.equipment.*') ? 'active' : '' }}"><i class="bi bi-fire"></i>معدات الطوارئ</a>
+        <a href="{{ route('emergency.contacts.index') }}" class="{{ request()->routeIs('emergency.contacts.*') ? 'active' : '' }}"><i class="bi bi-telephone"></i>جهات الاتصال</a>
+        <a href="{{ route('emergency.buildings.index') }}" class="{{ request()->routeIs('emergency.buildings.*') ? 'active' : '' }}"><i class="bi bi-building"></i>المبنى</a>
+        <a href="{{ route('emergency.analytics.index') }}" class="{{ request()->routeIs('emergency.analytics.*') ? 'active' : '' }}"><i class="bi bi-graph-up"></i>مؤشرات الطوارئ</a>
+        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'emergency.manage'))
+          <a href="{{ route('emergency.settings') }}" class="{{ request()->routeIs('emergency.settings') ? 'active' : '' }}"><i class="bi bi-clock-history"></i>مهل التصعيد</a>
+        @endif
+      @endif
       <hr>
       <a href="/index.html"><i class="bi bi-folder2-open"></i>الوثائق (المنظومة)</a>
     </aside>

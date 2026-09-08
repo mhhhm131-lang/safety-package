@@ -8,12 +8,13 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * permission:<code> — يمنع الوصول ما لم يكن دور المستخدم (من ملفه) ضمن أصحاب الصلاحية.
- * منقول من OHSMS بلا tenant وبلا superuser.
+ * permission:<code>[,<code>…] — يمنع الوصول ما لم يكن دور المستخدم (من ملفه) ضمن أصحاب إحدى الصلاحيات المذكورة.
+ * منقول من OHSMS بلا tenant وبلا superuser. تعدد الرموز (أيٌّ منها يكفي) أُضيف في المرحلة ٤ للطوارئ
+ * (الاطلاع أو الاستجابة الميدانية).
  */
 class CheckPermission
 {
-    public function handle(Request $request, Closure $next, string $permissionCode): Response
+    public function handle(Request $request, Closure $next, string ...$permissionCodes): Response
     {
         $user = $request->user();
         if (!$user) {
@@ -27,10 +28,12 @@ class CheckPermission
             abort(403, 'الحساب غير مفعّل.');
         }
 
-        if (!PermissionRegistry::hasPermission($profile->role, $permissionCode)) {
-            abort(403, 'ليس لديك صلاحية للوصول لهذه الصفحة.');
+        foreach ($permissionCodes as $code) {
+            if (PermissionRegistry::hasPermission($profile->role, $code)) {
+                return $next($request);
+            }
         }
 
-        return $next($request);
+        abort(403, 'ليس لديك صلاحية للوصول لهذه الصفحة.');
     }
 }

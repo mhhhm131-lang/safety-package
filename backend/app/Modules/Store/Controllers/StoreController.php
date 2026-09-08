@@ -4,6 +4,7 @@ namespace App\Modules\Store\Controllers;
 
 use App\Core\Permissions\PermissionRegistry;
 use App\Http\Controllers\Controller;
+use App\Modules\Emergency\Services\TeamSync;
 use App\Modules\Governance\Services\DeptSync;
 use App\Modules\Incident\Services\IncidentService;
 use App\Modules\Incident\Services\OccSync;
@@ -131,6 +132,15 @@ class StoreController extends Controller
             $doc->version = $doc->version + 1;
             $doc->updated_by = $userId;
             $doc->save();
+
+            if ($key === TeamSync::KEY) {
+                // ملف المكان هو الحقيقة: الفريق الأولي في وحدة الطوارئ يُشتق منه فور الحفظ (المرحلة ٤ الخطوة ٥)
+                try {
+                    app(TeamSync::class)->sync();
+                } catch (\Throwable $e) {
+                    report($e);
+                }
+            }
 
             return response()->json(['key' => $key, 'version' => $doc->version]);
         });

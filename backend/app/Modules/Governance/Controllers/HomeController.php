@@ -33,6 +33,9 @@ class HomeController extends Controller
         if (PermissionRegistry::hasPermission($role, 'risk.list')) {
             $cards[] = ['title' => 'المخاطر', 'desc' => 'كتاب المخاطر، السجل العام للمعهد، مخاطر الإدارات والأماكن', 'url' => route('risk.reference.index'), 'icon' => 'bi-exclamation-triangle'];
         }
+        if (PermissionRegistry::hasPermission($role, 'emergency.view') || PermissionRegistry::hasPermission($role, 'emergency.respond')) {
+            $cards[] = ['title' => 'الطوارئ', 'desc' => 'التفعيل، تنبيه الفريق الأولي، التتبع المباشر، التمارين، التقرير', 'url' => route('emergency.dashboard'), 'icon' => 'bi-exclamation-octagon'];
+        }
         if (PermissionRegistry::hasPermission($role, 'system.audit')) {
             $cards[] = ['title' => 'سجل التدقيق', 'desc' => 'من فعل ماذا ومتى', 'url' => route('app.audit'), 'icon' => 'bi-journal-text'];
         }
