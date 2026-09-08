@@ -101,10 +101,14 @@ class RiskTest extends TestCase
     public function test_master_to_reference_copy_is_idempotent_and_keeps_phases(): void
     {
         $m = $this->masterRisk();
+        \App\Modules\Risk\Models\RiskControl::create(['risk_id' => $m->id, 'phase' => 'preventive', 'description_ar' => 'مراقب حريق طوال العمل', 'sort_order' => 1]);
         $copy = app(RiskCopyService::class);
         $ref1 = $copy->masterToReference($m, null);
         $ref2 = $copy->masterToReference($m, null);
         $this->assertSame($ref1->id, $ref2->id);
+        // الإصلاح الثالث: بنود التحكم تُنسخ مع الخطر (OHSMS كان لا ينسخها)
+        $this->assertSame('مراقب حريق طوال العمل', $ref1->controls()->first()?->description_ar);
+        $this->assertSame(1, $ref1->controls()->count());
         $this->assertSame('reference', $ref1->risk_type);
         $this->assertSame('تصريح عمل ساخن قبل البدء', $ref1->phases()->where('phase', 'proactive')->first()->preventive_action);
         $this->assertSame(3, $ref1->phases()->count());

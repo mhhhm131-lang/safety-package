@@ -100,6 +100,7 @@ class RiskCopyService
             $newRisk = Risk::create(array_merge($data, $overrides));
             $this->copyPhases($source, $newRisk);
             $this->ensurePhases($newRisk);
+            $this->copyControls($source, $newRisk);
             return $newRisk;
         });
     }
@@ -128,6 +129,16 @@ class RiskCopyService
                     'details' => $d->details, 'cascading_effects' => $d->cascading_effects,
                 ]);
             }
+        }
+    }
+
+    /** الإصلاح الثالث في BACKEND.md ٥-٢: OHSMS لا ينسخ بنود التحكم الخاصة بالخطر عند النسخ بين السجلات. */
+    private function copyControls(Risk $source, Risk $target): void
+    {
+        foreach ($source->controls()->orderBy('sort_order')->get() as $control) {
+            $copy = $control->replicate(['review_flag', 'review_notes', 'flag_count']);
+            $copy->risk_id = $target->id;
+            $copy->save();
         }
     }
 
