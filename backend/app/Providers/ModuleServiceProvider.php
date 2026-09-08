@@ -21,6 +21,7 @@ class ModuleServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->app['router']->aliasMiddleware('permission', CheckPermission::class);
+        $this->app['router']->aliasMiddleware('contractor', \App\Core\Middleware\EnsureContractor::class);
         $this->loadModuleRoutes();
     }
 

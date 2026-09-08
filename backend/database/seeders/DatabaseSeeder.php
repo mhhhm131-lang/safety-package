@@ -19,6 +19,8 @@ class DatabaseSeeder extends Seeder
             RiskBookSeeder::class,
             RiskControlsSeeder::class,
             EmergencySeeder::class,
+            TradeSeeder::class,          // المرحلة ٦: ٩ مهن من OHSMS (شجرة التصنيف المهني)
+            TrainingTopicSeeder::class,  // المرحلة ٦: ٩ مواضيع تدريب مرجعية لكفاءة العمال
         ]);
     }
 }

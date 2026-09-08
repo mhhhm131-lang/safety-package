@@ -14,7 +14,10 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    protected $fillable = ['username', 'name', 'email', 'password'];
+    protected $fillable = ['username', 'name', 'email', 'password', 'external_party_id'];
+
+    /** أدوار الأطراف الخارجية: حسابها مربوط بطرف (external_party_id) وترى بياناته فقط (المرحلة ٦). */
+    public const CONTRACTOR_ROLES = ['contractor', 'contractor_supervisor', 'consultant_office', 'external'];
 
     protected $hidden = ['password', 'remember_token'];
 
@@ -50,5 +53,21 @@ class User extends Authenticatable
     public function can_(string $permission): bool
     {
         return PermissionRegistry::hasPermission($this->role(), $permission);
+    }
+
+    public function externalParty(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(\App\Modules\Project\Models\ExternalParty::class, 'external_party_id');
+    }
+
+    /** حساب طرف خارجي (مقاول/مشرف مقاول/مكتب استشاري) مربوط بطرف. */
+    public function isContractor(): bool
+    {
+        return in_array($this->role(), self::CONTRACTOR_ROLES, true) && $this->external_party_id !== null;
+    }
+
+    public function isContractorRole(): bool
+    {
+        return in_array($this->role(), self::CONTRACTOR_ROLES, true);
     }
 }

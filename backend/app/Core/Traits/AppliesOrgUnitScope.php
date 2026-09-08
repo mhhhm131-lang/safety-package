@@ -50,4 +50,34 @@ trait AppliesOrgUnitScope
         $p = $this->userProfile();
         return $p && in_array($p->role, $this->globalScopeRoles, true);
     }
+
+    /**
+     * نطاق الطرف الخارجي (المرحلة ٦ — نظير ContextScopeService في OHSMS): حساب المقاول/مشرف المقاول/المكتب الاستشاري
+     * يرى صفوف طرفه فقط (users.external_party_id)؛ بلا طرف يرى لا شيء. بقية الأدوار لا تُقيَّد.
+     */
+    protected function scopeToExternalParty(Builder $query, string $column = 'external_party_id'): void
+    {
+        $user = auth()->user();
+        if (!$user || !$user->isContractorRole()) return;
+        if (!$user->external_party_id) {
+            $query->whereRaw('1 = 0');
+            return;
+        }
+        $query->where($column, $user->external_party_id);
+    }
+
+    /** يمنع حساب الطرف الخارجي من فتح صف طرف آخر (يُستدعى في show/edit). */
+    protected function assertPartyAccess(?int $partyId): void
+    {
+        $user = auth()->user();
+        if ($user && $user->isContractorRole() && (int) $user->external_party_id !== (int) $partyId) {
+            abort(403, 'هذا السجل لطرف آخر.');
+        }
+    }
+
+    protected function contractorPartyId(): ?int
+    {
+        $user = auth()->user();
+        return ($user && $user->isContractorRole()) ? $user->external_party_id : null;
+    }
 }

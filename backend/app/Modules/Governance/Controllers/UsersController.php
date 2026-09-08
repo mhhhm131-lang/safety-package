@@ -40,7 +40,7 @@ class UsersController extends Controller
     {
         $data = $this->validated($request, null);
         DB::transaction(function () use ($data) {
-            $user = User::create(['username' => $data['username'], 'name' => $data['name'], 'email' => $data['email'] ?? null, 'password' => $data['password']]);
+            $user = User::create(['username' => $data['username'], 'name' => $data['name'], 'email' => $data['email'] ?? null, 'password' => $data['password'], 'external_party_id' => $data['external_party_id'] ?? null]);
             UserProfile::create([
                 'user_id' => $user->id, 'role' => $data['role'],
                 'organization_unit_id' => $data['organization_unit_id'] ?? null, 'place_id' => $data['place_id'] ?? null,
@@ -59,7 +59,7 @@ class UsersController extends Controller
     {
         $data = $this->validated($request, $user);
         DB::transaction(function () use ($data, $user) {
-            $user->fill(['username' => $data['username'], 'name' => $data['name'], 'email' => $data['email'] ?? null]);
+            $user->fill(['username' => $data['username'], 'name' => $data['name'], 'email' => $data['email'] ?? null, 'external_party_id' => $data['external_party_id'] ?? null]);
             if (!empty($data['password'])) {
                 $user->password = $data['password'];
             }
@@ -98,6 +98,8 @@ class UsersController extends Controller
             'roles' => PermissionRegistry::ROLES,
             'units' => OrganizationUnit::where('is_active', true)->orderBy('order')->get(),
             'places' => Place::orderBy('sort')->get(),
+            'parties' => \App\Modules\Project\Models\ExternalParty::orderBy('name')->get(['id', 'name', 'party_type']),
+            'contractorRoles' => \App\Models\User::CONTRACTOR_ROLES,
         ];
     }
 
@@ -111,7 +113,11 @@ class UsersController extends Controller
             'role' => ['required', Rule::in(array_keys(PermissionRegistry::ROLES))],
             'organization_unit_id' => 'nullable|exists:organization_units,id',
             'place_id' => 'nullable|exists:places,id',
+            'external_party_id' => 'nullable|exists:external_parties,id', // المرحلة ٦: حساب مقاول/مشرف مقاول/مكتب استشاري → طرفه
         ]);
+        if (!in_array($data['role'], \App\Models\User::CONTRACTOR_ROLES, true)) {
+            $data['external_party_id'] = null;
+        }
         $data['username'] = Str::lower($data['username']);
         return $data;
     }

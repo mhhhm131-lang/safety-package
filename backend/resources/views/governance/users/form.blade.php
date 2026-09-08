@@ -21,6 +21,11 @@
       <select class="form-select" name="place_id"><option value="">—</option>
         @foreach($places as $p)<option value="{{ $p->id }}" @selected((int)old('place_id', $user?->profile?->place_id)===$p->id)>{{ $p->code }} · {{ $p->name }}</option>@endforeach
       </select></div>
+    <div class="col-md-6" id="party-field"><label class="form-label">الطرف الخارجي (لحساب المقاول / مشرف المقاول / المكتب الاستشاري)</label>
+      <select class="form-select" name="external_party_id"><option value="">—</option>
+        @foreach($parties as $pt)<option value="{{ $pt->id }}" @selected((int)old('external_party_id', $user?->external_party_id)===$pt->id)>{{ $pt->name }}</option>@endforeach
+      </select>
+      <div class="form-text">حساب الطرف الخارجي يرى بيانات طرفه فقط: مشاريعه وعماله ومستنداته وتأهيله.</div></div>
   </div>
   <div class="mt-3 d-flex gap-2"><button class="btn btn-g">حفظ</button><a class="btn btn-outline-secondary" href="{{ route('app.users.index') }}">إلغاء</a></div>
 </form>

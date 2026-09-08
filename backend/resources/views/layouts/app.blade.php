@@ -97,6 +97,30 @@
           <a href="{{ route('emergency.settings') }}" class="{{ request()->routeIs('emergency.settings') ? 'active' : '' }}"><i class="bi bi-clock-history"></i>مهل التصعيد</a>
         @endif
       @endif
+      @if(auth()->user()->isContractor())
+        <hr>
+        <div class="small text-muted px-2 mb-1">بوابة المقاول</div>
+        <a href="{{ route('contractor.home') }}" class="{{ request()->routeIs('contractor.home') ? 'active' : '' }}"><i class="bi bi-building"></i>بوابتنا</a>
+      @endif
+      @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'project.list') || \App\Core\Permissions\PermissionRegistry::hasPermission($role, 'worker.list'))
+        <hr>
+        <div class="small text-muted px-2 mb-1">المقاولون</div>
+        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'project.list'))
+          <a href="{{ route('projects.index') }}" class="{{ request()->routeIs('projects.*') ? 'active' : '' }}"><i class="bi bi-kanban"></i>المشاريع</a>
+        @endif
+        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'external_party.list'))
+          <a href="{{ route('external-parties.index') }}" class="{{ request()->routeIs('external-parties.*') ? 'active' : '' }}"><i class="bi bi-buildings"></i>الأطراف الخارجية</a>
+        @endif
+        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'worker.list'))
+          <a href="{{ route('workers.index') }}" class="{{ request()->routeIs('workers.*') ? 'active' : '' }}"><i class="bi bi-person-badge"></i>العمال</a>
+        @endif
+        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'competency.view'))
+          <a href="{{ route('competency.matrix') }}" class="{{ request()->routeIs('competency.*') ? 'active' : '' }}"><i class="bi bi-award"></i>الكفاءات والمهن</a>
+        @endif
+        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'integration.manage'))
+          <a href="{{ route('settings.contractor-channels') }}" class="{{ request()->routeIs('settings.contractor-channels') ? 'active' : '' }}"><i class="bi bi-shield-check"></i>قنوات التحقق</a>
+        @endif
+      @endif
       <hr>
       <a href="/index.html"><i class="bi bi-folder2-open"></i>الوثائق (المنظومة)</a>
     </aside>
