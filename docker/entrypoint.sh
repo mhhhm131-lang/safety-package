@@ -41,5 +41,9 @@ fi
 
 chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
 
+# مجلدات nginx المؤقتة (قد يكون /tmp فارغاً عند التشغيل) ورقم البناء للتحقق من النشر
+mkdir -p /tmp/nginx/client-body /tmp/nginx/fastcgi /tmp/nginx/proxy && chown -R www-data:www-data /tmp/nginx
+echo "${RENDER_GIT_COMMIT:-local}" > public/build.txt
+
 echo "▶ جاهز"
 exec "$@"

@@ -44,7 +44,8 @@ COPY *.html support.js  public/
 
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh \
-    && chown -R www-data:www-data storage bootstrap/cache \
+    && mkdir -p /tmp/nginx/client-body /tmp/nginx/fastcgi /tmp/nginx/proxy /var/lib/nginx/tmp /var/log/nginx \
+    && chown -R www-data:www-data /tmp/nginx /var/lib/nginx /var/log/nginx storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
 EXPOSE 80
