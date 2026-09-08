@@ -21,7 +21,7 @@ class LoginController extends Controller
         if (Auth::check()) {
             return redirect($this->safeNext($request->query('next')));
         }
-        return view('auth.login', ['next' => $request->query('next', '/dashboard.html')]);
+        return view('auth.login', ['next' => $request->query('next', '/app')]);
     }
 
     public function login(Request $request): RedirectResponse
@@ -78,7 +78,7 @@ class LoginController extends Controller
     {
         $next = (string) $next;
         if ($next === '' || !str_starts_with($next, '/') || str_starts_with($next, '//')) {
-            return '/dashboard.html';
+            return '/app';
         }
         return $next;
     }

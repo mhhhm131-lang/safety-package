@@ -88,6 +88,8 @@ class StoreApiTest extends TestCase
         $this->get('/login')->assertOk()->assertSee('اسم المستخدم');
         $this->post('/login', ['username' => 'SALAMA', 'password' => '1234', 'next' => '/dashboard.html'])
             ->assertRedirect('/dashboard.html');
+        $this->post('/logout');
+        $this->post('/login', ['username' => 'salama', 'password' => '1234'])->assertRedirect('/app');
         $this->assertAuthenticated();
         $this->post('/login', ['username' => 'salama', 'password' => 'wrong'])->assertSessionHasErrors('username');
     }
