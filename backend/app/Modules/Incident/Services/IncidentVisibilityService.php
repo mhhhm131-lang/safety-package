@@ -14,10 +14,10 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class IncidentVisibilityService
 {
-    private const MANAGEMENT_ROLES = ['top_management', 'safety_committee', 'branch_manager', 'department_manager', 'section_manager', 'security_safety_head']; // قرار ٢٠٢٦-٠٩-٠٨: رئيس الأمن والسلامة كمدير إدارة
+    private const MANAGEMENT_ROLES = ['top_management', 'safety_committee', 'branch_manager', 'department_manager', 'section_manager', 'security_safety_head', 'admin_eng_manager', 'facilities_manager']; // قرار ٢٠٢٦-٠٩-٠٨: الثلاثة كمديري إدارات
 
     /** الأدوار المعهدية المضافة: اطلاع على الكل (مؤقت حتى يقرر المستخدم — BACKEND.md الفجوة ٩). */
-    private const INSTITUTE_VIEW_ALL = ['top_management', 'safety_committee', 'admin_eng_manager', 'facilities_manager', 'support_team'];
+    private const INSTITUTE_VIEW_ALL = ['top_management', 'safety_committee', 'support_team']; // فريق الإسناد: دوره في الطوارئ (المرحلة ٤)
 
     public function canView(Incident $incident, int $userId): bool
     {
