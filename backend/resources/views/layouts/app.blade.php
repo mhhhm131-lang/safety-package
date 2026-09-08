@@ -4,12 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="csrf-token" content="{{ csrf_token() }}">
-<title>@yield('title', 'منظومة السلامة') — معهد الإدارة العامة</title>
+<title>@yield('title', View::hasSection('page_title') ? trim(View::getSection('page_title')) : 'منظومة السلامة') — معهد الإدارة العامة</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{--g:#0f4c3a;--g2:#166a4f;--bg:#f3f6f4}
+  :root{--g:#0f4c3a;--g2:#166a4f;--bg:#f3f6f4;
+    /* متغيرات شاشات OHSMS المنقولة (سمة فاتحة بدل الداكنة) */
+    --bg-main:#f3f6f4;--bg-card:#ffffff;--bg-dark:#e9efec;--border-color:#d9e2de;--text-main:#1a2a24;--text-muted:#6b7a74;--accent:#0f4c3a;--accent-color:#0f4c3a}
+  .btn-accent{background:var(--g);color:#fff}.btn-accent:hover{background:var(--g2);color:#fff}
+  .container-fluid .card{background:var(--bg-card)}
   body{font-family:Cairo,"Segoe UI",Tahoma,sans-serif;background:var(--bg);min-height:100vh}
   .topbar{background:var(--g);color:#fff}
   .topbar a{color:#fff;text-decoration:none}
@@ -55,12 +59,24 @@
         <a href="{{ route('app.audit') }}" class="{{ request()->routeIs('app.audit') ? 'active' : '' }}"><i class="bi bi-journal-text"></i>سجل التدقيق</a>
       @endif
       <a href="{{ route('app.notifications.index') }}" class="{{ request()->routeIs('app.notifications.*') ? 'active' : '' }}"><i class="bi bi-bell"></i>الإشعارات</a>
+      @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'risk.list'))
+        <hr>
+        <div class="small text-muted px-2 mb-1">المخاطر</div>
+        <a href="{{ route('risk.master.index') }}" class="{{ request()->routeIs('risk.master.*') ? 'active' : '' }}"><i class="bi bi-book-half"></i>كتاب المخاطر</a>
+        <a href="{{ route('risk.reference.index') }}" class="{{ request()->routeIs('risk.reference.*') ? 'active' : '' }}"><i class="bi bi-bookmark"></i>السجل العام للمعهد</a>
+        <a href="{{ route('risk.active.index') }}" class="{{ request()->routeIs('risk.active.*') || request()->routeIs('risk.index') ? 'active' : '' }}"><i class="bi bi-lightning-charge"></i>مخاطر الإدارات والأماكن</a>
+        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'risk.approve'))
+          <a href="{{ route('risk.approval.queue') }}" class="{{ request()->routeIs('risk.approval.*') ? 'active' : '' }}"><i class="bi bi-check2-square"></i>اعتماد المخاطر</a>
+        @endif
+      @endif
       <hr>
       <a href="/index.html"><i class="bi bi-folder2-open"></i>الوثائق (المنظومة)</a>
     </aside>
     <main class="col-md-10 py-3">
       @if(session('ok'))<div class="alert alert-success py-2">{{ session('ok') }}</div>@endif
+      @if(session('success'))<div class="alert alert-success py-2">{{ session('success') }}</div>@endif
       @if(session('err'))<div class="alert alert-danger py-2">{{ session('err') }}</div>@endif
+      @if(session('error'))<div class="alert alert-danger py-2">{{ session('error') }}</div>@endif
       @if($errors->any())<div class="alert alert-danger py-2"><ul class="m-0">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul></div>@endif
       @yield('content')
     </main>
@@ -73,5 +89,6 @@
   poll();setInterval(poll,60000);
 })();
 </script>
+@stack('scripts')
 </body>
 </html>

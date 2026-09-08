@@ -716,7 +716,7 @@ function renderPlace(hz,sysId){
     <div class="crumb"><a href="#">اللوحة</a><span>›</span><b>${esc(fs[0].name)}</b></div>
     <div class="pfh"><div><div class="code">${hz}</div><h1>${esc(fs[0].name)}</h1>
       <div class="sum">${S.length?`<b>${AR(okN)}</b> من ${AR(S.length)} نظاماً فُحص في موعده وسليم${lateN?` · <b style="color:var(--red)">${AR(lateN)}</b> فحصه متأخر أو لم يُفحص`:''}${faultN?` · <b style="color:var(--amber)">${AR(faultN)}</b> في آخر فحصه ✗`:''}`:'لم تُفتح جولة لهذا المكان بعد'}</div></div>
-      <div class="acts">${links}</div></div>
+      <div class="acts">${links}${(ROLE&&ROLE!=='tech'&&ROLE!=='cons')?`<a href="/app/risk/active?place=${hz}">مخاطر المكان ←</a>`:''}</div></div>
     <div class="seg" style="margin-bottom:22px">${K.map(k=>`<div class="k ${k.cls}${k.v?'':' zero'}" style="cursor:default"><div class="v">${AR(k.v)}</div><div class="l">${k.l}</div></div>`).join('')}</div>
     ${readiness(hz,S)}
     <div class="h"><h2>الأنظمة</h2><span class="cnt">${AR(S.length)}</span><em>انقر النظام لبنوده وجولاته وبلاغاته</em></div>

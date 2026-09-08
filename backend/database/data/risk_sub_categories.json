@@ -1,0 +1,642 @@
+[
+    {
+        "id": 1,
+        "category_id": 1,
+        "name": "الضوضاء",
+        "name_en": "Noise",
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "DWD"
+    },
+    {
+        "id": 2,
+        "category_id": 1,
+        "name": "الإضاءة",
+        "name_en": "Lighting",
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "ADA"
+    },
+    {
+        "id": 3,
+        "category_id": 1,
+        "name": "الاهتزازات",
+        "name_en": "Vibrations",
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "AHT"
+    },
+    {
+        "id": 4,
+        "category_id": 2,
+        "name": "الغازات السامة",
+        "name_en": "Toxic Gases",
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "GS"
+    },
+    {
+        "id": 5,
+        "category_id": 2,
+        "name": "المواد الكاوية",
+        "name_en": "Corrosive Materials",
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "MK"
+    },
+    {
+        "id": 6,
+        "category_id": 3,
+        "name": "الفيروسات والبكتيريا",
+        "name_en": "Viruses and Bacteria",
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "FW"
+    },
+    {
+        "id": 7,
+        "category_id": 3,
+        "name": "الحشرات والقوارض",
+        "name_en": "Insects and Rodents",
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "HW"
+    },
+    {
+        "id": 8,
+        "category_id": 4,
+        "name": "الأجزاء المتحركة",
+        "name_en": "Moving Parts",
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "AM"
+    },
+    {
+        "id": 9,
+        "category_id": 4,
+        "name": "السقوط من ارتفاع",
+        "name_en": "Falls from Height",
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "SA"
+    },
+    {
+        "id": 10,
+        "category_id": 4,
+        "name": "سقوط الأجسام",
+        "name_en": "Falling Objects",
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "SA2"
+    },
+    {
+        "id": 11,
+        "category_id": 5,
+        "name": "الصعق الكهربائي",
+        "name_en": "Electric Shock",
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "SK"
+    },
+    {
+        "id": 12,
+        "category_id": 5,
+        "name": "قصر الدائرة",
+        "name_en": "Short Circuit",
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "QD"
+    },
+    {
+        "id": 13,
+        "category_id": 6,
+        "name": "مواد قابلة للاشتعال",
+        "name_en": "Flammable Materials",
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "MQL"
+    },
+    {
+        "id": 14,
+        "category_id": 6,
+        "name": "نقص معدات الإطفاء",
+        "name_en": "Lack of Fire Equipment",
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "MA"
+    },
+    {
+        "id": 15,
+        "category_id": 6,
+        "name": "الانفجار",
+        "name_en": "Explosion",
+        "description": null,
+        "is_universal": 0,
+        "tenant_id": null,
+        "abbreviation": "ANF"
+    },
+    {
+        "id": 16,
+        "category_id": 7,
+        "name": "الإرهاق والإجهاد البدني",
+        "name_en": "Fatigue & Physical Strain",
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "AWB"
+    },
+    {
+        "id": 17,
+        "category_id": 7,
+        "name": "الأخطاء البشرية",
+        "name_en": "Human Errors",
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "AB"
+    },
+    {
+        "id": 18,
+        "category_id": 7,
+        "name": "سوء استخدام معدات الحماية",
+        "name_en": "PPE Misuse",
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "SAM"
+    },
+    {
+        "id": 19,
+        "category_id": 7,
+        "name": "الإيرغونوميا (تصميم العمل)",
+        "name_en": "Ergonomics",
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "AXA"
+    },
+    {
+        "id": 20,
+        "category_id": 8,
+        "name": "ضعف الإجراءات والسياسات",
+        "name_en": "Weak Procedures & Policies",
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "AW"
+    },
+    {
+        "id": 21,
+        "category_id": 8,
+        "name": "ضعف الإشراف",
+        "name_en": "Weak Supervision",
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "ASR"
+    },
+    {
+        "id": 22,
+        "category_id": 8,
+        "name": "نقص في تخطيط السلامة",
+        "name_en": "Poor Safety Planning",
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "TS"
+    },
+    {
+        "id": 23,
+        "category_id": 8,
+        "name": "ضعف التواصل",
+        "name_en": "Communication Breakdown",
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "TWA"
+    },
+    {
+        "id": 24,
+        "category_id": 9,
+        "name": "ضغط العمل",
+        "name_en": "Work Stress",
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "DA"
+    },
+    {
+        "id": 25,
+        "category_id": 9,
+        "name": "العنف والتحرش في مكان العمل",
+        "name_en": "Workplace Violence & Harassment",
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "AWM"
+    },
+    {
+        "id": 26,
+        "category_id": 9,
+        "name": "الاحتراق الوظيفي",
+        "name_en": "Burnout",
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "AW2"
+    },
+    {
+        "id": 27,
+        "category_id": 1,
+        "name": "الإجهاد الحراري",
+        "name_en": null,
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "AH"
+    },
+    {
+        "id": 28,
+        "category_id": 1,
+        "name": "الإشعاع المؤين",
+        "name_en": null,
+        "description": null,
+        "is_universal": 0,
+        "tenant_id": null,
+        "abbreviation": "AM2"
+    },
+    {
+        "id": 29,
+        "category_id": 1,
+        "name": "الإشعاع غير المؤين",
+        "name_en": null,
+        "description": null,
+        "is_universal": 0,
+        "tenant_id": null,
+        "abbreviation": "AM3"
+    },
+    {
+        "id": 30,
+        "category_id": 1,
+        "name": "الضغط الجوي غير الطبيعي",
+        "name_en": null,
+        "description": null,
+        "is_universal": 0,
+        "tenant_id": null,
+        "abbreviation": "DJT"
+    },
+    {
+        "id": 31,
+        "category_id": 2,
+        "name": "المواد المسرطنة",
+        "name_en": null,
+        "description": null,
+        "is_universal": 0,
+        "tenant_id": null,
+        "abbreviation": "MM"
+    },
+    {
+        "id": 32,
+        "category_id": 2,
+        "name": "الغبار الصناعي",
+        "name_en": null,
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "GS2"
+    },
+    {
+        "id": 33,
+        "category_id": 2,
+        "name": "المبيدات والمواد الزراعية",
+        "name_en": null,
+        "description": null,
+        "is_universal": 0,
+        "tenant_id": null,
+        "abbreviation": "MWZ"
+    },
+    {
+        "id": 34,
+        "category_id": 3,
+        "name": "النفايات الحيوية",
+        "name_en": null,
+        "description": null,
+        "is_universal": 0,
+        "tenant_id": null,
+        "abbreviation": "NH"
+    },
+    {
+        "id": 35,
+        "category_id": 4,
+        "name": "القطع والجروح",
+        "name_en": null,
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "QW"
+    },
+    {
+        "id": 36,
+        "category_id": 4,
+        "name": "السحق والضغط",
+        "name_en": null,
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "SW"
+    },
+    {
+        "id": 37,
+        "category_id": 4,
+        "name": "التشابك مع الأجزاء المتحركة",
+        "name_en": null,
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "TAM"
+    },
+    {
+        "id": 38,
+        "category_id": 4,
+        "name": "الاصطدام والارتطام",
+        "name_en": null,
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "AW3"
+    },
+    {
+        "id": 39,
+        "category_id": 4,
+        "name": "القذف والتطاير",
+        "name_en": null,
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "QW2"
+    },
+    {
+        "id": 40,
+        "category_id": 5,
+        "name": "القوس الكهربائي",
+        "name_en": null,
+        "description": null,
+        "is_universal": 0,
+        "tenant_id": null,
+        "abbreviation": "QK"
+    },
+    {
+        "id": 41,
+        "category_id": 5,
+        "name": "الصاعقة",
+        "name_en": null,
+        "description": null,
+        "is_universal": 0,
+        "tenant_id": null,
+        "abbreviation": "SAA"
+    },
+    {
+        "id": 42,
+        "category_id": 6,
+        "name": "الدخان والاختناق",
+        "name_en": null,
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "DW"
+    },
+    {
+        "id": 43,
+        "category_id": 7,
+        "name": "رفع الأحمال اليدوي",
+        "name_en": null,
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "RAY"
+    },
+    {
+        "id": 44,
+        "category_id": 7,
+        "name": "الأوضاع السيئة والتكرار",
+        "name_en": null,
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "ASW"
+    },
+    {
+        "id": 45,
+        "category_id": 8,
+        "name": "ضعف الإشراف والتدريب",
+        "name_en": null,
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "AW4"
+    },
+    {
+        "id": 46,
+        "category_id": 1,
+        "name": "درجات الحرارة المنخفضة",
+        "name_en": null,
+        "description": null,
+        "is_universal": 0,
+        "tenant_id": null,
+        "abbreviation": "DHM"
+    },
+    {
+        "id": 47,
+        "category_id": 1,
+        "name": "المجالات الكهرومغناطيسية",
+        "name_en": null,
+        "description": null,
+        "is_universal": 0,
+        "tenant_id": null,
+        "abbreviation": "MK2"
+    },
+    {
+        "id": 48,
+        "category_id": 1,
+        "name": "الأسطح الزلقة",
+        "name_en": null,
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "AZ"
+    },
+    {
+        "id": 49,
+        "category_id": 2,
+        "name": "التحسس الجلدي",
+        "name_en": null,
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "TJ"
+    },
+    {
+        "id": 50,
+        "category_id": 2,
+        "name": "المواد المتفاعلة ذاتياً",
+        "name_en": null,
+        "description": null,
+        "is_universal": 0,
+        "tenant_id": null,
+        "abbreviation": "MMD"
+    },
+    {
+        "id": 51,
+        "category_id": 2,
+        "name": "الأسمدة والمواد الزراعية",
+        "name_en": null,
+        "description": null,
+        "is_universal": 0,
+        "tenant_id": null,
+        "abbreviation": "AWZ"
+    },
+    {
+        "id": 52,
+        "category_id": 3,
+        "name": "العفن والفطريات",
+        "name_en": null,
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "AW5"
+    },
+    {
+        "id": 53,
+        "category_id": 3,
+        "name": "المواد البشرية والحيوانية",
+        "name_en": null,
+        "description": null,
+        "is_universal": 0,
+        "tenant_id": null,
+        "abbreviation": "MBW"
+    },
+    {
+        "id": 54,
+        "category_id": 4,
+        "name": "الانحشار في معدات",
+        "name_en": null,
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "AM4"
+    },
+    {
+        "id": 55,
+        "category_id": 4,
+        "name": "الأدوات اليدوية غير الآمنة",
+        "name_en": null,
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "AYA"
+    },
+    {
+        "id": 56,
+        "category_id": 4,
+        "name": "الحوادث المرورية في موقع العمل",
+        "name_en": null,
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "HMM"
+    },
+    {
+        "id": 57,
+        "category_id": 5,
+        "name": "عدم عزل الطاقة (LOTO)",
+        "name_en": null,
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "ATX"
+    },
+    {
+        "id": 58,
+        "category_id": 5,
+        "name": "الكهرباء الساكنة",
+        "name_en": null,
+        "description": null,
+        "is_universal": 0,
+        "tenant_id": null,
+        "abbreviation": "KS"
+    },
+    {
+        "id": 59,
+        "category_id": 6,
+        "name": "الحرائق الكهربائية",
+        "name_en": null,
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "HK"
+    },
+    {
+        "id": 60,
+        "category_id": 6,
+        "name": "السوائل القابلة للاشتعال",
+        "name_en": null,
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "SQL"
+    },
+    {
+        "id": 61,
+        "category_id": 7,
+        "name": "السير والتنقل",
+        "name_en": null,
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "SW2"
+    },
+    {
+        "id": 62,
+        "category_id": 7,
+        "name": "العمل المنفرد",
+        "name_en": null,
+        "description": null,
+        "is_universal": 0,
+        "tenant_id": null,
+        "abbreviation": "AM5"
+    },
+    {
+        "id": 63,
+        "category_id": 8,
+        "name": "ضعف إدارة التغيير",
+        "name_en": null,
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "AT"
+    },
+    {
+        "id": 64,
+        "category_id": 9,
+        "name": "التمييز وعدم العدالة",
+        "name_en": null,
+        "description": null,
+        "is_universal": 1,
+        "tenant_id": null,
+        "abbreviation": "TWA2"
+    }
+]

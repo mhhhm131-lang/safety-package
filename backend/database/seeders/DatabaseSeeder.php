@@ -15,6 +15,9 @@ class DatabaseSeeder extends Seeder
         $this->call([
             PlacesSeeder::class,
             OrganizationUnitsSeeder::class,
+            AffectedGroupsSeeder::class,
+            RiskBookSeeder::class,
+            RiskControlsSeeder::class,
         ]);
     }
 }

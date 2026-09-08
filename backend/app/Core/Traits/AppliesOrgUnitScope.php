@@ -9,10 +9,13 @@ use Illuminate\Database\Eloquent\Builder;
 /**
  * نطاق الرؤية بالوحدة التنظيمية (من OHSMS بلا سياق المشاريع):
  * أدوار الإشراف العام ترى الكل؛ غيرها يرى وحدته وما تحتها + السجلات بلا وحدة.
+ * مصحَّح: الذاكرة المؤقتة للملف لكل نسخة متحكم لا static (كانت تتسرب بين الطلبات في الاختبارات).
  */
 trait AppliesOrgUnitScope
 {
     protected array $globalScopeRoles = ['system_admin', 'system_staff', 'top_management', 'safety_committee', 'safety_coordinator'];
+
+    private array $orgScopeProfileCache = [];
 
     protected function scopeToUserOrgUnit(Builder $query, string $column = 'organization_unit_id'): void
     {
@@ -34,12 +37,12 @@ trait AppliesOrgUnitScope
 
     protected function userProfile(): ?UserProfile
     {
-        static $cache = [];
         $userId = auth()->id();
-        if ($userId && !array_key_exists($userId, $cache)) {
-            $cache[$userId] = UserProfile::where('user_id', $userId)->first();
+        if (!$userId) return null;
+        if (!array_key_exists($userId, $this->orgScopeProfileCache)) {
+            $this->orgScopeProfileCache[$userId] = UserProfile::where('user_id', $userId)->first();
         }
-        return $userId ? $cache[$userId] : null;
+        return $this->orgScopeProfileCache[$userId];
     }
 
     protected function isGlobalScopeRole(): bool

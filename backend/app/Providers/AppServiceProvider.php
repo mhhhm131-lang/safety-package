@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Modules\Risk\Models\Risk;
+use App\Policies\RiskPolicy;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -18,5 +21,7 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->isProduction()) {
             URL::forceScheme('https');
         }
+
+        Gate::policy(Risk::class, RiskPolicy::class);
     }
 }

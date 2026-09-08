@@ -67,7 +67,7 @@ class OrganizationUnit extends Model
         $all = static::query()->get(['id', 'parent_id']);
         $byParent = [];
         foreach ($all as $u) {
-            $byParent[$u->parent_id][] = $u->id;
+            $byParent[$u->parent_id ?? 0][] = $u->id;
         }
         $ids = [$this->id];
         $stack = [$this->id];

@@ -88,6 +88,8 @@ class PermissionRegistry
             'department_manager', 'section_manager', 'safety_coordinator',
             'admin_eng_manager', 'facilities_manager', 'security_safety_head', 'support_team'],
         'risk.create'  => ['system_admin', 'system_staff', 'safety_coordinator'],
+        // إضافة معهدية: مدير الإدارة/الفرع/القسم يفعّل من السجل العام في سجل وحدته ويسمّي المسؤول (BACKEND.md ٥-٥)
+        'risk.activate' => ['system_admin', 'system_staff', 'safety_coordinator', 'branch_manager', 'department_manager', 'section_manager'],
         'risk.approve' => ['system_admin', 'system_staff', 'top_management', 'safety_committee'],
 
         // التصاريح (Hub)

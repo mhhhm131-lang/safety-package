@@ -1,0 +1,92 @@
+[
+    {
+        "id": 1,
+        "tenant_id": null,
+        "name": "المخاطر الفيزيائية",
+        "name_en": "Physical Hazards",
+        "description": "المخاطر المتعلقة بالعوامل الفيزيائية في بيئة العمل",
+        "is_active": 1,
+        "created_at": "2026-04-13 14:58:02",
+        "abbreviation": "FYZ"
+    },
+    {
+        "id": 2,
+        "tenant_id": null,
+        "name": "المخاطر الكيميائية",
+        "name_en": "Chemical Hazards",
+        "description": "المخاطر المتعلقة بالتعرض للمواد الكيميائية",
+        "is_active": 1,
+        "created_at": "2026-04-13 14:58:02",
+        "abbreviation": "KYM"
+    },
+    {
+        "id": 3,
+        "tenant_id": null,
+        "name": "المخاطر البيولوجية",
+        "name_en": "Biological Hazards",
+        "description": "المخاطر المتعلقة بالكائنات الحية والمواد البيولوجية",
+        "is_active": 1,
+        "created_at": "2026-04-13 14:58:02",
+        "abbreviation": "BYW"
+    },
+    {
+        "id": 4,
+        "tenant_id": null,
+        "name": "المخاطر الميكانيكية",
+        "name_en": "Mechanical Hazards",
+        "description": "المخاطر المتعلقة بالمعدات والآلات",
+        "is_active": 1,
+        "created_at": "2026-04-13 14:58:02",
+        "abbreviation": "MYK"
+    },
+    {
+        "id": 5,
+        "tenant_id": null,
+        "name": "المخاطر الكهربائية",
+        "name_en": "Electrical Hazards",
+        "description": "المخاطر المتعلقة بالتيار الكهربائي",
+        "is_active": 1,
+        "created_at": "2026-04-13 14:58:02",
+        "abbreviation": "KHR"
+    },
+    {
+        "id": 6,
+        "tenant_id": null,
+        "name": "مخاطر الحريق",
+        "name_en": "Fire Hazards",
+        "description": "المخاطر المتعلقة بالحريق والانفجار",
+        "is_active": 1,
+        "created_at": "2026-04-13 14:58:02",
+        "abbreviation": "HRY"
+    },
+    {
+        "id": 7,
+        "tenant_id": null,
+        "name": "المخاطر البشرية",
+        "name_en": "Human Hazards",
+        "description": "المخاطر الناتجة عن السلوك البشري والإرهاق والأخطاء",
+        "is_active": 1,
+        "created_at": "2026-04-13 14:58:02",
+        "abbreviation": "BSR"
+    },
+    {
+        "id": 8,
+        "tenant_id": null,
+        "name": "المخاطر الإدارية والتنظيمية",
+        "name_en": "Administrative & Organizational Hazards",
+        "description": "المخاطر الناتجة عن ضعف الإدارة والإجراءات والإشراف",
+        "is_active": 1,
+        "created_at": "2026-04-13 14:58:03",
+        "abbreviation": "AW"
+    },
+    {
+        "id": 9,
+        "tenant_id": null,
+        "name": "المخاطر النفسية والاجتماعية",
+        "name_en": "Psychosocial Hazards",
+        "description": "المخاطر المتعلقة بالضغط النفسي والصحة الذهنية",
+        "is_active": 1,
+        "created_at": "2026-04-13 14:58:03",
+        "abbreviation": "NW"
+    }
+]

@@ -1,0 +1,380 @@
+[
+    {
+        "id": 1,
+        "type_category_id": 1,
+        "name": "الآلات الصاخبة",
+        "name_en": "Noisy Machinery",
+        "description": null
+    },
+    {
+        "id": 2,
+        "type_category_id": 1,
+        "name": "عدم استخدام واقيات الأذن",
+        "name_en": "No Ear Protection",
+        "description": null
+    },
+    {
+        "id": 3,
+        "type_category_id": 2,
+        "name": "إضاءة غير كافية",
+        "name_en": "Insufficient Lighting",
+        "description": null
+    },
+    {
+        "id": 4,
+        "type_category_id": 2,
+        "name": "وهج مفرط",
+        "name_en": "Excessive Glare",
+        "description": null
+    },
+    {
+        "id": 5,
+        "type_category_id": 3,
+        "name": "أدوات اهتزازية",
+        "name_en": "Vibrating Tools",
+        "description": null
+    },
+    {
+        "id": 6,
+        "type_category_id": 4,
+        "name": "تسرب غاز",
+        "name_en": "Gas Leak",
+        "description": null
+    },
+    {
+        "id": 7,
+        "type_category_id": 4,
+        "name": "سوء التهوية",
+        "name_en": "Poor Ventilation",
+        "description": null
+    },
+    {
+        "id": 8,
+        "type_category_id": 5,
+        "name": "انسكاب مواد كيميائية",
+        "name_en": "Chemical Spill",
+        "description": null
+    },
+    {
+        "id": 9,
+        "type_category_id": 5,
+        "name": "عدم ارتداء القفازات",
+        "name_en": "No Gloves",
+        "description": null
+    },
+    {
+        "id": 10,
+        "type_category_id": 6,
+        "name": "اتصال مباشر مع مصابين",
+        "name_en": "Direct Contact with Infected",
+        "description": null
+    },
+    {
+        "id": 11,
+        "type_category_id": 6,
+        "name": "عدم التعقيم",
+        "name_en": "Lack of Sterilization",
+        "description": null
+    },
+    {
+        "id": 12,
+        "type_category_id": 7,
+        "name": "تراكم النفايات",
+        "name_en": "Waste Accumulation",
+        "description": null
+    },
+    {
+        "id": 13,
+        "type_category_id": 8,
+        "name": "عدم وجود حواجز حماية",
+        "name_en": "No Safety Guards",
+        "description": null
+    },
+    {
+        "id": 14,
+        "type_category_id": 8,
+        "name": "صيانة غير كافية",
+        "name_en": "Insufficient Maintenance",
+        "description": null
+    },
+    {
+        "id": 15,
+        "type_category_id": 9,
+        "name": "سقالات غير آمنة",
+        "name_en": "Unsafe Scaffolding",
+        "description": null
+    },
+    {
+        "id": 16,
+        "type_category_id": 9,
+        "name": "عدم استخدام حزام الأمان",
+        "name_en": "No Safety Harness",
+        "description": null
+    },
+    {
+        "id": 17,
+        "type_category_id": 10,
+        "name": "تخزين غير آمن",
+        "name_en": "Unsafe Storage",
+        "description": null
+    },
+    {
+        "id": 18,
+        "type_category_id": 11,
+        "name": "أسلاك مكشوفة",
+        "name_en": "Exposed Wires",
+        "description": null
+    },
+    {
+        "id": 19,
+        "type_category_id": 11,
+        "name": "معدات غير مؤرضة",
+        "name_en": "Ungrounded Equipment",
+        "description": null
+    },
+    {
+        "id": 20,
+        "type_category_id": 12,
+        "name": "حمل زائد",
+        "name_en": "Overload",
+        "description": null
+    },
+    {
+        "id": 21,
+        "type_category_id": 12,
+        "name": "تلف العزل",
+        "name_en": "Insulation Damage",
+        "description": null
+    },
+    {
+        "id": 22,
+        "type_category_id": 13,
+        "name": "تخزين غير صحيح للمواد",
+        "name_en": "Improper Material Storage",
+        "description": null
+    },
+    {
+        "id": 23,
+        "type_category_id": 13,
+        "name": "مصادر اشتعال مكشوفة",
+        "name_en": "Open Ignition Sources",
+        "description": null
+    },
+    {
+        "id": 24,
+        "type_category_id": 14,
+        "name": "طفايات منتهية الصلاحية",
+        "name_en": "Expired Extinguishers",
+        "description": null
+    },
+    {
+        "id": 25,
+        "type_category_id": 14,
+        "name": "عدم وجود خطة إخلاء",
+        "name_en": "No Evacuation Plan",
+        "description": null
+    },
+    {
+        "id": 26,
+        "type_category_id": 15,
+        "name": "تراكم الغازات",
+        "name_en": "Gas Accumulation",
+        "description": null
+    },
+    {
+        "id": 27,
+        "type_category_id": 16,
+        "name": "ساعات عمل طويلة",
+        "name_en": "Long Working Hours",
+        "description": null
+    },
+    {
+        "id": 28,
+        "type_category_id": 16,
+        "name": "عدم كفاية فترات الراحة",
+        "name_en": "Insufficient Rest Periods",
+        "description": null
+    },
+    {
+        "id": 29,
+        "type_category_id": 16,
+        "name": "العمل في ظروف مناخية قاسية",
+        "name_en": "Harsh Weather Conditions",
+        "description": null
+    },
+    {
+        "id": 30,
+        "type_category_id": 17,
+        "name": "عدم التركيز",
+        "name_en": "Lack of Focus",
+        "description": null
+    },
+    {
+        "id": 31,
+        "type_category_id": 17,
+        "name": "تجاوز إجراءات السلامة",
+        "name_en": "Bypassing Safety Procedures",
+        "description": null
+    },
+    {
+        "id": 32,
+        "type_category_id": 17,
+        "name": "استخدام معدات بطريقة خاطئة",
+        "name_en": "Misuse of Equipment",
+        "description": null
+    },
+    {
+        "id": 33,
+        "type_category_id": 18,
+        "name": "عدم ارتداء معدات الحماية",
+        "name_en": "Not Wearing PPE",
+        "description": null
+    },
+    {
+        "id": 34,
+        "type_category_id": 18,
+        "name": "معدات حماية تالفة",
+        "name_en": "Damaged PPE",
+        "description": null
+    },
+    {
+        "id": 35,
+        "type_category_id": 19,
+        "name": "وضعيات عمل خاطئة",
+        "name_en": "Awkward Postures",
+        "description": null
+    },
+    {
+        "id": 36,
+        "type_category_id": 19,
+        "name": "حركات متكررة",
+        "name_en": "Repetitive Motions",
+        "description": null
+    },
+    {
+        "id": 37,
+        "type_category_id": 19,
+        "name": "رفع أحمال ثقيلة",
+        "name_en": "Heavy Lifting",
+        "description": null
+    },
+    {
+        "id": 38,
+        "type_category_id": 20,
+        "name": "عدم وجود إجراءات مكتوبة",
+        "name_en": "Lack of Written Procedures",
+        "description": null
+    },
+    {
+        "id": 39,
+        "type_category_id": 20,
+        "name": "إجراءات غير محدّثة",
+        "name_en": "Outdated Procedures",
+        "description": null
+    },
+    {
+        "id": 40,
+        "type_category_id": 20,
+        "name": "عدم الالتزام بالإجراءات",
+        "name_en": "Non-Compliance",
+        "description": null
+    },
+    {
+        "id": 41,
+        "type_category_id": 21,
+        "name": "نقص المشرفين المؤهلين",
+        "name_en": "Insufficient Qualified Supervisors",
+        "description": null
+    },
+    {
+        "id": 42,
+        "type_category_id": 21,
+        "name": "عدم متابعة العمل الميداني",
+        "name_en": "Lack of Field Monitoring",
+        "description": null
+    },
+    {
+        "id": 43,
+        "type_category_id": 22,
+        "name": "عدم تقييم المخاطر مسبقاً",
+        "name_en": "No Pre-Risk Assessment",
+        "description": null
+    },
+    {
+        "id": 44,
+        "type_category_id": 22,
+        "name": "غياب خطط الطوارئ",
+        "name_en": "Missing Emergency Plans",
+        "description": null
+    },
+    {
+        "id": 45,
+        "type_category_id": 22,
+        "name": "سوء توزيع الموارد",
+        "name_en": "Poor Resource Allocation",
+        "description": null
+    },
+    {
+        "id": 46,
+        "type_category_id": 23,
+        "name": "فشل نقل التعليمات",
+        "name_en": "Failed Instruction Transfer",
+        "description": null
+    },
+    {
+        "id": 47,
+        "type_category_id": 23,
+        "name": "حواجز لغوية",
+        "name_en": "Language Barriers",
+        "description": null
+    },
+    {
+        "id": 48,
+        "type_category_id": 24,
+        "name": "حمل عمل زائد",
+        "name_en": "Excessive Workload",
+        "description": null
+    },
+    {
+        "id": 49,
+        "type_category_id": 24,
+        "name": "مواعيد نهائية ضيقة",
+        "name_en": "Tight Deadlines",
+        "description": null
+    },
+    {
+        "id": 50,
+        "type_category_id": 24,
+        "name": "مسؤوليات غير واضحة",
+        "name_en": "Unclear Responsibilities",
+        "description": null
+    },
+    {
+        "id": 51,
+        "type_category_id": 25,
+        "name": "سياسات غير فعّالة",
+        "name_en": "Ineffective Policies",
+        "description": null
+    },
+    {
+        "id": 52,
+        "type_category_id": 25,
+        "name": "بيئة عمل عدائية",
+        "name_en": "Hostile Work Environment",
+        "description": null
+    },
+    {
+        "id": 53,
+        "type_category_id": 26,
+        "name": "استمرار الضغط لفترات طويلة",
+        "name_en": "Prolonged Stress",
+        "description": null
+    },
+    {
+        "id": 54,
+        "type_category_id": 26,
+        "name": "ضعف التقدير",
+        "name_en": "Lack of Recognition",
+        "description": null
+    }
+]
