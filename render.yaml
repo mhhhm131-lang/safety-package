@@ -21,6 +21,8 @@ services:
         value: production
       - key: APP_DEBUG
         value: "false"
+      - key: APP_URL
+        value: "https://ipa-safety.onrender.com"
       - key: APP_LOCALE
         value: ar
       - key: APP_FALLBACK_LOCALE
