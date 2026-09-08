@@ -59,6 +59,15 @@
         <a href="{{ route('app.audit') }}" class="{{ request()->routeIs('app.audit') ? 'active' : '' }}"><i class="bi bi-journal-text"></i>سجل التدقيق</a>
       @endif
       <a href="{{ route('app.notifications.index') }}" class="{{ request()->routeIs('app.notifications.*') ? 'active' : '' }}"><i class="bi bi-bell"></i>الإشعارات</a>
+      @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'incident.list'))
+        <hr>
+        <div class="small text-muted px-2 mb-1">بلاغات الشاغلين</div>
+        <a href="{{ route('incidents.index') }}" class="{{ request()->routeIs('incidents.index') || request()->routeIs('incidents.show') ? 'active' : '' }}"><i class="bi bi-megaphone"></i>سجل مركز السلامة</a>
+        <a href="{{ route('incident.landing') }}" target="_blank"><i class="bi bi-box-arrow-up-left"></i>صفحة البلاغ العامة</a>
+        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'system.settings'))
+          <a href="{{ route('incidents.settings') }}" class="{{ request()->routeIs('incidents.settings') ? 'active' : '' }}"><i class="bi bi-clock"></i>المهل</a>
+        @endif
+      @endif
       @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'risk.list'))
         <hr>
         <div class="small text-muted px-2 mb-1">المخاطر</div>

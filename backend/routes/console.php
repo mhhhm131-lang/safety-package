@@ -1,8 +1,6 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+// البند ج (BACKEND.md ٥-٢-ب): مؤقت مهل بلاغ الشاغل في الخادم، كل دقيقة. يعمل عبر program:scheduler في supervisord.
+Schedule::command('incidents:check-deadlines')->everyMinute()->withoutOverlapping();

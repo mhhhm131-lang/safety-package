@@ -16,6 +16,17 @@ class PlacesController extends Controller
         return view('governance.places.index', ['places' => Place::withCount('units')->orderBy('sort')->get()]);
     }
 
+    /** رمز QR لكل مكان (قرار ٢٠٢٦-٠٩-٠٨): يفتح صفحة بلاغ الشاغل والمكان محدد مسبقاً. */
+    public function qr(?string $code = null): View
+    {
+        $q = Place::orderBy('sort');
+        if ($code) $q->where('code', $code);
+        $places = $q->get();
+        abort_if($places->isEmpty(), 404);
+        $places->each(fn (Place $p) => $p->qr_url = url('/incident?place='.$p->code));
+        return view('governance.places.qr', ['places' => $places]);
+    }
+
     public function update(Request $request, Place $place): RedirectResponse
     {
         $data = $request->validate(['name' => 'required|string|max:120']);

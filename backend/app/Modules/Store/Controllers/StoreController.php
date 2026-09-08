@@ -5,6 +5,8 @@ namespace App\Modules\Store\Controllers;
 use App\Core\Permissions\PermissionRegistry;
 use App\Http\Controllers\Controller;
 use App\Modules\Governance\Services\DeptSync;
+use App\Modules\Incident\Services\IncidentService;
+use App\Modules\Incident\Services\OccSync;
 use App\Modules\Store\Models\InstituteDocument;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -95,7 +97,8 @@ class StoreController extends Controller
         return DB::transaction(function () use ($key, $data, $clientVersion, $userId) {
             $doc = InstituteDocument::where('key', $key)->lockForUpdate()->first();
 
-            if ($doc && $clientVersion !== $doc->version) {
+            // ipa-occ وثيقة مشتقة تُدمج (لا تُكتب فوقها) فلا تعارض نسخ فيها
+            if ($doc && $clientVersion !== $doc->version && $key !== OccSync::KEY) {
                 // نسخة العميل أقدم: لا نكتب فوق الأحدث، ونعيد ما عند الخادم
                 return response()->json([
                     'message' => 'تغيّرت الوثيقة من جهاز آخر',
@@ -111,6 +114,14 @@ class StoreController extends Controller
                     return response()->json(['message' => 'صيغة الهيكل غير صحيحة'], 422);
                 }
                 $data = json_encode($this->depts->fromDocument($rows), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            }
+            if ($key === OccSync::KEY) {
+                // بلاغات الشاغلين: جدول البلاغات هو الأصل؛ ما ربطه الفني في النموذج يُسجَّل ربطاً عكسياً
+                $docArr = json_decode($data, true);
+                if (!is_array($docArr)) {
+                    return response()->json(['message' => 'صيغة بلاغات الشاغلين غير صحيحة'], 422);
+                }
+                $data = json_encode(app(OccSync::class)->fromDocument($docArr, $userId, app(IncidentService::class)), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             }
 
             if (!$doc) {
@@ -129,8 +140,8 @@ class StoreController extends Controller
     {
         $this->assertKey($key);
         if (!$this->session($request)) return $this->noDailyWork();
-        if ($key === self::DEPTS_KEY) {
-            return response()->json(['message' => 'الهيكل التنظيمي لا يُحذف من اللوحة'], 422);
+        if ($key === self::DEPTS_KEY || $key === OccSync::KEY) {
+            return response()->json(['message' => 'هذه الوثيقة مشتقة من الخادم ولا تُحذف من اللوحة'], 422);
         }
         InstituteDocument::where('key', $key)->delete();
         return response()->json(['key' => $key, 'deleted' => true]);

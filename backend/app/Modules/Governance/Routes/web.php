@@ -35,6 +35,8 @@ Route::middleware(['web', 'auth'])->prefix('app')->name('app.')->group(function 
 
     Route::middleware('permission:system.settings')->prefix('places')->name('places.')->group(function () {
         Route::get('/', [PlacesController::class, 'index'])->name('index');
+        Route::get('/qr', [PlacesController::class, 'qr'])->name('qr');
+        Route::get('/{code}/qr', [PlacesController::class, 'qr'])->name('qr.one');
         Route::put('/{place}', [PlacesController::class, 'update'])->name('update');
     });
 

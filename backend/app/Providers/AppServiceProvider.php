@@ -2,9 +2,15 @@
 
 namespace App\Providers;
 
+use App\Modules\Incident\Models\Incident;
+use App\Modules\Incident\Observers\IncidentObserver;
 use App\Modules\Risk\Models\Risk;
+use App\Policies\IncidentPolicy;
 use App\Policies\RiskPolicy;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -23,5 +29,10 @@ class AppServiceProvider extends ServiceProvider
         }
 
         Gate::policy(Risk::class, RiskPolicy::class);
+        Gate::policy(Incident::class, IncidentPolicy::class);
+        Incident::observe(IncidentObserver::class);
+
+        // الصفحات العامة لبلاغ الشاغل: ١٠ في الساعة لكل عنوان (OHSMS)
+        RateLimiter::for('incident-public', fn (Request $request) => Limit::perHour(10)->by($request->ip()));
     }
 }

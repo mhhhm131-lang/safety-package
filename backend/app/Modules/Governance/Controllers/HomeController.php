@@ -27,6 +27,9 @@ class HomeController extends Controller
         if (PermissionRegistry::hasPermission($role, 'system.settings')) {
             $cards[] = ['title' => 'الأماكن', 'desc' => 'الأماكن التسعة (٨+١)', 'url' => route('app.places.index'), 'icon' => 'bi-geo-alt'];
         }
+        if (PermissionRegistry::hasPermission($role, 'incident.list')) {
+            $cards[] = ['title' => 'بلاغات الشاغلين', 'desc' => 'سجل مركز السلامة: الإحالة للفني، المتابعة، الإغلاق', 'url' => route('incidents.index'), 'icon' => 'bi-megaphone'];
+        }
         if (PermissionRegistry::hasPermission($role, 'risk.list')) {
             $cards[] = ['title' => 'المخاطر', 'desc' => 'كتاب المخاطر، السجل العام للمعهد، مخاطر الإدارات والأماكن', 'url' => route('risk.reference.index'), 'icon' => 'bi-exclamation-triangle'];
         }

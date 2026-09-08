@@ -44,6 +44,9 @@ class Place extends Model
             $links[] = ['الحريق (١٢)', "$f/fire-inspection.html"];
         }
         $links[] = ['ملف المكان في اللوحة', '/dashboard.html#place='.$this->code];
+        $links[] = ['مخاطر المكان', '/app/risk/active?place='.$this->code];
+        $links[] = ['بلاغات الشاغلين', '/app/incidents?place='.$this->code];
+        $links[] = ['رمز QR', '/app/places/'.$this->code.'/qr'];
         return $links;
     }
 }

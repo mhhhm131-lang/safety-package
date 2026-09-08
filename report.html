@@ -1,137 +1,16 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>بلاغ عن خطر — مركز السلامة</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
-<style>
-:root{--green:#0f3d2e;--green-2:#1b5c46;--gold:#b8912f;--red:#9b1c1c;--ink:#12100e;--muted:#6b6560;--line:#c9c4bd;--bg:#e9e6e0;--tint:#f4f2ee}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--ink);line-height:1.7;font-size:14px;min-height:100vh}
-.header{background:linear-gradient(135deg,var(--green),var(--green-2));color:#fff;padding:18px 20px;border-bottom:4px solid var(--gold)}
-.header .in{max-width:640px;margin:0 auto;display:flex;align-items:center;gap:12px}
-.header .ic{width:44px;height:44px;border:2px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex:none}
-.header h1{font-size:18px;font-weight:900}.header p{font-size:12px;opacity:.85}
-.wrap{max-width:640px;margin:0 auto;padding:18px 16px 50px}
-.card{background:#fff;border:1px solid var(--line);border-top:4px solid var(--gold);border-radius:8px;padding:18px;margin-bottom:16px}
-.urgent{background:#fdf3f3;border:1px solid var(--red);border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.urgent b{color:var(--red)}
-.urgent a{margin-inline-start:auto;background:var(--red);color:#fff;text-decoration:none;font-weight:700;padding:6px 14px;border-radius:6px;font-size:13px}
-label{display:block;font-size:12.5px;font-weight:700;color:var(--green);margin:12px 0 4px}
-label small{font-weight:400;color:var(--muted)}
-input,select,textarea{width:100%;font-family:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink)}
-textarea{min-height:110px;resize:vertical}
-input:focus,select:focus,textarea:focus{outline:0;border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,145,47,.15)}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.btn{font-family:inherit;font-weight:900;font-size:15px;border:0;padding:13px 20px;border-radius:8px;cursor:pointer;width:100%;margin-top:16px}
-.btn-main{background:var(--green);color:#fff}.btn-main:hover{background:var(--green-2)}
-.btn-gh{background:#fff;border:1px solid var(--green);color:var(--green);font-size:13px;padding:9px 14px;width:auto;margin-top:0}
-.note{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.7}
-.ok{display:none}.ok.on{display:block}
-.ok .big{font-size:22px;font-weight:900;color:var(--green)}
-.ok .id{font-size:30px;font-weight:900;color:var(--gold);margin:6px 0}
-.ok .kv{font-size:13px;margin:4px 0}.ok .kv b{color:var(--green)}
-.acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
-.prev{max-width:100%;max-height:220px;border-radius:6px;border:1px solid var(--line);margin-top:8px;display:none}
-.mine{margin-top:6px}
-.mr{border-top:1px dotted var(--line);padding:8px 0;font-size:12.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.mr b{color:var(--green)}
-.tag{font-size:11px;font-weight:700;padding:0 8px;border-radius:10px;border:1px solid}
-.t-new{color:var(--red);border-color:var(--red);background:#fdf3f3}.t-as{color:#a8620f;border-color:#a8620f;background:#fdf6ea}.t-ln{color:#5b2d6b;border-color:#5b2d6b;background:#f0eaf3}.t-ok{color:var(--green);border-color:var(--green-2);background:#eef5f1}
-.foot{text-align:center;font-size:12px;color:var(--muted);padding:14px}
-.foot a{color:var(--green)}
-@media(max-width:520px){.row2{grid-template-columns:1fr}}
-</style>
-</head>
-<body>
-<div class="header"><div class="in"><div class="ic">🚨</div><div><h1>بلاغ عن خطر أو ملاحظة سلامة</h1><p>معهد الإدارة العامة — مبنى الملز · يصل مركز السلامة ويُقيَّد في سجل بلاغات الشاغلين</p></div></div></div>
-
-<div class="wrap">
-  <div class="urgent"><b>حالة طارئة الآن؟</b> اتصل بالمركز أولاً ثم أبلغ هنا. <a href="tel:+966505498966">📞 اتصال بالمركز</a></div>
-
-  <div class="card" id="formCard">
-    <label>المكان <small>أين الخطر؟</small></label>
-    <select id="hz"></select>
-    <label>الموقع بالتفصيل <small>الدور، الغرفة، أقرب معلم</small></label>
-    <input type="text" id="loc" placeholder="مثال: الدور الثاني — بجانب المصعد الشرقي">
-    <label>ما الذي رأيته؟ <small>مطلوب</small></label>
-    <textarea id="desc" placeholder="صف الخطر أو الملاحظة بكلماتك: ماذا، وأين بالضبط، ومنذ متى"></textarea>
-    <label>صورة <small>اختياري — تُصغَّر تلقائياً</small></label>
-    <input type="file" id="img" accept="image/*" capture="environment">
-    <img id="prev" class="prev" alt="">
-    <div class="row2">
-      <div><label>اسمك <small>اختياري</small></label><input type="text" id="name" placeholder="يساعد المركز على التواصل معك"></div>
-      <div><label>هاتفك <small>اختياري</small></label><input type="tel" id="phone" placeholder="05xxxxxxxx"></div>
-    </div>
-    <button class="btn btn-main" onclick="send()">إرسال البلاغ إلى مركز السلامة</button>
-    <div class="note">لا يلزم تسجيل دخول. البلاغ يُقيَّد برقم ووقت في سجل بلاغات الشاغلين لدى مركز السلامة، ويُتابَع من مسؤول السلامة.</div>
-  </div>
-
-  <div class="card ok" id="okCard">
-    <div class="big">✓ وصل بلاغك مركز السلامة</div>
-    <div class="id" id="okId"></div>
-    <div class="kv"><b>الوقت:</b> <span id="okAt"></span></div>
-    <div class="kv"><b>المكان:</b> <span id="okHz"></span></div>
-    <div class="note" id="okNote"><b>إلى حين ربط النظام بحسابات المعهد،</b> يُحفظ البلاغ على هذا الجهاز. أرسله للمركز الآن بأحد الزرين، أو اتصل به.</div>
-    <div class="acts">
-      <button class="btn btn-gh" onclick="shareLast()">📤 مشاركة نص البلاغ</button>
-      <button class="btn btn-gh" onclick="downloadLast()">⬇ ملف البلاغ للمركز</button>
-      <a class="btn btn-gh" id="waLink" href="#" target="_blank" style="text-decoration:none">💬 واتساب المركز</a>
-      <button class="btn btn-gh" onclick="again()">بلاغ آخر</button>
-    </div>
-  </div>
-
-  <div class="card" id="mineCard" style="display:none">
-    <div style="font-weight:900;color:var(--green)">بلاغاتك من هذا الجهاز</div>
-    <div class="mine" id="mine"></div>
-  </div>
-</div>
-<div class="foot">حزمة السلامة والصحة المهنية — معهد الإدارة العامة · <a href="index.html">المنظومة</a> · <a href="HZ-00-safety-center/reporting-channels.html">قنوات الإبلاغ الأخرى</a></div>
-
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>بلاغ عن خطر — معهد الإدارة العامة</title>
+<meta http-equiv="refresh" content="0;url=/incident">
 <script>
-const PLACES=[['HZ-01','القبو ومواقف السيارات'],['HZ-02','غرف الكهرباء'],['HZ-03','غرف التكييف'],['HZ-04','مركز البيانات'],['HZ-00','مركز السلامة'],['HZ-05','المطاعم'],['HZ-06','المكاتب الإدارية'],['HZ-07','القاعات التدريبية'],['HZ-08','المخازن'],['','مكان آخر / لا أعرف']];
-const OKEY='ipa-occ', CENTER='966505498966';
-const $=id=>document.getElementById(id);
-const AR=n=>String(n).replace(/[0-9]/g,d=>'٠١٢٣٤٥٦٧٨٩'[d]);
-const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function stamp(){const d=new Date(),p=n=>String(n).padStart(2,'0');return AR(`${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} — ${p(d.getHours())}:${p(d.getMinutes())}`);}
-function occAll(){try{return JSON.parse(localStorage.getItem(OKEY))||{seq:0,reports:[]}}catch(e){return {seq:0,reports:[]}}}
-function occSave(o){try{localStorage.setItem(OKEY,JSON.stringify(o));return true}catch(e){return false}}
-const placeName=h=>(PLACES.find(p=>p[0]===h)||['','غير محدد'])[1];
-$('hz').innerHTML=PLACES.map(p=>`<option value="${p[0]}">${p[1]}</option>`).join('');
-const q=new URLSearchParams(location.search);if(q.get('hz'))$('hz').value=q.get('hz');
-
-let IMG='';
-$('img').addEventListener('change',e=>{
-  const f=e.target.files[0];if(!f){IMG='';$('prev').style.display='none';return;}
-  const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{
-    const M=1024,s=Math.min(1,M/Math.max(im.width,im.height)),c=document.createElement('canvas');
-    c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);
-    IMG=c.toDataURL('image/jpeg',.7);$('prev').src=IMG;$('prev').style.display='block';};im.src=rd.result;};rd.readAsDataURL(f);
-});
-let LAST=null;
-function send(){
-  const desc=$('desc').value.trim();if(!desc){alert('اكتب ما رأيته قبل الإرسال');$('desc').focus();return;}
-  const a=occAll();a.seq=(a.seq||0)+1;
-  const o={id:'ش — '+AR(String(a.seq).padStart(3,'0')),at:stamp(),ts:Date.now(),hz:$('hz').value,place:placeName($('hz').value),loc:$('loc').value.trim(),desc,name:$('name').value.trim(),phone:$('phone').value.trim(),img:IMG,status:'new',dev:true};
-  a.reports.push(o);
-  if(!occSave(a)){alert('تعذّر الحفظ على هذا الجهاز (المخزن ممتلئ؟) — أرسل البلاغ عبر الاتصال أو الواتساب');return;}
-  LAST=o;$('okId').textContent=o.id;$('okAt').textContent=o.at;$('okHz').textContent=o.place+(o.loc?' — '+o.loc:'');
-  $('waLink').href='https://wa.me/'+CENTER+'?text='+encodeURIComponent(txtOf(o));
-  $('formCard').style.display='none';$('okCard').classList.add('on');drawMine();window.scrollTo({top:0});
-}
-function txtOf(o){return 'بلاغ سلامة '+o.id+' · '+o.at+'\nالمكان: '+o.place+(o.loc?' — '+o.loc:'')+'\n'+o.desc+(o.name?'\nالمبلّغ: '+o.name:'')+(o.phone?' · '+o.phone:'');}
-function shareLast(){if(!LAST)return;const t=txtOf(LAST);if(navigator.share)navigator.share({title:'بلاغ سلامة '+LAST.id,text:t}).catch(()=>{});else{navigator.clipboard&&navigator.clipboard.writeText(t);alert('نُسخ نص البلاغ — ألصقه في رسالة إلى المركز');}}
-function downloadLast(){if(!LAST)return;const blob=new Blob([JSON.stringify({ipaOcc:1,v:1,at:new Date().toISOString(),reports:[LAST]})],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='بلاغ-شاغل-'+LAST.id.replace(/\s|—/g,'')+'.json';a.click();URL.revokeObjectURL(a.href);}
-function again(){$('desc').value='';$('loc').value='';$('img').value='';IMG='';$('prev').style.display='none';$('formCard').style.display='';$('okCard').classList.remove('on');window.scrollTo({top:0});}
-const ST={new:['t-new','وصل المركز — لم يُنظر فيه بعد'],assigned:['t-as','أحاله المركز إلى الفني'],linked:['t-ln','فُتح عليه بلاغ فحص ويُتابَع'],closed:['t-ok','مُغلق']};
-function drawMine(){
-  const list=occAll().reports.filter(o=>o.dev).slice().reverse();
-  $('mineCard').style.display=list.length?'':'none';
-  $('mine').innerHTML=list.map(o=>{const s=ST[o.status]||ST.new;return `<div class="mr"><b>${esc(o.id)}</b><span>${esc(o.at)}</span><span>${esc(o.place)}</span><span class="tag ${s[0]}">${s[1]}</span>${o.note?`<span style="color:var(--muted)">— ${esc(o.note)}</span>`:''}</div>`}).join('');
-}
-drawMine();
+/* المرحلة ٣ (٢٠٢٦-٠٩-٠٨): صفحة بلاغ الشاغل صارت في الخادم (/incident). هذا الملف يحوّل إليها ويحمل المكان إن وُجد. */
+(function(){var q=new URLSearchParams(location.search),hz=q.get('hz');location.replace('/incident'+(hz?'?place='+encodeURIComponent(hz):''));})();
 </script>
+</head>
+<body style="font-family:Segoe UI,Tahoma,sans-serif;padding:24px;text-align:center">
+<p>انتقلت صفحة البلاغ. <a href="/incident">اضغط هنا إن لم تُحوَّل تلقائياً</a>.</p>
 </body>
 </html>

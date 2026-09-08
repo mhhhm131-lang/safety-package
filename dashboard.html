@@ -354,7 +354,7 @@ button{font-family:inherit}
 
   <!-- بلاغات الشاغلين: سجل مركز السلامة -->
   <div id="secO" style="display:none">
-    <div class="h"><h2>بلاغات الشاغلين</h2><span class="cnt" id="oN">٠</span><em id="oHint">سجل مركز السلامة — ما يصل من الشاغلين بلا دخول</em><a href="report.html" class="editl" style="text-decoration:none">صفحة البلاغ ←</a></div>
+    <div class="h"><h2>بلاغات الشاغلين</h2><span class="cnt" id="oN">٠</span><em id="oHint">سجل مركز السلامة — ما يصل من الشاغلين بلا دخول</em><a href="/app/incidents" class="editl" style="text-decoration:none">سجل مركز السلامة ←</a><a href="/incident" class="editl" style="text-decoration:none">صفحة البلاغ ←</a></div>
     <div class="cards" id="oBody"></div>
   </div>
 
@@ -724,7 +724,7 @@ function renderPlace(hz,sysId){
     ${S.length?`<div class="sysh"><span>النظام</span><span>آخر فحص</span><span>المستحق القادم</span><span>نتيجة آخر فحص</span><span>مفتوح</span><span></span></div><div class="sysl">${S.map(s=>sysRow(s,hz)).join('')}</div>`:'<div class="empty"><b>لا بيانات</b>افتح نموذج الفحص وسجّل جولة، أو استورد ملف جولة</div>'}
     <div class="h"><h2>البلاغات المفتوحة في المكان</h2><span class="cnt${open.filter(r=>overdue(r)>=0).length?' red':''}">${AR(open.length)}</span></div>
     <div class="cards">${open.length?open.sort(byOverdue).map(r=>row(r)).join(''):'<div class="empty calm"><b>لا بلاغات مفتوحة</b></div>'}</div>
-    ${(()=>{const oc=occOpen().filter(o=>o.hz===hz);return oc.length?`<div class="h"><h2>بلاغات الشاغلين عن المكان</h2><span class="cnt">${AR(oc.length)}</span></div><div class="cards">${oc.map(occRow).join('')}</div>`:''})()}`;
+    ${(()=>{const oc=occOpen().filter(o=>o.hz===hz);return `<div class="h"><h2>بلاغات الشاغلين عن المكان</h2><span class="cnt">${AR(oc.length)}</span><em>محالة إلى الفني وتنتظر بلاغ فحص</em><a href="/app/incidents?place=${hz}" class="editl" style="text-decoration:none">سجل المكان في الخادم ←</a></div>`})()}`;
   return true;
 }
 function faultDays(r){
@@ -1019,7 +1019,8 @@ function drawOcc(){
   $('oN').textContent=AR(open.length);$('oN').className='cnt'+(nw?' red':'');
   $('oHint').textContent=nw?AR(nw)+' جديد لم يُنظر فيه':(open.length?'قيد المتابعة':'سجل مركز السلامة — ما يصل من الشاغلين بلا دخول');
   const closed=all.length-open.length;
-  $('oBody').innerHTML=(open.length?open.map(occRow).join(''):'<div class="empty calm"><b>لا بلاغات شاغلين مفتوحة</b></div>')+(closed?`<div class="empty" style="margin-top:8px">و${AR(closed)} بلاغ مُغلق في السجل</div>`:'');
+  /* المرحلة ٣: السجل في الخادم (/app/incidents)؛ ما يصل هنا هو ما يُحال إلى الفنيين فقط */
+  $('oBody').innerHTML=(open.length?`<div class="empty calm"><b>${AR(open.length)} بلاغ محال إلى الفنيين ينتظر فتح بلاغ فحص</b> — <a href="/app/incidents?status=open" style="color:var(--green)">سجل مركز السلامة كاملاً ←</a></div>`:'<div class="empty calm"><b>لا بلاغات محالة إلى الفنيين الآن</b> — <a href="/app/incidents" style="color:var(--green)">سجل مركز السلامة ←</a></div>');
   return {n:nw,open:open.length};
 }
 function occAssign(id){
