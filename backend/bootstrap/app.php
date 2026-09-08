@@ -15,6 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // خلف وكيل Render: نقرأ X-Forwarded-Proto وإلا صارت التحويلات http:// ورفضها المتصفح (mixed content)
         $middleware->trustProxies(at: '*');
+        // المرحلة ٥: Webhooks الأجهزة بلا جلسة ولا CSRF — التوقيع HMAC لكل جهاز هو المصادقة (WebhookController)
+        $middleware->validateCsrfTokens(except: ['api/iot/webhooks/*']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

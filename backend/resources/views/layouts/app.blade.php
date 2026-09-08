@@ -89,6 +89,10 @@
         <a href="{{ route('emergency.contacts.index') }}" class="{{ request()->routeIs('emergency.contacts.*') ? 'active' : '' }}"><i class="bi bi-telephone"></i>جهات الاتصال</a>
         <a href="{{ route('emergency.buildings.index') }}" class="{{ request()->routeIs('emergency.buildings.*') ? 'active' : '' }}"><i class="bi bi-building"></i>المبنى</a>
         <a href="{{ route('emergency.analytics.index') }}" class="{{ request()->routeIs('emergency.analytics.*') ? 'active' : '' }}"><i class="bi bi-graph-up"></i>مؤشرات الطوارئ</a>
+        <a href="{{ route('emergency.iot.dashboard') }}" class="{{ request()->routeIs('emergency.iot.dashboard') || request()->routeIs('emergency.iot.events') ? 'active' : '' }}"><i class="bi bi-cpu"></i>أنظمة المبنى</a>
+        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'integration.manage'))
+          <a href="{{ route('emergency.iot.devices.index') }}" class="{{ request()->routeIs('emergency.iot.devices.*') ? 'active' : '' }}"><i class="bi bi-hdd-network"></i>الأجهزة الموصولة</a>
+        @endif
         @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'emergency.manage'))
           <a href="{{ route('emergency.settings') }}" class="{{ request()->routeIs('emergency.settings') ? 'active' : '' }}"><i class="bi bi-clock-history"></i>مهل التصعيد</a>
         @endif

@@ -33,6 +33,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Risk::class, RiskPolicy::class);
         Gate::policy(Incident::class, IncidentPolicy::class);
         Gate::policy(EmergencyIncident::class, EmergencyPolicy::class);
+        // المرحلة ٥: Webhooks الأجهزة — ٦٠٠ في الدقيقة لكل عنوان (لوحة إنذار قد ترسل حدثاً لكل منطقة)
+        \Illuminate\Support\Facades\RateLimiter::for('iot-webhook', fn ($request) => \Illuminate\Cache\RateLimiting\Limit::perMinute(600)->by($request->ip()));
         Incident::observe(IncidentObserver::class);
 
         // الصفحات العامة لبلاغ الشاغل: ١٠ في الساعة لكل عنوان (OHSMS)

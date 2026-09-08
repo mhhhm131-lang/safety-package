@@ -7,13 +7,16 @@ use App\Modules\Emergency\Models\EmergencyBuilding;
 use App\Modules\Emergency\Models\EmergencyEventLog;
 use App\Modules\Emergency\Models\EmergencyIncident;
 use App\Modules\Emergency\Models\Lockdown;
+use App\Modules\Integration\Services\AccessControlService;
+use App\Modules\Integration\Services\DigitalSignageService;
+use App\Modules\Integration\Services\ElevatorService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
  * الإغلاق الأمني (من OHSMS) — الحالة في جدول lockdowns بدل الكاش (الإصلاح المقرر ٥-٣).
- * أفعال الأنظمة (أبواب/مصاعد/شاشات) كانت في OHSMS تستدعي خدمات Integration (المرحلة ٥)؛ هنا تُسجَّل «deferred»
- * وتُوصل عند نقل إنترنت الأشياء. الإغلاق حالة طارئة من نوع lockdown تسير بآلة الحالة نفسها.
+ * أفعال الأنظمة (أبواب/مصاعد/شاشات) تُنفَّذ عبر أجهزة المبنى المفعّلة (المرحلة ٥)؛ بلا جهاز تُسجَّل «no_device».
+ * الإغلاق حالة طارئة من نوع lockdown تسير بآلة الحالة نفسها.
  */
 class LockdownService
 {
@@ -47,7 +50,7 @@ class LockdownService
                 'state' => 'active',
                 'zones' => $options['zones'] ?? null,
                 'options' => $options ?: null,
-                'results' => $this->deferredSystemActions($level),
+                'results' => $this->executeSystemActions($building, $level, $by->id, $options),
                 'reason' => $options['reason'] ?? null,
                 'initiated_by_id' => $by->id,
                 'initiated_at' => now(),
@@ -68,7 +71,7 @@ class LockdownService
         return DB::transaction(function () use ($lockdown, $by, $reason) {
             $lockdown->update([
                 'state' => 'lifted', 'lifted_by_id' => $by->id, 'lifted_at' => now(), 'lift_reason' => $reason,
-                'results' => array_merge($lockdown->results ?? [], ['lifted' => 'deferred_phase_5']),
+                'results' => array_merge($lockdown->results ?? [], ['lifted' => $this->liftSystemActions($lockdown->building, $by->id)]),
             ]);
             if ($lockdown->incident && $lockdown->incident->isOpen()) {
                 EmergencyEventLog::log($lockdown->incident, EmergencyEventLog::TYPE_LOCKDOWN, 'رفع الإغلاق الأمني'.($reason ? ' — '.$reason : ''), [], 'info', $by->id);
@@ -83,7 +86,7 @@ class LockdownService
     {
         $lockdown = Lockdown::create([
             'building_id' => $building->id, 'level' => 'zone', 'state' => 'partial', 'zones' => $zones,
-            'options' => $options ?: null, 'results' => ['zones' => array_fill_keys($zones, 'deferred_phase_5')],
+            'options' => $options ?: null, 'results' => ['zones' => array_fill_keys($zones, 'no_device')],
             'reason' => $options['reason'] ?? null, 'initiated_by_id' => $by->id, 'initiated_at' => now(),
         ]);
         Log::warning('[Lockdown] zone lockdown', ['building' => $building->id, 'zones' => $zones, 'user' => $by->id]);
@@ -103,17 +106,40 @@ class LockdownService
         ];
     }
 
-    /** ما كان OHSMS يفعله في الأنظمة لكل مستوى — يُسجَّل مؤجلاً حتى المرحلة ٥. */
-    protected function deferredSystemActions(string $level): array
+    /** أفعال OHSMS لكل مستوى، عبر أجهزة المبنى المفعّلة (المرحلة ٥). */
+    protected function executeSystemActions(EmergencyBuilding $building, string $level, int $userId, array $options): array
     {
-        $actions = match ($level) {
-            self::LEVEL_FULL => ['access_control' => 'lock_all', 'elevators' => 'fire_recall', 'signage' => 'lockdown_alert'],
-            self::LEVEL_MODIFIED => ['access_control' => 'lock_exterior', 'elevators' => 'normal', 'signage' => 'warning'],
-            self::LEVEL_SOFT => ['access_control' => 'lock_exterior', 'elevators' => 'normal', 'signage' => 'info'],
-            self::LEVEL_SHELTER => ['access_control' => 'lock_exterior_no_egress', 'elevators' => 'hold', 'signage' => 'shelter'],
-            default => [],
+        $access = app(AccessControlService::class)->forBuilding($building->id);
+        $elev = app(ElevatorService::class)->forBuilding($building->id);
+        $sign = app(DigitalSignageService::class)->forBuilding($building->id);
+        $r = ['level' => $level];
+        $lockOpts = match ($level) {
+            self::LEVEL_FULL => ['lock_exterior' => true, 'lock_interior' => true, 'allow_egress' => $options['allow_egress'] ?? true],
+            self::LEVEL_SHELTER => ['lock_exterior' => true, 'lock_interior' => false, 'allow_egress' => false],
+            default => ['lock_exterior' => true, 'lock_interior' => false, 'allow_egress' => true],
         };
-        return ['planned' => $actions, 'executed' => 'deferred_phase_5'];
+        $r['access_control'] = $access->canReach() ? $access->activateLockdown($building->id, $userId, $lockOpts + ['message' => $options['reason'] ?? 'Lockdown']) : 'no_device';
+        $r['elevators'] = $level === self::LEVEL_FULL ? ($elev->canReach() ? $elev->activateFireRecall($building->id, $userId) : 'no_device') : 'normal';
+        if ($sign->canReach()) {
+            $r['signage'] = $level === self::LEVEL_FULL
+                ? $sign->showLockdownAlert($building->id, [], $userId)
+                : $sign->pushEmergencyAlert($building->id, ['type' => $level === self::LEVEL_SHELTER ? 'chemical' : 'security', 'message_ar' => implode('. ', $this->getLockdownInstructions($level))], $userId);
+        } else {
+            $r['signage'] = 'no_device';
+        }
+        return $r;
+    }
+
+    protected function liftSystemActions(EmergencyBuilding $building, int $userId): array
+    {
+        $access = app(AccessControlService::class)->forBuilding($building->id);
+        $elev = app(ElevatorService::class)->forBuilding($building->id);
+        $sign = app(DigitalSignageService::class)->forBuilding($building->id);
+        return [
+            'access_control' => $access->canReach() ? $access->deactivateLockdown($building->id, $userId) : 'no_device',
+            'elevators' => $elev->canReach() ? $elev->returnToNormal($building->id, $userId) : 'no_device',
+            'signage' => $sign->canReach() ? $sign->showAllClear($building->id, $userId) : 'no_device',
+        ];
     }
 
     public function getLockdownInstructions(string $level): array

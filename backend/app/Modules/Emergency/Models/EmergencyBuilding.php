@@ -18,7 +18,7 @@ class EmergencyBuilding extends Model
     protected $fillable = [
         'code', 'name', 'name_en', 'address', 'building_type', 'floors_count', 'basement_floors', 'total_capacity',
         'current_occupants', 'latitude', 'longitude', 'floor_plan_file', 'status', 'risk_level', 'last_audit_date',
-        'next_audit_date', 'emergency_status', 'created_by_id',
+        'next_audit_date', 'emergency_status', 'created_by_id', 'fire_zones',
     ];
 
     protected $casts = [

@@ -301,7 +301,7 @@ class EmergencyTest extends TestCase
         $lockdown = Lockdown::first();
         $this->assertSame('active', $lockdown->state);
         $this->assertSame('lockdown', $lockdown->incident->incident_type);
-        $this->assertSame('deferred_phase_5', $lockdown->results['executed']);
+        $this->assertSame('no_device', $lockdown->results['access_control'], 'المرحلة ٥: بلا جهاز مسجّل تُسجَّل الأفعال no_device');
         $this->actingAs($this->salama)->getJson("/api/emergency/buildings/{$this->building->id}/lockdown")->assertOk()->assertJsonPath('data.is_locked_down', true);
         $this->actingAs($this->salama)->post("/app/emergency/lockdowns/{$lockdown->id}/lift", ['reason' => 'زال الخطر'])->assertRedirect();
         $this->assertSame('lifted', $lockdown->fresh()->state);

@@ -36,14 +36,16 @@ class EmergencyService
     public function triggerAlarm(
         EmergencyBuilding $building,
         string $type,
-        User $triggeredBy,
+        ?User $triggeredBy,
         string $severity = 'high',
         bool $isDrill = false,
         ?string $description = null,
         ?int $placeId = null,
         ?int $linkedIncidentId = null,
+        ?\App\Modules\Integration\Models\IotDevice $device = null,
     ): EmergencyIncident {
-        $incident = DB::transaction(function () use ($building, $type, $triggeredBy, $severity, $isDrill, $description, $placeId, $linkedIncidentId) {
+        // triggeredBy = null: التفعيل من جهاز (المرحلة ٥) — يُسجَّل باسم الجهاز في السجل الزمني
+        $incident = DB::transaction(function () use ($building, $type, $triggeredBy, $severity, $isDrill, $description, $placeId, $linkedIncidentId, $device) {
             $building->update(['emergency_status' => EmergencyBuilding::EMERGENCY_EVACUATING]);
 
             $incident = EmergencyIncident::create([
@@ -54,7 +56,7 @@ class EmergencyService
                 'status' => EmergencyIncident::STATUS_ACTIVE,
                 'is_drill' => $isDrill,
                 'triggered_at' => now(),
-                'triggered_by_id' => $triggeredBy->id,
+                'triggered_by_id' => $triggeredBy?->id,
                 'description' => $description,
                 'linked_incident_id' => $linkedIncidentId,
             ]);
@@ -63,10 +65,10 @@ class EmergencyService
             EmergencyEventLog::log(
                 $incident,
                 EmergencyEventLog::TYPE_ALARM_TRIGGERED,
-                ($isDrill ? 'بدء تمرين إخلاء — ' : 'تشغيل إنذار الطوارئ — ').$incident->getTypeLabel().($place ? ' في '.$place->name : ''),
-                ['severity' => $severity, 'place' => $place?->code, 'triggered_by' => $triggeredBy->name],
+                ($isDrill ? 'بدء تمرين إخلاء — ' : ($device ? 'إنذار آلي من '.$device->getKindLabel().' «'.$device->name.'» — ' : 'تشغيل إنذار الطوارئ — ')).$incident->getTypeLabel().($place ? ' في '.$place->name : ''),
+                ['severity' => $severity, 'place' => $place?->code, 'triggered_by' => $triggeredBy?->name ?? ($device?->name), 'device_id' => $device?->id],
                 'critical',
-                $triggeredBy->id
+                $triggeredBy?->id
             );
 
             $this->musteringService->generateQrCodesForIncident($incident);
