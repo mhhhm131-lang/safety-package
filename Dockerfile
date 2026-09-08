@@ -15,7 +15,8 @@ RUN composer dump-autoload --optimize --classmap-authoritative
 # ── المرحلة ٢: التشغيل ──
 FROM php:8.4-fpm-alpine AS runtime
 
-RUN apk add --no-cache nginx supervisor bash curl icu-dev libzip-dev oniguruma-dev postgresql-dev sqlite-dev $PHPIZE_DEPS \
+# linux-headers: يحتاجها امتداد sockets (المرحلة ٥ — بروتوكولات BACnet/Modbus/MQTT) للتجميع على Alpine
+RUN apk add --no-cache nginx supervisor bash curl icu-dev libzip-dev oniguruma-dev postgresql-dev sqlite-dev linux-headers $PHPIZE_DEPS \
     && docker-php-ext-install pdo_pgsql pdo_sqlite mbstring bcmath intl opcache zip sockets \
     && apk del $PHPIZE_DEPS \
     && rm -rf /var/cache/apk/*
