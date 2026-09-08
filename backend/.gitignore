@@ -33,3 +33,4 @@ Thumbs.db
 /public/archive
 /public/*.html
 /public/support.js
+/public/_test
