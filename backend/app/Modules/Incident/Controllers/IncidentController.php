@@ -58,7 +58,7 @@ class IncidentController extends Controller
             'title' => ['nullable', 'string', 'max:200'],
             'description' => ['required', 'string', 'min:5', 'max:5000'],
             'risk_id' => [$type === 'secret' ? 'nullable' : 'required', 'integer', 'exists:risks,id'],
-            'place_id' => ['nullable', 'integer', 'exists:places,id'],
+            'place_id' => ['required', 'integer', 'exists:places,id'], // المكان إلزامي: عليه يقوم التوجيه إلى فني المكان
             'location_text' => ['nullable', 'string', 'max:200'],
             'reporter_name' => ['nullable', 'string', 'max:120'],
             'reporter_phone' => ['nullable', 'string', 'max:30'],
@@ -66,6 +66,7 @@ class IncidentController extends Controller
             'photo' => ['nullable', 'string', 'max:4500000'],
         ], [
             'description.required' => 'اكتب ما رأيته قبل الإرسال.',
+            'place_id.required' => 'اختر المكان — عليه تُحال البلاغات إلى فني المكان.',
             'risk_id.required' => 'اختر نوع الخطر من التصنيف (الفئة ← الفرعية ← الخطر).',
         ]);
 
