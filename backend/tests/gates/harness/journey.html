@@ -1,0 +1,116 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0}iframe{width:1100px;height:1400px;border:0}#out{font:11px monospace;white-space:pre-wrap;background:#ff0;padding:4px;max-height:120px;overflow:hidden}</style></head>
+<body><div id="out">running…</div><iframe id="f"></iframe>
+<script>
+/* journey.html?upto=N&as=role&page=dash|form&row=p01-i-3&summary=1
+   يمثّل قصة STORY.md خطوة خطوة في نموذج الأقبية، ثم يعرض الصفحة المطلوبة بدور معيّن (للصورة) أو يطبع ملخصاً لكل الأدوار. */
+const q=new URLSearchParams(location.search);
+const UPTO=+(q.get('upto')||12), AS=q.get('as')||'', PAGE=q.get('page')||'dash', SUMMARY=q.get('summary')==='1', ROWQ=q.get('row')||'';
+const ROOT='/', FORM='HZ-01-basement/inspection-form.html', KEY='ipa-park-form-v10';
+const U={tech:'fani',fm:'marafiq',adm:'shuon',exec:'idara',safety:'salama'};
+const A='p01-i-1', B='p01-i-3';
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const f=document.getElementById('f'); let w;
+const xsrf=()=>{const m=document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);return m?decodeURIComponent(m[1]):''};
+async function login(role){
+  await fetch('/login',{credentials:'same-origin'});
+  await fetch('/logout',{method:'POST',credentials:'same-origin',headers:{'X-XSRF-TOKEN':xsrf(),'Accept':'application/json'}}).catch(()=>{});
+  const h=await (await fetch('/login',{credentials:'same-origin'})).text();
+  const tok=(h.match(/name="_token" value="([^"]+)"/)||[])[1];
+  const r=await fetch('/login',{method:'POST',credentials:'same-origin',redirect:'manual',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({_token:tok,username:U[role],password:'1234',next:'/vision.html'})});
+  const chk=await fetch('/api/store?versions=1',{credentials:'same-origin',headers:{'Accept':'application/json'}});
+  if(chk.status!==200)throw new Error('login failed for '+role+' status '+chk.status);
+  const j=await chk.json(); if(j.session.r!==role)throw new Error('wrong role '+j.session.r);
+}
+async function apiGet(key){const r=await fetch('/api/store/'+key,{credentials:'same-origin',headers:{'Accept':'application/json'}});if(r.status!==200)return null;const j=await r.json();j.data=JSON.parse(j.data);return j;}
+async function apiPut(key,data,version){const r=await fetch('/api/store/'+key,{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json','Accept':'application/json','X-XSRF-TOKEN':xsrf()},body:JSON.stringify({data:JSON.stringify(data),version})});if(!r.ok)throw new Error('put '+key+' '+r.status);}
+async function apiClear(){await login('safety');const j=await (await fetch('/api/store?versions=1',{credentials:'same-origin',headers:{'Accept':'application/json'}})).json();
+  for(const k of Object.keys(j.versions)){await fetch('/api/store/'+k,{method:'DELETE',credentials:'same-origin',headers:{'X-XSRF-TOKEN':xsrf(),'Accept':'application/json'}});}}
+function session(role){}
+async function open(role,row){
+  await login(role);
+  const loaded=new Promise(r=>f.addEventListener('load',r,{once:true}));
+  f.src=ROOT+FORM+'?t='+Math.random()+(row?'#open='+row:'');
+  await Promise.race([loaded,wait(3000)]);
+  w=f.contentWindow; w.alert=()=>{}; w.confirm=()=>true; w.$=id=>w.document.getElementById(id);
+  await wait(900);
+}
+const ov=()=>w.$('ov');
+function lvlOpt(n,ld){w.document.querySelector(`#ov .lvl[data-lvl="${n}"] .opt[data-ld="${ld}"]`).click();}
+function lvlNote(n,txt){w.document.querySelector(`#ov .lvl[data-lvl="${n}"] textarea`).value=txt;}
+async function techNew(row,imp,desc,need){
+  await open('tech',null);
+  const tr=w.document.querySelector(`#items tr[data-row="${row}"]`);
+  tr.querySelector('input[data-r="no"]').click(); await wait(80);
+  tr.querySelector('.act').click(); await wait(120);
+  w.pickFork('esc'); await wait(50);
+  w.$('mImpact').querySelector(`[data-imp="${imp}"]`).click();
+  w.$('mDesc').value=desc; w.$('needTxt').value=need;
+  w.sendMain(); await wait(200);
+}
+async function techClose(row,txt){
+  await open('tech',row); w.pickFork('close'); await wait(50);
+  lvlNote(1,txt); w.document.querySelector('#ov .ack').checked=true; w.sendMain(); await wait(200);
+}
+async function mgr(role,row,ld,txt){
+  await open(role,row); const n={fm:2,adm:3,exec:4}[role];
+  lvlOpt(n,ld); lvlNote(n,txt); w.sendMain(); await wait(200);
+}
+async function safetyWatch(row,who,req,ans){
+  await open('safety',row); w.addWatch(); const tr=w.$('wRows').lastElementChild;
+  tr.querySelector('.ww').value=who; tr.querySelector('.wr').value=req; tr.querySelector('.wp').value=ans;
+  tr.querySelector('.wp').dispatchEvent(new w.Event('input')); w.sendMain(); await wait(200);
+}
+const STEPS=[
+ /*1*/ async()=>techNew(A,'none','الكاشف الثاني لا يستجيب لاختبار الغاز','كاشف بديل من نفس الطراز'),
+ /*2*/ async()=>mgr('fm',A,'back','صُرف كاشف من مخزون الطوارئ — رقم الصرف ٤٤١'),
+ /*3*/ async()=>techClose(A,'رُكّب الكاشف البديل واختُبر بالغاز'),
+ /*4*/ async()=>techNew(B,'partial','فتحة السحب الشرقية مسدودة جزئياً بمخلفات بناء','عمّال تنظيف ومعدات رفع'),
+ /*5*/ async()=>mgr('fm',B,'up','لا عقد تنظيف ساري — يلزم اعتماد مدير الشؤون'),
+ /*6*/ async()=>{const g=await apiGet(KEY);const d=g.data;const r=d.reports.find(x=>x.row===B);
+        const AR=s=>String(s).replace(/[0-9]/g,c=>'٠١٢٣٤٥٦٧٨٩'[c]),p=n=>String(n).padStart(2,'0');const t=new Date(Date.now()-26*36e5);
+        const st=AR(`${t.getFullYear()}/${p(t.getMonth()+1)}/${p(t.getDate())} — ${p(t.getHours())}:${p(t.getMinutes())}`);r.when=st;r.sent=st;
+        await apiPut(KEY,d,g.version);},
+ /*7*/ async()=>safetyWatch(B,'مدير الشؤون الإدارية والهندسية','مهلة البلاغ انتهت منذ يومين — نرجو البت في اعتماد التنظيف','لم يرد'),
+ /*8*/ async()=>{await open('safety',B); w.addWatch(); const tr=w.$('wRows').lastElementChild;
+        tr.querySelector('.ww').value='الإدارة العليا'; tr.querySelector('.wr').value='إبلاغ بتوقف المسار عند مدير الشؤون'; tr.querySelector('.wp').value='طلبت الملف';
+        tr.querySelector('.wp').dispatchEvent(new w.Event('input'));
+        w.$('gStuck').checked=true; w.$('gStuck').dispatchEvent(new w.Event('change'));
+        w.$('gWhy').value='توقف المسار عند مدير الشؤون بعد تجاوز المهلة ٢٤ ساعة ومخاطبته دون رد'; w.sendMain(); await wait(200);},
+ /*9*/ async()=>mgr('exec',B,'back','اعتماد التنظيف من بند الطوارئ — يُنفَّذ فوراً'),
+ /*10*/async()=>techClose(B,'نُظّفت الفتحة وأُعيد تشغيل السحب'),
+ /*11*/async()=>{await open('safety',B); w.$('reopen').checked=true; w.sendMain(); await wait(200);},
+ /*12*/async()=>{await open('tech',B); w.pickFork('esc'); await wait(50); w.$('mImpact').querySelector('[data-imp="alt"]').click();
+        w.$('needTxt').value='تعديل مسار الفتحة — أعمال مدنية'; w.sendMain(); await wait(200);
+        await mgr('fm',B,'up','خارج نطاق الصيانة'); await mgr('adm',B,'up','يحتاج ميزانية أعمال مدنية');
+        await mgr('exec',B,'stop','يُدرج في ميزانية العام القادم — مع إبقاء الإجراءات التعويضية');},
+];
+(async()=>{
+  try{
+    localStorage.clear(); await apiClear(); const DIAG=[];
+    for(let i=0;i<UPTO;i++){ try{ await STEPS[i](); }catch(e){ DIAG.push({step:i+1,err:String(e)}); throw new Error('step '+(i+1)+': '+e+' DIAG='+JSON.stringify(DIAG)); }
+      await wait(1500);
+      const g=await apiGet(KEY); DIAG.push({step:i+1,log:(w&&w.ipaStore)?w.ipaStore.log.slice():null,pending:(w&&w.ipaStore)?w.ipaStore.pending():null,localRows:(JSON.parse(localStorage.getItem(KEY)||'{"reports":[]}').reports||[]).map(r=>r.row),server:g?{v:g.version,rows:g.data.reports.map(r=>r.row)}:null}); }
+    window.DIAG=DIAG;
+    if(SUMMARY){
+      const out={};
+      for(const role of ['tech','fm','adm','exec','safety']){
+        await open(role,null);
+        const mi=w.myItems(), md=w.myDone();
+        const RL={tech:1,fm:2,adm:3,exec:4}, L=RL[role]||0;
+        out[role]={wait:mi.map(r=>r.id+' '+w.dispStatus(r).t+(w.isNew(r)?' [جديد]':'')+(w.watchFor(r,L)?' [متابعة]':'')+((L>1&&L<4&&r.path!=='إداري'&&!w.isClosed(r))?' [رقابي فوقك]':'')),
+                   mine:md.map(r=>r.id+' '+w.dispStatus(r).t+(w.isNew(r)?' [جديد]':''))};
+      }
+      const d=(await apiGet(KEY)).data; out.records=d.reports.map(r=>({id:r.id,status:r.status,path:r.path,m7:r.m7,reopen:r.reopen,hist:(r.hist||[]).length,levels:Object.keys(r.levels||{}).join(',')}));
+      out.diag=window.DIAG;document.getElementById('out').textContent='RESULT '+JSON.stringify(out);
+    }else if(AS){
+      await login(AS);
+      const loaded=new Promise(r=>f.addEventListener('load',r,{once:true}));
+      f.src=ROOT+(PAGE==='form'?FORM+'?t='+Math.random()+(ROWQ?'#open='+ROWQ:''):'dashboard.html?t='+Math.random());
+      await Promise.race([loaded,wait(3000)]); await wait(700);
+      document.getElementById('out').textContent='RESULT {"shot":"'+PAGE+'","as":"'+AS+'","upto":'+UPTO+'}';
+      document.getElementById('out').style.display='none';
+    }
+    document.title='done';
+  }catch(e){document.getElementById('out').textContent='RESULT '+JSON.stringify({error:String(e&&e.stack||e)});}
+})();
+</script></body></html>

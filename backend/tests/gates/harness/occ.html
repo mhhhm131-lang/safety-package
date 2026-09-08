@@ -1,0 +1,21 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+<body><div id="out">running…</div><iframe id="f" style="width:1100px;height:900px;border:0"></iframe>
+<script>
+/* occ.html?u=fani&p=1234&hz=HZ-01-basement — يدخل بالخادم ويفتح نموذج فحص المكان ويطبع شريط «بلاغات شاغلين لهذا المكان». */
+const q=new URLSearchParams(location.search), U=q.get('u')||'fani', P=q.get('p')||'1234', DIR=q.get('hz')||'HZ-01-basement';
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const f=document.getElementById('f');
+const xsrf=()=>{const m=document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);return m?decodeURIComponent(m[1]):''};
+(async()=>{
+  await fetch('/login',{credentials:'same-origin'});
+  await fetch('/logout',{method:'POST',credentials:'same-origin',headers:{'X-XSRF-TOKEN':xsrf(),'Accept':'application/json'}}).catch(()=>{});
+  const h=await (await fetch('/login',{credentials:'same-origin'})).text();
+  const tok=(h.match(/name="_token" value="([^"]+)"/)||[])[1];
+  await fetch('/login',{method:'POST',credentials:'same-origin',redirect:'manual',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({_token:tok,username:U,password:P})});
+  f.src='/'+DIR+'/inspection-form.html';
+  await wait(3000);
+  const w=f.contentWindow, d=f.contentDocument;
+  const bar=d.getElementById('occBar');
+  document.getElementById('out').textContent='RESULT '+JSON.stringify({user:U,role:w.ROLE,hidden:bar?bar.hidden:null,text:bar?bar.textContent.replace(/\s+/g,' ').trim().slice(0,300):null,buttons:bar?[...bar.querySelectorAll('button')].map(b=>b.textContent.trim()):[]});
+})();
+</script></body></html>

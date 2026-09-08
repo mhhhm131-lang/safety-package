@@ -1,0 +1,54 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+<body><div id="out">running…</div><iframe id="f" style="width:1100px;height:900px;border:0"></iframe>
+<script>
+/* two.html?as=role&do=write|read — جهازان (ملفا تعريف منفصلان) على الخادم نفسه.
+   write: يدخل كالفني، يعلّم بنداً غير مطابق في نموذج الأقبية ويفتح بلاغاً ويرسله.
+   read : يدخل بالدور المطلوب ويفتح اللوحة ويطبع ما يراه من بلاغات مفتوحة، ويفتح النموذج ويطبع البلاغات. */
+const q=new URLSearchParams(location.search), AS=q.get('as')||'safety', DO=q.get('do')||'read';
+const U={tech:'fani',fm:'marafiq',adm:'shuon',exec:'idara',safety:'salama'};
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const f=document.getElementById('f'); let w;
+const xsrf=()=>{const m=document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);return m?decodeURIComponent(m[1]):''};
+async function login(role){
+  await fetch('/login',{credentials:'same-origin'});
+  await fetch('/logout',{method:'POST',credentials:'same-origin',headers:{'X-XSRF-TOKEN':xsrf(),'Accept':'application/json'}}).catch(()=>{});
+  const h=await (await fetch('/login',{credentials:'same-origin'})).text();
+  const tok=(h.match(/name="_token" value="([^"]+)"/)||[])[1];
+  await fetch('/login',{method:'POST',credentials:'same-origin',redirect:'manual',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({_token:tok,username:U[role],password:'1234',next:'/vision.html'})});
+  const j=await (await fetch('/api/store?versions=1',{credentials:'same-origin',headers:{'Accept':'application/json'}})).json();
+  if(j.session.r!==role)throw new Error('login failed '+role);
+}
+async function open(url){
+  const loaded=new Promise(r=>f.addEventListener('load',r,{once:true}));
+  f.src=url+(url.includes('?')?'&':'?')+'t='+Math.random();
+  await Promise.race([loaded,wait(4000)]);
+  w=f.contentWindow; w.alert=()=>{}; w.confirm=()=>true; w.$=id=>w.document.getElementById(id);
+  await wait(900);
+}
+(async()=>{
+  try{
+    localStorage.clear();
+    await login(AS);
+    const out={as:AS,do:DO};
+    if(DO==='write'){
+      await open('/HZ-01-basement/inspection-form.html');
+      const tr=w.document.querySelector('#items tr[data-row="p01-i-2"]');
+      tr.querySelector('input[data-r="no"]').click(); await wait(80);
+      tr.querySelector('.act').click(); await wait(120);
+      w.pickFork('esc'); await wait(50);
+      w.$('mImpact').querySelector('[data-imp="partial"]').click();
+      w.$('mDesc').value='اختبار جهازين — مروحة السحب الثالثة تهتز'; w.$('needTxt').value='فحص المحمل';
+      w.sendMain(); await wait(1500);
+      out.log=w.ipaStore.log.slice(); out.pending=w.ipaStore.pending();
+      out.rows=JSON.parse(localStorage.getItem('ipa-park-form-v10')).reports.map(r=>r.row+' '+r.status);
+    }else{
+      await open('/dashboard.html'); await wait(800);
+      const ids=t=>Array.from(new Set((t.match(/ب — ٠[٠-٩]/g)||[])));
+      out.dash={entered:w.$('login').classList.contains('off'),role:w.$('uRole').textContent,ids:ids(w.document.body.innerText),open:(w.document.body.innerText.match(/[٠-٩]+ مفتوح في المبنى/)||[''])[0]};
+      await open('/HZ-01-basement/inspection-form.html');
+      out.form={entered:w.$('login').classList.contains('off'),role:w.$('uRole').textContent,ids:ids(w.document.body.innerText)};
+    }
+    document.getElementById('out').textContent='RESULT '+JSON.stringify(out);
+  }catch(e){document.getElementById('out').textContent='RESULT '+JSON.stringify({error:String(e&&e.stack||e)});}
+})();
+</script></body></html>
