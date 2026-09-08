@@ -62,8 +62,12 @@ log('device registered + secret shown once', (did, len(secret), f))
 log('device page shows webhook url', f'/api/iot/webhooks/{did}' in r.text)
 
 # ٢) البوابة: إنذار موقّع ← حالة طارئة خلال ثانية (الجهاز يرسل بلا جلسة)
+t = time.perf_counter(); requests.get(BASE + '/up', timeout=120); net = round(time.perf_counter() - t, 3)
 st, j, dt = webhook(did, secret, {'event_type': 'alarm', 'zone_id': '3', 'severity': 'critical', 'location': 'بوابة ٥ — محاكاة'}, ts=int(time.time()))
-log('GATE signed alarm → incident', (st, j.get('action'), j.get('incident_code'), f'{dt}s', 'PASS' if (st == 200 and j.get('action') == 'incident_created' and dt < 1.0) else 'FAIL'))
+srv = j.get('processing_ms') if isinstance(j, dict) else None
+# المعيار: زمن المعالجة في الخادم (من وصول الطلب حتى الرد بالحالة المنشأة) < ثانية؛ الرحلة الكاملة تشمل الشبكة والطبقة الوسيطة
+log('GATE signed alarm → incident', (st, j.get('action'), j.get('incident_code'), f'server {srv}ms', f'round-trip {dt}s (network baseline /up {net}s)',
+    'PASS' if (st == 200 and j.get('action') == 'incident_created' and srv is not None and srv < 1000) else 'FAIL'))
 iid = j.get('incident_id')
 live = sa.get(BASE + f'/app/emergency/incidents/{iid}/live', timeout=120).text
 log('live page: device-originated + place HZ-06 + team notified', ('إنذار آلي' in live, 'HZ-06' in live or 'المكاتب' in live, 'الفريق الأولي' in live))

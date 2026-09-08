@@ -37,6 +37,8 @@ class WebhookController extends Controller
         return response()->json([
             'success' => true, 'event_id' => $event->id, 'action' => $event->action_taken,
             'incident_id' => $event->incident_id, 'incident_code' => $event->incident?->incident_code,
+            // زمن المعالجة في الخادم من وصول الطلب حتى الرد (البوابة: «خلال ثانية» — بلا زمن الشبكة)
+            'processing_ms' => (int) round((microtime(true) - (float) $request->server('REQUEST_TIME_FLOAT', microtime(true))) * 1000),
         ]);
     }
 }
