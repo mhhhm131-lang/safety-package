@@ -74,7 +74,7 @@
   if (pendKeys.length) {
     pendKeys.forEach(function (k) {
       var r = syncSend(k, pend[k].op, pend[k].version);
-      LOG.push({ k: k, op: pend[k].op, replay: true, status: r.status });
+      LOG.push({ k: k, op: pend[k].op, replay: true, status: r.status, body: (r.status >= 400 && r.json) ? (r.json.error || r.json.message || '') : '' });
       if (r.status === 200 || r.status === 404 || r.status === 409 || r.status === 422) clearPending(k);
       if (r.status === 401 || r.status === 419) { toLogin(); return; }
     });
@@ -150,8 +150,15 @@
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-XSRF-TOKEN': xsrf() },
         body: body
       }).then(function (r) {
-        LOG.push({ k: k, op: op, status: r.status });
+        var entry = { k: k, op: op, status: r.status };
+        LOG.push(entry);
         if (r.status === 401 || r.status === 419) { toLogin(); return; }
+        if (r.status >= 500) {
+          return r.text().then(function (t) {
+            try { var j = JSON.parse(t); entry.body = j.error || j.message || t.slice(0, 300); } catch (e) { entry.body = t.slice(0, 300); }
+            retry(k, op, 'تعذّر الحفظ في الخادم — سيُعاد');
+          });
+        }
         if (r.status === 409) {
           return r.json().then(function (j) {
             VER[k] = j.version;

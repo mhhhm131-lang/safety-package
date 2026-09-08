@@ -69,7 +69,21 @@ class StoreController extends Controller
         }
         $clientVersion = (int) ($payload['version'] ?? 0);
 
-        return DB::transaction(function () use ($key, $payload, $clientVersion, $request) {
+        try {
+            return $this->store($key, $payload['data'], $clientVersion, $request->user()->id);
+        } catch (\Throwable $e) {
+            // يُسجَّل كاملاً في السجل؛ ويُعاد للمستخدم المسجَّل نص مختصر ليُشخَّص الخلل بلا وصول للسجلات
+            report($e);
+            return response()->json([
+                'message' => 'تعذّر الحفظ في الخادم',
+                'error' => class_basename($e).': '.mb_substr($e->getMessage(), 0, 300),
+            ], 500);
+        }
+    }
+
+    private function store(string $key, string $data, int $clientVersion, int $userId): JsonResponse
+    {
+        return DB::transaction(function () use ($key, $data, $clientVersion, $userId) {
             $doc = InstituteDocument::where('key', $key)->lockForUpdate()->first();
 
             if ($doc && $clientVersion !== $doc->version) {
@@ -84,9 +98,9 @@ class StoreController extends Controller
             if (!$doc) {
                 $doc = new InstituteDocument(['key' => $key, 'version' => 0]);
             }
-            $doc->data = $payload['data'];
+            $doc->data = $data;
             $doc->version = $doc->version + 1;
-            $doc->updated_by = $request->user()->id;
+            $doc->updated_by = $userId;
             $doc->save();
 
             return response()->json(['key' => $key, 'version' => $doc->version]);
