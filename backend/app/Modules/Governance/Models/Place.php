@@ -20,4 +20,30 @@ class Place extends Model
         if (!$code) return null;
         return static::where('code', $code)->value('id');
     }
+
+    /** مجلد المكان في ملفات المعهد (SOURCE.md §٢) — أسماء المجلدات ثابتة. */
+    public const FOLDERS = [
+        'HZ-00' => 'HZ-00-safety-center', 'HZ-01' => 'HZ-01-basement', 'HZ-02' => 'HZ-02-electrical',
+        'HZ-03' => 'HZ-03-hvac', 'HZ-04' => 'HZ-04-datacenter', 'HZ-05' => 'HZ-05-restaurants',
+        'HZ-06' => 'HZ-06-offices', 'HZ-07' => 'HZ-07-halls', 'HZ-08' => 'HZ-08-storage',
+    ];
+
+    /** روابط وثائق المكان ونموذجه وملفه في اللوحة. مركز السلامة بلا خطة استجابة (مركز القيادة) وله نموذجا فحص. */
+    public function links(): array
+    {
+        $f = '/'.(self::FOLDERS[$this->code] ?? $this->code);
+        $links = [
+            ['فهرس المكان', "$f/index.html"],
+            ['خطة السلامة', "$f/safety-plan.html"],
+        ];
+        if ($this->code !== 'HZ-00') {
+            $links[] = ['خطة الاستجابة', "$f/response-plan.html"];
+            $links[] = ['نموذج الفحص', "$f/inspection-form.html"];
+        } else {
+            $links[] = ['الجاهزية (٧)', "$f/inspection-form.html"];
+            $links[] = ['الحريق (١٢)', "$f/fire-inspection.html"];
+        }
+        $links[] = ['ملف المكان في اللوحة', '/dashboard.html#place='.$this->code];
+        return $links;
+    }
 }

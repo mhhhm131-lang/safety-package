@@ -166,6 +166,18 @@ class GovernanceTest extends TestCase
         $this->assertDatabaseHas('organization_units', ['code' => 'it']);
     }
 
+    public function test_places_screen_links_documents_and_forms(): void
+    {
+        $safety = $this->user('salama', 'system_admin');
+        $r = $this->actingAs($safety)->get('/app/places')->assertOk();
+        $r->assertSee('/HZ-01-basement/safety-plan.html', false)
+          ->assertSee('/HZ-01-basement/response-plan.html', false)
+          ->assertSee('/HZ-01-basement/inspection-form.html', false)
+          ->assertSee('/HZ-00-safety-center/fire-inspection.html', false)
+          ->assertDontSee('/HZ-00-safety-center/response-plan.html', false)
+          ->assertSee('/dashboard.html#place=HZ-05', false);
+    }
+
     public function test_notifications_inbox(): void
     {
         $safety = $this->user('salama', 'system_admin');
