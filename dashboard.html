@@ -1138,6 +1138,7 @@ window.addEventListener('focus',()=>{if(ROLE)load();});
 /* جلسة قائمة؟ */
 (function(){
   let s=null;try{s=JSON.parse(localStorage.getItem(SESSION))}catch(e){}
+  if(s&&s.r&&!USERS[s.u])USERS[s.u]={p:'',r:s.r,n:s.n||'',h:''}; /* حساب حقيقي من الخادم (المرحلة ١) */
   if(s&&USERS[s.u])enter(s.u);
 })();
 </script>

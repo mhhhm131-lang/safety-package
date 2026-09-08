@@ -2,7 +2,9 @@
 
 namespace App\Modules\Store\Controllers;
 
+use App\Core\Permissions\PermissionRegistry;
 use App\Http\Controllers\Controller;
+use App\Modules\Governance\Services\DeptSync;
 use App\Modules\Store\Models\InstituteDocument;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,18 +18,23 @@ use Illuminate\Support\Facades\DB;
  * GET    /api/store/{key}             → وثيقة واحدة
  * PUT    /api/store/{key}             → {data: نص JSON, version} — 409 إن كانت النسخة أقدم من الخادم
  * DELETE /api/store/{key}
+ *
+ * الجلسة: دور الواجهة (safety/tech/fm/adm/exec/cons/dept) من ملف المستخدم؛ الأدوار بلا دور واجهة
+ * (موظف، مقاول، طرف خارجي) لا تصل إلى العمل اليومي → 403.
+ * ipa-depts وثيقة مشتقة من جدول الهيكل التنظيمي (DeptSync) — الجدول هو الأصل.
  */
 class StoreController extends Controller
 {
+    public const DEPTS_KEY = 'ipa-depts';
+
+    public function __construct(private DeptSync $depts) {}
+
     public function index(Request $request): JsonResponse
     {
-        $user = $request->user();
-        $session = [
-            'u' => $user->username,
-            'r' => $user->role,
-            'n' => $user->name,
-            'd' => $user->dept_code,
-        ];
+        $session = $this->session($request);
+        if (!$session) {
+            return $this->noDailyWork();
+        }
 
         if ($request->boolean('versions')) {
             $versions = InstituteDocument::query()->pluck('version', 'key');
@@ -47,9 +54,10 @@ class StoreController extends Controller
         return response()->json(['session' => $session, 'csrf' => csrf_token(), 'docs' => $docs]);
     }
 
-    public function show(string $key): JsonResponse
+    public function show(Request $request, string $key): JsonResponse
     {
         $this->assertKey($key);
+        if (!$this->session($request)) return $this->noDailyWork();
         $doc = InstituteDocument::where('key', $key)->first();
         if (!$doc) {
             return response()->json(['message' => 'لا توجد وثيقة بهذا المفتاح'], 404);
@@ -60,6 +68,7 @@ class StoreController extends Controller
     public function put(Request $request, string $key): JsonResponse
     {
         $this->assertKey($key);
+        if (!$this->session($request)) return $this->noDailyWork();
         $payload = $request->validate([
             'data' => 'required|string|max:16000000',
             'version' => 'nullable|integer|min:0',
@@ -95,6 +104,15 @@ class StoreController extends Controller
                 ], 409);
             }
 
+            if ($key === self::DEPTS_KEY) {
+                // الجدول هو الأصل: نكتب فيه ثم نعيد توليد الوثيقة منه
+                $rows = json_decode($data, true);
+                if (!is_array($rows)) {
+                    return response()->json(['message' => 'صيغة الهيكل غير صحيحة'], 422);
+                }
+                $data = json_encode($this->depts->fromDocument($rows), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            }
+
             if (!$doc) {
                 $doc = new InstituteDocument(['key' => $key, 'version' => 0]);
             }
@@ -107,11 +125,48 @@ class StoreController extends Controller
         });
     }
 
-    public function destroy(string $key): JsonResponse
+    public function destroy(Request $request, string $key): JsonResponse
     {
         $this->assertKey($key);
+        if (!$this->session($request)) return $this->noDailyWork();
+        if ($key === self::DEPTS_KEY) {
+            return response()->json(['message' => 'الهيكل التنظيمي لا يُحذف من اللوحة'], 422);
+        }
         InstituteDocument::where('key', $key)->delete();
         return response()->json(['key' => $key, 'deleted' => true]);
+    }
+
+    /** يُستدعى من شاشة الهيكل في الخادم بعد أي تعديل: تحديث وثيقة اللوحة ورفع نسختها. */
+    public static function refreshDeptsDocument(DeptSync $sync): void
+    {
+        $data = json_encode($sync->toDocument(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $doc = InstituteDocument::firstOrNew(['key' => self::DEPTS_KEY]);
+        $doc->data = $data;
+        $doc->version = ($doc->exists ? $doc->version : 0) + 1;
+        $doc->updated_by = auth()->id();
+        $doc->save();
+    }
+
+    private function session(Request $request): ?array
+    {
+        $user = $request->user();
+        $profile = $user->profile;
+        if (!$profile || !$profile->is_active) return null;
+        $ui = PermissionRegistry::uiRole($profile->role);
+        if (!$ui) return null;
+        return [
+            'u' => $user->username,
+            'r' => $ui,
+            'role' => $profile->role,
+            'n' => $user->name,
+            'd' => $profile->organizationUnit?->code,
+            'p' => $profile->place?->code,
+        ];
+    }
+
+    private function noDailyWork(): JsonResponse
+    {
+        return response()->json(['message' => 'حسابك لا يملك صلاحية العمل اليومي (اللوحة ونماذج الفحص). الوثائق مفتوحة للجميع.'], 403);
     }
 
     private function assertKey(string $key): void

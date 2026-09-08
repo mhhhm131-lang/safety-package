@@ -39,11 +39,7 @@ class LoginController extends Controller
                 ->withErrors(['username' => "محاولات كثيرة — حاول بعد {$sec} ثانية"]);
         }
 
-        $ok = Auth::attempt([
-            'username' => $username,
-            'password' => $data['password'],
-            'is_active' => true,
-        ], remember: true);
+        $ok = Auth::attempt(['username' => $username, 'password' => $data['password']], remember: true);
 
         if (!$ok) {
             RateLimiter::hit($throttleKey, 60);
@@ -51,14 +47,26 @@ class LoginController extends Controller
                 ->withErrors(['username' => 'اسم المستخدم أو كلمة المرور غير صحيحة']);
         }
 
+        // الحساب المعطّل لا يدخل (في OHSMS is_active لا يمنع الدخول — عندنا يمنع)
+        if (!Auth::user()->isActive()) {
+            Auth::logout();
+            RateLimiter::hit($throttleKey, 60);
+            return back()->withInput(['username' => $username])
+                ->withErrors(['username' => 'هذا الحساب معطّل — راجع مسؤول السلامة']);
+        }
+
         RateLimiter::clear($throttleKey);
         $request->session()->regenerate();
+        app('audit.logger')->log($request, 'login', 'User', Auth::id(), "دخول {$username}", Auth::id());
 
         return redirect($this->safeNext($request->input('next')));
     }
 
     public function logout(Request $request): RedirectResponse
     {
+        if ($u = Auth::user()) {
+            app('audit.logger')->log($request, 'logout', 'User', $u->id, "خروج {$u->username}", $u->id);
+        }
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

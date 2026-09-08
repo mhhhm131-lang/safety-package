@@ -31,6 +31,14 @@ fi
 if [ "$RUN_MIGRATIONS" = "true" ]; then
   echo "  الترحيلات..."
   php artisan migrate --force --no-interaction
+  echo "  البيانات المرجعية (الأماكن، الهيكل)..."
+  php artisan db:seed --force --no-interaction
+fi
+
+# حساب مسؤول السلامة الأول في الإنتاج: من متغيرات البيئة (تُضبط في Render مرة واحدة ثم تُحذف).
+if [ -n "$IPA_ADMIN_USERNAME" ] && [ -n "$IPA_ADMIN_PASSWORD" ]; then
+  echo "  حساب مسؤول السلامة: $IPA_ADMIN_USERNAME"
+  php artisan ipa:user "$IPA_ADMIN_USERNAME" system_admin "${IPA_ADMIN_NAME:-مسؤول السلامة}" --password="$IPA_ADMIN_PASSWORD" --no-interaction
 fi
 
 # لا حساب افتراضي في الإنتاج. الحسابات التجريبية للتطوير فقط.

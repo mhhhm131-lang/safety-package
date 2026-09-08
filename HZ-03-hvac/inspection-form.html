@@ -1783,7 +1783,9 @@ document.querySelectorAll('main.sheet table').forEach(t=>{if(t.closest('.tw')||t
 /* ===== الدخول الموحّد من اللوحة (dashboard.html): جلسة قائمة = لا دخول ثانٍ ===== */
 (function(){
   let s=null;try{s=JSON.parse(localStorage.getItem('ipa-session'))}catch(e){}
-  if(!s||!USERS[s.u])return;
+  if(!s||!s.r)return;
+  /* حساب حقيقي من الخادم (المرحلة ١): دوره من الجلسة لا من القائمة التجريبية */
+  if(!USERS[s.u])USERS[s.u]={p:'',r:s.r,n:s.n||'',h:''};
   $('uu').value=s.u;$('pp').value=USERS[s.u].p;doLogin();document.body.classList.add('fromDash');
   const a=document.createElement('a');a.href='../dashboard.html';a.textContent='← اللوحة';
   a.style.cssText='color:#fff;font-weight:700;text-decoration:none;border:1px solid rgba(255,255,255,.4);padding:2px 10px;border-radius:2px';

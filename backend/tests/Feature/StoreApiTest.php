@@ -15,7 +15,9 @@ class StoreApiTest extends TestCase
 
     private function safety(): User
     {
-        return User::create(['username' => 'salama', 'name' => 'مسؤول السلامة', 'role' => 'safety', 'password' => '1234']);
+        $u = User::create(['username' => 'salama', 'name' => 'مسؤول السلامة', 'password' => '1234']);
+        \App\Modules\Governance\Models\UserProfile::create(['user_id' => $u->id, 'role' => 'system_admin', 'is_active' => true]);
+        return $u;
     }
 
     public function test_unauthenticated_gets_401_json(): void
@@ -43,11 +45,11 @@ class StoreApiTest extends TestCase
     public function test_version_conflict_returns_409_with_server_copy(): void
     {
         $u = $this->safety();
-        $this->actingAs($u)->putJson('/api/store/ipa-depts', ['data' => '["a"]', 'version' => 0])->assertOk();
-        $this->actingAs($u)->putJson('/api/store/ipa-depts', ['data' => '["a","b"]', 'version' => 1])->assertOk()->assertJson(['version' => 2]);
+        $this->actingAs($u)->putJson('/api/store/ipa-place', ['data' => '["a"]', 'version' => 0])->assertOk();
+        $this->actingAs($u)->putJson('/api/store/ipa-place', ['data' => '["a","b"]', 'version' => 1])->assertOk()->assertJson(['version' => 2]);
 
         // جهاز آخر ما زال على النسخة ١
-        $this->actingAs($u)->putJson('/api/store/ipa-depts', ['data' => '["stale"]', 'version' => 1])
+        $this->actingAs($u)->putJson('/api/store/ipa-place', ['data' => '["stale"]', 'version' => 1])
             ->assertStatus(409)
             ->assertJsonPath('version', 2)
             ->assertJsonPath('data', '["a","b"]');

@@ -15,7 +15,8 @@ class ProxyHttpsTest extends TestCase
 
     public function test_redirects_are_https_behind_proxy(): void
     {
-        User::create(['username' => 'fani', 'name' => 'الفني', 'role' => 'tech', 'password' => '1234']);
+        $u = User::create(['username' => 'fani', 'name' => 'الفني', 'password' => '1234']);
+        \App\Modules\Governance\Models\UserProfile::create(['user_id' => $u->id, 'role' => 'field_worker', 'is_active' => true]);
 
         $r = $this->withServerVariables(['HTTP_X_FORWARDED_PROTO' => 'https', 'HTTP_HOST' => 'ipa-safety.onrender.com'])
             ->post('/logout');

@@ -49,6 +49,13 @@ services:
         value: stderr
       - key: RUN_MIGRATIONS
         value: "true"
+      # حساب مسؤول السلامة الأول: يُدخل من لوحة Render مرة واحدة (لا يُكتب هنا)، ويُحذف بعد الدخول.
+      - key: IPA_ADMIN_USERNAME
+        sync: false
+      - key: IPA_ADMIN_PASSWORD
+        sync: false
+      - key: IPA_ADMIN_NAME
+        sync: false
       # للمرحلة ٠ فقط: الحسابات التجريبية السبعة لتشغيل بوابة القصة على النسخة المنشورة.
       # تُعاد إلى "false" عند قبول المرحلة ١ (إدارة الحسابات الحقيقية).
       - key: SEED_DEMO
