@@ -7,7 +7,7 @@ namespace App\Core\Permissions;
  *
  * المفاتيح الداخلية هي مفاتيح OHSMS نفسها حتى تعمل آلات الحالة المنقولة بلا تعديل،
  * ومقابلها العربي هو أدوار المعهد. أدوار المعهد التي لا مقابل لها في OHSMS مفاتيح جديدة.
- * قرار ٢٠٢٦-٠٩-٠٨: مدير الشؤون الإدارية والهندسية ومدير المرافق والصيانة ورئيس الأمن والسلامة = صلاحيات مدير الإدارة/القسم نفسها (+ أدوار في الطوارئ تُضاف في المرحلة ٤). فريق الإسناد: دوره في الطوارئ (المرحلة ٤)؛ حتى ذلك اطلاع. المكتب الاستشاري: اطلاع.
+ * قرار ٢٠٢٦-٠٩-٠٨: مدير الشؤون الإدارية والهندسية ومدير المرافق والصيانة ورئيس الأمن والسلامة = صلاحيات مدير الإدارة/القسم نفسها (+ أدوار في الطوارئ تُضاف في المرحلة ٤). فريق الإسناد: دوره في الطوارئ (المرحلة ٤)؛ حتى ذلك اطلاع. المكتب الاستشاري (قرار ٢٠٢٦-٠٩-٠٨): مقاول = طرف خارجي؛ صلاحيات مشرف المقاول + المخاطر (اطلاع وإنشاء تقييم، والاعتماد لمسؤول السلامة)؛ ويعتمد بنود الفحص وقيمها في نماذج المعهد (دور الواجهة cons كما هو).
  */
 class PermissionRegistry
 {
@@ -79,15 +79,15 @@ class PermissionRegistry
         // بلاغ الشاغل (Incident)
         'incident.list'   => ['system_admin', 'system_staff', 'top_management', 'safety_committee', 'branch_manager',
             'department_manager', 'section_manager', 'safety_coordinator', 'contractor_supervisor', 'field_worker',
-            'admin_eng_manager', 'facilities_manager', 'security_safety_head', 'support_team'],
-        'incident.create' => ['system_admin', 'system_staff', 'safety_coordinator', 'employee', 'contractor_supervisor'],
+            'admin_eng_manager', 'facilities_manager', 'security_safety_head', 'support_team', 'consultant_office'],
+        'incident.create' => ['system_admin', 'system_staff', 'safety_coordinator', 'employee', 'contractor_supervisor', 'consultant_office'],
         'incident.manage' => ['system_admin', 'system_staff', 'safety_coordinator', 'field_worker', 'safety_committee'],
 
         // المخاطر
         'risk.list'    => ['system_admin', 'system_staff', 'top_management', 'safety_committee', 'branch_manager',
             'department_manager', 'section_manager', 'safety_coordinator',
-            'admin_eng_manager', 'facilities_manager', 'security_safety_head', 'support_team'],
-        'risk.create'  => ['system_admin', 'system_staff', 'safety_coordinator'],
+            'admin_eng_manager', 'facilities_manager', 'security_safety_head', 'support_team', 'consultant_office'],
+        'risk.create'  => ['system_admin', 'system_staff', 'safety_coordinator', 'consultant_office'],
         // إضافة معهدية: مدير الإدارة/الفرع/القسم يفعّل من السجل العام في سجل وحدته ويسمّي المسؤول (BACKEND.md ٥-٥)
         'risk.activate' => ['system_admin', 'system_staff', 'safety_coordinator', 'branch_manager', 'department_manager', 'section_manager', 'security_safety_head', 'admin_eng_manager', 'facilities_manager'],
         'risk.approve' => ['system_admin', 'system_staff', 'top_management', 'safety_committee'],
@@ -95,14 +95,14 @@ class PermissionRegistry
         // التصاريح (Hub)
         'permit.list'           => ['system_admin', 'system_staff', 'safety_committee', 'safety_coordinator',
             'branch_manager', 'department_manager', 'section_manager', 'contractor_supervisor',
-            'admin_eng_manager', 'facilities_manager', 'security_safety_head'],
-        'permit.create'         => ['system_admin', 'system_staff', 'safety_coordinator', 'contractor_supervisor', 'employee'],
+            'admin_eng_manager', 'facilities_manager', 'security_safety_head', 'consultant_office'],
+        'permit.create'         => ['system_admin', 'system_staff', 'safety_coordinator', 'contractor_supervisor', 'employee', 'consultant_office'],
         'permit.review'         => ['system_admin', 'system_staff', 'safety_coordinator'],
         'permit.safety_approve' => ['system_admin', 'system_staff', 'safety_coordinator'],
         'permit.final_approve'  => ['system_admin', 'system_staff'],
         'permit.activate'       => ['system_admin', 'system_staff', 'safety_coordinator'],
-        'permit.edit'           => ['system_admin', 'system_staff', 'safety_coordinator', 'contractor_supervisor'],
-        'permit.cancel'         => ['system_admin', 'system_staff', 'safety_coordinator', 'contractor_supervisor'],
+        'permit.edit'           => ['system_admin', 'system_staff', 'safety_coordinator', 'contractor_supervisor', 'consultant_office'],
+        'permit.cancel'         => ['system_admin', 'system_staff', 'safety_coordinator', 'contractor_supervisor', 'consultant_office'],
         'permit.zones'          => ['system_admin', 'system_staff'],
 
         // النماذج الرقمية
@@ -114,19 +114,19 @@ class PermissionRegistry
         'form.track'   => ['system_admin', 'system_staff', 'safety_coordinator'],
 
         // المشاريع والمقاولون والعمال
-        'project.list'          => ['system_admin', 'system_staff', 'safety_committee', 'safety_coordinator', 'branch_manager', 'department_manager', 'section_manager', 'contractor_supervisor', 'security_safety_head', 'admin_eng_manager', 'facilities_manager'],
+        'project.list'          => ['system_admin', 'system_staff', 'safety_committee', 'safety_coordinator', 'branch_manager', 'department_manager', 'section_manager', 'contractor_supervisor', 'security_safety_head', 'admin_eng_manager', 'facilities_manager', 'consultant_office'],
         'project.create'        => ['system_admin', 'system_staff'],
         'project.edit'          => ['system_admin', 'system_staff'],
-        'external_party.list'   => ['system_admin', 'system_staff', 'safety_committee', 'safety_coordinator', 'branch_manager', 'department_manager', 'section_manager', 'contractor_supervisor', 'security_safety_head', 'admin_eng_manager', 'facilities_manager'],
+        'external_party.list'   => ['system_admin', 'system_staff', 'safety_committee', 'safety_coordinator', 'branch_manager', 'department_manager', 'section_manager', 'contractor_supervisor', 'security_safety_head', 'admin_eng_manager', 'facilities_manager', 'consultant_office'],
         'external_party.create' => ['system_admin', 'system_staff'],
         'external_party.edit'   => ['system_admin', 'system_staff'],
         'external_party.evaluate' => ['system_admin', 'system_staff', 'safety_coordinator'],
-        'worker.list'    => ['system_admin', 'system_staff', 'safety_committee', 'safety_coordinator', 'branch_manager', 'department_manager', 'section_manager', 'contractor_supervisor', 'security_safety_head', 'admin_eng_manager', 'facilities_manager'],
-        'worker.create'  => ['system_admin', 'system_staff', 'safety_coordinator', 'contractor_supervisor'],
-        'worker.edit'    => ['system_admin', 'system_staff', 'safety_coordinator', 'contractor_supervisor'],
+        'worker.list'    => ['system_admin', 'system_staff', 'safety_committee', 'safety_coordinator', 'branch_manager', 'department_manager', 'section_manager', 'contractor_supervisor', 'security_safety_head', 'admin_eng_manager', 'facilities_manager', 'consultant_office'],
+        'worker.create'  => ['system_admin', 'system_staff', 'safety_coordinator', 'contractor_supervisor', 'consultant_office'],
+        'worker.edit'    => ['system_admin', 'system_staff', 'safety_coordinator', 'contractor_supervisor', 'consultant_office'],
         'worker.approve' => ['system_admin', 'system_staff', 'safety_coordinator'],
         'worker.manage'  => ['system_admin', 'system_staff', 'safety_coordinator'],
-        'competency.view'   => ['system_admin', 'system_staff', 'safety_committee', 'safety_coordinator', 'branch_manager', 'department_manager', 'section_manager', 'contractor_supervisor', 'security_safety_head', 'admin_eng_manager', 'facilities_manager'],
+        'competency.view'   => ['system_admin', 'system_staff', 'safety_committee', 'safety_coordinator', 'branch_manager', 'department_manager', 'section_manager', 'contractor_supervisor', 'security_safety_head', 'admin_eng_manager', 'facilities_manager', 'consultant_office'],
         'competency.manage' => ['system_admin', 'system_staff', 'safety_coordinator'],
         'training.view'       => ['system_admin', 'system_staff', 'safety_committee', 'safety_coordinator', 'branch_manager', 'department_manager', 'section_manager', 'security_safety_head', 'admin_eng_manager', 'facilities_manager'],
         'training.manage'     => ['system_admin', 'system_staff', 'safety_coordinator'],
@@ -147,7 +147,7 @@ class PermissionRegistry
 
         // التقارير والتوعية والدعم
         'report.view'      => ['system_admin', 'top_management', 'safety_committee', 'branch_manager', 'department_manager', 'section_manager', 'safety_coordinator', 'security_safety_head', 'admin_eng_manager', 'facilities_manager'],
-        'awareness.view'   => ['system_admin', 'system_staff', 'top_management', 'safety_committee', 'safety_coordinator', 'branch_manager', 'department_manager', 'section_manager', 'contractor_supervisor', 'field_worker', 'employee', 'security_safety_head', 'admin_eng_manager', 'facilities_manager'],
+        'awareness.view'   => ['system_admin', 'system_staff', 'top_management', 'safety_committee', 'safety_coordinator', 'branch_manager', 'department_manager', 'section_manager', 'contractor_supervisor', 'field_worker', 'employee', 'security_safety_head', 'admin_eng_manager', 'facilities_manager', 'consultant_office'],
         'awareness.manage' => ['system_admin', 'system_staff', 'safety_coordinator'],
         'support.list'     => self::ALL,
     ];
