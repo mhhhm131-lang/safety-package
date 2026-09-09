@@ -5,8 +5,6 @@ namespace App\Modules\Governance\Controllers;
 use App\Core\Services\BackupService;
 use App\Core\Services\CloseoutService;
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use App\Modules\Governance\Models\UserProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -29,12 +27,18 @@ class CloseoutController extends Controller
 
     public function index()
     {
+        // مرور واحد على الحسابات: bcrypt بطيء متعمَّداً، وفحصه مرتين أوقع الصفحة في انقطاع
+        // الاتصال على المنشور. يُعرض ما كان تجريبياً وما بقي خطراً مهما كان اسمه.
+        $audit = $this->closeout->accountAudit();
+        $accounts = $audit->filter(fn (array $a) => $a['seeded']
+            || in_array($a['username'], CloseoutService::DEMO_USERNAMES, true))->values();
+
         return view('modules.governance.closeout', [
             'inventory'     => $this->closeout->inventory(),
             'preserved'     => $this->closeout->preserved(),
             'unclassified'  => $this->closeout->unclassifiedTables(),
-            'demoAccounts'  => $this->demoAccounts(),
-            'risky'         => $this->closeout->riskyAccounts()->count(),
+            'demoAccounts'  => $accounts,
+            'risky'         => $audit->where('seeded', true)->count(),
             'confirmWord'   => self::CONFIRM_WORD,
             'backups'       => $this->backup->existing(),
         ]);
@@ -84,11 +88,10 @@ class CloseoutController extends Controller
     /** تعطيل الحسابات التجريبية — بحارسَين. */
     public function disableDemo(Request $request)
     {
-        // الحارس الثاني: من يعطّل وهو داخل بحساب تجريبي يقفل الباب على نفسه في منتصف الإجراء
-        // (يظهر 403 بلا رسالة). الخطة تقول: أنشئ حسابك الحقيقي وتحقّق من دخوله **ثم** عطّل.
+        // الحارس الثاني: من يعطّل وكلمته هي المبذورة يقفل الباب على نفسه في منتصف الإجراء
+        // (تظهر صفحة ممنوعة بلا رسالة). الاسم لا يهم — التعطيل يشمل كل كلمة مبذورة.
         $actor = $request->user();
-        if ($actor && in_array($actor->username, CloseoutService::DEMO_USERNAMES, true)
-            && $this->closeout->stillSeeded($actor)) {
+        if ($actor && $this->closeout->stillSeeded($actor)) {
             return back()->with('error',
                 'حسابك ('.$actor->username.') ما زال على كلمة المرور المبذورة، فسيشمله التعطيل. '
                 .'غيّر كلمتك أو ادخل بحساب آخر أولاً — وإلا أقفلت الباب على نفسك في منتصف الإجراء.');
@@ -102,32 +105,4 @@ class CloseoutController extends Controller
             : back()->with('error', $out ?: 'تعذّر التعطيل.');
     }
 
-    /**
-     * الحسابات المعروضة: القائمة التجريبية **وكل** حساب ما زال على الكلمة المبذورة.
-     *
-     * **لماذا الاثنان:** الحساب المُعاد تسميته يخرج من القائمة ويبقى خطره — الاسم يتغيّر
-     * والكلمة هي الخطر. والقائمة تبقى لأن حساباتها من البذرة ولو غُيّرت كلماتها.
-     *
-     * @return \Illuminate\Support\Collection<int, array{username: string, name: string, role: string, active: bool, seeded: bool}>
-     */
-    private function demoAccounts()
-    {
-        $riskyIds = $this->closeout->riskyAccounts()->pluck('id');
-
-        return User::whereIn('username', CloseoutService::DEMO_USERNAMES)
-            ->orWhereIn('id', $riskyIds)
-            ->orderBy('username')
-            ->get(['id', 'username', 'name', 'password'])
-            ->map(function (User $u) {
-                $profile = UserProfile::where('user_id', $u->id)->first();
-
-                return [
-                    'username' => $u->username,
-                    'name'     => $u->name,
-                    'role'     => $profile?->role ?? '—',
-                    'active'   => (bool) $profile?->is_active,
-                    'seeded'   => $this->closeout->stillSeeded($u),
-                ];
-            });
-    }
 }

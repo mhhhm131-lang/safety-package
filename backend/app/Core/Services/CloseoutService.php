@@ -107,11 +107,36 @@ class CloseoutService
     }
 
     /**
+     * جرد الحسابات في **مرور واحد**: الاسم والدور والحالة وهل كلمته مبذورة.
+     *
+     * **لماذا مرور واحد:** `Hash::check` عملية bcrypt متعمَّدة البطء (ربع ثانية لكل حساب
+     * على الخطة المجانية). فحص الحسابات مرتين — مرة للعدّ ومرة للعرض — أوقع الصفحة في
+     * انقطاع الاتصال على المنشور. والملف يُحمَّل مع الحساب بدل استعلام لكل صف.
+     *
+     * @return \Illuminate\Support\Collection<int, array{id: int, username: string, name: string, role: string, active: bool, seeded: bool}>
+     */
+    public function accountAudit()
+    {
+        return User::query()
+            ->leftJoin('user_profiles', 'user_profiles.user_id', '=', 'users.id')
+            ->orderBy('users.username')
+            ->get(['users.id', 'users.username', 'users.name', 'users.password',
+                'user_profiles.role', 'user_profiles.is_active'])
+            ->map(fn ($row) => [
+                'id'       => (int) $row->id,
+                'username' => (string) $row->username,
+                'name'     => (string) $row->name,
+                'role'     => $row->role ?? '—',
+                'active'   => (bool) $row->is_active,
+                'seeded'   => Hash::check(self::SEEDED_PASSWORD, (string) $row->password),
+            ]);
+    }
+
+    /**
      * الحسابات الخطرة: **كل** حساب ما زال على الكلمة المبذورة، مهما كان اسمه.
      *
      * **لماذا كل الحسابات لا القائمة التجريبية وحدها** (تصحيح ٢٠٢٦-٠٩-٠٩): المستخدم أعاد
      * تسمية حساب مبذور، فخرج من القائمة وبقي خطره. الاسم يتغيّر والكلمة هي الخطر.
-     * الفحص `Hash::check` لكل حساب — عدد حسابات المعهد بالعشرات لا بالآلاف.
      *
      * @return \Illuminate\Support\Collection<int, User>
      */
