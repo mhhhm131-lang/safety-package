@@ -8,7 +8,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /** أحد الأماكن التسعة (٨+١) — SOURCE.md §٢. */
 class Place extends Model
 {
-    protected $fillable = ['code', 'name', 'sort'];
+    // max_workers/max_equipment: سعة المكان كمنطقة عمل (المرحلة ٦-ب) — null يعني بلا حد.
+    protected $fillable = ['code', 'name', 'sort', 'max_workers', 'max_equipment'];
+
+    protected $casts = ['max_workers' => 'integer', 'max_equipment' => 'integer'];
 
     public function units(): HasMany
     {

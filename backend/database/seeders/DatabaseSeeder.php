@@ -21,6 +21,11 @@ class DatabaseSeeder extends Seeder
             EmergencySeeder::class,
             TradeSeeder::class,          // المرحلة ٦: ٩ مهن من OHSMS (شجرة التصنيف المهني)
             TrainingTopicSeeder::class,  // المرحلة ٦: ٩ مواضيع تدريب مرجعية لكفاءة العمال
+            // المرحلة ٦-ب: كتالوج التصاريح وقواعده (بعد المخاطر والمهن — يربط بفئاتها وأسمائها)
+            PermitTypesSeeder::class,
+            PermitConflictRulesSeeder::class,
+            RiskRequiredPermitTypesSeeder::class,
+            QualificationChecklistSeeder::class,
         ]);
     }
 }

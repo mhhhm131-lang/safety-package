@@ -7,3 +7,6 @@ Schedule::command('incidents:check-deadlines')->everyMinute()->withoutOverlappin
 
 // المرحلة ٤ (BACKEND.md ٥-٣): التصعيد الآلي للحالات الطارئة النشطة كل دقيقة — المهل من شاشة الإعدادات بلا قيم افتراضية.
 Schedule::command('emergency:check-escalation')->everyMinute()->withoutOverlapping();
+
+// المرحلة ٦-ب (BACKEND.md ٥-٦): إنهاء صلاحية التصاريح وتأهيلات المقاولين التي مضى تاريخها — مرة يومياً.
+Schedule::command('permits:expire-overdue')->dailyAt('00:10')->withoutOverlapping();

@@ -78,6 +78,20 @@
           <a href="{{ route('risk.approval.queue') }}" class="{{ request()->routeIs('risk.approval.*') ? 'active' : '' }}"><i class="bi bi-check2-square"></i>اعتماد المخاطر</a>
         @endif
       @endif
+      @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'permit.list'))
+        <hr>
+        <div class="small text-muted px-2 mb-1">التصاريح</div>
+        <a href="{{ route('permits.index') }}" class="{{ request()->routeIs('permits.index') || request()->routeIs('permits.show') || request()->routeIs('permits.create') || request()->routeIs('permits.review') || request()->routeIs('permits.edit') || request()->routeIs('permits.activate') || request()->routeIs('permits.evaluate') ? 'active' : '' }}"><i class="bi bi-file-earmark-check"></i>سجل التصاريح</a>
+        <a href="{{ route('permits.queue') }}" class="{{ request()->routeIs('permits.queue') ? 'active' : '' }}"><i class="bi bi-inbox"></i>طابور الإجراء</a>
+        <a href="{{ route('permits.dashboard') }}" class="{{ request()->routeIs('permits.dashboard') || request()->routeIs('permits.report') ? 'active' : '' }}"><i class="bi bi-speedometer2"></i>لوحة التصاريح</a>
+        <a href="{{ route('permits.gate') }}" class="{{ request()->routeIs('permits.gate') || request()->routeIs('permits.gate.logs') ? 'active' : '' }}"><i class="bi bi-person-check"></i>جاهزية العامل</a>
+        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'epc.manage'))
+          <a href="{{ route('equipment.index') }}" class="{{ request()->routeIs('equipment.*') ? 'active' : '' }}"><i class="bi bi-truck"></i>المعدات</a>
+        @endif
+        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'permit.zones'))
+          <a href="{{ route('permits.settings') }}" class="{{ request()->routeIs('permits.settings') ? 'active' : '' }}"><i class="bi bi-sliders"></i>السعة والتعارض</a>
+        @endif
+      @endif
       @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'emergency.view') || \App\Core\Permissions\PermissionRegistry::hasPermission($role, 'emergency.respond'))
         <hr>
         <div class="small text-muted px-2 mb-1">الطوارئ</div>

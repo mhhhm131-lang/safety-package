@@ -6,7 +6,42 @@
   <h1 class="h4 m-0"><i class="bi bi-building me-2"></i>{{ $party->name }} <small class="text-muted fs-6">{{ $party->getTypeLabel() }} — بوابة المقاول</small></h1>
   <span class="badge {{ $evaluation['label'] === 'high' ? 'bg-success' : ($evaluation['label'] === 'medium' ? 'bg-warning text-dark' : 'bg-danger') }}" data-trust="{{ $evaluation['score'] }}">درجة الثقة {{ $evaluation['score'] }}/100</span>
 </div>
-<div class="alert alert-info py-2 small">ما تراه هنا بيانات طرفكم فقط: المشاريع وحالة التأهيل، العمال، المستندات. تبويب التصاريح يُضاف في المرحلة التالية.</div>
+<div class="alert alert-info py-2 small">ما تراه هنا بيانات طرفكم فقط: المشاريع وحالة التأهيل، العمال، المستندات، والتصاريح.</div>
+
+{{-- التصاريح (المرحلة ٦-ب): ما ينتظر رفع أدلة منكم أولاً --}}
+<div class="card mb-3">
+  <div class="card-header d-flex align-items-center">
+    <span><i class="bi bi-file-earmark-check"></i> تصاريحنا</span>
+    <span class="badge bg-light text-dark border ms-2" data-permits-count>{{ $permits->count() }}</span>
+    @if($me->can_('permit.list'))
+      <a href="{{ route('permits.index') }}" class="small ms-auto">عرض الكل</a>
+    @endif
+  </div>
+  <div class="card-body p-0">
+    @forelse($permits as $p)
+      @php($total = $p->requirements->count())
+      @php($done = $p->requirements->filter->isComplete()->count())
+      <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom small" data-permit="{{ $p->code }}">
+        <a href="{{ route('permits.show', $p) }}" class="fw-bold" dir="ltr">{{ $p->code }}</a>
+        <div class="flex-grow-1">
+          {{ \Illuminate\Support\Str::limit($p->title, 40) }}
+          <div class="text-muted">{{ $p->type?->name }} @if($p->place)· {{ $p->place->name }}@endif</div>
+        </div>
+        @if($total)
+          <div class="text-center" style="min-width:90px">
+            <div class="text-muted" style="font-size:.72rem">{{ $done }}/{{ $total }} بنداً</div>
+            <div class="progress" style="height:4px">
+              <div class="progress-bar {{ $done === $total ? 'bg-success' : '' }}" style="width:{{ $total ? round($done / $total * 100) : 0 }}%"></div>
+            </div>
+          </div>
+        @endif
+        @include('modules.permits._status', ['status' => $p->status])
+      </div>
+    @empty
+      <div class="text-center text-muted py-3 small">لا تصاريح لطرفكم بعد. يصدرها مسؤول السلامة بعد اكتمال التأهيل.</div>
+    @endforelse
+  </div>
+</div>
 
 <div class="row g-3">
   <div class="col-lg-4">

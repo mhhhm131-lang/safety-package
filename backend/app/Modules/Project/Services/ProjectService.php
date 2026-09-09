@@ -63,12 +63,17 @@ class ProjectService
                 'workers' => (int) ($mh->workers ?? 0),
                 'registered_workers' => Worker::where('project_id', $pid)->where('external_party_id', $pc->external_party_id)->count(),
                 'manhours' => (int) ($mh->hours ?? 0),
-                'permits' => null, // المرحلة ٦-ب
+                // المرحلة ٦-ب: تصاريح المقاول النشطة على هذا المشروع
+                'permits' => \App\Modules\Permit\Models\Permit::where('project_id', $pid)
+                    ->where('external_party_id', $pc->external_party_id)
+                    ->where('status', \App\Modules\Permit\Models\Permit::STATUS_ACTIVE)
+                    ->count(),
             ];
         });
 
         return [
-            'active_permits' => null, // المرحلة ٦-ب
+            'active_permits' => \App\Modules\Permit\Models\Permit::where('project_id', $pid)
+                ->where('status', \App\Modules\Permit\Models\Permit::STATUS_ACTIVE)->count(),
             'open_risks' => Risk::where('project_id', $pid)->whereNotIn('status', ['closed', 'archived', 'rejected'])->count(),
             'incidents_count' => $incidentCount,
             'active_workers' => Worker::where('project_id', $pid)->count(),

@@ -6,8 +6,10 @@ use App\Modules\Incident\Models\Incident;
 use App\Modules\Incident\Observers\IncidentObserver;
 use App\Modules\Risk\Models\Risk;
 use App\Modules\Emergency\Models\EmergencyIncident;
+use App\Modules\Permit\Models\Permit;
 use App\Policies\EmergencyPolicy;
 use App\Policies\IncidentPolicy;
+use App\Policies\PermitPolicy;
 use App\Policies\RiskPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -33,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Risk::class, RiskPolicy::class);
         Gate::policy(Incident::class, IncidentPolicy::class);
         Gate::policy(EmergencyIncident::class, EmergencyPolicy::class);
+        Gate::policy(Permit::class, PermitPolicy::class);
         // المرحلة ٥: Webhooks الأجهزة — ٦٠٠ في الدقيقة لكل عنوان (لوحة إنذار قد ترسل حدثاً لكل منطقة)
         \Illuminate\Support\Facades\RateLimiter::for('iot-webhook', fn ($request) => \Illuminate\Cache\RateLimiting\Limit::perMinute(600)->by($request->ip()));
         Incident::observe(IncidentObserver::class);
