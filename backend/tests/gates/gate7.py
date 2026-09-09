@@ -166,17 +166,25 @@ r, f = post(sa, f'/app/forms/{fid}/send', {
 track2 = sa.get(BASE + f'/app/forms/{fid}/tracking', timeout=120).text
 log('12 assigned by role', (f'مكلَّفون={len(re.findall(chr(100)+"ata-assignment=", track2))}', f[:70]))
 
-# ١٣) المتأخرون: تُرجَع المهلة يوماً (كما لو مضت) ثم يُشغَّل الأمر المجدول
-import subprocess
-def artisan(*args):
-    return subprocess.run(['php', 'artisan', *args], capture_output=True, text=True,
-                          encoding='utf-8', errors='replace', timeout=180)
+# ١٣) المتأخرون: تُرجَع المهلة يوماً (كما لو مضت) ثم يُشغَّل الأمر المجدول.
+#     `php artisan` يعمل على قاعدة البيانات **المحلية** وحدها، فلا معنى له حين تكون البوابة
+#     على المنشور — كان يطبع صفراً بينما يعدّل قاعدة أخرى. على المنشور: الأمر يعمل في
+#     الخادم عبر program:scheduler (routes/console.php، يومياً ٠٧:٠٠)، وتغطيته في
+#     FormScenarioTest::test_gate_declaration_from_risk_assign_sign_results_overdue.
+IS_LOCAL = BASE.startswith('http://127.0.0.1') or BASE.startswith('http://localhost')
+if IS_LOCAL:
+    import subprocess
+    def artisan(*args):
+        return subprocess.run(['php', 'artisan', *args], capture_output=True, text=True,
+                              encoding='utf-8', errors='replace', timeout=180)
 
-artisan('tinker', '--execute',
-        'App\\Modules\\Form\\Models\\FormAssignment::where("status","pending")'
-        '->update(["due_date" => now()->subDay()->toDateString()]);')
-cmd = artisan('forms:check-overdue')
-log('13 overdue command', (cmd.stdout or '').strip().splitlines()[-1] if cmd.stdout else cmd.returncode)
+    artisan('tinker', '--execute',
+            'App\\Modules\\Form\\Models\\FormAssignment::where("status","pending")'
+            '->update(["due_date" => now()->subDay()->toDateString()]);')
+    cmd = artisan('forms:check-overdue')
+    log('13 overdue command', (cmd.stdout or '').strip().splitlines()[-1] if cmd.stdout else cmd.returncode)
+else:
+    log('13 overdue command', 'يُتخطّى على المنشور (أمر خادم يومي) — مغطّى في FormScenarioTest')
 
 # ١٤) شاشة المتابعة والنسبة
 track = sa.get(BASE + f'/app/forms/{fid}/tracking', timeout=120).text
