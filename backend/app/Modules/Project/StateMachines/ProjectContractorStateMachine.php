@@ -49,6 +49,6 @@ class ProjectContractorStateMachine extends StateMachine
                 ProjectContractor::STATUS_SUSPENDED => ['system_admin', 'safety_coordinator'],
                 ProjectContractor::STATUS_EXPIRED => ['system'],
             ],
-        ]);
+        ], ProjectContractor::STATUSES);
     }
 }

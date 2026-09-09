@@ -25,7 +25,10 @@ class NotificationService
 
     /**
      * القناة الثانية (BACKEND.md §٦): بريد لكل إشعار إن كان للمستخدم بريد. محاولة لا توقف العمل إن تعطّل المرسل.
-     * MAIL_MAILER=log محلياً؛ على الخادم يُضبط SMTP في متغيرات البيئة (الفجوة ٧).
+     *
+     * **المرحلة ٨-٢:** الفشل لم يعد يُبتلع — يُسجَّل في الإعدادات ويظهر في شاشة البريد
+     * (`/app/mail`). كان `report()` وحده، فيبقى العطل مخفياً حتى لا يصل بلاغ.
+     * وإن كان المرسل `log` فالقناة معطّلة عملياً وتقولها الشاشة صراحةً.
      */
     private function mail(int $userId, string $title, ?string $message, ?string $url): void
     {
@@ -38,6 +41,11 @@ class NotificationService
             });
         } catch (\Throwable $e) {
             report($e);
+            try {
+                app(MailHealthService::class)->recordFailure($e);
+            } catch (\Throwable) {
+                // تسجيل العطل لا يجوز أن يُسقط الإشعار داخل النظام
+            }
         }
     }
 

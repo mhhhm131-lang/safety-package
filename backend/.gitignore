@@ -34,3 +34,6 @@ Thumbs.db
 /public/*.html
 /public/support.js
 /public/_test
+
+# نسخ قاعدة البيانات: بيانات حقيقية لا تدخل المستودع أبداً (المرحلة ٨-٣)
+/storage/app/private/backups

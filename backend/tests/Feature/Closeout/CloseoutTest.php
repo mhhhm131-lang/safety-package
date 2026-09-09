@@ -1,0 +1,265 @@
+<?php
+
+namespace Tests\Feature\Closeout;
+
+use App\Core\Services\CloseoutService;
+use App\Models\User;
+use App\Modules\Governance\Models\Place;
+use App\Modules\Governance\Models\UserProfile;
+use App\Modules\Incident\Models\Incident;
+use App\Modules\Risk\Models\Risk;
+use App\Modules\Risk\Models\RiskCategory;
+use App\Modules\Risk\Models\RiskControl;
+use Database\Seeders\OrganizationUnitsSeeder;
+use Database\Seeders\PlacesSeeder;
+use Database\Seeders\RiskBookSeeder;
+use Database\Seeders\RiskControlsSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Tests\TestCase;
+
+/**
+ * المرحلة ٨-١ — الأمن والتنظيف.
+ *
+ * ما يجب أن يصمد: المرجعي لا يُمس، والحارس يمنع إغلاق الباب على الجميع،
+ * وكل جدول مصنَّف (وإلا بقيت بيانات تجربة بعد التسليم أو حُذف مرجع).
+ */
+class CloseoutTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private User $salama;
+    private User $fani;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seed([PlacesSeeder::class, OrganizationUnitsSeeder::class, RiskBookSeeder::class, RiskControlsSeeder::class]);
+
+        $this->salama = $this->user('salama', 'system_admin');
+        $this->fani   = $this->user('fani', 'field_worker');
+    }
+
+    private function user(string $username, string $role, bool $active = true): User
+    {
+        $u = User::create([
+            'username' => $username, 'name' => "اسم {$username}",
+            'password' => '123456', 'email' => "{$username}@example.test",
+        ]);
+        UserProfile::create(['user_id' => $u->id, 'role' => $role, 'is_active' => $active]);
+
+        return $u;
+    }
+
+    private function activeRisk(): Risk
+    {
+        $category = RiskCategory::where('name', 'مخاطر الحريق')->firstOrFail();
+        $risk = Risk::create([
+            'risk_type' => 'active', 'title' => 'خطر فعلي للاختبار', 'description' => 'وصف',
+            'category_id' => $category->id, 'place_id' => Place::idByCode('HZ-06'),
+            'severity' => 4, 'likelihood' => 4, 'status' => 'active',
+        ]);
+        RiskControl::create([
+            'risk_id' => $risk->id, 'risk_category_id' => $category->id, 'phase' => 'preventive',
+            'description_ar' => 'بند تحكم للاختبار', 'evidence_type' => 'check',
+        ]);
+
+        return $risk;
+    }
+
+    private function incident(string $code): Incident
+    {
+        return Incident::create([
+            'code' => $code, 'title' => 'بلاغ تجربة', 'description' => 'وصف',
+            'incident_type' => 'normal', 'status' => 'new',
+            'risk_id' => Risk::where('risk_type', 'reference')->value('id'),
+            'place_id' => Place::idByCode('HZ-06'),
+        ]);
+    }
+
+    // ════════════ الحارس: كل جدول مصنَّف ════════════
+
+    public function test_every_table_is_classified(): void
+    {
+        $this->assertSame([], app(CloseoutService::class)->unclassifiedTables(),
+            'جدول بلا تصنيف: صنّفه في OPERATIONAL أو REFERENCE قبل التسليم.');
+    }
+
+    public function test_no_table_is_in_both_lists(): void
+    {
+        $both = array_intersect(CloseoutService::OPERATIONAL, CloseoutService::REFERENCE);
+        $this->assertSame([], array_values($both));
+    }
+
+    // ════════════ الحذف ════════════
+
+    public function test_purge_removes_operational_and_keeps_reference(): void
+    {
+        $this->incident('ش-0001');
+        $this->incident('ش-0002');
+        $this->activeRisk();
+
+        $masterBefore    = Risk::where('risk_type', 'master')->count();
+        $referenceBefore = Risk::where('risk_type', 'reference')->count();
+        $placesBefore    = Place::count();
+        $usersBefore     = User::count();
+
+        $this->assertGreaterThan(0, $masterBefore);
+
+        app(CloseoutService::class)->purge();
+
+        $this->assertSame(0, Incident::count());
+        $this->assertSame(0, Risk::where('risk_type', 'active')->count());
+
+        $this->assertSame($masterBefore, Risk::where('risk_type', 'master')->count());
+        $this->assertSame($referenceBefore, Risk::where('risk_type', 'reference')->count());
+        $this->assertSame($placesBefore, Place::count());
+        $this->assertSame($usersBefore, User::count(), 'الحسابات لا تُحذف — تُعطَّل');
+    }
+
+    public function test_purge_keeps_category_level_controls(): void
+    {
+        // بنود التحكم على مستوى الفئة (risk_id فارغ) مرجعية — لا تُحذف مع الخطر الفعّال
+        $categoryControls = RiskControl::whereNull('risk_id')->count();
+        $this->assertGreaterThan(0, $categoryControls);
+
+        $this->activeRisk();
+        app(CloseoutService::class)->purge();
+
+        $this->assertSame($categoryControls, RiskControl::whereNull('risk_id')->count());
+    }
+
+    public function test_inventory_counts_what_will_be_deleted(): void
+    {
+        $this->incident('ش-0001');
+        $inventory = app(CloseoutService::class)->inventory();
+
+        $this->assertSame(1, $inventory['بلاغات الشاغل']);
+        $this->assertArrayHasKey('المخاطر الفعّالة (الإدارات والأماكن)', $inventory);
+    }
+
+    public function test_preserved_shows_the_reference_data(): void
+    {
+        $preserved = app(CloseoutService::class)->preserved();
+
+        $this->assertGreaterThan(0, $preserved['كتاب المخاطر']);
+        $this->assertSame(9, $preserved['الأماكن']);
+    }
+
+    // ════════════ تعطيل الحسابات التجريبية ════════════
+
+    public function test_demo_off_refuses_without_a_real_admin(): void
+    {
+        $this->artisan('ipa:demo-off')->assertFailed();
+
+        $this->assertTrue(UserProfile::where('user_id', $this->salama->id)->value('is_active'));
+    }
+
+    public function test_demo_off_disables_once_a_real_admin_exists(): void
+    {
+        $this->user('sara.alahmad', 'system_admin');
+
+        $this->artisan('ipa:demo-off')->assertSuccessful();
+
+        $this->assertFalse((bool) UserProfile::where('user_id', $this->salama->id)->value('is_active'));
+        $this->assertFalse((bool) UserProfile::where('user_id', $this->fani->id)->value('is_active'));
+    }
+
+    public function test_demo_off_keeps_the_real_admin_active(): void
+    {
+        $real = $this->user('sara.alahmad', 'system_admin');
+        $this->artisan('ipa:demo-off')->assertSuccessful();
+
+        $this->assertTrue((bool) UserProfile::where('user_id', $real->id)->value('is_active'));
+    }
+
+    public function test_disabled_demo_account_cannot_log_in(): void
+    {
+        $this->user('sara.alahmad', 'system_admin');
+        $this->artisan('ipa:demo-off')->assertSuccessful();
+
+        $this->post('/login', ['username' => 'salama', 'password' => '123456'])
+            ->assertSessionHasErrors();
+        $this->assertGuest();
+    }
+
+    // ════════════ الشاشة ════════════
+
+    public function test_screen_requires_settings_permission(): void
+    {
+        $this->actingAs($this->fani)->get(route('app.closeout.index'))->assertForbidden();
+        $this->actingAs($this->salama)->get(route('app.closeout.index'))->assertOk();
+    }
+
+    public function test_screen_shows_inventory_and_preserved(): void
+    {
+        $this->incident('ش-0001');
+
+        $this->actingAs($this->salama)->get(route('app.closeout.index'))
+            ->assertOk()
+            ->assertSee('data-purge="بلاغات الشاغل"', false)
+            ->assertSee('data-keep="كتاب المخاطر"', false)
+            ->assertSee('data-real-admin="0"', false);
+    }
+
+    public function test_purge_needs_the_confirmation_word(): void
+    {
+        $this->incident('ش-0001');
+
+        $this->actingAs($this->salama)
+            ->post(route('app.closeout.purge'), ['confirm' => 'نعم'])
+            ->assertSessionHasErrors('confirm');
+
+        $this->assertSame(1, Incident::count(), 'لا حذف بلا كلمة التأكيد');
+
+        $this->actingAs($this->salama)
+            ->post(route('app.closeout.purge'), ['confirm' => 'احذف'])
+            ->assertSessionHas('success');
+
+        $this->assertSame(0, Incident::count());
+    }
+
+    public function test_screen_refuses_demo_off_without_a_real_admin(): void
+    {
+        $this->actingAs($this->salama)
+            ->post(route('app.closeout.demo-off'))
+            ->assertSessionHas('error');
+
+        $this->assertTrue((bool) UserProfile::where('user_id', $this->salama->id)->value('is_active'));
+    }
+
+    public function test_screen_disables_demo_once_a_real_admin_exists(): void
+    {
+        $real = $this->user('sara.alahmad', 'system_admin');
+
+        $this->actingAs($real)
+            ->post(route('app.closeout.demo-off'))
+            ->assertSessionHas('success');
+
+        $this->assertFalse((bool) UserProfile::where('user_id', $this->salama->id)->value('is_active'));
+    }
+
+    public function test_screen_refuses_when_the_actor_is_a_demo_account(): void
+    {
+        // حساب حقيقي موجود، لكن الفاعل تجريبي: التعطيل يقفل عليه الباب في منتصف الإجراء
+        $this->user('sara.alahmad', 'system_admin');
+
+        $this->actingAs($this->salama)
+            ->post(route('app.closeout.demo-off'))
+            ->assertSessionHas('error');
+
+        $this->assertTrue((bool) UserProfile::where('user_id', $this->salama->id)->value('is_active'));
+    }
+
+    public function test_purge_is_atomic_and_leaves_no_orphans(): void
+    {
+        $risk = $this->activeRisk();
+        $this->incident('ش-0001');
+
+        app(CloseoutService::class)->purge();
+
+        $this->assertSame(0, DB::table('risk_controls')->where('risk_id', $risk->id)->count());
+        $this->assertSame(0, DB::table('incident_events')->count());
+        $this->assertSame(0, DB::table('audit_logs')->count());
+    }
+}

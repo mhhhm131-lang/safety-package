@@ -32,6 +32,6 @@ class EmergencyStateMachine extends StateMachine
             'any' => [
                 'cancelled' => $manage,
             ],
-        ]);
+        ], \App\Modules\Emergency\Models\EmergencyIncident::STATUS_LABELS);
     }
 }

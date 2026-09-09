@@ -71,6 +71,6 @@ class PermitStateMachine extends StateMachine
             'any' => [
                 Permit::STATUS_CANCELLED => [...self::REVIEWERS, 'contractor_supervisor', 'consultant_office'],
             ],
-        ]);
+        ], Permit::STATUS_LABELS);
     }
 }

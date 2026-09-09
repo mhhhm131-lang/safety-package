@@ -33,6 +33,6 @@ class RiskStateMachine extends StateMachine
                 'in_progress' => ['system_admin', 'system_staff'],
                 'closed' => ['system_admin', 'system_staff'],
             ],
-        ]);
+        ], \App\Modules\Risk\Models\Risk::STATUS_LABELS);
     }
 }

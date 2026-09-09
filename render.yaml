@@ -66,3 +66,23 @@ services:
       # الحسابات التجريبية للتطوير فقط. أُطفئت عند قبول المرحلة ١ (٢٠٢٦-٠٩-٠٨).
       - key: SEED_DEMO
         value: "false"
+      # قناة البريد (المرحلة ٨-٢). بلا هذه المفاتيح يقع Laravel على MAIL_MAILER=log:
+      # الرسالة تُكتب في السجل ولا تصل أحداً بلا خطأ ظاهر — نصف قنوات §٦ معطّل صامتاً.
+      # sync: false = تُدخل في لوحة Render ولا تُكتب في المستودع. أي خدمة تعطي SMTP تعمل.
+      # التحقق من شاشة `/app/mail` برسالة اختبار.
+      - key: MAIL_MAILER
+        sync: false
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_PORT
+        sync: false
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_SCHEME
+        sync: false
+      - key: MAIL_FROM_ADDRESS
+        sync: false
+      - key: MAIL_FROM_NAME
+        sync: false

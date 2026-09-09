@@ -1,7 +1,9 @@
 <?php
 
 use App\Modules\Governance\Controllers\AuditLogsController;
+use App\Modules\Governance\Controllers\CloseoutController;
 use App\Modules\Governance\Controllers\HomeController;
+use App\Modules\Governance\Controllers\MailController;
 use App\Modules\Governance\Controllers\NotificationsController;
 use App\Modules\Governance\Controllers\OrgUnitsController;
 use App\Modules\Governance\Controllers\PlacesController;
@@ -41,6 +43,20 @@ Route::middleware(['web', 'auth'])->prefix('app')->name('app.')->group(function 
     });
 
     Route::middleware('permission:system.audit')->get('/audit', [AuditLogsController::class, 'index'])->name('audit');
+
+    // البريد (المرحلة ٨-٢): حالة القناة الثانية ورسالة اختبار — يتحقق منها مسؤول السلامة بنفسه.
+    Route::middleware('permission:system.settings')->prefix('mail')->name('mail.')->group(function () {
+        Route::get('/', [MailController::class, 'index'])->name('index');
+        Route::post('/test', [MailController::class, 'test'])->name('test');
+    });
+
+    // الإغلاق (المرحلة ٨-١): بديل سطر الأوامر الغائب على Render — الجرد ثم الحذف بكلمة تأكيد.
+    Route::middleware('permission:system.settings')->prefix('closeout')->name('closeout.')->group(function () {
+        Route::get('/', [CloseoutController::class, 'index'])->name('index');
+        Route::post('/purge', [CloseoutController::class, 'purge'])->name('purge');
+        Route::post('/demo-off', [CloseoutController::class, 'disableDemo'])->name('demo-off');
+        Route::get('/backup', [CloseoutController::class, 'backupDownload'])->name('backup');
+    });
 
     Route::prefix('notifications')->name('notifications.')->group(function () {
         Route::get('/', [NotificationsController::class, 'index'])->name('index');

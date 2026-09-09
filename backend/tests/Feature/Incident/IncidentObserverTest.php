@@ -24,7 +24,8 @@ class IncidentObserverTest extends TestCase
         $incident->status = 'closed';
 
         $this->expectException(TransitionException::class);
-        $this->expectExceptionMessage("Cannot transition from 'new' to 'closed'");
+        // الرسالة عُرّبت في المرحلة ٨-٤ وصارت بأسماء الحالات لا بمفاتيحها
+        $this->expectExceptionMessage('لا يصح الانتقال من «جديد» إلى «مغلق»');
 
         $incident->save();
     }

@@ -58,6 +58,10 @@
       @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'system.audit'))
         <a href="{{ route('app.audit') }}" class="{{ request()->routeIs('app.audit') ? 'active' : '' }}"><i class="bi bi-journal-text"></i>سجل التدقيق</a>
       @endif
+      @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'system.settings'))
+        <a href="{{ route('app.mail.index') }}" class="{{ request()->routeIs('app.mail.*') ? 'active' : '' }}"><i class="bi bi-envelope-at"></i>البريد</a>
+        <a href="{{ route('app.closeout.index') }}" class="{{ request()->routeIs('app.closeout.*') ? 'active' : '' }}"><i class="bi bi-box-seam"></i>الإغلاق والتسليم</a>
+      @endif
       <a href="{{ route('app.notifications.index') }}" class="{{ request()->routeIs('app.notifications.*') ? 'active' : '' }}"><i class="bi bi-bell"></i>الإشعارات</a>
       @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'report.view'))
         <a href="{{ route('reports.dashboard') }}" class="{{ request()->routeIs('reports.*') ? 'active' : '' }}"><i class="bi bi-clipboard-data"></i>التقارير</a>

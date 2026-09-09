@@ -58,6 +58,6 @@ class IncidentStateMachine extends StateMachine
             'any' => [
                 'out_of_scope' => ['system_admin', 'system_staff'],
             ],
-        ]);
+        ], \App\Modules\Incident\Models\Incident::STATUS_LABELS);
     }
 }
