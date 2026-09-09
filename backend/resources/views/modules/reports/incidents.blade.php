@@ -29,15 +29,20 @@
   <div class="card-body">
     <h2 class="h6 mb-2"><i class="bi bi-stopwatch"></i> الوصول إلى الفني</h2>
     <div class="row g-2">
-      <div class="col-4"><div class="border rounded p-2 text-center">
+      <div class="col-6 col-lg-3"><div class="border rounded p-2 text-center">
         <div class="h5 m-0" data-resp="avg">{{ $data['response']['avg_minutes'] === null ? 'لا بيانات' : $data['response']['avg_minutes'] }}</div>
         <small class="text-muted">متوسط الدقائق</small>
       </div></div>
-      <div class="col-4"><div class="border rounded p-2 text-center">
+      <div class="col-6 col-lg-3"><div class="border rounded p-2 text-center">
         <div class="h5 m-0" data-resp="max">{{ $data['response']['max_minutes'] === null ? 'لا بيانات' : $data['response']['max_minutes'] }}</div>
         <small class="text-muted">أطول انتظار</small>
       </div></div>
-      <div class="col-4"><div class="border rounded p-2 text-center">
+      {{-- عدد البلاغات التي حُسب منها المتوسط: متوسط بلا عدده لا يُقرأ --}}
+      <div class="col-6 col-lg-3"><div class="border rounded p-2 text-center">
+        <div class="h5 m-0" data-resp="count">{{ $data['response']['count'] }}</div>
+        <small class="text-muted">بلاغاً قيس وصولها</small>
+      </div></div>
+      <div class="col-6 col-lg-3"><div class="border rounded p-2 text-center">
         <div class="h5 m-0" data-resp="pending">{{ $data['response']['pending'] }}</div>
         <small class="text-muted">لم يصل الفني بعد</small>
       </div></div>

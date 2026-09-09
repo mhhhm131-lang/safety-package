@@ -10,6 +10,7 @@
         (الحسابات salama/fani/mudir/idara بكلمة 1234)
 """
 import re, sys, time, requests
+from html import unescape
 
 BASE = sys.argv[1] if len(sys.argv) > 1 else 'http://127.0.0.1:8089'
 TAG = 'بوابة٧ب-' + time.strftime('%H%M')
@@ -44,7 +45,7 @@ def post(s, url, data, page, files=None, method='post'):
     if method != 'post': d['_method'] = method.upper()
     r = s.post(BASE + url, data=d, files=files, allow_redirects=True, timeout=120)
     flash = re.search(r'alert alert-(success|danger|warning)[^>]*>(.*?)</div>', r.text, re.S)
-    msg = (flash.group(1) + ': ' + re.sub(r'<[^>]+>', '', flash.group(2)).strip()[:120]) if flash \
+    msg = (flash.group(1) + ': ' + unescape(re.sub(r'<[^>]+>', '', flash.group(2))).strip()[:120]) if flash \
         else f'no-flash http={r.status_code}'
     return r, msg
 
@@ -61,6 +62,11 @@ def count_of(html, key):
 
 def kpi_of(html, key):
     m = re.search(r'data-kpi="' + key + r'">\s*([^<]*?)\s*<', html)
+    return (m.group(1).strip() if m else None)
+
+
+def resp_of(html, key):
+    m = re.search(r'data-resp="' + key + r'">\s*([^<]*?)\s*<', html)
     return (m.group(1).strip() if m else None)
 
 
@@ -95,6 +101,9 @@ dash0 = idara.get(BASE + '/app/reports', timeout=120).text
 log('2 GM dashboard', ('فجوة الاستجابة' in dash0, 'ما يحتاج قراراً' in dash0 or 'لا شيء ينتظر قراراً' in dash0,
                        'بلاغات=' + str(count_of(dash0, 'incidents'))))
 before = int(count_of(dash0, 'incidents') or 0)
+# عدد البلاغات التي قيس وصولها قبل هذه الجولة — المرجع الذي يثبت أن بلاغنا دخل القياس
+inc0 = idara.get(BASE + '/app/reports/incidents', timeout=120).text
+resp_before = int(resp_of(inc0, 'count') or 0)
 
 # ٣) بلاغ حقيقي من صفحة الشاغل (المسار الكامل لا إدراج مباشر)
 tok, form = csrf(g, '/incident/normal')
@@ -124,22 +133,40 @@ dash1 = idara.get(BASE + '/app/reports', timeout=120).text
 after = int(count_of(dash1, 'incidents') or 0)
 log('4 live number (no cache)', (f'قبل={before}', f'بعد={after}', after == before + 1))
 
-# ٥) البلاغ لم يصل الفني بعد: يُعدّ في «لم يصل الفني» والمتوسط «لا بيانات» أو رقم سابق
+# ٥) عدّاد «لم يصل الفني بعد» رقم حقيقي على اللوحة.
+#    لا يُشترط أن يكون بلاغنا فيه: إن كان للفني مكان فالمرحلة ٣ تحوّله وتستلمه آلياً.
 pending_before = kpi_of(dash1, 'incident_pending')
-log('5 pending before field receipt', (f'بانتظار={pending_before}', int(pending_before or 0) >= 1))
+log('5 pending counter present', (f'بانتظار={pending_before}', pending_before is not None and pending_before.isdigit()))
 
-# ٦) الفني يستلم البلاغ ← فجوة الاستجابة تصير رقماً بالدقائق
+# ٦) الفني يستلم **هذا البلاغ** ← يدخل قياس فجوة الاستجابة.
+#    التحقق على عدد البلاغات المقيسة لا على المتوسط وحده: على المنشور بيانات سابقة
+#    تجعل المتوسط رقماً قبل أن يستلم الفني شيئاً — نجاح كاذب.
 lst = sa.get(BASE + '/app/incidents', timeout=120).text
 iid = re.search(r'/app/incidents/(\d+)"', lst.split(inc_code)[1]).group(1)
-users = sa.get(BASE + '/app/users', timeout=120).text
-pos = users.find('>fani<')
-fid = re.search(r'/app/users/(\d+)/edit', users[pos if pos > 0 else 0:]).group(1)
-# fani بلا مكان في البذرة التجريبية فلا تحويل آلي: المركز يحيله ثم يستلمه الفني
-r1, f1 = post(sa, f'/app/incidents/{iid}/refer', {'field_worker_id': fid, 'note': 'للفحص العاجل'}, f'/app/incidents/{iid}')
-r2, f2 = post(fa, f'/app/incidents/{iid}/field-receive', {}, f'/app/incidents/{iid}')
+show = sa.get(BASE + f'/app/incidents/{iid}', timeout=120).text
+
+# مسار المرحلة ٣ يختلف بحسب مكان الفني: بمكان يُحوَّل ويُستلم آلياً، وبلا مكان
+# يحيله المركز ثم يستلمه الفني يدوياً. البوابة تقبل الطريقين وتتحقق من النتيجة.
+if 'استلمه الفني' in show:
+    how = 'استُلم آلياً (للفني مكان)'
+else:
+    if ok(fa, f'/app/incidents/{iid}') != 200:
+        users = sa.get(BASE + '/app/users', timeout=120).text
+        pos = users.find('>fani<')
+        fid = re.search(r'/app/users/(\d+)/edit', users[pos if pos > 0 else 0:]).group(1)
+        post(sa, f'/app/incidents/{iid}/refer', {'field_worker_id': fid, 'note': 'للفحص العاجل'}, f'/app/incidents/{iid}')
+    r2, how = post(fa, f'/app/incidents/{iid}/field-receive', {}, f'/app/incidents/{iid}')
+    show = sa.get(BASE + f'/app/incidents/{iid}', timeout=120).text
+
+received = 'استلمه الفني' in show
+inc1 = idara.get(BASE + '/app/reports/incidents', timeout=120).text
+resp_after = int(resp_of(inc1, 'count') or 0)
+avg = resp_of(inc1, 'avg')
 dash2 = idara.get(BASE + '/app/reports', timeout=120).text
-avg = kpi_of(dash2, 'incident_avg')
-log('6 response gap becomes a number', (f1[:32], f2[:32], f'متوسط={avg}', avg not in (None, 'لا بيانات')))
+log('6 response gap measures it', (
+    how[:40], f'استلمه الفني={received}',
+    f'مقيس {resp_before}→{resp_after}', f'متوسط={avg}',
+    received and resp_after == resp_before + 1 and avg not in (None, 'لا بيانات')))
 
 # ٧) مرشّح المكان يضيّق كل الأقسام
 only06 = idara.get(BASE + f'/app/reports?place_id={place06.group(1)}', timeout=120).text
