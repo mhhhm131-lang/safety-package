@@ -7,7 +7,11 @@
 **لا تُشغَّل خطوة التعطيل على المنشور إلا بعد إنشاء الحساب الحقيقي والتحقق من دخوله.**
 مرّر `--disable-demo --as=اسم:كلمة` لتنفيذها بحساب حقيقي؛ بدونها تُفحص الرفضتان وحدهما.
 
-التشغيل: PYTHONIOENCODING=utf-8 python gate8_1.py http://127.0.0.1:8089 [--disable-demo --as=user:pass]
+التشغيل: PYTHONIOENCODING=utf-8 python gate8_1.py http://127.0.0.1:8089
+        [--admin=اسم:كلمة] [--disable-demo --as=اسم:كلمة]
+
+`--admin` حساب مسؤول السلامة الذي تعمل به البوابة (الافتراضي التجريبي `salama:1234`).
+على المنشور بعد تغيير كلمة المرور التجريبية يلزم تمريره.
 """
 import re, sys, requests
 from html import unescape
@@ -17,6 +21,9 @@ BASE = args[0] if args else 'http://127.0.0.1:8089'
 DO_DISABLE = '--disable-demo' in sys.argv
 # اعتماد الحساب الحقيقي لخطوة التعطيل: --as اسم:كلمة
 REAL = next((a.split('=', 1)[1] for a in sys.argv if a.startswith('--as=')), None)
+# حساب مسؤول السلامة الذي تعمل به البوابة. الافتراضي التجريبي، ويُمرَّر غيره على المنشور
+# بعد تغيير كلمة المرور: --admin=اسم:كلمة
+ADMIN = next((a.split('=', 1)[1] for a in sys.argv if a.startswith('--admin=')), 'salama:1234')
 def log(k, v): print(k, '|', v, flush=True)
 
 
@@ -58,7 +65,11 @@ def cell(html, attr, label):
     return int(n[-1]) if n else None
 
 
-sa, code = login('salama')
+admin_user, admin_pw = ADMIN.split(':', 1)
+sa, code = login(admin_user, admin_pw)
+assert code == 302, (
+    f'تعذّر الدخول بحساب «{admin_user}». على المنشور غُيّرت كلمة المرور التجريبية؛ '
+    'مرّر --admin=اسم:كلمة')
 b = sa.get(BASE + '/build.txt', timeout=120)
 log('build', (b.text.strip()[:12] if b.ok and 'DOCTYPE' not in b.text else 'n/a (local)', f'login={code}'))
 fa, _ = login('fani')
@@ -126,8 +137,11 @@ log('9 screens after purge', (len(codes), 'أخطاء خادم=' + str(len([c fo
                               [pc for pc in codes if pc[1] != 200]))
 
 # ١٠) الحارس الثاني: من يعطّل وهو داخل بحساب تجريبي يُمنع (وإلا أقفل الباب على نفسه)
-r, f = post(sa, '/app/closeout/demo-off', {}, '/app/closeout')
-log('10 self-lockout guard', (f[:110], 'داخل بحساب تجريبي' in f))
+if admin_user in re.findall(r'data-demo="([^"]+)"', page):
+    r, f = post(sa, '/app/closeout/demo-off', {}, '/app/closeout')
+    log('10 self-lockout guard', (f[:110], 'داخل بحساب تجريبي' in f))
+else:
+    log('10 self-lockout guard', f'يُتخطّى: «{admin_user}» ليس حساباً تجريبياً')
 
 # ١١) التعطيل بحساب حقيقي، ثم دخول الحساب التجريبي يُرفض
 if DO_DISABLE and REAL:
