@@ -13,7 +13,8 @@ use Illuminate\Console\Command;
  * **الخطر في الكلمة لا في الاسم** (تصحيح ٢٠٢٦-٠٩-٠٩): الاسم التجريبي الذي غيّر صاحبه
  * كلمته صار حساباً حقيقياً يعمل به، وتعطيله يقفل الباب عليه بلا سبب. والذي بقي على
  * الكلمة المبذورة خطرٌ على موقع مفتوح للإنترنت مهما كان اسمه.
- * `--all` يعطّل القائمة التجريبية كلها ولو غُيّرت كلماتها — للتسليم النهائي.
+ * الفحص يشمل **كل** الحسابات لا القائمة التجريبية وحدها: الحساب المُعاد تسميته يخرج من
+ * القائمة ويبقى خطره. و`--all` يضيف القائمة التجريبية كلها ولو غُيّرت كلماتها — للتسليم النهائي.
  *
  * **تُعطَّل ولا تُحذف:** سجل التدقيق وأحداث البلاغات والتصاريح تشير إلى أصحابها.
  *
@@ -23,7 +24,7 @@ use Illuminate\Console\Command;
 class IpaDemoOff extends Command
 {
     protected $signature = 'ipa:demo-off {--dry-run : اعرض ما سيُعطَّل بلا تعطيل}
-                                         {--all : عطّل القائمة التجريبية كلها ولو غُيّرت كلماتها}';
+                                         {--all : أضِف القائمة التجريبية كلها ولو غُيّرت كلماتها}';
 
     protected $description = 'تعطيل الحسابات الباقية على كلمة المرور المبذورة، بعد التأكد من بقاء مسؤول سلامة نشط.';
 
@@ -31,15 +32,16 @@ class IpaDemoOff extends Command
     {
         $all = (bool) $this->option('all');
 
-        $candidates = User::whereIn('username', CloseoutService::DEMO_USERNAMES)->get()
+        // كل حساب ما زال على الكلمة المبذورة مهما كان اسمه؛ و`--all` يضيف القائمة التجريبية كلها.
+        $candidates = User::query()->get()
             ->filter(fn (User $u) => $this->isActive($u))
-            ->filter(fn (User $u) => $all || $closeout->stillSeeded($u))
+            ->filter(fn (User $u) => $closeout->stillSeeded($u)
+                || ($all && in_array($u->username, CloseoutService::DEMO_USERNAMES, true)))
             ->values();
 
         if ($candidates->isEmpty()) {
-            $this->info($all
-                ? 'لا حساب تجريبي نشط. لا شيء ليُعمل.'
-                : 'لا حساب نشط على كلمة المرور المبذورة. لا شيء ليُعمل.');
+            $this->info('لا حساب نشط على كلمة المرور المبذورة'
+                .($all ? ' ولا حساب تجريبي نشط.' : '.').' لا شيء ليُعمل.');
 
             return self::SUCCESS;
         }

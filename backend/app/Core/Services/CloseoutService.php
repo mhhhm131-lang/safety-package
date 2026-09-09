@@ -107,13 +107,17 @@ class CloseoutService
     }
 
     /**
-     * الحسابات الخطرة: من القائمة التجريبية وما زال على الكلمة المبذورة.
+     * الحسابات الخطرة: **كل** حساب ما زال على الكلمة المبذورة، مهما كان اسمه.
+     *
+     * **لماذا كل الحسابات لا القائمة التجريبية وحدها** (تصحيح ٢٠٢٦-٠٩-٠٩): المستخدم أعاد
+     * تسمية حساب مبذور، فخرج من القائمة وبقي خطره. الاسم يتغيّر والكلمة هي الخطر.
+     * الفحص `Hash::check` لكل حساب — عدد حسابات المعهد بالعشرات لا بالآلاف.
      *
      * @return \Illuminate\Support\Collection<int, User>
      */
     public function riskyAccounts()
     {
-        return User::whereIn('username', self::DEMO_USERNAMES)->get()
+        return User::query()->get(['id', 'username', 'name', 'password'])
             ->filter(fn (User $u) => $this->stillSeeded($u))
             ->values();
     }

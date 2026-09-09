@@ -163,6 +163,41 @@ class CloseoutTest extends TestCase
         $this->assertFalse(app(CloseoutService::class)->stillSeeded($this->salama->refresh()));
     }
 
+    public function test_a_renamed_seeded_account_is_still_caught(): void
+    {
+        // المستخدم أعاد تسمية حساب مبذور فخرج من القائمة التجريبية — والكلمة هي الخطر
+        $this->fani->username = 'ohsmsadmin';
+        $this->fani->save();
+
+        $risky = app(CloseoutService::class)->riskyAccounts()->pluck('username');
+
+        $this->assertContains('ohsmsadmin', $risky->all(),
+            'الحساب المُعاد تسميته لا يفلت من الفحص');
+    }
+
+    public function test_renamed_seeded_account_is_disabled(): void
+    {
+        $this->salama->password = 'Strong-Real-2026';
+        $this->salama->save();
+        $this->fani->username = 'renamed.tech';
+        $this->fani->save();
+
+        $this->artisan('ipa:demo-off')->assertSuccessful();
+
+        $this->assertFalse((bool) UserProfile::where('user_id', $this->fani->id)->value('is_active'));
+    }
+
+    public function test_screen_lists_a_risky_account_outside_the_demo_list(): void
+    {
+        $this->salama->password = 'Strong-Real-2026';
+        $this->salama->save();
+        $outsider = $this->user('sara.alahmad', 'department_manager'); // كلمته مبذورة
+
+        $this->actingAs($this->salama->refresh())->get(route('app.closeout.index'))
+            ->assertOk()
+            ->assertSee('data-seeded="sara.alahmad"', false);
+    }
+
     public function test_demo_off_refuses_when_no_admin_would_survive(): void
     {
         // salama هو مسؤول السلامة الوحيد وما زال على الكلمة المبذورة

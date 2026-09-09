@@ -103,14 +103,19 @@ class CloseoutController extends Controller
     }
 
     /**
-     * الحسابات التجريبية بحالتها وبحال كلمة مرورها.
-     * **الخطر في الكلمة لا في الاسم:** ما غُيّرت كلمته صار حساباً حقيقياً.
+     * الحسابات المعروضة: القائمة التجريبية **وكل** حساب ما زال على الكلمة المبذورة.
+     *
+     * **لماذا الاثنان:** الحساب المُعاد تسميته يخرج من القائمة ويبقى خطره — الاسم يتغيّر
+     * والكلمة هي الخطر. والقائمة تبقى لأن حساباتها من البذرة ولو غُيّرت كلماتها.
      *
      * @return \Illuminate\Support\Collection<int, array{username: string, name: string, role: string, active: bool, seeded: bool}>
      */
     private function demoAccounts()
     {
+        $riskyIds = $this->closeout->riskyAccounts()->pluck('id');
+
         return User::whereIn('username', CloseoutService::DEMO_USERNAMES)
+            ->orWhereIn('id', $riskyIds)
             ->orderBy('username')
             ->get(['id', 'username', 'name', 'password'])
             ->map(function (User $u) {
@@ -125,5 +130,4 @@ class CloseoutController extends Controller
                 ];
             });
     }
-
 }
