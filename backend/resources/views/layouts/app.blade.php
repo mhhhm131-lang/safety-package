@@ -78,6 +78,15 @@
           <a href="{{ route('risk.approval.queue') }}" class="{{ request()->routeIs('risk.approval.*') ? 'active' : '' }}"><i class="bi bi-check2-square"></i>اعتماد المخاطر</a>
         @endif
       @endif
+      <hr>
+      <div class="small text-muted px-2 mb-1">النماذج</div>
+      <a href="{{ route('forms.mine') }}" class="{{ request()->routeIs('forms.mine') || request()->routeIs('forms.fill') || request()->routeIs('forms.submitted') ? 'active' : '' }}"><i class="bi bi-inbox"></i>نماذجي</a>
+      @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'form.list'))
+        <a href="{{ route('forms.index') }}" class="{{ request()->routeIs('forms.index') || request()->routeIs('forms.show') || request()->routeIs('forms.edit') || request()->routeIs('forms.create') || request()->routeIs('forms.tracking') || request()->routeIs('forms.results') || request()->routeIs('forms.send') ? 'active' : '' }}"><i class="bi bi-ui-checks"></i>النماذج الرقمية</a>
+        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'form.create'))
+          <a href="{{ route('forms.generate') }}" class="{{ request()->routeIs('forms.generate') ? 'active' : '' }}"><i class="bi bi-magic"></i>توليد من المخاطر</a>
+        @endif
+      @endif
       @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'permit.list'))
         <hr>
         <div class="small text-muted px-2 mb-1">التصاريح</div>
