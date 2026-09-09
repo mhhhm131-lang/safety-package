@@ -8,48 +8,55 @@ use App\Modules\Governance\Models\UserProfile;
 use Illuminate\Console\Command;
 
 /**
- * تعطيل الحسابات التجريبية عند التسليم (المرحلة ٨-١).
+ * تعطيل الحسابات التي ما زالت على كلمة المرور المبذورة (المرحلة ٨-١).
  *
- * **تُعطَّل ولا تُحذف:** سجل التدقيق وأحداث البلاغات والتصاريح تشير إلى أصحابها؛
- * حذف الحساب يقطع الأثر. الحساب المعطَّل لا يدخل (المرحلة ١).
+ * **الخطر في الكلمة لا في الاسم** (تصحيح ٢٠٢٦-٠٩-٠٩): الاسم التجريبي الذي غيّر صاحبه
+ * كلمته صار حساباً حقيقياً يعمل به، وتعطيله يقفل الباب عليه بلا سبب. والذي بقي على
+ * الكلمة المبذورة خطرٌ على موقع مفتوح للإنترنت مهما كان اسمه.
+ * `--all` يعطّل القائمة التجريبية كلها ولو غُيّرت كلماتها — للتسليم النهائي.
  *
- * **الحارس:** يرفض ما لم يوجد `system_admin` نشط خارج القائمة التجريبية — تعطيلها
- * كلها بلا بديل يغلق الباب على الجميع، ولا سطر أوامر على Render لفتحه.
+ * **تُعطَّل ولا تُحذف:** سجل التدقيق وأحداث البلاغات والتصاريح تشير إلى أصحابها.
+ *
+ * **الحارس:** يرفض ما لم يبقَ `system_admin` نشط بعد التعطيل — وإلا أُغلق الباب على الجميع،
+ * ولا سطر أوامر على Render لفتحه.
  */
 class IpaDemoOff extends Command
 {
-    protected $signature = 'ipa:demo-off {--dry-run : اعرض ما سيُعطَّل بلا تعطيل}';
+    protected $signature = 'ipa:demo-off {--dry-run : اعرض ما سيُعطَّل بلا تعطيل}
+                                         {--all : عطّل القائمة التجريبية كلها ولو غُيّرت كلماتها}';
 
-    protected $description = 'تعطيل الحسابات التجريبية بعد التأكد من وجود حساب مسؤول سلامة حقيقي نشط.';
+    protected $description = 'تعطيل الحسابات الباقية على كلمة المرور المبذورة، بعد التأكد من بقاء مسؤول سلامة نشط.';
 
-    public function handle(): int
+    public function handle(CloseoutService $closeout): int
     {
-        $demo = User::whereIn('username', CloseoutService::DEMO_USERNAMES)->get();
-        $active = $demo->filter(fn (User $u) => $this->isActive($u));
+        $all = (bool) $this->option('all');
 
-        if ($active->isEmpty()) {
-            $this->info('لا حساب تجريبي نشط. لا شيء ليُعمل.');
+        $candidates = User::whereIn('username', CloseoutService::DEMO_USERNAMES)->get()
+            ->filter(fn (User $u) => $this->isActive($u))
+            ->filter(fn (User $u) => $all || $closeout->stillSeeded($u))
+            ->values();
+
+        if ($candidates->isEmpty()) {
+            $this->info($all
+                ? 'لا حساب تجريبي نشط. لا شيء ليُعمل.'
+                : 'لا حساب نشط على كلمة المرور المبذورة. لا شيء ليُعمل.');
 
             return self::SUCCESS;
         }
 
-        $realAdmin = UserProfile::where('role', 'system_admin')
-            ->where('is_active', true)
-            ->whereHas('user', fn ($q) => $q->whereNotIn('username', CloseoutService::DEMO_USERNAMES))
-            ->with('user:id,username,name')
-            ->first();
+        $survivor = $this->survivingAdmin($candidates->pluck('id')->all());
 
-        if (!$realAdmin) {
-            $this->error('لا يوجد حساب «مسؤول السلامة» نشط خارج الحسابات التجريبية.');
-            $this->line('أنشئه أولاً، وتحقّق من دخوله، ثم أعد هذا الأمر:');
+        if (!$survivor) {
+            $this->error('لا يبقى «مسؤول سلامة» نشط بعد هذا التعطيل.');
+            $this->line('أنشئ حساباً حقيقياً وتحقّق من دخوله، ثم أعد هذا الأمر:');
             $this->line('  php artisan ipa:user <اسم-الدخول> system_admin "<الاسم>" --password=<كلمة قوية>');
             $this->line('التعطيل الآن يغلق الباب على الجميع، ولا سطر أوامر على Render لفتحه.');
 
             return self::FAILURE;
         }
 
-        $this->line('الحساب الحقيقي: '.$realAdmin->user?->username.' — '.$realAdmin->user?->name);
-        $this->line('سيُعطَّل: '.$active->pluck('username')->implode('، '));
+        $this->line('يبقى نشطاً: '.$survivor->user?->username.' — '.$survivor->user?->name);
+        $this->line('سيُعطَّل: '.$candidates->pluck('username')->implode('، '));
 
         if ($this->option('dry-run')) {
             $this->info('عرض فقط — لم يُعطَّل شيء.');
@@ -57,13 +64,21 @@ class IpaDemoOff extends Command
             return self::SUCCESS;
         }
 
-        foreach ($active as $user) {
-            UserProfile::where('user_id', $user->id)->update(['is_active' => false]);
-        }
+        UserProfile::whereIn('user_id', $candidates->pluck('id'))->update(['is_active' => false]);
 
-        $this->info(sprintf('تم: عُطّل %d حساباً تجريبياً.', $active->count()));
+        $this->info(sprintf('تم: عُطّل %d حساباً.', $candidates->count()));
 
         return self::SUCCESS;
+    }
+
+    /** مسؤول سلامة نشط لن يشمله التعطيل. */
+    private function survivingAdmin(array $aboutToDisable): ?UserProfile
+    {
+        return UserProfile::where('role', 'system_admin')
+            ->where('is_active', true)
+            ->whereNotIn('user_id', $aboutToDisable)
+            ->with('user:id,username,name')
+            ->first();
     }
 
     private function isActive(User $user): bool

@@ -2,7 +2,9 @@
 
 namespace App\Core\Services;
 
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -88,6 +90,33 @@ class CloseoutService
         'salama', 'coord', 'fani', 'mudir', 'marafiq', 'shuon', 'idara', 'maktab',
         'test.gate', 'g6.muqawil',
     ];
+
+    /**
+     * كلمة المرور المبذورة في `DemoUsersSeeder`.
+     *
+     * **الخطر في الكلمة لا في الاسم** (تصحيح ٢٠٢٦-٠٩-٠٩): الاسم التجريبي الذي غُيّرت كلمته
+     * صار حساباً حقيقياً يعمل به صاحبه، وتعطيله يقفل الباب عليه. والاسم الذي بقي على
+     * الكلمة المبذورة خطرٌ مهما كان اسمه — الموقع مفتوح للإنترنت.
+     */
+    public const SEEDED_PASSWORD = '1234';
+
+    /** هل ما زال الحساب على كلمة المرور المبذورة؟ */
+    public function stillSeeded(User $user): bool
+    {
+        return Hash::check(self::SEEDED_PASSWORD, (string) $user->password);
+    }
+
+    /**
+     * الحسابات الخطرة: من القائمة التجريبية وما زال على الكلمة المبذورة.
+     *
+     * @return \Illuminate\Support\Collection<int, User>
+     */
+    public function riskyAccounts()
+    {
+        return User::whereIn('username', self::DEMO_USERNAMES)->get()
+            ->filter(fn (User $u) => $this->stillSeeded($u))
+            ->values();
+    }
 
     /**
      * جرد ما سيُحذف: [الاسم المعروض => العدد]. يُعرض قبل الحذف دائماً.

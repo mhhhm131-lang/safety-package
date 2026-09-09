@@ -34,7 +34,7 @@ class CloseoutController extends Controller
             'preserved'     => $this->closeout->preserved(),
             'unclassified'  => $this->closeout->unclassifiedTables(),
             'demoAccounts'  => $this->demoAccounts(),
-            'realAdmin'     => $this->realAdmin(),
+            'risky'         => $this->closeout->riskyAccounts()->count(),
             'confirmWord'   => self::CONFIRM_WORD,
             'backups'       => $this->backup->existing(),
         ]);
@@ -86,16 +86,12 @@ class CloseoutController extends Controller
     {
         // الحارس الثاني: من يعطّل وهو داخل بحساب تجريبي يقفل الباب على نفسه في منتصف الإجراء
         // (يظهر 403 بلا رسالة). الخطة تقول: أنشئ حسابك الحقيقي وتحقّق من دخوله **ثم** عطّل.
-        if (in_array($request->user()?->username, CloseoutService::DEMO_USERNAMES, true)) {
+        $actor = $request->user();
+        if ($actor && in_array($actor->username, CloseoutService::DEMO_USERNAMES, true)
+            && $this->closeout->stillSeeded($actor)) {
             return back()->with('error',
-                'أنت داخل بحساب تجريبي ('.$request->user()->username.'). '
-                .'ادخل بحسابك الحقيقي أولاً ثم عطّلها — وإلا أقفلت الباب على نفسك في منتصف الإجراء.');
-        }
-
-        if (!$this->realAdmin()) {
-            return back()->with('error',
-                'لا يوجد حساب «مسؤول السلامة» نشط خارج الحسابات التجريبية. '
-                .'أنشئه من شاشة المستخدمين وتحقّق من دخوله أولاً — التعطيل الآن يغلق الباب على الجميع.');
+                'حسابك ('.$actor->username.') ما زال على كلمة المرور المبذورة، فسيشمله التعطيل. '
+                .'غيّر كلمتك أو ادخل بحساب آخر أولاً — وإلا أقفلت الباب على نفسك في منتصف الإجراء.');
         }
 
         $code = Artisan::call('ipa:demo-off');
@@ -106,12 +102,17 @@ class CloseoutController extends Controller
             : back()->with('error', $out ?: 'تعذّر التعطيل.');
     }
 
-    /** @return \Illuminate\Support\Collection<int, array{username: string, name: string, role: string, active: bool}> */
+    /**
+     * الحسابات التجريبية بحالتها وبحال كلمة مرورها.
+     * **الخطر في الكلمة لا في الاسم:** ما غُيّرت كلمته صار حساباً حقيقياً.
+     *
+     * @return \Illuminate\Support\Collection<int, array{username: string, name: string, role: string, active: bool, seeded: bool}>
+     */
     private function demoAccounts()
     {
         return User::whereIn('username', CloseoutService::DEMO_USERNAMES)
             ->orderBy('username')
-            ->get(['id', 'username', 'name'])
+            ->get(['id', 'username', 'name', 'password'])
             ->map(function (User $u) {
                 $profile = UserProfile::where('user_id', $u->id)->first();
 
@@ -120,16 +121,9 @@ class CloseoutController extends Controller
                     'name'     => $u->name,
                     'role'     => $profile?->role ?? '—',
                     'active'   => (bool) $profile?->is_active,
+                    'seeded'   => $this->closeout->stillSeeded($u),
                 ];
             });
     }
 
-    private function realAdmin(): ?UserProfile
-    {
-        return UserProfile::where('role', 'system_admin')
-            ->where('is_active', true)
-            ->whereHas('user', fn ($q) => $q->whereNotIn('username', CloseoutService::DEMO_USERNAMES))
-            ->with('user:id,username,name')
-            ->first();
-    }
 }

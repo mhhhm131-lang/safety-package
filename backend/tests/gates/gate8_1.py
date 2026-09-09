@@ -95,15 +95,10 @@ log('2 every table classified', 'data-unclassified' not in page)
 demos = re.findall(r'data-demo="([^"]+)"', page)
 log('3 demo accounts listed', (len(demos), demos[:4]))
 
-# ٤) التعطيل مرفوض بلا حساب حقيقي نشط
-has_real = 'data-real-admin="1"' in page
-if not has_real:
-    r, f = post(sa, '/app/closeout/demo-off', {}, '/app/closeout')
-    still = sa.get(BASE + '/app/closeout', timeout=120).text
-    log('4 demo-off refused (guard)', (f[:90], 'salama ما زال نشطاً',
-                                       'data-state="salama">\n                  نشط' in still or 'نشط' in still))
-else:
-    log('4 real admin exists', 'الحارس يسمح بالتعطيل')
+# ٤) حال كلمات المرور: الخطر في الكلمة لا في الاسم
+risky = re.search(r'data-risky="(\d+)"', page)
+seeded = dict(re.findall(r'data-seeded="([^"]+)">\s*([^<]+?)\s*<', page))
+log('4 password state', (f'خطرة={risky.group(1) if risky else "?"}', seeded))
 
 # ٥) الحذف مرفوض بلا كلمة التأكيد
 r, f = post(sa, '/app/closeout/purge', {'confirm': 'نعم'}, '/app/closeout')
@@ -137,11 +132,13 @@ log('9 screens after purge', (len(codes), 'أخطاء خادم=' + str(len([c fo
                               [pc for pc in codes if pc[1] != 200]))
 
 # ١٠) الحارس الثاني: من يعطّل وهو داخل بحساب تجريبي يُمنع (وإلا أقفل الباب على نفسه)
-if admin_user in re.findall(r'data-demo="([^"]+)"', page):
+# الحارس: الفاعل الذي ما زال على الكلمة المبذورة سيشمله التعطيل فيُمنع
+actor_seeded = dict(re.findall(r'data-seeded="([^"]+)">\s*([^<]+?)\s*<', page2)).get(admin_user) == 'مبذورة'
+if actor_seeded:
     r, f = post(sa, '/app/closeout/demo-off', {}, '/app/closeout')
-    log('10 self-lockout guard', (f[:110], 'داخل بحساب تجريبي' in f))
+    log('10 self-lockout guard', (f[:110], 'المبذورة' in f))
 else:
-    log('10 self-lockout guard', f'يُتخطّى: «{admin_user}» ليس حساباً تجريبياً')
+    log('10 self-lockout guard', f'يُتخطّى: كلمة «{admin_user}» غُيّرت فلا يشمله التعطيل')
 
 # ١١) التعطيل بحساب حقيقي، ثم دخول الحساب التجريبي يُرفض
 if DO_DISABLE and REAL:

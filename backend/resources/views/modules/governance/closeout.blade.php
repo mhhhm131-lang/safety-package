@@ -47,31 +47,35 @@
   <div class="card-body">
     <h2 class="h6 mb-2"><i class="bi bi-person-lock"></i> الحسابات التجريبية</h2>
     <p class="small text-muted">
-      تُعطَّل ولا تُحذف: سجل التدقيق وأحداث البلاغات والتصاريح تشير إلى أصحابها، والحذف يقطع الأثر.
+      <strong>الخطر في كلمة المرور لا في الاسم.</strong> الحساب الذي غيّرت كلمته صار حساباً حقيقياً يعمل به صاحبه.
+      والباقي على الكلمة المبذورة خطرٌ ما دام الموقع مفتوحاً للإنترنت.
+      والتعطيل لا يحذف: سجل التدقيق وأحداث البلاغات تشير إلى أصحابها.
     </p>
 
-    @if($realAdmin)
-      <div class="alert alert-success py-2 small" data-real-admin="1">
-        حساب مسؤول السلامة الحقيقي: <strong>{{ $realAdmin->user?->username }}</strong> — {{ $realAdmin->user?->name }}.
-        التعطيل آمن.
+    @if($risky)
+      <div class="alert alert-danger py-2 small" data-risky="{{ $risky }}">
+        <strong>{{ $risky }}</strong> حساباً ما زال على كلمة المرور المبذورة. عطّلها أو غيّر كلماتها.
       </div>
     @else
-      <div class="alert alert-danger py-2 small" data-real-admin="0">
-        لا يوجد حساب «مسؤول السلامة» نشط خارج القائمة التجريبية.
-        أنشئه من <a href="{{ route('app.users.create') }}">شاشة المستخدمين</a> وتحقّق من دخوله أولاً.
-        التعطيل الآن يغلق الباب على الجميع.
+      <div class="alert alert-success py-2 small" data-risky="0">
+        لا حساب على كلمة المرور المبذورة.
       </div>
     @endif
 
     <div class="table-responsive">
       <table class="table table-sm align-middle m-0">
-        <thead><tr><th>اسم الدخول</th><th>الاسم</th><th>الدور</th><th>الحالة</th></tr></thead>
+        <thead><tr><th>اسم الدخول</th><th>الاسم</th><th>الدور</th><th>كلمة المرور</th><th>الحالة</th></tr></thead>
         <tbody>
           @foreach($demoAccounts as $acc)
             <tr data-demo="{{ $acc['username'] }}">
               <td class="font-monospace">{{ $acc['username'] }}</td>
               <td>{{ $acc['name'] }}</td>
               <td class="small">{{ \App\Core\Permissions\PermissionRegistry::ROLES[$acc['role']] ?? $acc['role'] }}</td>
+              <td>
+                <span class="badge bg-{{ $acc['seeded'] ? 'danger' : 'success' }}" data-seeded="{{ $acc['username'] }}">
+                  {{ $acc['seeded'] ? 'مبذورة' : 'غُيّرت' }}
+                </span>
+              </td>
               <td>
                 <span class="badge bg-{{ $acc['active'] ? 'warning text-dark' : 'secondary' }}" data-state="{{ $acc['username'] }}">
                   {{ $acc['active'] ? 'نشط' : 'معطَّل' }}
@@ -85,9 +89,10 @@
 
     <form method="post" action="{{ route('app.closeout.demo-off') }}" class="mt-3">
       @csrf
-      <button class="btn btn-sm btn-outline-danger" @disabled(!$realAdmin)>
-        <i class="bi bi-person-x"></i> عطّل الحسابات التجريبية
+      <button class="btn btn-sm btn-outline-danger" @disabled(!$risky)>
+        <i class="bi bi-person-x"></i> عطّل ما بقي على الكلمة المبذورة
       </button>
+      <span class="small text-muted ms-2">لا يمسّ الحسابات التي غُيّرت كلماتها.</span>
     </form>
   </div>
 </div>

@@ -44,7 +44,7 @@ class CloseoutTest extends TestCase
     {
         $u = User::create([
             'username' => $username, 'name' => "اسم {$username}",
-            'password' => '123456', 'email' => "{$username}@example.test",
+            'password' => CloseoutService::SEEDED_PASSWORD, 'email' => "{$username}@example.test",
         ]);
         UserProfile::create(['user_id' => $u->id, 'role' => $role, 'is_active' => $active]);
 
@@ -146,39 +146,77 @@ class CloseoutTest extends TestCase
         $this->assertSame(9, $preserved['الأماكن']);
     }
 
-    // ════════════ تعطيل الحسابات التجريبية ════════════
+    // ════════════ تعطيل ما بقي على الكلمة المبذورة ════════════
 
-    public function test_demo_off_refuses_without_a_real_admin(): void
+    public function test_seeded_password_is_detected(): void
     {
+        $closeout = app(CloseoutService::class);
+
+        $this->assertTrue($closeout->stillSeeded($this->salama), 'الحساب المبذور على كلمة البذرة');
+    }
+
+    public function test_changed_password_is_not_seeded(): void
+    {
+        $this->salama->password = 'Strong-Real-2026';
+        $this->salama->save();
+
+        $this->assertFalse(app(CloseoutService::class)->stillSeeded($this->salama->refresh()));
+    }
+
+    public function test_demo_off_refuses_when_no_admin_would_survive(): void
+    {
+        // salama هو مسؤول السلامة الوحيد وما زال على الكلمة المبذورة
         $this->artisan('ipa:demo-off')->assertFailed();
 
-        $this->assertTrue(UserProfile::where('user_id', $this->salama->id)->value('is_active'));
+        $this->assertTrue((bool) UserProfile::where('user_id', $this->salama->id)->value('is_active'));
     }
 
-    public function test_demo_off_disables_once_a_real_admin_exists(): void
+    public function test_demo_off_spares_accounts_whose_password_changed(): void
     {
-        $this->user('sara.alahmad', 'system_admin');
+        // المستخدم غيّر كلمته: حسابه صار حقيقياً ولا يُعطَّل
+        $this->salama->password = 'Strong-Real-2026';
+        $this->salama->save();
 
         $this->artisan('ipa:demo-off')->assertSuccessful();
+
+        $this->assertTrue((bool) UserProfile::where('user_id', $this->salama->id)->value('is_active'),
+            'الحساب الذي غُيّرت كلمته لا يُعطَّل');
+        $this->assertFalse((bool) UserProfile::where('user_id', $this->fani->id)->value('is_active'),
+            'الباقي على الكلمة المبذورة يُعطَّل');
+    }
+
+    public function test_all_flag_disables_the_whole_demo_list(): void
+    {
+        $this->salama->password = 'Strong-Real-2026';
+        $this->salama->save();
+        $real = $this->user('sara.alahmad', 'system_admin');
+        $real->password = 'Another-Real-2026';
+        $real->save();
+
+        $this->artisan('ipa:demo-off --all')->assertSuccessful();
 
         $this->assertFalse((bool) UserProfile::where('user_id', $this->salama->id)->value('is_active'));
-        $this->assertFalse((bool) UserProfile::where('user_id', $this->fani->id)->value('is_active'));
+        $this->assertTrue((bool) UserProfile::where('user_id', $real->id)->value('is_active'),
+            'الحساب خارج القائمة التجريبية لا يُمس');
     }
 
-    public function test_demo_off_keeps_the_real_admin_active(): void
+    public function test_dry_run_changes_nothing(): void
     {
-        $real = $this->user('sara.alahmad', 'system_admin');
-        $this->artisan('ipa:demo-off')->assertSuccessful();
+        $this->salama->password = 'Strong-Real-2026';
+        $this->salama->save();
 
-        $this->assertTrue((bool) UserProfile::where('user_id', $real->id)->value('is_active'));
+        $this->artisan('ipa:demo-off --dry-run')->assertSuccessful();
+
+        $this->assertTrue((bool) UserProfile::where('user_id', $this->fani->id)->value('is_active'));
     }
 
-    public function test_disabled_demo_account_cannot_log_in(): void
+    public function test_disabled_account_cannot_log_in(): void
     {
-        $this->user('sara.alahmad', 'system_admin');
+        $this->salama->password = 'Strong-Real-2026';
+        $this->salama->save();
         $this->artisan('ipa:demo-off')->assertSuccessful();
 
-        $this->post('/login', ['username' => 'salama', 'password' => '123456'])
+        $this->post('/login', ['username' => 'fani', 'password' => CloseoutService::SEEDED_PASSWORD])
             ->assertSessionHasErrors();
         $this->assertGuest();
     }
@@ -191,7 +229,7 @@ class CloseoutTest extends TestCase
         $this->actingAs($this->salama)->get(route('app.closeout.index'))->assertOk();
     }
 
-    public function test_screen_shows_inventory_and_preserved(): void
+    public function test_screen_shows_inventory_and_password_state(): void
     {
         $this->incident('ش-0001');
 
@@ -199,7 +237,18 @@ class CloseoutTest extends TestCase
             ->assertOk()
             ->assertSee('data-purge="بلاغات الشاغل"', false)
             ->assertSee('data-keep="كتاب المخاطر"', false)
-            ->assertSee('data-real-admin="0"', false);
+            ->assertSee('data-seeded="salama"', false)
+            ->assertSee('مبذورة');
+    }
+
+    public function test_screen_marks_a_changed_password_as_safe(): void
+    {
+        $this->salama->password = 'Strong-Real-2026';
+        $this->salama->save();
+
+        $this->actingAs($this->salama->refresh())->get(route('app.closeout.index'))
+            ->assertOk()
+            ->assertSee('غُيّرت');
     }
 
     public function test_purge_needs_the_confirmation_word(): void
@@ -219,8 +268,9 @@ class CloseoutTest extends TestCase
         $this->assertSame(0, Incident::count());
     }
 
-    public function test_screen_refuses_demo_off_without_a_real_admin(): void
+    public function test_screen_refuses_when_the_actor_would_disable_themselves(): void
     {
+        // الفاعل تجريبي وما زال على الكلمة المبذورة: التعطيل يشمله
         $this->actingAs($this->salama)
             ->post(route('app.closeout.demo-off'))
             ->assertSessionHas('error');
@@ -228,26 +278,16 @@ class CloseoutTest extends TestCase
         $this->assertTrue((bool) UserProfile::where('user_id', $this->salama->id)->value('is_active'));
     }
 
-    public function test_screen_disables_demo_once_a_real_admin_exists(): void
+    public function test_screen_disables_once_the_actor_password_changed(): void
     {
-        $real = $this->user('sara.alahmad', 'system_admin');
+        $this->salama->password = 'Strong-Real-2026';
+        $this->salama->save();
 
-        $this->actingAs($real)
+        $this->actingAs($this->salama->refresh())
             ->post(route('app.closeout.demo-off'))
             ->assertSessionHas('success');
 
-        $this->assertFalse((bool) UserProfile::where('user_id', $this->salama->id)->value('is_active'));
-    }
-
-    public function test_screen_refuses_when_the_actor_is_a_demo_account(): void
-    {
-        // حساب حقيقي موجود، لكن الفاعل تجريبي: التعطيل يقفل عليه الباب في منتصف الإجراء
-        $this->user('sara.alahmad', 'system_admin');
-
-        $this->actingAs($this->salama)
-            ->post(route('app.closeout.demo-off'))
-            ->assertSessionHas('error');
-
+        $this->assertFalse((bool) UserProfile::where('user_id', $this->fani->id)->value('is_active'));
         $this->assertTrue((bool) UserProfile::where('user_id', $this->salama->id)->value('is_active'));
     }
 
