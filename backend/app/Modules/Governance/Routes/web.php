@@ -55,6 +55,7 @@ Route::middleware(['web', 'auth'])->prefix('app')->name('app.')->group(function 
         Route::get('/', [CloseoutController::class, 'index'])->name('index');
         Route::post('/purge', [CloseoutController::class, 'purge'])->name('purge');
         Route::post('/demo-off', [CloseoutController::class, 'disableDemo'])->name('demo-off');
+        Route::post('/book-replace', [CloseoutController::class, 'replaceBook'])->name('book-replace');
         Route::get('/backup', [CloseoutController::class, 'backupDownload'])->name('backup');
     });
 

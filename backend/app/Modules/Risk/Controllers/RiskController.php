@@ -89,8 +89,8 @@ class RiskController extends Controller
     {
         $validated = $request->validate(array_merge($this->referenceValidationRules(), $this->activeExtraRules()));
         try {
-            $validated['title'] = $this->deriveTitle($validated['risk_type_category_id'] ?? null, $validated['sub_category_id'] ?? null);
-            $validated['description'] = $validated['title'];
+            $validated['title'] = trim((string) ($validated['title'] ?? '')) ?: $this->deriveTitle($validated['risk_type_category_id'] ?? null, $validated['sub_category_id'] ?? null);
+            $validated['description'] = trim((string) ($validated['description'] ?? '')) ?: $validated['title'];
             $risk = $this->riskService->createRisk(Auth::id(), collect($validated)->except(['phases'])->all(), 'active');
             $this->riskService->persistAllPhases($risk, $validated['phases'] ?? []);
             return redirect()->route('risk.active.index')->with('success', 'أُنشئ الخطر في السجل الفعلي بمراحله الثلاث.');
@@ -114,9 +114,14 @@ class RiskController extends Controller
         $this->authorizeScope($risk);
         $validated = $request->validate(array_merge($this->referenceValidationRules(), $this->activeExtraRules()));
         try {
-            $derived = $this->deriveTitle($validated['risk_type_category_id'] ?? null, $validated['sub_category_id'] ?? null);
-            $validated['title'] = $derived !== 'خطر غير محدد' ? $derived : ($risk->title ?: 'خطر غير محدد');
-            $validated['description'] = $validated['title'];
+            $typed = trim((string) ($validated['title'] ?? ''));
+            if ($typed !== '') {
+                $validated['title'] = $typed;
+            } else {
+                $derived = $this->deriveTitle($validated['risk_type_category_id'] ?? null, $validated['sub_category_id'] ?? null);
+                $validated['title'] = $derived !== 'خطر غير محدد' ? $derived : ($risk->title ?: 'خطر غير محدد');
+            }
+            $validated['description'] = trim((string) ($validated['description'] ?? '')) ?: $validated['title'];
             $this->riskService->updateRisk($risk, Auth::id(), collect($validated)->except(['phases'])->all());
             $this->riskService->persistAllPhases($risk, $validated['phases'] ?? []);
             return redirect()->route('risk.active.index')->with('success', 'حُدّث الخطر الفعلي بمراحله الثلاث.');
@@ -218,6 +223,9 @@ class RiskController extends Controller
     public function activate(Request $request, int $risk)
     {
         $validated = $request->validate(array_merge([
+            'title' => ['nullable', 'string', 'max:300'],
+            'description' => ['nullable', 'string', 'max:10000'],
+            'contact_channel' => ['nullable', 'string', 'max:200'],
             'scope_type' => ['required', 'string', 'in:general,org_unit'],
             'organization_unit_id' => ['nullable', 'integer', 'exists:organization_units,id'],
             'place_id' => ['nullable', 'integer', 'exists:places,id'],

@@ -314,6 +314,9 @@ class RiskService
             $likelihood = $data['likelihood'] ?? $referenceRisk->likelihood;
 
             $overrides = array_filter([
+                'title'                    => $data['title'] ?? null,
+                'description'              => $data['description'] ?? null,
+                'contact_channel'          => $data['contact_channel'] ?? null,
                 'scope_type'               => $data['scope_type'] ?? null,
                 'organization_unit_id'     => $data['organization_unit_id'] ?? null,
                 'place_id'                 => $data['place_id'] ?? null,

@@ -143,4 +143,31 @@
   </div>
 </div>
 
+{{-- ٣) كتاب المعهد (المرحلة ٩) --}}
+<div class="card mb-3">
+  <div class="card-body">
+    <h2 class="h6 mb-2"><i class="bi bi-book"></i> كتاب المعهد</h2>
+    <p class="small text-muted mb-2">يستبدل شجرة المخاطر كلها (الأصناف، الفروع، الأخطار، طبقاتها، بنود التحكم، قواعد التصاريح) بالكتاب المعتمد في المرحلة ٩. المتأثرون والأماكن والهيكل لا تُمس. يُرفض ما دام هناك عمل تشغيلي مربوط بالمخاطر.</p>
+    <table class="table table-sm m-0" style="max-width:32rem">
+      <tbody>
+        @foreach($book as $label => $n)
+          <tr data-book="{{ $label }}"><td class="small">{{ $label }}</td><td class="text-end"><span class="badge bg-{{ str_contains($label, 'OHSMS') && $n ? 'warning text-dark' : 'secondary' }}">{{ $n }}</span></td></tr>
+        @endforeach
+      </tbody>
+    </table>
+    @if($bookBlockers)
+      <div class="alert alert-warning small mt-2 mb-0">يمنع الاستبدال: @foreach($bookBlockers as $k => $v){{ $k }} ({{ $v }})@if(!$loop->last)، @endif @endforeach — احذف بيانات التجربة أولاً.</div>
+    @endif
+    <form method="post" action="{{ route('app.closeout.book-replace') }}" class="mt-3 d-flex flex-wrap align-items-end gap-2">
+      @csrf
+      <div>
+        <label class="form-label small mb-0 text-muted">اكتب «{{ $confirmBook }}» للتأكيد</label>
+        <input type="text" name="confirm" class="form-control form-control-sm" style="max-width:12rem" autocomplete="off">
+      </div>
+      <button class="btn btn-sm btn-warning" @disabled($bookBlockers)><i class="bi bi-arrow-repeat"></i> استبدل الكتاب بكتاب المعهد</button>
+      <span class="small text-muted">خذ نسخة احتياطية أولاً.</span>
+    </form>
+  </div>
+</div>
+
 @endsection

@@ -219,7 +219,7 @@ class ReportScenarioTest extends TestCase
     public function test_risks_count_active_only_not_the_book(): void
     {
         // بذرة كتاب المخاطر فيها مئات المخاطر المرجعية — لا تُحسب واقعاً
-        $category = RiskCategory::where('name', 'مخاطر الحريق')->firstOrFail();
+        $category = RiskCategory::where('name', 'الحريق والانفجار')->firstOrFail();
         Risk::create([
             'risk_type' => 'active', 'title' => 'خطر فعلي حرج', 'description' => 'وصف',
             'category_id' => $category->id, 'place_id' => Place::idByCode('HZ-06'),
@@ -234,7 +234,7 @@ class ReportScenarioTest extends TestCase
     public function test_needs_attention_lists_escalated_and_critical(): void
     {
         $this->incident('ب-صعد', 10, status: 'escalated_to_manager');
-        $category = RiskCategory::where('name', 'مخاطر الحريق')->firstOrFail();
+        $category = RiskCategory::where('name', 'الحريق والانفجار')->firstOrFail();
         Risk::create([
             'risk_type' => 'active', 'title' => 'خطر حرج', 'description' => 'وصف',
             'category_id' => $category->id, 'place_id' => Place::idByCode('HZ-06'),

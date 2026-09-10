@@ -125,7 +125,7 @@ class PermitScenarioTest extends TestCase
         }
 
         // ٢) إنشاء تصريح أعمال ساخنة في غرفة الكهرباء — يرث مخاطر المكان ويولّد بنود التحكم
-        $hzRiskCount = $this->seedPlaceRisk('HZ-02', 'مخاطر الحريق');
+        $hzRiskCount = $this->seedPlaceRisk('HZ-02', 'الحريق والانفجار');
         $permit = $this->hotWorkPermit();
 
         $this->assertSame(Permit::STATUS_DRAFT, $permit->status);

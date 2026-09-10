@@ -53,7 +53,7 @@ class CloseoutTest extends TestCase
 
     private function activeRisk(): Risk
     {
-        $category = RiskCategory::where('name', 'مخاطر الحريق')->firstOrFail();
+        $category = RiskCategory::where('name', 'الحريق والانفجار')->firstOrFail();
         $risk = Risk::create([
             'risk_type' => 'active', 'title' => 'خطر فعلي للاختبار', 'description' => 'وصف',
             'category_id' => $category->id, 'place_id' => Place::idByCode('HZ-06'),

@@ -59,19 +59,19 @@ class RiskTest extends TestCase
         return $r->fresh();
     }
 
-    public function test_full_book_seeder_loads_264_risks_into_reference_only(): void
+    public function test_institute_book_seeder_loads_8_49_177_into_reference_only(): void
     {
         RiskCategory::query()->delete();
         $this->seed(\Database\Seeders\RiskBookSeeder::class);
-        $this->assertSame(9, RiskCategory::count());
-        $this->assertSame(64, RiskSubCategory::count());
+        $this->assertSame(8, RiskCategory::count());
+        $this->assertSame(49, RiskSubCategory::count());
         $this->assertSame(0, Risk::where('risk_type', 'master')->count()); // قرار ٢١: طبقة واحدة
-        $this->assertSame(264, Risk::where('risk_type', 'reference')->count());
-        $this->assertSame(264 * 3, RiskPhase::count());
-        $this->assertTrue(RiskPhase::whereNotNull('preventive_action')->count() >= 21);
+        $this->assertSame(177, Risk::where('risk_type', 'reference')->count());
+        $this->assertSame(177 * 3, RiskPhase::count());
+        $this->assertSame(177, Risk::whereNull('sub_category_id')->count() === 0 ? 177 : -1); // لا خطر بلا فرع
         // إعادة التشغيل لا تكرر
         $this->seed(\Database\Seeders\RiskBookSeeder::class);
-        $this->assertSame(264, Risk::where('risk_type', 'reference')->count());
+        $this->assertSame(177, Risk::where('risk_type', 'reference')->count());
     }
 
     public function test_screens_permission_matrix(): void

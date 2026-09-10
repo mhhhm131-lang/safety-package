@@ -225,7 +225,7 @@ class SmartJsaServiceTest extends TestCase
 
     public function test_place_risks_suggest_required_permit_types(): void
     {
-        $fire = RiskCategory::where('name', 'مخاطر الحريق')->firstOrFail();
+        $fire = RiskCategory::where('name', 'الحريق والانفجار')->firstOrFail();
         $placeId = Place::idByCode('HZ-02');
 
         Risk::create([
@@ -242,7 +242,7 @@ class SmartJsaServiceTest extends TestCase
 
     public function test_severity_condition_filters_suggested_types(): void
     {
-        $mech = RiskCategory::where('name', 'المخاطر الميكانيكية')->firstOrFail();
+        $mech = RiskCategory::where('name', 'الميكانيكية والإنشائية')->firstOrFail();
         $placeId = Place::idByCode('HZ-08');
 
         $risk = Risk::create([

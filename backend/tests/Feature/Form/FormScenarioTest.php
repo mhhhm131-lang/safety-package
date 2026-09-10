@@ -67,7 +67,7 @@ class FormScenarioTest extends TestCase
     /** خطر فعّال بدرجة محددة على مكان، مع بند تحكم استباقي. */
     private function risk(int $severity, int $likelihood, string $placeCode = 'HZ-02', string $title = 'خطر اختبار'): Risk
     {
-        $category = RiskCategory::where('name', 'مخاطر الحريق')->firstOrFail();
+        $category = RiskCategory::where('name', 'الحريق والانفجار')->firstOrFail();
         $risk = Risk::create([
             'risk_type' => 'active', 'title' => $title, 'description' => 'وصف الخطر للاختبار',
             'category_id' => $category->id, 'place_id' => Place::idByCode($placeCode),

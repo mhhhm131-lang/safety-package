@@ -19,17 +19,18 @@ class RiskControlsSeeder extends Seeder
 {
     // Maps seeder keys → Arabic category names in the database
     private array $categoryMap = [
-        'hot_work'         => 'مخاطر الحريق',
-        'confined_space'   => 'المخاطر الفيزيائية',
-        'work_at_height'   => 'المخاطر الفيزيائية',
-        'excavation'       => 'المخاطر الميكانيكية',
-        'electrical_work'  => 'المخاطر الكهربائية',
-        'loto'             => 'المخاطر الكهربائية',
-        'hazmat_handling'  => 'المخاطر الكيميائية',
-        'radiation_work'   => 'المخاطر الفيزيائية',
-        'pressure_testing' => 'المخاطر الميكانيكية',
-        'blasting'         => 'المخاطر الفيزيائية',
-        'crane_operations' => 'المخاطر الميكانيكية',
+        // أسماء أصناف كتاب المعهد (قرار ٢٣) — الأماكن المحصورة تحت الكيميائية لأن ضررها اختناق بالغاز
+        'hot_work'         => 'الحريق والانفجار',
+        'confined_space'   => 'الكيميائية',
+        'work_at_height'   => 'الميكانيكية والإنشائية',
+        'excavation'       => 'الميكانيكية والإنشائية',
+        'electrical_work'  => 'الكهربائية',
+        'loto'             => 'الكهربائية',
+        'hazmat_handling'  => 'الكيميائية',
+        'radiation_work'   => 'الفيزيائية (عوامل البيئة)',
+        'pressure_testing' => 'الميكانيكية والإنشائية',
+        'blasting'         => 'الحريق والانفجار',
+        'crane_operations' => 'الميكانيكية والإنشائية',
     ];
 
     public function run(): void

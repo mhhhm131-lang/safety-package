@@ -200,6 +200,61 @@ class CloseoutService
         ];
     }
 
+    /** حال كتاب المعهد كما هو في القاعدة الآن (للشاشة وللبوابة). */
+    public function bookStatus(): array
+    {
+        $codes = DB::table('risks')->where('risk_type', 'reference')->pluck('code');
+        $institute = $codes->filter(fn ($c) => (bool) preg_match('/^(PH|CH|BI|ME|EL|FI|ER|OR)-\d\d-\d\d$/', (string) $c))->count();
+        return [
+            'الأصناف الرئيسية'        => DB::table('risk_categories')->count(),
+            'الفروع'                   => DB::table('risk_sub_categories')->count(),
+            'مخاطر السجل العام'        => $codes->count(),
+            'منها من كتاب المعهد'      => $institute,
+            'منها بأكواد أخرى (OHSMS أو مضافة يدوياً)'    => $codes->count() - $institute,
+            'مخاطر فعلية (إدارات)'     => DB::table('risks')->where('risk_type', 'active')->count(),
+        ];
+    }
+
+    /**
+     * ما يمنع استبدال الكتاب: عمل تشغيلي يشير إلى مخاطر قائمة. يُحذف أولاً بـ purge().
+     *
+     * @return array<string, int>
+     */
+    public function bookReplaceBlockers(): array
+    {
+        return array_filter([
+            'مخاطر فعلية للإدارات' => DB::table('risks')->where('risk_type', 'active')->count(),
+            'بلاغات مربوطة بخطر'   => DB::table('incidents')->count(),
+            'مخاطر على تصاريح'     => DB::table('permit_risks')->count(),
+            'نماذج مولَّدة من خطر' => DB::table('form_templates')->whereNotNull('source_risk_id')->count(),
+        ]);
+    }
+
+    /**
+     * استبدال كتاب المعهد (المرحلة ٩، قرار ٢٢): يحذف شجرة المخاطر كلها (الأصناف والفروع والأخطار
+     * وطبقاتها وبنود التحكم وقواعد التصاريح) ثم يبذر الكتاب الجديد من `institute_risk_book.json`
+     * مع بنود التحكم وقواعد التصاريح على الأصناف الجديدة. المتأثرون والأماكن والهيكل لا تُمس.
+     *
+     * @return array<string, int> حال الكتاب بعد الاستبدال
+     */
+    public function replaceBook(): array
+    {
+        if ($blockers = $this->bookReplaceBlockers()) {
+            throw new \RuntimeException('لا يُستبدل الكتاب وهناك عمل تشغيلي مربوط به: '
+                .implode('، ', array_map(fn ($k, $v) => "$k ($v)", array_keys($blockers), $blockers))
+                .'. احذف بيانات التجربة أولاً.');
+        }
+        DB::transaction(function () {
+            foreach (['risk_required_permit_types', 'risk_controls', 'risks', 'risk_causes', 'risk_sub_categories', 'risk_categories'] as $t) {
+                DB::table($t)->delete();
+            }
+            (new \Database\Seeders\RiskBookSeeder)->run();
+            (new \Database\Seeders\RiskControlsSeeder)->run();
+            (new \Database\Seeders\RiskRequiredPermitTypesSeeder)->run();
+        });
+        return $this->bookStatus();
+    }
+
     /**
      * الحذف الفعلي. يعيد [الجدول => عدد المحذوف] لما حُذف منه شيء.
      *

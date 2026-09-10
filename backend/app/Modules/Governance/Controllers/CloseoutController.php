@@ -19,6 +19,7 @@ class CloseoutController extends Controller
 {
     /** الكلمة التي يكتبها المستخدم ليؤكد الحذف — لا زر واحد يمحو قاعدة. */
     public const CONFIRM_WORD = 'احذف';
+    public const CONFIRM_BOOK = 'استبدل';
 
     public function __construct(
         private readonly CloseoutService $closeout,
@@ -40,6 +41,9 @@ class CloseoutController extends Controller
             'demoAccounts'  => $accounts,
             'risky'         => $audit->where('seeded', true)->count(),
             'confirmWord'   => self::CONFIRM_WORD,
+            'confirmBook'   => self::CONFIRM_BOOK,
+            'book'          => $this->closeout->bookStatus(),
+            'bookBlockers'  => $this->closeout->bookReplaceBlockers(),
             'backups'       => $this->backup->existing(),
         ]);
     }
@@ -83,6 +87,23 @@ class CloseoutController extends Controller
             array_sum($deleted),
             count($deleted),
         ));
+    }
+
+    /** استبدال كتاب المعهد (المرحلة ٩): يُرفض ما دام هناك عمل تشغيلي مربوط بالمخاطر. */
+    public function replaceBook(Request $request)
+    {
+        $request->validate(
+            ['confirm' => ['required', 'string', 'in:'.self::CONFIRM_BOOK]],
+            ['confirm.in' => 'اكتب كلمة «'.self::CONFIRM_BOOK.'» للتأكيد.'],
+            ['confirm' => 'كلمة التأكيد'],
+        );
+        try {
+            $status = $this->closeout->replaceBook();
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+        return back()->with('success', sprintf('استُبدل الكتاب: %d أصناف، %d فرعاً، %d خطراً في السجل العام.',
+            $status['الأصناف الرئيسية'], $status['الفروع'], $status['مخاطر السجل العام']));
     }
 
     /** تعطيل الحسابات التجريبية — بحارسَين. */

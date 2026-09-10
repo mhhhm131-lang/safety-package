@@ -22,30 +22,29 @@ class RiskRequiredPermitTypesSeeder extends Seeder
         $categories = RiskCategory::pluck('id', 'name');
 
         $mappings = [
-            'المخاطر الميكانيكية' => [
+            // أسماء أصناف كتاب المعهد (قرار ٢٣)
+            'الميكانيكية والإنشائية' => [
+                ['work_at_height', RiskRequiredPermitType::COND_SEVERITY_GE_3],
                 ['loto', RiskRequiredPermitType::COND_SEVERITY_GE_3],
                 ['work_permit', RiskRequiredPermitType::COND_ALWAYS],
                 ['crane_operations', RiskRequiredPermitType::COND_SEVERITY_GE_4],
             ],
-            'المخاطر الكهربائية' => [
+            'الكهربائية' => [
                 ['electrical_work', RiskRequiredPermitType::COND_ALWAYS],
                 ['loto', RiskRequiredPermitType::COND_SEVERITY_GE_3],
             ],
-            'مخاطر الحريق' => [
+            'الحريق والانفجار' => [
                 ['hot_work', RiskRequiredPermitType::COND_ALWAYS],
             ],
-            'المخاطر الكيميائية' => [
+            'الكيميائية' => [
+                ['confined_space', RiskRequiredPermitType::COND_SEVERITY_GE_4],
                 ['hazmat_handling', RiskRequiredPermitType::COND_ALWAYS],
                 ['hazmat_transport', RiskRequiredPermitType::COND_SEVERITY_GE_3],
             ],
-            'المخاطر الفيزيائية' => [
-                ['confined_space', RiskRequiredPermitType::COND_SEVERITY_GE_4],
-                ['work_at_height', RiskRequiredPermitType::COND_SEVERITY_GE_3],
+            'الفيزيائية (عوامل البيئة)' => [
+                ['radiation_work', RiskRequiredPermitType::COND_SEVERITY_GE_4],
             ],
-            'المخاطر البيولوجية' => [
-                ['work_permit', RiskRequiredPermitType::COND_ALWAYS],
-            ],
-            'المخاطر البشرية' => [
+            'البيولوجية والصحية' => [
                 ['work_permit', RiskRequiredPermitType::COND_ALWAYS],
             ],
             // الإدارية والتنظيمية والنفسية والاجتماعية: لا تصريح آلي — معالجتها إجرائية.
