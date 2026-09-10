@@ -460,7 +460,7 @@
                     const chips = p.affected_groups.map(g =>
                         `<span style="display:inline-block;margin:1px 2px;padding:1px 6px;border-radius:12px;font-size:.7rem;background:${st.color}20;color:${st.color};border:1px solid ${st.color}60;">${escAttr(g.name)}</span>`
                     ).join('');
-                    groupsHtml = popTrigger(`المتأثرون — ${st.label}`,
+                    groupsHtml = popTrigger(`العواقب والأضرار — ${st.label}`,
                         `<div>${p.affected_groups.map(g => `<div><b>${escAttr(g.name)}</b>${g.impact ? ' — ' + ({low:'منخفض',medium:'متوسط',high:'عالٍ',critical:'حرج'}[g.impact] || g.impact) : ''}${g.rep_scope ? ' / ' + ({local:'محلي',regional:'إقليمي',national:'وطني',international:'دولي'}[g.rep_scope] || g.rep_scope) : ''}${g.detail ? '<div class="small text-muted">' + escAttr(g.detail) + '</div>' : ''}</div>`).join('')}</div>`,
                         `<div style="line-height:1.8;">${chips}</div>`);
                 }
@@ -620,7 +620,7 @@
                             <th style="min-width:70px;text-align:center;">الكود</th>
                             <th style="width:100px;">الطور</th>
                             <th>الأسباب</th>
-                            <th>المتأثرون</th>
+                            <th>العواقب والأضرار</th>
                             <th style="width:80px;text-align:center;">التقييم القبلي</th>
                             <th>الإجراء الوقائي</th>
                             <th>الإجراء التصحيحي</th>

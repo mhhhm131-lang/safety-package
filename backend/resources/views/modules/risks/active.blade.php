@@ -435,7 +435,7 @@
                 const groupsList = (p?.affected_groups || []).map(g => g.name);
                 let groupsHtml = dash;
                 if (groupsList.length) {
-                    groupsHtml = popTrigger(`المتأثرون — ${st.label}`,
+                    groupsHtml = popTrigger(`العواقب والأضرار — ${st.label}`,
                         `<ul class='mb-0 ps-3'>${groupsList.map(g => `<li>${escAttr(g)}</li>`).join('')}</ul>`,
                         `<span class="badge-count">${groupsList.length} فئة</span>`);
                 }
@@ -530,7 +530,7 @@
                         <th>الفئة</th>
                         <th class="phase-col">الطور</th>
                         <th>الأسباب</th>
-                        <th>المتأثرون</th>
+                        <th>العواقب والأضرار</th>
                         <th>الإجراء التصحيحي</th>
                         <th>الإجراء الوقائي</th>
                         <th>الوحدة</th>

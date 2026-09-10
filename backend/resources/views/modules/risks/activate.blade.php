@@ -259,8 +259,14 @@
                             </div>
 
                             <div>
-                                <label class="form-label" style="color:var(--text-main);"><i class="bi bi-people me-1"></i>المجموعات المتأثرة</label>
-                                @foreach($masterAndTenantGroups as $group)
+                                <label class="form-label" style="color:var(--text-main);"><i class="bi bi-diagram-3 me-1"></i>العواقب والأضرار <small style="color:var(--text-muted);font-weight:400;">— انقر الدائرة واختر من يتضرر وبماذا</small></label>
+                                @foreach(\App\Modules\Risk\Models\AffectedGroup::CIRCLES + ['أخرى' => []] as $circle => $circleNames)
+                                    @php $circleGroups = $circle === 'أخرى' ? $masterAndTenantGroups->filter(fn ($g) => \App\Modules\Risk\Models\AffectedGroup::circleOf($g->name) === 'أخرى') : $masterAndTenantGroups->whereIn('name', $circleNames); @endphp
+                                    @if($circleGroups->isNotEmpty())
+                                    <details class="ag-circle mb-2 rounded" style="border:1px solid var(--border-color);" @if(collect($phaseGroupIds)->intersect($circleGroups->pluck('id'))->isNotEmpty()) open @endif>
+                                        <summary class="px-2 py-1 fw-bold" style="cursor:pointer;color:var(--text-main);">{{ $circle }} <span class="badge bg-success ag-count ms-1"></span> <small style="color:var(--text-muted);font-weight:400;">({{ $circleGroups->count() }})</small></summary>
+                                        <div class="px-2 pb-1">
+                                        @foreach($circleGroups as $group)
                                     @php
                                         $gid = $group->id;
                                         $isChecked = in_array($gid, $phaseGroupIds, true);
@@ -291,6 +297,10 @@
                                     <input type="text" name="phases[{{ $phaseKey }}][affected_detail][{{ $gid }}]" class="form-control form-control-sm"
                                                placeholder="ما الضرر تحديداً؟" maxlength="1000" value="{{ old("phases.{$phaseKey}.affected_detail.{$gid}", $gDetail) }}">
                                     </div>
+                                        @endforeach
+                                        </div>
+                                    </details>
+                                    @endif
                                 @endforeach
                             </div>
                         </div>
@@ -342,6 +352,14 @@
         </div>
     </form>
 </div>
+
+{{-- العواقب والأضرار: عدّاد المختار في كل دائرة --}}
+<script>
+document.querySelectorAll('details.ag-circle').forEach(function (d) {
+    var upd = function () { var n = d.querySelectorAll('input[type=checkbox]:checked').length; var b = d.querySelector('.ag-count'); if (b) b.textContent = n ? n : ''; };
+    d.addEventListener('change', upd); upd();
+});
+</script>
 @endsection
 
 @push('scripts')
