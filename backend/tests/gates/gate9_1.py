@@ -81,7 +81,7 @@ title = 'خطر بوابة ٩-١ — اختبار اسم حر'
 r, f = post(sa, '/app/risk/reference/create', {
     'category_id': cat_id, 'sub_category_id': sub_id, 'severity': 3, 'likelihood': 2, 'title': title,
     'description': 'المصدر: بوابة · الحدث: اختبار', 'contact_channel': 'مركز السلامة',
-    'phases[proactive][affected_group_ids][]': grp_id, f'phases[proactive][affected_impact][{grp_id}]': 'high',
+    'phases[proactive][affected_group_ids][]': grp_id, f'phases[proactive][affected_impact][{grp_id}]': '4',
     f'phases[proactive][affected_rep_scope][{grp_id}]': 'local', f'phases[proactive][affected_detail][{grp_id}]': 'تفصيل البوابة',
 }, '/app/risk/reference/create')
 log('4a create', f)

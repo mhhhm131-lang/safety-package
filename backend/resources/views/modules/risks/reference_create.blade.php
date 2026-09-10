@@ -243,10 +243,11 @@
                                            value="{{ $gid }}" id="rag_{{ $phaseKey }}_{{ $gid }}">
                                     <label for="rag_{{ $phaseKey }}_{{ $gid }}" style="color:var(--text-main);min-width:120px;font-weight:600;">{{ $group->name }}</label>
                                     <select name="phases[{{ $phaseKey }}][affected_impact][{{ $gid }}]" class="form-select form-select-sm" style="max-width:130px;">
-                                        <option value="low">منخفض</option>
-                                        <option value="medium" selected>متوسط</option>
-                                        <option value="high">عالي</option>
-                                        <option value="critical">حرج</option>
+                                        <option value="1">1 — طفيف</option>
+                                        <option value="2">2 — بسيط</option>
+                                        <option value="3" selected>3 — متوسط</option>
+                                        <option value="4">4 — كبير</option>
+                                        <option value="5">5 — كارثي</option>
                                     </select>
                                     @if($group->name === 'السمعة'){{-- قرار ٢٦: النطاق للسمعة وحدها --}}
                                     <select name="phases[{{ $phaseKey }}][affected_rep_scope][{{ $gid }}]" class="form-select form-select-sm" style="max-width:130px;">

@@ -249,10 +249,11 @@
                                                id="mag_{{ $phaseKey }}_{{ $gid }}">
                                         <label for="mag_{{ $phaseKey }}_{{ $gid }}" style="color:var(--text-main);min-width:120px;font-weight:600;">{{ $group->name }}</label>
                                         <select name="phases[{{ $phaseKey }}][affected_impact][{{ $gid }}]" class="form-select form-select-sm" style="max-width:130px;">
-                                            <option value="low" @selected($impact === 'low')>منخفض</option>
-                                            <option value="medium" @selected($impact === 'medium')>متوسط</option>
-                                            <option value="high" @selected($impact === 'high')>عالي</option>
-                                            <option value="critical" @selected($impact === 'critical')>حرج</option>
+                                            <option value="1" @selected(\App\Modules\Risk\Models\RiskPhaseAffectedGroupDetail::normalizeImpact($impact) === '1')>1 — طفيف</option>
+                                            <option value="2" @selected(\App\Modules\Risk\Models\RiskPhaseAffectedGroupDetail::normalizeImpact($impact) === '2')>2 — بسيط</option>
+                                            <option value="3" @selected(\App\Modules\Risk\Models\RiskPhaseAffectedGroupDetail::normalizeImpact($impact) === '3')>3 — متوسط</option>
+                                            <option value="4" @selected(\App\Modules\Risk\Models\RiskPhaseAffectedGroupDetail::normalizeImpact($impact) === '4')>4 — كبير</option>
+                                            <option value="5" @selected(\App\Modules\Risk\Models\RiskPhaseAffectedGroupDetail::normalizeImpact($impact) === '5')>5 — كارثي</option>
                                         </select>
                                         <select name="phases[{{ $phaseKey }}][affected_rep_scope][{{ $gid }}]" class="form-select form-select-sm" style="max-width:130px;">
                                             <option value="" @selected($repScope === '')>— النطاق —</option>

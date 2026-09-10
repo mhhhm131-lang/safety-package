@@ -461,7 +461,7 @@
                         `<span style="display:inline-block;margin:1px 2px;padding:1px 6px;border-radius:12px;font-size:.7rem;background:${st.color}20;color:${st.color};border:1px solid ${st.color}60;">${escAttr(g.name)}</span>`
                     ).join('');
                     groupsHtml = popTrigger(`العواقب والأضرار — ${st.label}`,
-                        `<div>${p.affected_groups.map(g => `<div><b>${escAttr(g.name)}</b>${g.impact ? ' — ' + ({low:'منخفض',medium:'متوسط',high:'عالٍ',critical:'حرج'}[g.impact] || g.impact) : ''}${g.rep_scope ? ' / ' + ({local:'محلي',regional:'إقليمي',national:'وطني',international:'دولي'}[g.rep_scope] || g.rep_scope) : ''}${g.detail ? '<div class="small text-muted">' + escAttr(g.detail) + '</div>' : ''}</div>`).join('')}</div>`,
+                        `<div>${p.affected_groups.map(g => `<div><b>${escAttr(g.name)}</b>${g.impact ? ' — ' + ({'1':'١ طفيف','2':'٢ بسيط','3':'٣ متوسط','4':'٤ كبير','5':'٥ كارثي',low:'٢ بسيط',medium:'٣ متوسط',high:'٤ كبير',critical:'٥ كارثي'}[g.impact] || g.impact) : ''}${g.rep_scope ? ' / ' + ({local:'محلي',regional:'إقليمي',national:'وطني',international:'دولي'}[g.rep_scope] || g.rep_scope) : ''}${g.detail ? '<div class="small text-muted">' + escAttr(g.detail) + '</div>' : ''}</div>`).join('')}</div>`,
                         `<div style="line-height:1.8;">${chips}</div>`);
                 }
 

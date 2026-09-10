@@ -37,14 +37,37 @@ class RiskPhaseAffectedGroupDetail extends Model
         return $this->belongsTo(AffectedGroup::class);
     }
 
+    /**
+     * قرار ٢٧: أثر الفئة بمقياس الخطورة نفسه ١–٥ (طفيف، بسيط، متوسط، كبير، كارثي).
+     * القيم القديمة من OHSMS (low/medium/high/critical) تُقرأ وتُحوَّل: ٢/٣/٤/٥.
+     */
+    public const LEVELS = ['1' => 'طفيف', '2' => 'بسيط', '3' => 'متوسط', '4' => 'كبير', '5' => 'كارثي'];
+    public const LEGACY = ['low' => '2', 'medium' => '3', 'high' => '4', 'critical' => '5'];
+
+    public static function normalizeImpact($value): string
+    {
+        $v = (string) $value;
+        if (isset(self::LEGACY[$v])) return self::LEGACY[$v];
+        return isset(self::LEVELS[$v]) ? $v : '3';
+    }
+
+    public function getImpactLevelAttribute(): int
+    {
+        return (int) self::normalizeImpact($this->impact);
+    }
+
+    public function getImpactLabelAttribute(): string
+    {
+        return self::LEVELS[self::normalizeImpact($this->impact)];
+    }
+
     public function getImpactColorAttribute(): string
     {
-        return match($this->impact) {
-            'critical' => 'danger',
-            'high'     => 'warning',
-            'medium'   => 'info',
-            'low'      => 'success',
-            default    => 'secondary',
+        return match($this->impact_level) {
+            5 => 'danger',
+            4 => 'warning',
+            3 => 'info',
+            default => 'success',
         };
     }
 }
