@@ -85,6 +85,31 @@ class InstituteBookTest extends TestCase
         $this->assertSame(177, Risk::where('risk_type', 'reference')->count());
     }
 
+    public function test_safety_officer_narrows_active_registry_by_unit_code(): void
+    {
+        $this->seed([PlacesSeeder::class, OrganizationUnitsSeeder::class, AffectedGroupsSeeder::class, RiskBookSeeder::class]);
+        $ref = Risk::where('code', 'PH-01-04')->firstOrFail();
+        $eng = $this->orgUnit('eng'); $hr = $this->orgUnit('hr');
+        foreach ([$eng, $hr] as $u) {
+            Risk::create(['risk_type' => 'active', 'parent_reference_id' => $ref->id, 'title' => 'اختلال الراحة الحرارية — '.$u->name,
+                'category_id' => $ref->category_id, 'sub_category_id' => $ref->sub_category_id, 'severity' => 2, 'likelihood' => 3,
+                'scope_type' => 'org_unit', 'organization_unit_id' => $u->id, 'status' => 'approved']);
+        }
+        $admin = $this->makeUser('system_admin');
+
+        $all = $this->actingAs($admin)->getJson("/app/risk/registry/tree/active/risks-by-sub-category/{$ref->sub_category_id}")->assertOk()->json();
+        $only = $this->actingAs($admin)->getJson("/app/risk/registry/tree/active/risks-by-sub-category/{$ref->sub_category_id}?unit=eng")->assertOk()->json();
+        $this->assertCount(2, $all);
+        $this->assertCount(1, $only);
+        $this->assertSame($eng->id, $only[0]['organization_unit_id']);
+
+        $html = $this->actingAs($admin)->get('/app/risk/active?unit=eng')->assertOk()->getContent();
+        $this->assertStringContainsString('مركز اللغة الإنجليزية', $html);
+        $this->assertStringContainsString('كل الإدارات', $html);
+        $org = $this->actingAs($admin)->get('/app/org')->assertOk()->getContent();
+        $this->assertStringContainsString('/app/risk/active?unit=eng', $org);
+    }
+
     public function test_activation_carries_title_description_and_affected_detail_into_active_registry(): void
     {
         $this->seed([PlacesSeeder::class, OrganizationUnitsSeeder::class, AffectedGroupsSeeder::class, RiskBookSeeder::class]);

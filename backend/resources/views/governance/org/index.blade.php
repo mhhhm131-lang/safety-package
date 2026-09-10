@@ -17,6 +17,7 @@
   <td class="small">{{ $u->place?->name ?? '—' }}</td>
   <td class="small">{{ $u->manager?->name ?? $u->manager_name ?? '—' }}</td>
   <td class="text-nowrap">
+    <a class="btn btn-sm btn-outline-success" href="{{ route('risk.active.index', ['unit' => $u->code]) }}" title="سجل مخاطر هذه الوحدة وأقسامها"><i class="bi bi-lightning-charge"></i> المخاطر</a>
     <a class="btn btn-sm btn-outline-secondary" href="{{ route('app.org.edit', $u) }}">تعديل</a>
     <form method="post" action="{{ route('app.org.destroy', $u) }}" class="d-inline" onsubmit="return confirm('حذف «{{ $u->name }}»؟')">@csrf @method('DELETE')<button class="btn btn-sm btn-outline-danger">حذف</button></form>
   </td>

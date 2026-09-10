@@ -81,11 +81,19 @@ class RiskTreeController extends Controller
         ]);
     }
 
-    /** المعهد: ?place=HZ-xx يحصر سجل الإدارة بمكان واحد (رابط «مخاطر المكان» من اللوحة). */
+    /**
+     * المعهد: ?place=HZ-xx يحصر سجل الإدارة بمكان واحد (رابط «مخاطر المكان» من اللوحة)،
+     * و?unit=<كود الوحدة> يحصره بإدارة أو قسم وأبنائه (رابط «المخاطر» من الهيكل التنظيمي،
+     * وقائمة الإدارة في الشاشة — لمن نطاقه عام كمسؤول السلامة والإدارة العليا).
+     */
     private function scopeToPlace($q): void
     {
         if ($code = request()->query('place')) {
             $q->whereHas('place', fn ($p) => $p->where('code', $code));
+        }
+        if ($unit = request()->query('unit')) {
+            $u = \App\Modules\Governance\Models\OrganizationUnit::where('code', $unit)->orWhere('id', (int) $unit)->first();
+            $q->whereIn('organization_unit_id', $u ? \App\Modules\Governance\Models\OrganizationUnit::descendantIdsOf($u->id) : [-1]);
         }
     }
 

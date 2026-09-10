@@ -4,7 +4,11 @@
 @php
     // المعهد: رابط «مخاطر المكان» من اللوحة يمرّر ?place=HZ-xx
     $placeFilter = request('place') ? \App\Modules\Governance\Models\Place::where('code', request('place'))->first() : null;
-    $placeQ = $placeFilter ? '?place='.e($placeFilter->code) : '';
+    // ?unit=<كود> يحصر السجل بإدارة أو قسم وأبنائه (مسؤول السلامة والإدارة العليا يرون الكل، فيحتاجون الحصر)
+    $unitFilter = request('unit') ? \App\Modules\Governance\Models\OrganizationUnit::where('code', request('unit'))->first() : null;
+    $orgUnits = \App\Modules\Governance\Models\OrganizationUnit::where('is_active', true)->orderBy('order')->get(['id', 'code', 'name', 'unit_type']);
+    $qs = array_filter(['place' => $placeFilter?->code, 'unit' => $unitFilter?->code]);
+    $placeQ = $qs ? '?'.http_build_query($qs) : '';
 @endphp
 
 @section('content')
@@ -16,13 +20,23 @@
             <h4 class="mb-1" style="color: var(--text-main);">
                 <i class="bi bi-shield-check me-2" style="color: var(--accent);"></i>
                 السجل الفعلي
-                @if($placeFilter)<span class="badge bg-info ms-2" style="font-size:.7rem">{{ $placeFilter->code }} — {{ $placeFilter->name }}</span> <a href="{{ route('risk.active.index') }}" class="small" style="color:var(--text-muted)">كل الأماكن</a>@endif
+                @if($placeFilter)<span class="badge bg-info ms-2" style="font-size:.7rem">{{ $placeFilter->code }} — {{ $placeFilter->name }}</span> <a href="{{ route('risk.active.index', array_filter(['unit' => $unitFilter?->code])) }}" class="small" style="color:var(--text-muted)">كل الأماكن</a>@endif
+                @if($unitFilter)<span class="badge bg-success ms-2" style="font-size:.7rem"><i class="bi bi-diagram-3"></i> {{ $unitFilter->name }}</span> <a href="{{ route('risk.active.index', array_filter(['place' => $placeFilter?->code])) }}" class="small" style="color:var(--text-muted)">كل الإدارات</a>@endif
             </h4>
             <p class="mb-0" style="color: var(--text-muted); font-size: 0.85rem;">
                 تصفّح هرمي: فئة رئيسية → اختر الفرعيات → اختر خطر → تفاصيل
             </p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 align-items-center">
+            <form method="get" class="d-flex gap-1 align-items-center">
+                @if($placeFilter)<input type="hidden" name="place" value="{{ $placeFilter->code }}">@endif
+                <select name="unit" class="form-select form-select-sm" style="max-width:16rem" onchange="this.form.submit()" title="حصر السجل بإدارة أو قسم">
+                    <option value="">— كل الإدارات —</option>
+                    @foreach($orgUnits as $ou)
+                        <option value="{{ $ou->code }}" @selected($unitFilter && $unitFilter->code === $ou->code)>{{ $ou->name }}</option>
+                    @endforeach
+                </select>
+            </form>
             <a href="{{ route('risk.active.create') }}" class="btn btn-accent">
                 <i class="bi bi-plus-lg me-1"></i> إضافة خطر
             </a>
