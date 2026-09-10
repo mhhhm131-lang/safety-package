@@ -128,6 +128,18 @@ class InstituteBookTest extends TestCase
         $this->assertSame('PH-01-01', $ref->fresh()->code); // الأصل لا يتغير
     }
 
+    public function test_risk_detail_page_renders_when_notes_column_is_text(): void
+    {
+        // عمود risks.notes نصي (تكتبه البذرة ولوحة السجل الفعلي) ويحجب علاقة notes() — كان يسقط بـ foreach على نص
+        $this->seed([AffectedGroupsSeeder::class, RiskBookSeeder::class]);
+        $r = Risk::where('code', 'PH-01-01')->firstOrFail();
+        $this->assertNotEmpty($r->getAttribute('notes'));
+        $admin = $this->makeUser('system_admin');
+        $html = $this->actingAs($admin)->get("/app/risk/{$r->id}/detail")->assertOk()->getContent();
+        $this->assertStringContainsString('PH-01-01', $html);
+        $this->assertStringContainsString('الإجهاد الحراري', $html);
+    }
+
     public function test_safety_officer_narrows_active_registry_by_unit_code(): void
     {
         $this->seed([PlacesSeeder::class, OrganizationUnitsSeeder::class, AffectedGroupsSeeder::class, RiskBookSeeder::class]);

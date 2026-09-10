@@ -235,7 +235,8 @@
                             <button type="submit" class="btn btn-primary"><i class="bi bi-send"></i></button>
                         </div>
                     </form>
-                    @forelse($risk->notes ?? [] as $note)
+                    {{-- عمود risks.notes (نص) يحجب علاقة notes() — نقرأ العلاقة صراحةً --}}
+                    @forelse(($risk->relationLoaded('notes') ? $risk->getRelation('notes') : $risk->notes()->with('createdBy')->get()) as $note)
                         <div class="p-3 rounded mb-2" style="background: var(--bg-main);">
                             <div class="d-flex justify-content-between mb-1">
                                 <strong style="color: var(--accent);">{{ $note->createdBy->name ?? 'النظام' }}</strong>
