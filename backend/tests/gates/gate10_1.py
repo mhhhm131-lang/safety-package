@@ -32,6 +32,8 @@ def csrf(s, url):
 def login(user, pw):
     s = sess(); tok, _ = csrf(s, '/login')
     r = s.post(BASE + '/login', data={'_token': tok, 'username': user, 'password': pw}, allow_redirects=False, timeout=120)
+    # 302 إلى /login = كلمة خاطئة أو حساب معطَّل (ليس دخولاً) — يُعاد 401 ليُتخطّى دور الحساب بصدق
+    if r.status_code == 302 and r.headers.get('Location', '').rstrip('/').endswith('/login'): return s, 401
     return s, r.status_code
 def strip(h): return unescape(re.sub(r'<[^>]+>', ' ', h))
 def ar(n): return str(n).translate(str.maketrans('0123456789', '٠١٢٣٤٥٦٧٨٩'))
