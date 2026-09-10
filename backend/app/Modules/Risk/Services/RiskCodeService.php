@@ -85,6 +85,22 @@ class RiskCodeService
         return $abbrev;
     }
 
+    /**
+     * قرار ٢٩ (المرحلة ٩): كود نسخة الإدارة/المكان = كود الأصل في الكتاب + «/» + رمز الوحدة
+     * (أو رمز المكان إن كان النطاق عاماً) — «PH-01-01/ENG» — حتى يُقرأ الأصل من الكود.
+     * التكرار للوحدة نفسها يأخذ لاحقة رقمية: «PH-01-01/ENG-2».
+     */
+    public function generateActiveCode(Risk $reference, ?string $unitCode, ?string $placeCode): string
+    {
+        $suffix = strtoupper((string) ($unitCode ?: $placeCode ?: 'GEN'));
+        $base = "{$reference->code}/{$suffix}";
+        $code = $base; $i = 2;
+        while (Risk::where('code', $code)->exists()) {
+            $code = "{$base}-".$i++;
+        }
+        return $code;
+    }
+
     public function generateRiskCode(int $categoryId, int $subCategoryId): string
     {
         // withoutGlobalScopes() needed — master categories have tenant_id=NULL

@@ -111,6 +111,23 @@ class InstituteBookTest extends TestCase
         $this->assertSame(9, $r->phases()->first()->affectedGroups()->count());
     }
 
+    public function test_active_copy_code_is_parent_code_slash_unit_code(): void
+    {
+        $this->seed([PlacesSeeder::class, OrganizationUnitsSeeder::class, AffectedGroupsSeeder::class, RiskBookSeeder::class]);
+        $ref = Risk::where('code', 'PH-01-01')->firstOrFail();
+        $eng = $this->orgUnit('eng');
+        $svc = app(\App\Modules\Risk\Services\RiskService::class);
+
+        $a = $svc->activateFromReference($ref, null, ['scope_type' => 'org_unit', 'organization_unit_id' => $eng->id, 'severity' => 3, 'likelihood' => 2]);
+        $b = $svc->activateFromReference($ref, null, ['scope_type' => 'org_unit', 'organization_unit_id' => $eng->id, 'severity' => 3, 'likelihood' => 2]);
+        $c = $svc->activateFromReference($ref, null, ['scope_type' => 'general', 'place_id' => \App\Modules\Governance\Models\Place::where('code', 'HZ-06')->value('id'), 'severity' => 2, 'likelihood' => 2]);
+
+        $this->assertSame('PH-01-01/ENG', $a->code);
+        $this->assertSame('PH-01-01/ENG-2', $b->code);
+        $this->assertSame('PH-01-01/HZ-06', $c->code);
+        $this->assertSame('PH-01-01', $ref->fresh()->code); // الأصل لا يتغير
+    }
+
     public function test_safety_officer_narrows_active_registry_by_unit_code(): void
     {
         $this->seed([PlacesSeeder::class, OrganizationUnitsSeeder::class, AffectedGroupsSeeder::class, RiskBookSeeder::class]);

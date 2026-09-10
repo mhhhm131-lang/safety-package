@@ -49,6 +49,13 @@ class Risk extends Model
     {
         static::creating(function (Risk $risk) {
             $risk->risk_score = $risk->severity * $risk->likelihood;
+            if (empty($risk->code) && $risk->risk_type === 'active' && $risk->parent_reference_id
+                && ($parent = self::find($risk->parent_reference_id)) && $parent->code) {
+                // قرار ٢٩: كود النسخة = كود الأصل/رمز الوحدة
+                $unitCode = $risk->organization_unit_id ? \App\Modules\Governance\Models\OrganizationUnit::find($risk->organization_unit_id)?->code : null;
+                $placeCode = $risk->place_id ? \App\Modules\Governance\Models\Place::find($risk->place_id)?->code : null;
+                $risk->code = app(RiskCodeService::class)->generateActiveCode($parent, $unitCode, $placeCode);
+            }
             if (empty($risk->code) && $risk->category_id) {
                 $risk->code = app(RiskCodeService::class)->generateRiskCode($risk->category_id, (int) $risk->sub_category_id);
             }
