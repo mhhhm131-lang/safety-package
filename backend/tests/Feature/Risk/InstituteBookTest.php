@@ -85,6 +85,32 @@ class InstituteBookTest extends TestCase
         $this->assertSame(177, Risk::where('risk_type', 'reference')->count());
     }
 
+    public function test_approved_table_json_fills_the_25_cells_of_its_risk(): void
+    {
+        $this->seed([AffectedGroupsSeeder::class, RiskBookSeeder::class]);
+        $r = Risk::where('code', 'PH-01-01')->firstOrFail();
+
+        $this->assertSame([4, 3, 12], [$r->severity, $r->likelihood, $r->risk_score]);
+        $this->assertStringContainsString('المصدر:', $r->description);
+        $this->assertStringNotContainsString('**', $r->description);
+        $this->assertNotEmpty($r->legal_reference); $this->assertNotEmpty($r->benefit); $this->assertNotEmpty($r->contact_channel);
+        foreach (RiskPhase::PHASES as $key) {
+            $p = $r->phases()->where('phase', $key)->firstOrFail();
+            $this->assertGreaterThanOrEqual(3, $p->causes()->count(), $key);
+            $this->assertSame(9, $p->affectedGroups()->count(), $key);
+            $this->assertNotEmpty($p->preventive_action); $this->assertNotEmpty($p->corrective_action);
+            $this->assertNotEmpty($p->residual_assessment); $this->assertNotEmpty($p->responsible_org_unit_text);
+        }
+        $rep = RiskPhaseAffectedGroupDetail::whereHas('affectedGroup', fn ($q) => $q->where('name', 'السمعة'))
+            ->whereIn('risk_phase_id', $r->phases()->pluck('id'))->first();
+        $this->assertSame('local', $rep->rep_scope);
+        $max = RiskPhaseAffectedGroupDetail::whereIn('risk_phase_id', $r->phases()->pluck('id'))->get()->max('impact_level');
+        $this->assertSame(4, $max); // قاعدة الاتساق: الخطورة = أعلى أثر
+        // إعادة التشغيل لا تكرر الأسباب ولا الفئات
+        $this->seed(RiskBookSeeder::class);
+        $this->assertSame(9, $r->phases()->first()->affectedGroups()->count());
+    }
+
     public function test_safety_officer_narrows_active_registry_by_unit_code(): void
     {
         $this->seed([PlacesSeeder::class, OrganizationUnitsSeeder::class, AffectedGroupsSeeder::class, RiskBookSeeder::class]);
@@ -113,7 +139,7 @@ class InstituteBookTest extends TestCase
     public function test_activation_carries_title_description_and_affected_detail_into_active_registry(): void
     {
         $this->seed([PlacesSeeder::class, OrganizationUnitsSeeder::class, AffectedGroupsSeeder::class, RiskBookSeeder::class]);
-        $ref = Risk::where('code', 'PH-01-01')->firstOrFail();
+        $ref = Risk::where('code', 'PH-01-03')->firstOrFail(); // خطر بلا جدول معتمد بعد
         $group = AffectedGroup::where('name', 'الموظفون')->firstOrFail();
         $phase = $ref->phases()->where('phase', RiskPhase::PHASE_PROACTIVE)->firstOrFail();
         $phase->affectedGroups()->sync([$group->id]);
