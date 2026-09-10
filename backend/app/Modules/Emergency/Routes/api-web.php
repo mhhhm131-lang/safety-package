@@ -26,6 +26,7 @@ Route::middleware(['web', 'auth'])->prefix('api/emergency')->name('api.emergency
         Route::get('/incidents/{incident}/missing', [EmergencyApiController::class, 'missingPeople'])->name('incidents.missing');
         Route::get('/incidents/{incident}/need-help', [EmergencyApiController::class, 'needHelp'])->name('incidents.need-help');
         Route::get('/incidents/{incident}/events', [EmergencyApiController::class, 'events'])->name('incidents.events');
+        Route::get('/incidents/{incident}/steps', [EmergencyApiController::class, 'steps'])->name('incidents.steps');
         Route::get('/buildings/{building}/assembly-points', [EmergencyApiController::class, 'assemblyPoints'])->name('buildings.assembly-points');
         Route::get('/buildings/{building}/map-data', [EmergencyApiController::class, 'mapData'])->name('buildings.map-data');
         Route::get('/buildings/{building}/lockdown', [EmergencyApiController::class, 'lockdownStatus'])->name('buildings.lockdown');

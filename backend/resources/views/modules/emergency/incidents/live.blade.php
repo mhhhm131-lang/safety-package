@@ -41,6 +41,44 @@
   @endforeach
 </div>
 
+{{-- خطوات خطة الاستجابة (المرحلة ١٠-٢): نسخة من خطة المكان لحظة التفعيل، كل خطوة بعدّاد من التفعيل، «تم» يسجّل بالثانية ومن --}}
+@if($planSteps->isNotEmpty())
+@php($RP = \App\Modules\Emergency\Models\ResponsePlan::class)
+<div class="card mb-3 border-dark" id="planStepsCard">
+  <div class="card-header bg-dark text-white d-flex align-items-center flex-wrap gap-2">
+    <strong><i class="bi bi-list-ol"></i> خطوات الخطة — {{ $incident->place?->code }} {{ $incident->place?->name }}</strong>
+    <span class="badge text-bg-light">تمت <span id="steps-done">{{ $planSteps->where('status', 'done')->count() }}</span> / {{ $planSteps->count() }}</span>
+    <span class="badge text-bg-danger" id="steps-overdue-badge" @if(!$planSteps->filter->isOverdue()->count()) hidden @endif>متجاوزة <span id="steps-overdue">{{ $planSteps->filter->isOverdue()->count() }}</span></span>
+    <span class="ms-auto small">العدّاد من لحظة التفعيل · النوافذ من وثيقة خطة الاستجابة · <a class="link-light" href="{{ route('emergency.plans.show', $incident->place?->code) }}">الخطة</a></span>
+  </div>
+  <div class="table-responsive"><table class="table table-sm m-0 small align-middle" id="planSteps">
+    <thead><tr><th style="width:2.5rem">#</th><th>المسار</th><th>الخطوة</th><th style="width:20%">من → البطاقة</th><th>المستهدف</th><th style="width:16%">العدّاد / الحالة</th><th></th></tr></thead>
+    <tbody>
+    @foreach($planSteps as $s)
+      <tr data-step="{{ $s->id }}" data-status="{{ $s->status }}" class="{{ $s->isDone() ? 'table-success' : ($s->status === 'skipped' ? 'table-secondary' : ($s->isOverdue() ? 'table-danger' : '')) }}">
+        <td><strong>{{ $s->label }}</strong></td>
+        <td class="text-muted text-nowrap">{{ $RP::PATHS[$s->path_key] ?? $s->path_key }}</td>
+        <td><strong>{{ $s->title }}</strong>@if($s->where_text)<br><small class="text-muted">أين: {{ $s->where_text }}</small>@endif @if($s->how_text)<br><small class="text-muted">كيف: {{ $s->how_text }}</small>@endif</td>
+        <td>@php($pc = $s->primaryCard())@if($pc)<a class="badge text-bg-dark text-decoration-none" href="{{ $pc['url'] }}" target="_blank">{{ $pc['no'] }} {{ $pc['name'] }}</a>@else<span class="badge text-bg-danger">بلا بطاقة</span>@endif<br><small class="text-muted">{{ $s->who_text }}</small></td>
+        <td class="text-nowrap">{{ $s->when_text ?? '—' }}</td>
+        <td class="text-nowrap step-state">
+          @if($s->isDone())<span class="badge text-bg-success">تمت {{ $s->done_at->format('H:i:s') }}</span><br><small>{{ $s->deltaLabel() }}@if($s->auto_source) · آلياً ({{ \App\Modules\Emergency\Models\EmergencyIncidentStep::AUTO_LABELS[$s->auto_source] ?? $s->auto_source }})@endif @if($s->done_by_name) · {{ $s->done_by_name }}@endif</small>
+          @elseif($s->status === 'skipped')<span class="badge text-bg-secondary">تُخطّيت</span>@if($s->note)<br><small>{{ $s->note }}</small>@endif
+          @elseif($s->due_at)<span class="badge text-bg-{{ $s->isOverdue() ? 'danger' : 'warning' }} step-timer" data-due="{{ $s->due_at->getTimestamp() }}">…</span>
+          @else<span class="badge text-bg-light border text-dark">شرطية — عند تحققها</span>@endif
+        </td>
+        <td class="text-end text-nowrap">
+          @if($open && $s->isPending())@can('respond', $incident)
+            <form method="post" action="{{ route('emergency.incidents.steps.done', [$incident, $s->id]) }}" class="d-inline">@csrf<button class="btn btn-sm btn-success py-0"><i class="bi bi-check2"></i> تم</button></form>
+            <form method="post" action="{{ route('emergency.incidents.steps.skip', [$incident, $s->id]) }}" class="d-inline" onsubmit="const n=prompt('سبب التخطي');if(!n)return false;this.note.value=n;">@csrf<input type="hidden" name="note"><button class="btn btn-sm btn-outline-secondary py-0" title="تخطٍّ بسبب">تخطٍّ</button></form>
+          @endcan @endif
+        </td>
+      </tr>
+    @endforeach
+    </tbody></table></div>
+</div>
+@endif
+
 <div class="row g-3">
   <div class="col-lg-6">
     {{-- الفريق الأولي: تنبيه ← وصول --}}
@@ -78,7 +116,9 @@
       <div class="card-header bg-warning"><strong><i class="bi bi-telephone-outbound"></i> يُنادى هاتفياً من المركز</strong> <span class="small">(بلا حساب أو بريد)</span></div>
       <ul class="list-group list-group-flush small">
         @foreach($manualCalls as $n)
-          <li class="list-group-item d-flex justify-content-between align-items-center"><span>{{ $n->recipient_name }} <span class="text-muted">· {{ $n->recipient_type === 'contact' ? 'جهة اتصال' : 'عضو فريق' }}</span></span>@if($n->recipient_contact)<a href="tel:{{ $n->recipient_contact }}" class="btn btn-sm btn-outline-success py-0"><i class="bi bi-telephone"></i> {{ $n->recipient_contact }}</a>@endif</li>
+          @php($mySteps = $n->recipient_type === 'team_member' ? ($stepsByTeamKey[$memberKeys[$n->recipient_id] ?? ''] ?? []) : [])
+          <li class="list-group-item d-flex justify-content-between align-items-center"><span>{{ $n->recipient_name }} <span class="text-muted">· {{ $n->recipient_type === 'contact' ? 'جهة اتصال' : 'عضو فريق' }}</span>
+            @if($mySteps)<br><small class="text-muted">خطوته: @foreach($mySteps as $ms){{ $ms->label }} {{ $ms->title }} ({{ $ms->when_text }}){{ $loop->last ? '' : ' · ' }}@endforeach</small>@endif</span>@if($n->recipient_contact)<a href="tel:{{ $n->recipient_contact }}" class="btn btn-sm btn-outline-success py-0"><i class="bi bi-telephone"></i> {{ $n->recipient_contact }}</a>@endif</li>
         @endforeach
       </ul>
     </div>
@@ -222,6 +262,12 @@
     }catch(err){}
   }
   if(open){setInterval(poll,5000);}
+  // خطوات الخطة (١٠-٢): عدّاد لكل خطوة معلّقة من لحظة التفعيل؛ ما تجاوز نافذته يحمرّ؛ وتغيّر الحالة من جهاز آخر يعيد التحميل
+  const fmt=s=>[Math.floor(s/3600),Math.floor(s%3600/60),s%60].map(x=>String(x).padStart(2,'0')).join(':');
+  function tickSteps(){let over=0;document.querySelectorAll('.step-timer[data-due]').forEach(el=>{const left=Math.round(+el.dataset.due-Date.now()/1000);const tr=el.closest('tr');if(left>=0){el.textContent='متبقٍ '+fmt(left);el.className='badge text-bg-warning step-timer';}else{over++;el.textContent='متأخر +'+fmt(-left);el.className='badge text-bg-danger step-timer';if(tr)tr.classList.add('table-danger');}});
+    const b=document.getElementById('steps-overdue-badge');if(b){b.hidden=over===0;document.getElementById('steps-overdue').textContent=over;}}
+  if(document.getElementById('planSteps')){tickSteps();if(open)setInterval(tickSteps,1000);
+    if(open)setInterval(async()=>{try{const r=await fetch(`/api/emergency/incidents/${incidentId}/steps`,{headers:{'Accept':'application/json'},credentials:'same-origin'});if(!r.ok)return;const j=await r.json();let changed=false;(j.data||[]).forEach(s=>{const tr=document.querySelector(`#planSteps tr[data-step="${s.id}"]`);if(tr&&tr.dataset.status!==s.status)changed=true;});if(changed)location.reload();}catch(e){}},5000);}
   const btn=document.getElementById('qrBtn');
   if(btn){btn.addEventListener('click',async()=>{
     let token=(document.getElementById('qrToken').value||'').trim();const m=token.match(/checkin\/([a-f0-9]{64})/);if(m)token=m[1];

@@ -60,6 +60,13 @@ class EmergencyApiController extends Controller
         ]]);
     }
 
+    /** خطوات خطة الاستجابة في الحالة (المرحلة ١٠-٢) — للعدّادات في شاشة التتبع. */
+    public function steps(EmergencyIncident $incident): JsonResponse
+    {
+        return response()->json(['success' => true, 'status' => $incident->status, 'server_now' => now()->toIso8601String(),
+            'data' => app(\App\Modules\Emergency\Services\IncidentStepsService::class)->toArray($incident)]);
+    }
+
     /** أحداث الحالة بعد رقم معيّن — للاستطلاع كل ثوانٍ من شاشة التتبع (بديل Echo غير المثبت). */
     public function events(Request $request, EmergencyIncident $incident): JsonResponse
     {

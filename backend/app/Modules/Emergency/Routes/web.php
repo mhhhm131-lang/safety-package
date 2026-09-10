@@ -48,6 +48,9 @@ Route::middleware(['web', 'auth'])->prefix('app/emergency')->name('emergency.')-
         Route::post('/check-in', [EmergencyController::class, 'checkInManual'])->name('checkin');
         Route::post('/mark-missing', [EmergencyController::class, 'markMissing'])->name('markMissing');
         Route::post('/report-missing', [EmergencyController::class, 'reportMissingPerson'])->name('reportMissing');
+        // خطوات خطة الاستجابة (المرحلة ١٠-٢): «تم» بيد المناوب أو صاحب الدور، أو تخطٍّ بسبب
+        Route::post('/steps/{step}/done', [EmergencyController::class, 'stepDone'])->name('steps.done')->whereNumber('step');
+        Route::post('/steps/{step}/skip', [EmergencyController::class, 'stepSkip'])->name('steps.skip')->whereNumber('step');
     });
 
     // التفعيل والسيطرة والإنهاء والإلغاء والإغلاق الأمني

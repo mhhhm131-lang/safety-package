@@ -93,6 +93,8 @@ class EmergencyIncident extends Model
     public function lockdown(): HasOne { return $this->hasOne(Lockdown::class, 'incident_id'); }
     public function afterActionReport(): HasOne { return $this->hasOne(AfterActionReport::class, 'incident_id'); }
     public function massMessages(): HasMany { return $this->hasMany(EmergencyMassMessage::class, 'incident_id'); }
+    /** خطوات خطة الاستجابة المنسوخة لحظة التفعيل (المرحلة ١٠-٢). */
+    public function planSteps(): HasMany { return $this->hasMany(EmergencyIncidentStep::class, 'incident_id')->orderBy('sort'); }
 
     public function scopeActive($query) { return $query->where('status', self::STATUS_ACTIVE); }
     public function scopeOpen($query) { return $query->whereIn('status', self::OPEN_STATUSES); }

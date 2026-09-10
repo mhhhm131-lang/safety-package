@@ -74,11 +74,15 @@ class EmergencyService
             $this->musteringService->generateQrCodesForIncident($incident);
             $building->floors()->update(['status' => 'evacuating']);
 
+            // المرحلة ١٠-٢ (ج): قائمة خطوات خطة المكان بعدّاد من لحظة التفعيل
+            app(IncidentStepsService::class)->seed($incident);
+
             return $incident;
         });
 
         // التنبيه خارج المعاملة حتى لا يُلغي فشل مرسل البريد التفعيل نفسه
         $this->notifications->notifyAll($incident);
+        app(IncidentStepsService::class)->notifyOwners($incident); // (د) كل صاحب دور خطوته هو
         broadcast(new EmergencyTriggered($incident));
 
         return $incident;
@@ -99,6 +103,8 @@ class EmergencyService
         EmergencyEventLog::log($incident, EmergencyEventLog::TYPE_TEAM_ARRIVED, 'وصل إلى الموقع: '.$label.($note ? ' — '.$note : ''),
             ['team_member_id' => $member->id, 'team_id' => $member->team_id], 'info', $by->id);
         $this->acknowledge($incident, $by);
+        // (ج) ما يثبت من السجل: وصول عضو الفريق الأولي = خطوة «التدخل الأولي» تمت
+        app(IncidentStepsService::class)->autoComplete($incident, 'team_arrived', null, $label);
     }
 
     public function contain(EmergencyIncident $incident, User $by, ?string $note = null): EmergencyIncident
@@ -107,6 +113,7 @@ class EmergencyService
         $incident->update(['contained_at' => now(), 'contained_by_id' => $by->id]);
         $incident->building->update(['emergency_status' => EmergencyBuilding::EMERGENCY_ALERT]);
         EmergencyEventLog::log($incident, EmergencyEventLog::TYPE_CONTAINED, 'تمت السيطرة'.($note ? ' — '.$note : ''), [], 'warning', $by->id);
+        app(IncidentStepsService::class)->autoComplete($incident, 'contained', $by); // «تقييم» تمت
         return $incident->fresh();
     }
 
@@ -139,6 +146,7 @@ class EmergencyService
             $incident->building->update(['emergency_status' => EmergencyBuilding::EMERGENCY_ALL_CLEAR]);
             $incident->building->floors()->update(['status' => 'normal']);
             EmergencyEventLog::log($incident, EmergencyEventLog::TYPE_ALL_CLEAR, 'انتهى الخطر — إنهاء الحالة', $stats, 'info', $endedBy->id);
+            app(IncidentStepsService::class)->autoComplete($incident, 'ended', $endedBy); // «استعادة التشغيل» تمت
 
             // التمرين المرتبط يُغلق معها
             $drill = EvacuationDrill::where('incident_id', $incident->id)->where('status', 'in_progress')->first();

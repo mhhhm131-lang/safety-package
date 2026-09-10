@@ -183,6 +183,12 @@ class AutoEscalationService
         foreach (EmergencyIncident::where('status', 'active')->get() as $incident) {
             $results[$incident->id] = $this->checkAndEscalate($incident);
         }
-        return ['incidents_checked' => count($results), 'results' => $results, 'timestamp' => now()->toISOString()];
+        // المرحلة ١٠-٢ (هـ): خطوات الخطة المتجاوزة نافذتها — في الحالات المفتوحة (نشطة أو تحت السيطرة)
+        $steps = app(IncidentStepsService::class);
+        $overdue = 0;
+        foreach (EmergencyIncident::open()->get() as $incident) {
+            $overdue += $steps->checkOverdue($incident);
+        }
+        return ['incidents_checked' => count($results), 'results' => $results, 'overdue_steps' => $overdue, 'timestamp' => now()->toISOString()];
     }
 }

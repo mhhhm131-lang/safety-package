@@ -37,6 +37,7 @@ class EmergencyEventLog extends Model
     const TYPE_MESSAGE = 'message';
     const TYPE_PANIC = 'panic';
     const TYPE_VISITOR = 'visitor';
+    const TYPE_PLAN_STEP = 'plan_step'; // المرحلة ١٠-٢: خطوات خطة الاستجابة (نسخ، تم، تخطٍّ، تجاوز)
 
     public const LABELS = [
         'alarm_triggered' => 'تشغيل الإنذار', 'floor_cleared' => 'تم إخلاء الدور', 'person_safe' => 'شخص آمن',
@@ -44,7 +45,7 @@ class EmergencyEventLog extends Model
         'team_notified' => 'تنبيه الفريق', 'team_arrived' => 'وصول عضو فريق', 'external_notified' => 'إبلاغ جهة خارجية',
         'contained' => 'تمت السيطرة', 'all_clear' => 'انتهى الخطر', 'note' => 'ملاحظة', 'status_change' => 'تغيير الحالة',
         'escalation' => 'تصعيد', 'cancelled' => 'إلغاء', 'lockdown' => 'إغلاق أمني', 'ics' => 'قيادة الحادث',
-        'message' => 'رسالة جماعية', 'panic' => 'تنبيه ذعر', 'visitor' => 'زائر',
+        'message' => 'رسالة جماعية', 'panic' => 'تنبيه ذعر', 'visitor' => 'زائر', 'plan_step' => 'خطوة الخطة',
     ];
 
     public function incident(): BelongsTo { return $this->belongsTo(EmergencyIncident::class, 'incident_id'); }

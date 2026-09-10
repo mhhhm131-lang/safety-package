@@ -14,6 +14,7 @@ use App\Modules\Emergency\Models\EmergencyEquipment;
 use App\Modules\Emergency\Models\EmergencyEquipmentInspection;
 use App\Modules\Emergency\Models\EmergencyEventLog;
 use App\Modules\Emergency\Models\EmergencyIncident;
+use App\Modules\Emergency\Models\EmergencyIncidentStep;
 use App\Modules\Emergency\Models\EmergencyTeam;
 use App\Modules\Emergency\Models\EmergencyTeamMember;
 use App\Modules\Emergency\Models\EvacuationCheckIn;
@@ -25,6 +26,7 @@ use App\Modules\Emergency\Services\AutoEscalationService;
 use App\Modules\Emergency\Services\DrillService;
 use App\Modules\Emergency\Services\EmergencyAnalyticsService;
 use App\Modules\Emergency\Services\EmergencyService;
+use App\Modules\Emergency\Services\IncidentStepsService;
 use App\Modules\Emergency\Services\LockdownService;
 use App\Modules\Emergency\Services\MedicalProfileService;
 use App\Modules\Emergency\Services\PanicAlertService;
@@ -308,8 +310,17 @@ class EmergencyController extends Controller
             ->where(fn ($w) => $w->where('place_id', $incident->place_id)->orWhereNull('place_id'))->get();
         $manualCalls = $incident->notifications()->manual()->get();
         $user = auth()->user();
+        // المرحلة ١٠-٢: خطوات الخطة بعدّاداتها، وخطوة كل عضو فريق بلا حساب بجانب اسمه في قائمة النداء
+        $planSteps = $incident->planSteps()->get();
+        $stepsByTeamKey = [];
+        foreach ($planSteps as $s) {
+            foreach ($s->role_cards ?? [] as $no) {
+                foreach (RoleCards::get((int) $no)['team'] ?? [] as $k) $stepsByTeamKey[$k][$s->id] = $s;
+            }
+        }
+        $memberKeys = EmergencyTeamMember::whereIn('id', $manualCalls->where('recipient_type', 'team_member')->pluck('recipient_id'))->pluck('role_key', 'id');
         return view('modules.emergency.incidents.live', compact(
-            'incident', 'stats', 'missingPeople', 'needHelp', 'byAssemblyPoint', 'teamCheckIns', 'teams', 'manualCalls', 'user'
+            'incident', 'stats', 'missingPeople', 'needHelp', 'byAssemblyPoint', 'teamCheckIns', 'teams', 'manualCalls', 'user', 'planSteps', 'stepsByTeamKey', 'memberKeys'
         ));
     }
 
@@ -343,6 +354,27 @@ class EmergencyController extends Controller
         }
         $this->musteringService->manualCheckIn($checkIn, $point, auth()->user());
         return back()->with('success', 'سُجّل وصول: '.$checkIn->getPersonName());
+    }
+
+    /** «تم» على خطوة من خطة الاستجابة — المناوب أو صاحب الدور (المرحلة ١٠-٢). */
+    public function stepDone(Request $request, EmergencyIncident $incident, int $step)
+    {
+        $this->authorize('respond', $incident);
+        $v = $request->validate(['note' => 'nullable|string|max:500']);
+        $s = EmergencyIncidentStep::where('incident_id', $incident->id)->findOrFail($step);
+        if (!$s->isPending()) return back()->with('error', 'الخطوة «'.$s->title.'» '.$s->getStatusLabel().' مسبقاً');
+        $s = app(IncidentStepsService::class)->complete($s, auth()->user(), null, null, $v['note'] ?? null);
+        return back()->with('success', 'تمت الخطوة '.$s->label.' «'.$s->title.'» — '.$s->deltaLabel());
+    }
+
+    public function stepSkip(Request $request, EmergencyIncident $incident, int $step)
+    {
+        $this->authorize('respond', $incident);
+        $v = $request->validate(['note' => 'required|string|max:500']);
+        $s = EmergencyIncidentStep::where('incident_id', $incident->id)->findOrFail($step);
+        if (!$s->isPending()) return back()->with('error', 'الخطوة «'.$s->title.'» '.$s->getStatusLabel().' مسبقاً');
+        app(IncidentStepsService::class)->skip($s, auth()->user(), $v['note']);
+        return back()->with('success', 'تُخطّيت الخطوة '.$s->label.' «'.$s->title.'»');
     }
 
     public function markMissing(Request $request, EmergencyIncident $incident)

@@ -38,7 +38,7 @@ class CloseoutService
         'panic_alert_responders', 'panic_alerts', 'lockdowns',
         'emergency_cameras', 'emergency_equipment_inspections', 'emergency_equipment',
         'emergency_team_members', 'emergency_teams',
-        'emergency_incidents',
+        'emergency_incident_steps', 'emergency_incidents',
         // إنترنت الأشياء
         'iot_events', 'iot_devices',
         // التصاريح والمعدات
