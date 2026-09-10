@@ -70,7 +70,37 @@
                                 <i class="bi bi-plus"></i>
                             </button>
                         </div>
-                        <small style="color:var(--text-muted);">يصبح اسم الخطر تلقائياً</small>
+                        <small style="color:var(--text-muted);">يُستخدم اسماً للخطر إن تُرك «اسم الخطر» فارغاً</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- 1-ب. تعريف الخطر (قرار ٢١: العنوان والوصف حرّان في السجل العام) --}}
+        <div class="card mb-3" style="background:var(--bg-card);border:1px solid var(--border-color);">
+            <div class="card-header" style="background:transparent;border-bottom:1px solid var(--border-color);">
+                <h6 class="mb-0 fw-bold" style="color:var(--accent);"><i class="bi bi-card-text me-2"></i>تعريف الخطر</h6>
+                <small style="color:var(--text-muted);">الاسم = حدث + مصدر؛ الوصف: المصدر ← التعرض ← الحدث ← الموقع</small>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label" style="color:var(--text-main);">اسم الخطر</label>
+                        <input type="text" name="title" class="form-control" maxlength="300"
+                               placeholder="مثال: تراكم أول أكسيد الكربون من عوادم المركبات في مواقف القبو"
+                               value="{{ old('title', '') }}">
+                        <small style="color:var(--text-muted);">إن تُرك فارغاً يُؤخذ من نوع الخطر (المستوى الثالث)</small>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label" style="color:var(--text-main);">الوصف</label>
+                        <textarea name="description" class="form-control" rows="4"
+                                  placeholder="المصدر: … · التعرض: … · الحدث المحتمل: … · الموقع: …">{{ old('description', '') }}</textarea>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" style="color:var(--text-main);">قناة الاتصال</label>
+                        <input type="text" name="contact_channel" class="form-control" maxlength="200"
+                               placeholder="مثال: مركز السلامة (المناوب) — مسؤول السلامة"
+                               value="{{ old('contact_channel', '') }}">
                     </div>
                 </div>
             </div>
@@ -219,6 +249,8 @@
                                         <option value="national">وطني</option>
                                         <option value="international">دولي</option>
                                     </select>
+                                    <input type="text" name="phases[{{ $phaseKey }}][affected_detail][{{ $gid }}]" class="form-control form-control-sm"
+                                           placeholder="ما الضرر تحديداً؟" maxlength="1000" value="{{ old("phases.{$phaseKey}.affected_detail.{$gid}", '') }}">
                                 </div>
                             @endforeach
                         </div>

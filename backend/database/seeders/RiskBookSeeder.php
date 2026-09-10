@@ -8,7 +8,6 @@ use App\Modules\Risk\Models\RiskCategory;
 use App\Modules\Risk\Models\RiskCause;
 use App\Modules\Risk\Models\RiskPhase;
 use App\Modules\Risk\Models\RiskSubCategory;
-use App\Modules\Risk\Services\RiskCopyService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -24,7 +23,8 @@ class RiskBookSeeder extends Seeder
 {
     public function run(): void
     {
-        if (Risk::where('risk_type', 'master')->exists()) {
+        // قرار ٢١: طبقة واحدة — يُبذر السجل العام مباشرة بلا نسخة master
+        if (Risk::where('risk_type', 'reference')->exists()) {
             return;
         }
         $dir = database_path('data');
@@ -53,10 +53,9 @@ class RiskBookSeeder extends Seeder
                     'name' => $z['name'], 'name_en' => $z['name_en'], 'description' => $z['description']]);
             }
 
-            $copy = app(RiskCopyService::class);
             foreach ($risks as $r) {
                 $risk = Risk::create([
-                    'risk_type' => 'master', 'code' => $r['code'], 'title' => $r['title'], 'description' => $r['description'],
+                    'risk_type' => 'reference', 'code' => $r['code'], 'title' => $r['title'], 'description' => $r['description'],
                     'category_id' => $catMap[$r['category_id']] ?? null, 'sub_category_id' => $r['sub_category_id'] ? ($subMap[$r['sub_category_id']] ?? null) : null,
                     'severity' => $r['severity'], 'likelihood' => $r['likelihood'], 'benefit' => $r['benefit'],
                     'contact_channel' => $r['contact_channel'], 'scope_type' => 'general', 'status' => 'approved',
@@ -69,9 +68,6 @@ class RiskBookSeeder extends Seeder
                     }
                     RiskPhase::create($data);
                 }
-                // الكتاب كاملاً = السجل العام للمعهد
-                $ref = $copy->masterToReference($risk, null);
-                $ref->update(['status' => 'approved']);
             }
         });
     }

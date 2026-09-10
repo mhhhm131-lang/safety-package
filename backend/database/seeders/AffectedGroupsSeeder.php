@@ -18,11 +18,21 @@ class AffectedGroupsSeeder extends Seeder
         ['الفريق الأولي للاستجابة', 'Initial response team', 'medium'],
         ['ذوو الإعاقة والحالات الخاصة', 'People with disabilities', 'high'],
         ['الممتلكات والأنظمة', 'Property & systems', 'medium'],
-        ['استمرارية الأعمال والسمعة', 'Continuity & reputation', 'medium'],
+        ['استمرارية الأعمال', 'Business continuity', 'medium'],
+        ['السمعة', 'Reputation', 'medium'],
+        ['الخسائر المالية والقانونية', 'Financial & legal losses', 'medium'],
     ];
+
+    /** الاسم القديم المدمج (قبل قرار ٢٤) يُعاد تسميته بدل حذفه حتى تبقى تفاصيل المخاطر المرتبطة به. */
+    private const RENAMES = ['استمرارية الأعمال والسمعة' => 'استمرارية الأعمال'];
 
     public function run(): void
     {
+        foreach (self::RENAMES as $old => $new) {
+            if (($g = AffectedGroup::where('name', $old)->first()) && !AffectedGroup::where('name', $new)->exists()) {
+                $g->update(['name' => $new, 'name_en' => 'Business continuity']);
+            }
+        }
         foreach (self::GROUPS as [$name, $en, $vuln]) {
             AffectedGroup::firstOrCreate(['name' => $name], ['name_en' => $en, 'vulnerability_level' => $vuln]);
         }

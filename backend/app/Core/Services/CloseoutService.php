@@ -189,8 +189,7 @@ class CloseoutService
     public function preserved(): array
     {
         return [
-            'كتاب المخاطر'        => DB::table('risks')->where('risk_type', 'master')->count(),
-            'السجل العام للمعهد'  => DB::table('risks')->where('risk_type', 'reference')->count(),
+            'السجل العام للمعهد (كتاب المعهد)' => DB::table('risks')->where('risk_type', 'reference')->count(), // قرار ٢١: طبقة واحدة
             'الأماكن'             => DB::table('places')->count(),
             'الوحدات التنظيمية'   => DB::table('organization_units')->count(),
             'أنواع التصاريح'      => DB::table('permit_types')->count(),

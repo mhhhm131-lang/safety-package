@@ -78,7 +78,7 @@
       @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'risk.list'))
         <hr>
         <div class="small text-muted px-2 mb-1">المخاطر</div>
-        <a href="{{ route('risk.master.index') }}" class="{{ request()->routeIs('risk.master.*') ? 'active' : '' }}"><i class="bi bi-book-half"></i>كتاب المخاطر</a>
+        {{-- قرار ٢١: طبقة واحدة — «كتاب المخاطر» (master) أُخفي؛ السجل العام هو كتاب المعهد --}}
         <a href="{{ route('risk.reference.index') }}" class="{{ request()->routeIs('risk.reference.*') ? 'active' : '' }}"><i class="bi bi-bookmark"></i>السجل العام للمعهد</a>
         <a href="{{ route('risk.active.index') }}" class="{{ request()->routeIs('risk.active.*') || request()->routeIs('risk.index') ? 'active' : '' }}"><i class="bi bi-lightning-charge"></i>مخاطر الإدارات والأماكن</a>
         @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'risk.approve'))

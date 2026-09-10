@@ -490,7 +490,7 @@ class PermitScenarioTest extends TestCase
             'code' => 'ش-9001', 'title' => 'دخان في غرفة الكهرباء', 'incident_type' => 'urgent',
             'status' => 'new', 'place_id' => $this->placeId('HZ-02'),
             'risk_id' => Risk::where('place_id', $this->placeId('HZ-02'))->value('id')
-                ?? Risk::where('risk_type', 'master')->value('id'),
+                ?? Risk::where('risk_type', 'reference')->value('id'),
         ]);
 
         $this->actingAs($this->salama)->post("/app/permits/{$permit->id}/evaluate", [

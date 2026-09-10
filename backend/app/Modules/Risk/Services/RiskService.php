@@ -111,6 +111,7 @@ class RiskService
                 [
                     'impact'    => $input['affected_impact'][$gid] ?? 'medium',
                     'rep_scope' => $input['affected_rep_scope'][$gid] ?? null,
+                    'impact_description' => $input['affected_detail'][$gid] ?? null,
                 ]
             );
         }

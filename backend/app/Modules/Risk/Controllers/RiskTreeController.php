@@ -106,6 +106,7 @@ class RiskTreeController extends Controller
                 'affected_groups' => $p->affectedGroups->map(fn ($g) => [
                     'id' => $g->id, 'name' => $g->name,
                     'impact' => optional($detailsByGroup->get($g->id))->impact, 'rep_scope' => optional($detailsByGroup->get($g->id))->rep_scope,
+                    'detail' => optional($detailsByGroup->get($g->id))->impact_description,
                 ])->values(),
             ];
         }

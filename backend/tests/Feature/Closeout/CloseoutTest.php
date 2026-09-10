@@ -99,19 +99,18 @@ class CloseoutTest extends TestCase
         $this->incident('ش-0002');
         $this->activeRisk();
 
-        $masterBefore    = Risk::where('risk_type', 'master')->count();
         $referenceBefore = Risk::where('risk_type', 'reference')->count();
         $placesBefore    = Place::count();
         $usersBefore     = User::count();
 
-        $this->assertGreaterThan(0, $masterBefore);
+        $this->assertGreaterThan(0, $referenceBefore);
 
         app(CloseoutService::class)->purge();
 
         $this->assertSame(0, Incident::count());
         $this->assertSame(0, Risk::where('risk_type', 'active')->count());
 
-        $this->assertSame($masterBefore, Risk::where('risk_type', 'master')->count());
+        $this->assertSame(0, Risk::where('risk_type', 'master')->count()); // قرار ٢١: لا طبقة master
         $this->assertSame($referenceBefore, Risk::where('risk_type', 'reference')->count());
         $this->assertSame($placesBefore, Place::count());
         $this->assertSame($usersBefore, User::count(), 'الحسابات لا تُحذف — تُعطَّل');
@@ -142,7 +141,7 @@ class CloseoutTest extends TestCase
     {
         $preserved = app(CloseoutService::class)->preserved();
 
-        $this->assertGreaterThan(0, $preserved['كتاب المخاطر']);
+        $this->assertGreaterThan(0, $preserved['السجل العام للمعهد (كتاب المعهد)']);
         $this->assertSame(9, $preserved['الأماكن']);
     }
 
@@ -271,7 +270,7 @@ class CloseoutTest extends TestCase
         $this->actingAs($this->salama)->get(route('app.closeout.index'))
             ->assertOk()
             ->assertSee('data-purge="بلاغات الشاغل"', false)
-            ->assertSee('data-keep="كتاب المخاطر"', false)
+            ->assertSee('data-keep="السجل العام للمعهد (كتاب المعهد)"', false)
             ->assertSee('data-seeded="salama"', false)
             ->assertSee('مبذورة');
     }
