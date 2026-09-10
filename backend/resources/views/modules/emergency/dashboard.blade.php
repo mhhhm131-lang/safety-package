@@ -46,7 +46,7 @@
     <div class="card mb-3">
       <div class="card-header d-flex align-items-center"><strong>جاهزية الأماكن التسعة</strong><span class="small text-muted ms-2">الفريق الأولي من ملف المكان في اللوحة</span><a class="btn btn-sm btn-outline-secondary ms-auto" href="{{ route('emergency.teams.index') }}">الفرق</a></div>
       <div class="table-responsive"><table class="table table-sm m-0 small">
-        <thead><tr><th>المكان</th><th>الفريق الأولي</th><th>الأعضاء</th><th>الجاهزية</th><th></th></tr></thead>
+        <thead><tr><th>المكان</th><th>الفريق الأولي</th><th>الأعضاء</th><th>الجاهزية</th><th>خطة الاستجابة</th><th></th></tr></thead>
         <tbody>
         @foreach($places as $place)
           @php($teams = $teamsByPlace->get($place->id, collect()))
@@ -59,6 +59,16 @@
               @if($derived->isEmpty())<span class="badge text-bg-danger">لم يُرشَّح</span>
               @elseif($derived->every(fn ($t) => in_array($t->readiness, ['approved', 'referred'])))<span class="badge text-bg-success">معتمد</span>
               @else<span class="badge text-bg-warning">بانتظار الاعتماد</span>@endif
+            </td>
+            <td class="small" data-plan="{{ $place->code }}">
+              @php($pr = $planReadiness[$place->id] ?? null)
+              @if($place->code === 'HZ-00')<span class="text-muted">مركز القيادة — بلا خطة استجابة</span>
+              @elseif(!$pr)<span class="badge text-bg-danger">لم تُزامَن من الوثيقة</span>
+              @else
+                <a href="{{ route('emergency.plans.show', $place->code) }}" class="text-decoration-none">مزامَنة من الوثيقة: {{ $pr['steps'] }} خطوة</a>
+                @if($pr['unstaffed'])<br><span class="badge text-bg-warning" title="بطاقات: {{ implode('، ', $pr['unstaffed']) }}">أدوار بلا شاغل: {{ count($pr['unstaffed']) }}</span>@else<br><span class="badge text-bg-success">كل الأدوار لها شاغل</span>@endif
+                @if($pr['no_card'])<span class="badge text-bg-light border text-dark" title="خطوات «من» فيها ليس بطاقة">بلا بطاقة: {{ $pr['no_card'] }}</span>@endif
+              @endif
             </td>
             <td class="text-nowrap">
               @if($mainBuilding && $P::hasPermission($role, 'emergency.trigger'))

@@ -64,6 +64,46 @@
   </div>
 </div>
 
+{{-- المرحلة ١٠-٤ (ز): الخطوات الثلاث الأولى من خطة الاستجابة لكل مكان — الفريق الأولي، استدعاء الطبيب، وصوله --}}
+@php $ps = $data['plan_steps']; $PC = \App\Modules\Emergency\Services\PlanComplianceService::class; @endphp
+<div class="card mb-3" id="planSteps">
+  <div class="card-body">
+    <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+      <i class="bi bi-list-ol fs-5 text-dark"></i>
+      <h2 class="h6 m-0">خطوات الاستجابة الثلاث الأولى لكل مكان</h2>
+      <span class="small text-muted">من خطة المكان كما سُجّلت فعلاً في الحالات والتمارين — الزمن من لحظة التفعيل بالثواني</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle m-0 small">
+        <thead><tr>
+          <th>المكان</th><th class="text-center">حالات</th><th class="text-center">تمارين</th>
+          @foreach($PC::FIRST_STEPS as $l => $n)<th class="text-center">{{ $l }} {{ $n }}<br><small class="text-muted fw-normal">متوسط / أطول / المستهدف</small></th>@endforeach
+          <th class="text-center">الالتزام بالنوافذ</th>
+        </tr></thead>
+        <tbody>
+          @foreach($ps['places'] as $p)
+            <tr data-plan-place="{{ $p['code'] }}">
+              <td>{{ $p['code'] }} — {{ $p['name'] }}</td>
+              <td class="text-center">{{ $p['incidents'] }}</td>
+              <td class="text-center">{{ $p['drills'] }}</td>
+              @foreach($p['steps'] as $l => $s)
+                <td class="text-center {{ $s['avg_sec'] !== null && $s['target_sec'] !== null && $s['avg_sec'] > $s['target_sec'] ? 'text-danger fw-bold' : '' }}">
+                  @if($s['avg_sec'] === null)<span class="text-muted">لا بيانات</span>@else{{ $PC::secs($s['avg_sec']) }} / {{ $PC::secs($s['max_sec']) }} / {{ $PC::secs($s['target_sec']) }}@endif
+                  @if($s['not_marked'])<br><small class="text-muted">لم تُعلَّم في {{ $s['not_marked'] }}</small>@endif
+                </td>
+              @endforeach
+              <td class="text-center">@if($p['ratio'] === null)<span class="text-muted">لا بيانات</span>@else<span class="badge text-bg-{{ $p['ratio'] >= 75 ? 'success' : ($p['ratio'] >= 40 ? 'warning' : 'danger') }}">{{ $p['on_time'] }}/{{ $p['measured'] }} ({{ $p['ratio'] }}٪)</span>@endif</td>
+            </tr>
+          @endforeach
+        </tbody>
+      </table>
+    </div>
+    @if(count($ps['trend']))
+      <div class="small text-muted mt-2">الاتجاه: @foreach($ps['trend'] as $m)<span class="me-3" data-trend="{{ $m['month'] }}">{{ $m['month'] }}: التدخل الأولي {{ $PC::secs($m['first_step_avg_sec']) }} · الالتزام {{ $m['ratio'] === null ? '—' : $m['ratio'].'٪' }} ({{ $m['incidents'] }} حالة)</span>@endforeach</div>
+    @endif
+  </div>
+</div>
+
 {{-- ما يحتاج قراراً --}}
 @if(count($data['attention']))
   <div class="card mb-3">

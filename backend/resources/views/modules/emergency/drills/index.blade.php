@@ -80,6 +80,10 @@
                                         @if($drill->evacuation_time_sec)
                                             <br><small class="text-muted">{{ gmdate('i:s', $drill->evacuation_time_sec) }} · {{ $drill->score }}/100</small>
                                         @endif
+                                        @php($pc = $planByDrill[$drill->id] ?? null)
+                                        @if($pc && $pc['total'])
+                                            <br><a class="badge text-bg-{{ $pc['ratio'] === null ? 'secondary' : ($pc['ratio'] >= 75 ? 'success' : ($pc['ratio'] >= 40 ? 'warning' : 'danger')) }} text-decoration-none" href="{{ route('emergency.incidents.report', $drill->incident) }}#planCompliance" title="الالتزام بالخطة: الخطوة، المستهدف، الفعلي، الفارق">الخطة: {{ $pc['label'] }}</a>
+                                        @endif
                                     @else
                                         <span class="text-muted">-</span>
                                     @endif

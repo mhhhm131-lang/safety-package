@@ -64,6 +64,46 @@
   </div>
 </div>
 
+{{-- المرحلة ١٠-٤ (ز): الالتزام بالخطة — أول مرة يُعرف فيها بالأرقام أين تأخرت الاستجابة --}}
+@if($planRows)
+@php($S = \App\Modules\Emergency\Models\EmergencyIncidentStep::class)
+<div class="card mb-3 border-dark" id="planCompliance">
+  <div class="card-header d-flex align-items-center flex-wrap gap-2"><strong><i class="bi bi-list-check"></i> الالتزام بالخطة</strong>
+    <span class="small text-muted">خطة {{ $incident->place?->code }} كما زُومنت من الوثيقة لحظة التفعيل · {{ $planSummary['total'] }} خطوة</span>
+    <span class="ms-auto d-flex gap-1 flex-wrap">
+      <span class="badge text-bg-success">ضمن النافذة {{ $planSummary['on_time'] }}</span>
+      <span class="badge text-bg-warning">تأخرت {{ $planSummary['late'] }}</span>
+      <span class="badge text-bg-danger">لم تُعلَّم {{ $planSummary['missed'] }}</span>
+      @if($planSummary['skipped'])<span class="badge text-bg-secondary">تُخطّيت {{ $planSummary['skipped'] }}</span>@endif
+      @if($planSummary['done_conditional'])<span class="badge text-bg-light border text-dark">شرطية تمت {{ $planSummary['done_conditional'] }}</span>@endif
+      @if($planSummary['conditional'])<span class="badge text-bg-light border text-dark">شرطية لم تتحقق {{ $planSummary['conditional'] }}</span>@endif
+      <span class="badge text-bg-dark" data-plan-ratio="{{ $planSummary['ratio'] ?? '' }}">الالتزام: {{ $planSummary['ratio'] === null ? 'لم يُقس' : $planSummary['ratio'].'٪' }}</span>
+    </span>
+  </div>
+  <div class="table-responsive"><table class="table table-sm m-0 small align-middle">
+    <thead><tr><th>#</th><th>المسار</th><th>الخطوة</th><th>المستهدف</th><th>الفعلي</th><th>الفارق</th><th>من</th><th>ملاحظة</th></tr></thead>
+    <tbody>
+    @foreach($planRows as $r)
+      <tr class="{{ ['late' => 'table-warning', 'missed' => 'table-danger', 'on_time' => 'table-success', 'done_conditional' => 'table-success'][$r['state']] ?? '' }}" data-state="{{ $r['state'] }}">
+        <td><strong>{{ $r['label'] }}</strong></td>
+        <td class="text-muted text-nowrap">{{ $r['path'] }}</td>
+        <td>{{ $r['title'] }}</td>
+        <td class="text-nowrap">{{ $r['target'] ?? '—' }}@if($r['window_to_sec'] !== null)<br><small class="text-muted">حتى {{ $S::secs($r['window_to_sec']) }}</small>@endif</td>
+        <td class="text-nowrap">
+          @if($r['status'] === 'done')بعد {{ $S::secs($r['elapsed_sec']) }}<br><small class="text-muted">{{ $r['done_at'] }}</small>
+          @elseif($r['status'] === 'skipped')<span class="text-muted">تُخطّيت</span>
+          @elseif($r['conditional'])<span class="text-muted">لم تتحقق</span>
+          @else<span class="text-danger fw-bold">لم تُعلَّم</span>@endif
+        </td>
+        <td class="text-nowrap">{{ $r['delta_label'] ?? '—' }}</td>
+        <td><small>{{ $r['owner'] }}</small>@if($r['by'])<br><small class="text-muted">{{ $r['by'] }}</small>@endif</td>
+        <td><small class="text-muted">{{ $r['auto'] ? 'آلياً من '.$r['auto'] : '' }}{{ $r['note'] ? ($r['auto'] ? ' — ' : '').$r['note'] : '' }}</small></td>
+      </tr>
+    @endforeach
+    </tbody></table></div>
+</div>
+@endif
+
 @if($incident->final_report)
 <div class="card mb-3"><div class="card-header"><strong>التقرير النهائي</strong></div><div class="card-body" style="white-space:pre-wrap">{{ $incident->final_report }}</div></div>
 @endif

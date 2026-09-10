@@ -30,6 +30,7 @@ use App\Modules\Emergency\Services\IncidentStepsService;
 use App\Modules\Emergency\Services\LockdownService;
 use App\Modules\Emergency\Services\MedicalProfileService;
 use App\Modules\Emergency\Services\PanicAlertService;
+use App\Modules\Emergency\Services\PlanComplianceService;
 use App\Modules\Emergency\Services\QrMusteringService;
 use App\Modules\Emergency\Services\ResponsePlanSync;
 use App\Modules\Emergency\Services\TeamSync;
@@ -68,9 +69,16 @@ class EmergencyController extends Controller
             : \App\Modules\Emergency\Models\EmergencyNotification::whereIn('incident_id', EmergencyIncident::open()->pluck('id'))->manual()->count();
         $mainBuilding = EmergencyBuilding::main();
         $escalationRules = app(AutoEscalationService::class)->getEscalationRules();
+        // المرحلة ١٠-٤ (ز): بند الخطة في جاهزية كل مكان — مزامَنة من الوثيقة، عدد الخطوات، أدوار بلا شاغل
+        $plansByPlace = ResponsePlan::with('steps')->get()->keyBy('place_id');
+        $activeByRole = \App\Modules\Governance\Models\UserProfile::where('is_active', true)->selectRaw('role, COUNT(*) as c')->groupBy('role')->pluck('c', 'role')->all();
+        $planReadiness = $plansByPlace->map(fn (ResponsePlan $p) => [
+            'steps' => $p->steps_count, 'synced_at' => $p->synced_at, 'no_card' => $p->no_card_count,
+            'unstaffed' => $p->unstaffedCards($teamsByPlace->get($p->place_id, collect()), $activeByRole),
+        ])->all();
 
         return view('modules.emergency.dashboard', compact(
-            'stats', 'buildings', 'activeIncidents', 'recentIncidents', 'upcomingDrills', 'places', 'teamsByPlace', 'pendingCalls', 'mainBuilding', 'escalationRules'
+            'stats', 'buildings', 'activeIncidents', 'recentIncidents', 'upcomingDrills', 'places', 'teamsByPlace', 'pendingCalls', 'mainBuilding', 'escalationRules', 'planReadiness'
         ));
     }
 
@@ -455,7 +463,11 @@ class EmergencyController extends Controller
         $byPoint = $this->musteringService->getStatsByAssemblyPoint($incident);
         $firstArrival = $incident->eventLogs->firstWhere('event_type', EmergencyEventLog::TYPE_TEAM_ARRIVED);
         $firstArrivalSec = $firstArrival ? (int) abs($firstArrival->logged_at->diffInSeconds($incident->triggered_at)) : null;
-        return view('modules.emergency.incidents.report', compact('incident', 'stats', 'byPoint', 'firstArrivalSec'));
+        // المرحلة ١٠-٤ (ز): «الالتزام بالخطة» — الخطوة، المستهدف، الفعلي، الفارق، من، ملاحظة
+        $compliance = app(PlanComplianceService::class);
+        $planRows = $compliance->rows($incident);
+        $planSummary = $compliance->summary($incident);
+        return view('modules.emergency.incidents.report', compact('incident', 'stats', 'byPoint', 'firstArrivalSec', 'planRows', 'planSummary'));
     }
 
     // ==================== الإغلاق الأمني ====================
@@ -487,9 +499,12 @@ class EmergencyController extends Controller
 
     public function drillsIndex()
     {
-        $drills = EvacuationDrill::with(['building', 'place', 'conductedBy', 'incident'])->orderByDesc('scheduled_at')->paginate(20);
+        $drills = EvacuationDrill::with(['building', 'place', 'conductedBy', 'incident.planSteps'])->orderByDesc('scheduled_at')->paginate(20);
         $stats = app(DrillService::class)->getDrillStats();
-        return view('modules.emergency.drills.index', compact('drills', 'stats'));
+        // المرحلة ١٠-٤: التمرين يُقاس بمسطرة الخطة نفسها
+        $compliance = app(PlanComplianceService::class);
+        $planByDrill = $drills->getCollection()->mapWithKeys(fn ($d) => [$d->id => $d->incident ? $compliance->summary($d->incident) : null])->all();
+        return view('modules.emergency.drills.index', compact('drills', 'stats', 'planByDrill'));
     }
 
     public function drillsCreate()

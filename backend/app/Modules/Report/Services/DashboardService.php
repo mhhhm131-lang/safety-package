@@ -41,6 +41,20 @@ class DashboardService
             'by_place'   => $this->byPlace($scope),
             'attention'  => $this->needsAttention($scope),
             'by_month'   => $this->incidentsByMonth($scope),
+            'plan_steps' => $this->planSteps($scope),
+        ];
+    }
+
+    /**
+     * المرحلة ١٠-٤ (ز): لكل مكان زمن الخطوات الثلاث الأولى من خطة الاستجابة (الفريق الأولي، استدعاء الطبيب، وصوله)
+     * كما سُجّلت فعلاً في الحالات والتمارين، ونسبة الالتزام بالنوافذ، واتجاهها شهراً بشهر.
+     */
+    public function planSteps(ReportScope $scope): array
+    {
+        $svc = app(\App\Modules\Emergency\Services\PlanComplianceService::class);
+        return [
+            'places' => $svc->placeStats($scope->from, $scope->to, $scope->placeId),
+            'trend' => $svc->monthlyTrend($scope->from, $scope->to, $scope->placeId),
         ];
     }
 

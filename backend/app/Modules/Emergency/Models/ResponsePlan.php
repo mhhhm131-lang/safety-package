@@ -49,6 +49,29 @@ class ResponsePlan extends Model
 
     public function shortFingerprint(): string { return substr($this->fingerprint, 0, 8); }
 
+    /**
+     * بطاقات الأدوار في خطوات المسارات التي لا شاغل لها اليوم (المرحلة ١٠-٤، جاهزية المكان):
+     * بطاقة بدور نظامي بلا حساب نشط في ذلك الدور، أو بطاقة فريق أولي بلا عضو بالمفتاح في فرق المكان.
+     * @param  \Illuminate\Support\Collection $placeTeams  فرق المكان النشطة بأعضائها
+     * @param  array<string,int> $activeByRole  عدد الحسابات النشطة لكل دور
+     * @return int[] أرقام البطاقات
+     */
+    public function unstaffedCards($placeTeams, array $activeByRole): array
+    {
+        $memberKeys = $placeTeams->flatMap(fn ($t) => $t->members->pluck('role_key'))->unique()->all();
+        $needed = [];
+        foreach ($this->pathSteps() as $s) foreach ($s->role_cards ?? [] as $n) $needed[(int) $n] = true;
+        $out = [];
+        foreach (array_keys($needed) as $no) {
+            $card = \App\Modules\Emergency\Support\RoleCards::get($no);
+            if (!$card || !empty($card['none'])) continue;
+            if (!empty($card['role']) && ($activeByRole[$card['role']] ?? 0) === 0) $out[] = $no;
+            if (!empty($card['team']) && !array_intersect($card['team'], $memberKeys)) $out[] = $no;
+        }
+        sort($out);
+        return $out;
+    }
+
     public function documentUrl(): string
     {
         return '/'.(Place::FOLDERS[$this->place?->code] ?? '').'/response-plan.html';
