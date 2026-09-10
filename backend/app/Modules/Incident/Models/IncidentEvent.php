@@ -29,6 +29,7 @@ class IncidentEvent extends Model
         'assigned' => 'تعيين',
         'begin_work' => 'بدأ الفني المعالجة',
         'inspection_linked' => 'فُتح عليه بلاغ فحص في نموذج المكان',
+        'emergency_triggered' => 'فُعّلت حالة طارئة بناءً على البلاغ',
         'resolve' => 'عولج',
         'resolved' => 'عولج',
         'request_closure' => 'طُلبت موافقة المبلّغ على الإغلاق',

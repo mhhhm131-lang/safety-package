@@ -46,6 +46,22 @@
         <x-risk-score-badge :score="(int) $risk->risk_score" />
         <a class="btn btn-sm btn-outline-primary ms-auto" href="{{ route('risk.show', $risk) }}">عرض الخطر</a>
       </div>
+      {{-- المرحلة ١٠-٣ (ح-٢): الطبقة بنوع البلاغ — عادي/سري: التشغيلية؛ عاجل: الاستجابة + زر التفعيل --}}
+      <div class="mt-2 p-2 rounded border small" style="background:{{ $layer['key'] === 'response' ? '#fff5f5' : '#f4f8f6' }}">
+        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+          <span class="badge text-bg-{{ $layer['key'] === 'response' ? 'danger' : 'success' }}">الطبقة {{ $layer['label'] }}</span>
+          <span class="text-muted">{{ $layer['why'] }}</span>
+          @if($layer['key'] === 'response' && $canTrigger && !$terminal && !$linkedEmergency)<button class="btn btn-sm btn-danger ms-auto" data-bs-toggle="modal" data-bs-target="#emergencyModal"><i class="bi bi-broadcast me-1"></i> تفعيل حالة طارئة</button>@endif
+        </div>
+        @if($layer['phase'])
+          @if($layer['phase']->preventive_action)<div><b>{{ $layer['key'] === 'response' ? 'ما يُفعل فوراً' : 'الضوابط القائمة' }}:</b> <span style="white-space:pre-wrap">{{ $layer['phase']->preventive_action }}</span></div>@endif
+          @if($layer['phase']->corrective_action)<div><b>{{ $layer['key'] === 'response' ? 'بعد السيطرة' : 'الإجراء التصحيحي' }}:</b> <span style="white-space:pre-wrap">{{ $layer['phase']->corrective_action }}</span></div>@endif
+          @if($layer['phase']->responsible_user_text || $layer['phase']->responsible_org_unit_text)<div class="text-muted">الجهة والشخص: {{ $layer['phase']->responsible_org_unit_text }} {{ $layer['phase']->responsible_user_text }}</div>@endif
+        @else
+          <div class="text-muted">لا نص لهذه الطبقة في جدول الخطر بعد.</div>
+        @endif
+        @if($layer['controls']->isNotEmpty())<ul class="mb-0 mt-1 ps-3">@foreach($layer['controls'] as $c)<li>{{ $c->description_ar }}@if($c->is_mandatory) <span class="badge text-bg-light border">إلزامي</span>@endif</li>@endforeach</ul>@endif
+      </div>
       <div class="row g-2 mt-2 small">
         <div class="col-md-6"><b>الإجراء التصحيحي:</b><div class="p-2 rounded" style="background:var(--bg-dark);white-space:pre-wrap">{{ $incident->corrective_action ?: 'لا يوجد' }}</div></div>
         <div class="col-md-6"><b>الإجراء الوقائي:</b><div class="p-2 rounded" style="background:var(--bg-dark);white-space:pre-wrap">{{ $incident->preventive_action ?: 'لا يوجد' }}</div></div>
@@ -71,7 +87,13 @@
   @if(!$terminal)
   <div class="card mb-3"><div class="card-body">
     <h6 class="fw-bold">الإجراءات المتاحة</h6>
+    @if($linkedEmergency)
+      <div class="alert alert-danger py-2 small mb-2"><i class="bi bi-broadcast me-1"></i> فُعّلت من هذا البلاغ الحالة الطارئة <a href="{{ route('emergency.incidents.live', $linkedEmergency) }}"><b>{{ $linkedEmergency->incident_code }}</b></a> ({{ $linkedEmergency->getTypeLabel() }} — {{ $linkedEmergency->getStatusLabel() }}). البلاغ يكمل مساره ومهله كما هو.</div>
+    @endif
     <div class="d-flex flex-wrap gap-2">
+      @if($canTrigger && !$linkedEmergency)
+        <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#emergencyModal"><i class="bi bi-broadcast me-1"></i> تفعيل حالة طارئة</button>
+      @endif
       @if($isCenter && in_array($incident->status, ['new', 'received', 'referred', 'ref_received'], true))
         <button class="btn btn-g" data-bs-toggle="modal" data-bs-target="#referModal"><i class="bi bi-person-check me-1"></i> إحالة إلى فني المكان</button>
         @if($incident->status === 'received' || $incident->status === 'new')
@@ -125,6 +147,21 @@
       <div class="small text-muted mt-2">اطلاع فقط — الإجراءات للمعيَّنين على هذا البلاغ ومركز السلامة.</div>
     @endif
   </div></div>
+  @if($canTrigger && !$linkedEmergency)
+  {{-- المرحلة ١٠-٣ (و): القرار بيد المركز؛ النوع مقترح من صنف الخطر --}}
+  <div class="modal fade" id="emergencyModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><form method="post" action="{{ route('incidents.triggerEmergency', $incident) }}">@csrf
+    <div class="modal-header"><h5 class="modal-title"><i class="bi bi-broadcast me-1"></i> تفعيل حالة طارئة من البلاغ {{ $incident->code }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <p class="small text-muted">تُنشأ الحالة في مركز الطوارئ بمكان البلاغ ({{ $incident->place?->code }} {{ $incident->place?->name }}) وتظهر خطوات خطة المكان بعدّاداتها فوراً. البلاغ يبقى برقمه ومساره ومهله.</p>
+      <label class="form-label small">نوع الحالة <span class="text-muted">(مقترح من صنف الخطر{{ $incident->risk?->category ? ': '.$incident->risk->category->name : '' }})</span></label>
+      <select name="incident_type" class="form-select mb-2" required>@foreach($emergencyTypes as $t)<option value="{{ $t }}" @selected($t === $proposedType)>{{ \App\Modules\Emergency\Models\EmergencyIncident::TYPES[$t] ?? $t }}</option>@endforeach</select>
+      <label class="form-label small">الخطورة</label>
+      <select name="severity" class="form-select mb-2">@foreach(\App\Modules\Emergency\Models\EmergencyIncident::SEVERITIES as $k => $l)<option value="{{ $k }}" @selected($k === ($incident->incident_type === 'urgent' ? 'high' : 'medium'))>{{ $l }}</option>@endforeach</select>
+      <textarea name="note" class="form-control" rows="2" placeholder="ما يعرفه المركز الآن (اختياري)"></textarea>
+    </div>
+    <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">رجوع</button><button class="btn btn-danger"><i class="bi bi-broadcast me-1"></i> تفعيل الآن</button></div>
+  </form></div></div></div>
+  @endif
   @endif
 
   {{-- المرفقات --}}

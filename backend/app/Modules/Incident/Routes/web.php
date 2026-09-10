@@ -45,6 +45,8 @@ Route::middleware(['auth'])->prefix('app/incidents')->name('incidents.')->group(
         Route::post('/{incident}/verify', [IncidentController::class, 'verifyByCoordinator'])->name('verify');
         Route::post('/{incident}/out-of-scope', [IncidentController::class, 'outOfScope'])->name('outOfScope');
         Route::post('/{incident}/link-risk', [IncidentController::class, 'linkRisk'])->name('linkRisk');
+        // المرحلة ١٠-٣ (و): من البلاغ إلى الحالة الطارئة — للمركز (incident.manage + emergency.trigger)
+        Route::middleware('permission:emergency.trigger')->post('/{incident}/trigger-emergency', [IncidentController::class, 'triggerEmergency'])->name('triggerEmergency');
         Route::put('/{incident}/actions', [IncidentController::class, 'updateActions'])->name('updateActions');
     });
 });

@@ -58,7 +58,7 @@ succ = g.get(loc, timeout=90).text
 log('success page shows code + auto-forward to place tech', (code in succ, 'حُوّل تلقائياً إلى فني المكان' in succ))
 track = g.get(BASE + f'/incident/track?code={code}', timeout=90).text
 inc_code = re.search(r'ش-\d{4}', track).group(0)
-log('track by code (timeline, no identity)', (inc_code, 'استلمه الفني' in track, 'الفني المنفّذ' not in track))
+log('track by code (timeline, no identity)', (inc_code, 'حُوّل إلى الفني' in track, 'الفني المنفّذ' not in track))  # ١٠-٣: الاستلام بيد الفني
 
 # ٢) المركز يراه؛ الفني المعيَّن يفتحه ويبدأ ويرفع دليلاً ويعالج
 lst = sa.get(BASE + '/app/incidents', timeout=90).text

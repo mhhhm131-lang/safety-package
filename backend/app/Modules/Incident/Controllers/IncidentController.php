@@ -8,6 +8,7 @@ use App\Modules\Governance\Models\Place;
 use App\Modules\Incident\Models\Incident;
 use App\Modules\Incident\Models\IncidentAttachment;
 use App\Modules\Incident\Services\IncidentClosureService;
+use App\Modules\Incident\Services\IncidentEmergencyBridge;
 use App\Modules\Incident\Services\IncidentService;
 use App\Modules\Incident\Services\IncidentVisibilityService;
 use App\Modules\Incident\Services\OccSync;
@@ -163,8 +164,13 @@ class IncidentController extends Controller
             ->sortByDesc(fn ($u) => (int) ($u->profile?->place_id && $u->profile->place_id === $incident->place_id));
         $coordinators = User::whereHas('profile', fn ($q) => $q->where('is_active', true)->where('role', 'safety_coordinator'))->orderBy('name')->get();
         $role = $user->role();
+        $bridge = app(IncidentEmergencyBridge::class);
         return view('modules.incidents.detail', [
             'incident' => $incident, 'fieldWorkers' => $fieldWorkers, 'coordinators' => $coordinators,
+            // المرحلة ١٠-٣: الطبقة بنوع البلاغ، والحالة الطارئة المفعَّلة منه، والنوع المقترح
+            'layer' => $bridge->riskLayer($incident), 'linkedEmergency' => $bridge->linkedEmergency($incident),
+            'proposedType' => $bridge->proposeType($incident), 'emergencyTypes' => IncidentEmergencyBridge::TYPE_OPTIONS,
+            'canTrigger' => $user->can('manage', $incident) && \App\Core\Permissions\PermissionRegistry::hasPermission($role, 'emergency.trigger'),
             'isCenter' => in_array($role, ['system_admin', 'system_staff'], true),
             'isField' => $incident->incident_field_team_id === $user->id,
             'isCoord' => $incident->incident_coordinator_id === $user->id || ($role === 'safety_coordinator' && !$incident->incident_coordinator_id),
@@ -192,6 +198,24 @@ class IncidentController extends Controller
     {
         $v = $request->validate(['note' => ['required', 'string', 'min:5', 'max:5000']]);
         return $this->act(fn () => $this->closureService->closeWithNote($incident, Auth::id(), $v['note']), 'أُغلق البلاغ بملاحظة.');
+    }
+
+    /** المرحلة ١٠-٣ (و): المركز يفعّل حالة طارئة من البلاغ — القرار بيد المركز، النوع مقترح من صنف الخطر ويغيّره. */
+    public function triggerEmergency(Request $request, Incident $incident)
+    {
+        abort_unless(Auth::user()->can('manage', $incident), 403, 'التفعيل من البلاغ لمركز السلامة.');
+        $v = $request->validate([
+            'incident_type' => ['required', 'in:'.implode(',', IncidentEmergencyBridge::TYPE_OPTIONS)],
+            'severity' => ['required', 'in:low,medium,high,critical'],
+            'note' => ['nullable', 'string', 'max:1000'],
+        ]);
+        try {
+            $emergency = app(IncidentEmergencyBridge::class)->trigger($incident, Auth::user(), $v['incident_type'], $v['severity'], $v['note'] ?? null);
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+        $this->occSync->refresh(Auth::id());
+        return redirect()->route('emergency.incidents.live', $emergency)->with('success', 'فُعّلت الحالة الطارئة '.$emergency->incident_code.' من البلاغ '.$incident->code.' — خطوات خطة المكان تعمل الآن');
     }
 
     public function fieldReceive(Incident $incident)

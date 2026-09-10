@@ -15,6 +15,7 @@
         · الخطورة {{ $incident->getSeverityLabel() }} · فعّلها {{ $incident->triggeredBy?->name ?? '—' }}
         · الإقرار: {{ $incident->acknowledged_at ? ($incident->acknowledgedBy?->name ?? '') .' '.$incident->acknowledged_at->format('H:i') : 'لم يُقرّ أحد بعد' }}
         @if($incident->escalation_level > 1) · <span class="badge text-bg-dark">تصعيد مستوى {{ $incident->escalation_level }}</span>@endif
+        @if($incident->linkedIncident) · <span class="badge text-bg-light border text-dark">المصدر: بلاغ <a href="{{ route('incidents.show', $incident->linkedIncident) }}">{{ $incident->linkedIncident->code }}</a></span>@endif
       </div>
       @if($incident->description)<div class="small mt-1">{{ $incident->description }}</div>@endif
     </div>

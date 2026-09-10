@@ -178,16 +178,20 @@ class IncidentService
         return UserProfile::where('user_id', $userId)->value('role') ?? 'unknown';
     }
 
-    /** المسار الآلي فور الإنشاء: يتوقف عند أول خطوة تحتاج معيَّناً غير معروف. */
+    /**
+     * المسار الآلي فور الإنشاء: يتوقف عند أول خطوة تحتاج معيَّناً غير معروف.
+     * المرحلة ١٠-٣ (ح-١، كلمة المستخدم ٢٠٢٦-٠٩-١٠): «استلمه الفني» لا يسجّلها النظام آلياً بل الفني بضغطة —
+     * فتصح «فجوة البلاغ» (من الإرسال إلى استلام الفني) بدل أن تكون صفراً دائماً.
+     */
     public function fastForwardRouting(Incident $incident): Incident
     {
         if ($incident->status !== 'new') return $incident;
-        $steps = [['receive', 'received'], ['refer', 'referred'], ['ref_receive', 'ref_received'], ['forward', 'forwarded'], ['field_receive', 'field_received']];
+        $steps = [['receive', 'received'], ['refer', 'referred'], ['ref_receive', 'ref_received'], ['forward', 'forwarded']];
         DB::transaction(function () use ($incident, $steps) {
             $noCoord = empty($incident->incident_coordinator_id);
             foreach ($steps as [$action, $to]) {
                 // المعهد: لا إحالة آلية بلا فني معروف — يبقى «وصل المركز» حتى يحيله المركز يدوياً
-                if (in_array($to, ['referred', 'field_received'], true) && empty($incident->incident_field_team_id)) {
+                if ($to === 'referred' && empty($incident->incident_field_team_id)) {
                     break;
                 }
                 // بلا منسق للمكان: خطوتا المنسق يؤديهما النظام (الإحالة للفني مباشرة — BACKEND.md ٥-٢-ب)

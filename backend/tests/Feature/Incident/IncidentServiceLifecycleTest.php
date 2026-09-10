@@ -61,12 +61,15 @@ class IncidentServiceLifecycleTest extends TestCase
             'title' => 'سقوط أداة', 'description' => 'وقعت أداة', 'risk_id' => $risk->id,
         ]);
 
-        // المنسق والفني معروفان → المسار الآلي يصل إلى «استلمه الفني»
-        $this->assertSame('field_received', $incident->status);
+        // المنسق والفني معروفان → المسار الآلي يصل إلى «حُوّل للفني»؛ الاستلام بيد الفني (١٠-٣ ح-١)
+        $this->assertSame('forwarded', $incident->status);
         $this->assertNotNull($incident->received_at);
         $this->assertNotNull($incident->referred_at);
         $this->assertNotNull($incident->ref_received_at);
         $this->assertNotNull($incident->forwarded_at);
+        $this->assertNull($incident->field_received_at);
+        $incident = $this->service->fieldReceive($incident, $incident->incident_field_team_id);
+        $this->assertSame('field_received', $incident->status);
         $this->assertNotNull($incident->field_received_at);
         // بحساب: لا رمز تتبع (يتابع من حسابه)
         $this->assertSame($this->user->id, $incident->actor_id);
@@ -85,7 +88,7 @@ class IncidentServiceLifecycleTest extends TestCase
         $this->assertNotEmpty($result['secret_key']);
         $this->assertSame('secret', $incident->incident_type);
         $this->assertNull($incident->actor_id);
-        $this->assertSame('field_received', $incident->status);
+        $this->assertSame('forwarded', $incident->status);
         $this->assertNotEmpty($incident->secret_tracking_code);
     }
 
@@ -93,6 +96,7 @@ class IncidentServiceLifecycleTest extends TestCase
     {
         ['field' => $field, 'risk' => $risk] = $this->buildActorsAndRisk();
         $incident = $this->service->createIncident('normal', $this->user->id, ['title' => 't', 'description' => 'd', 'risk_id' => $risk->id]);
+        $this->service->fieldReceive($incident, $field->id);
         $this->service->beginWork($incident, $field->id);
 
         // بلا مرفق وبلا ملخص → رفض
@@ -104,6 +108,7 @@ class IncidentServiceLifecycleTest extends TestCase
     {
         ['field' => $field, 'risk' => $risk] = $this->buildActorsAndRisk();
         $incident = $this->service->createIncident('normal', $this->user->id, ['title' => 't', 'description' => 'd', 'risk_id' => $risk->id]);
+        $this->service->fieldReceive($incident, $field->id);
         $this->service->beginWork($incident, $field->id);
 
         // دليل واحد يكفي للحارس
@@ -123,6 +128,7 @@ class IncidentServiceLifecycleTest extends TestCase
     {
         ['admin' => $admin, 'field' => $field, 'risk' => $risk] = $this->buildActorsAndRisk();
         $incident = $this->service->createIncident('normal', $this->user->id, ['title' => 't', 'description' => 'd', 'risk_id' => $risk->id]);
+        $this->service->fieldReceive($incident, $field->id);
         $this->service->beginWork($incident, $field->id);
         $this->addEvidence($incident, $field->id);
         $this->service->resolve($incident->fresh(), $field->id, 'تم تنفيذ الإجراء التصحيحي وإغلاق الموقع');
@@ -150,6 +156,7 @@ class IncidentServiceLifecycleTest extends TestCase
         $result = $this->service->createSecretIncident(['title' => 'بلاغ سري', 'description' => 'd', 'risk_id' => $risk->id]);
         $incident = $result['incident'];
 
+        $this->service->fieldReceive($incident, $field->id);
         $this->service->beginWork($incident, $field->id);
         $this->addEvidence($incident, $field->id);
         $this->service->resolve($incident->fresh(), $field->id, 'تم تنفيذ الإجراء التصحيحي وإغلاق الموقع');
@@ -174,6 +181,7 @@ class IncidentServiceLifecycleTest extends TestCase
         $result = $this->service->createSecretIncident(['title' => 'بلاغ', 'description' => 'd', 'risk_id' => $risk->id]);
         $incident = $result['incident'];
 
+        $this->service->fieldReceive($incident, $field->id);
         $this->service->beginWork($incident, $field->id);
         $this->addEvidence($incident, $field->id);
         $this->service->resolve($incident->fresh(), $field->id, 'تم تنفيذ الإجراء التصحيحي وإغلاق الموقع');
@@ -187,6 +195,7 @@ class IncidentServiceLifecycleTest extends TestCase
     {
         ['coord' => $coord, 'field' => $field, 'risk' => $risk] = $this->buildActorsAndRisk();
         $incident = $this->service->createIncident('normal', $this->user->id, ['title' => 't', 'description' => 'd', 'risk_id' => $risk->id]);
+        $this->service->fieldReceive($incident, $field->id);
         $this->service->beginWork($incident, $field->id);
 
         $escalated = $this->service->escalateToCoordinator(
@@ -214,6 +223,7 @@ class IncidentServiceLifecycleTest extends TestCase
         // المعهد: الفني لا يغلق؛ ومن تولّى المعالجة بعد التصعيد صار المنفّذ فيعلّم «عولج» والفني السابق لا
         ['admin' => $admin, 'coord' => $coord, 'field' => $field, 'risk' => $risk] = $this->buildActorsAndRisk();
         $incident = $this->service->createIncident('normal', $this->user->id, ['title' => 't', 'description' => 'd', 'risk_id' => $risk->id]);
+        $this->service->fieldReceive($incident, $field->id);
         $this->service->beginWork($incident, $field->id);
         $this->addEvidence($incident, $field->id);
         $this->service->resolve($incident->fresh(), $field->id, 'تم تنفيذ الإجراء التصحيحي وإغلاق الموقع');

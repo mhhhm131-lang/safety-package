@@ -87,10 +87,11 @@ class IncidentTest extends TestCase
         // التوجيه الآلي: منسق المكان وفني المكان من ملفات المستخدمين → وصل الفني بلا نقرة بشرية
         $this->assertSame($this->fani->id, $incident->incident_field_team_id);
         $this->assertSame($this->coord->id, $incident->incident_coordinator_id);
-        $this->assertSame('field_received', $incident->status);
+        $this->assertSame('forwarded', $incident->status); // ١٠-٣ (ح-١): الاستلام بيد الفني لا آلياً
+        $this->assertNull($incident->field_received_at);
         $this->assertSame('فصل التيار وعزل السلك فوراً', $incident->corrective_action); // موروث من الخطر
         $this->assertSame(1, $incident->attachments()->where('kind', 'report')->count());
-        $this->assertSame(['create', 'receive', 'refer', 'ref_receive', 'forward', 'field_receive'], $incident->events()->orderBy('id')->pluck('action')->all());
+        $this->assertSame(['create', 'receive', 'refer', 'ref_receive', 'forward'], $incident->events()->orderBy('id')->pluck('action')->all());
         // لا سجل تدقيق للسري
         $this->assertDatabaseMissing('audit_logs', ['model_name' => 'Incident']);
         // إشعار داخل النظام للمركز والفني
@@ -98,16 +99,22 @@ class IncidentTest extends TestCase
         $this->assertDatabaseHas('app_notifications', ['user_id' => $this->fani->id, 'type' => 'incident.forwarded']);
 
         // ٢) المبلّغ يتابع بالرمز: الخط الزمني بلا هوية
-        $this->get('/incident/track?code='.$incident->secret_tracking_code)->assertOk()->assertSee($incident->code)->assertSee('استلمه الفني')->assertDontSee('اسم fani');
+        $this->get('/incident/track?code='.$incident->secret_tracking_code)->assertOk()->assertSee($incident->code)->assertSee('حُوّل إلى الفني')->assertDontSee('استلمه الفني')->assertDontSee('اسم fani');
         $this->post('/incident/track', ['tracking_code' => 'WRONGCODE1'])->assertSessionHasErrors('tracking_code');
 
         // ٣) الرؤية: المركز والفني المعيَّن يريانه، فني مكان آخر لا
         $this->actingAs($this->salama)->get('/app/incidents')->assertOk()->assertSee($incident->code);
-        $this->actingAs($this->fani)->get("/app/incidents/{$incident->id}")->assertOk()->assertSee('بدء المعالجة');
+        $this->actingAs($this->fani)->get("/app/incidents/{$incident->id}")->assertOk()->assertSee('استلمتُ البلاغ');
         $this->actingAs($this->fani2)->get("/app/incidents/{$incident->id}")->assertForbidden();
 
         // ٤) الفني: يبدأ، يرفع دليلاً، يعلّم «عولج». فني آخر لا يستطيع
         $this->actingAs($this->fani2)->post("/app/incidents/{$incident->id}/begin-work")->assertSessionHas('error');
+        // ١٠-٣ (ح-١): الفني يستلم بضغطة — فتصح فجوة البلاغ
+        $this->actingAs($this->fani2)->post("/app/incidents/{$incident->id}/field-receive")->assertSessionHas('error');
+        $this->actingAs($this->fani)->post("/app/incidents/{$incident->id}/field-receive")->assertSessionHas('success');
+        $this->assertSame('field_received', $incident->fresh()->status);
+        $this->assertNotNull($incident->fresh()->field_received_at);
+        $this->get('/incident/track?code='.$incident->secret_tracking_code)->assertOk()->assertSee('استلمه الفني')->assertDontSee('اسم fani');
         $this->actingAs($this->fani)->post("/app/incidents/{$incident->id}/begin-work")->assertSessionHas('success');
         $this->assertSame('in_progress', $incident->fresh()->status);
         $this->actingAs($this->fani)->post("/app/incidents/{$incident->id}/resolve", ['resolution_summary' => 'فُصل التيار وعُزل السلك وأُعيد الغطاء وفُحص الخط كاملاً'])->assertSessionHas('error'); // بلا دليل
@@ -203,6 +210,7 @@ class IncidentTest extends TestCase
         // خارج النطاق من أي حالة — المركز فقط
         $this->actingAs($this->fani)->post("/app/incidents/{$b->id}/out-of-scope")->assertSessionHas('error');
         // المبلّغ بحساب: يعالج الفني، المركز يطلب الموافقة، المبلّغ يوافق، ثم الإغلاق
+        $this->actingAs($this->fani)->post("/app/incidents/{$b->id}/field-receive");
         $this->actingAs($this->fani)->post("/app/incidents/{$b->id}/begin-work");
         $this->actingAs($this->fani)->post("/app/incidents/{$b->id}/upload", ['file' => UploadedFile::fake()->createWithContent('p.png', base64_decode(self::PNG))]);
         $this->actingAs($this->fani)->post("/app/incidents/{$b->id}/resolve", ['resolution_summary' => 'فُحصت اللوحة وبُدّل القاطع المحترق وأُعيد التيار'])->assertSessionHas('success');
@@ -222,6 +230,7 @@ class IncidentTest extends TestCase
         $this->post('/incident/urgent', ['description' => 'دخان من غرفة الخوادم', 'place_id' => $this->placeId('HZ-06'), 'risk_id' => $this->reference->id]);
         $i = Incident::first();
         $this->assertSame('urgent', $i->incident_type);
+        $this->actingAs($this->fani)->post("/app/incidents/{$i->id}/field-receive")->assertSessionHas('success'); // ١٠-٣ (ح-١)
         $this->actingAs($this->fani)->post("/app/incidents/{$i->id}/escalate-to-coord", ['reason' => 'قصير'])->assertSessionHasErrors('reason');
         $resp = $this->actingAs($this->fani)->post("/app/incidents/{$i->id}/escalate-to-coord", ['reason' => 'يحتاج فصل التيار من المصدر الرئيسي وهذا خارج صلاحيتي']);
         $resp->assertSessionHas('success');
@@ -251,13 +260,13 @@ class IncidentTest extends TestCase
         $this->post('/incident/secret', ['description' => 'بلاغ سري بلا تصنيف', 'place_id' => $this->placeId('HZ-06')])->assertRedirect();
         $s = Incident::latest('id')->first();
         $this->assertNull($s->risk_id);
-        $this->assertSame('field_received', $s->status); // فني المكان معروف حتى بلا خطر
+        $this->assertSame('forwarded', $s->status); // فني المكان معروف حتى بلا خطر؛ الاستلام بيده (١٠-٣)
         // مكان له فني بلا منسق (القبو): خطوتا المنسق يؤديهما النظام ويصل الفني مباشرة
         $this->post('/incident/normal', ['description' => 'إنارة الطوارئ مطفأة في المواقف', 'place_id' => $this->placeId('HZ-01'), 'risk_id' => $this->reference->id]);
         $n = Incident::latest('id')->first();
         $this->assertNull($n->incident_coordinator_id);
         $this->assertSame($this->fani2->id, $n->incident_field_team_id);
-        $this->assertSame('field_received', $n->status);
+        $this->assertSame('forwarded', $n->status);
         $this->assertTrue(IncidentEvent::where('incident_id', $n->id)->where('action', 'ref_receive')->where('note', 'like', '%لا منسق%')->exists());
         // المركز يربطه بخطر لاحقاً
         $this->actingAs($this->salama)->post("/app/incidents/{$s->id}/link-risk", ['risk_id' => $this->reference->id])->assertSessionHas('success');
