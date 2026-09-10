@@ -113,6 +113,7 @@
         <div class="small text-muted px-2 mb-1">الطوارئ</div>
         <a href="{{ route('emergency.dashboard') }}" class="{{ request()->routeIs('emergency.dashboard') ? 'active' : '' }}"><i class="bi bi-exclamation-octagon"></i>مركز الطوارئ</a>
         <a href="{{ route('emergency.incidents.index') }}" class="{{ request()->routeIs('emergency.incidents.*') ? 'active' : '' }}"><i class="bi bi-broadcast"></i>الحالات الطارئة</a>
+        <a href="{{ route('emergency.plans.index') }}" class="{{ request()->routeIs('emergency.plans.*') ? 'active' : '' }}"><i class="bi bi-list-ol"></i>خطط الاستجابة</a>
         <a href="{{ route('emergency.teams.index') }}" class="{{ request()->routeIs('emergency.teams.*') ? 'active' : '' }}"><i class="bi bi-people-fill"></i>الفرق</a>
         <a href="{{ route('emergency.drills.index') }}" class="{{ request()->routeIs('emergency.drills.*') ? 'active' : '' }}"><i class="bi bi-calendar-event"></i>التمارين</a>
         <a href="{{ route('emergency.equipment.index') }}" class="{{ request()->routeIs('emergency.equipment.*') ? 'active' : '' }}"><i class="bi bi-fire"></i>معدات الطوارئ</a>

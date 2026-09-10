@@ -78,6 +78,8 @@ class CloseoutService
         // المبنى وجهات الاتصال والقوالب
         'emergency_buildings', 'building_floors', 'building_exits', 'assembly_points',
         'emergency_contacts', 'emergency_message_templates',
+        // خطط الاستجابة المشتقة من الوثائق الثماني (المرحلة ١٠-١): تُعاد قراءتها من الوثيقة، لا بيانات تشغيلية فيها
+        'response_plans', 'response_plan_steps',
         // قنوات التحقق من المقاولين (إعدادات لا بيانات)
         'contractor_channels',
         // بنية الإطار

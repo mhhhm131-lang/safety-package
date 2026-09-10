@@ -20,6 +20,9 @@ Route::middleware(['web', 'auth'])->prefix('app/emergency')->name('emergency.')-
         Route::get('/incidents', [EmergencyController::class, 'incidentsIndex'])->name('incidents.index');
         Route::get('/incidents/{incident}/live', [EmergencyController::class, 'incidentLive'])->name('incidents.live');
         Route::get('/incidents/{incident}/report', [EmergencyController::class, 'incidentReport'])->name('incidents.report');
+        // خطط الاستجابة المشتقة من الوثائق (المرحلة ١٠-١) — اطلاع
+        Route::get('/plans', [EmergencyController::class, 'plansIndex'])->name('plans.index');
+        Route::get('/plans/{place}', [EmergencyController::class, 'plansShow'])->name('plans.show');
         Route::get('/buildings', [EmergencyController::class, 'buildingsIndex'])->name('buildings.index');
         Route::get('/buildings/{building}', [EmergencyController::class, 'buildingsShow'])->name('buildings.show')->whereNumber('building');
         Route::get('/buildings/{building}/control', [EmergencyController::class, 'buildingControl'])->name('buildings.control');
@@ -85,6 +88,7 @@ Route::middleware(['web', 'auth'])->prefix('app/emergency')->name('emergency.')-
         Route::get('/settings', [EmergencyController::class, 'settingsEdit'])->name('settings');
         Route::post('/settings', [EmergencyController::class, 'settingsUpdate'])->name('settings.update');
         Route::post('/teams/sync', [EmergencyController::class, 'teamsSync'])->name('teams.sync');
+        Route::post('/plans/sync', [EmergencyController::class, 'plansSync'])->name('plans.sync');
     });
 
     Route::middleware('permission:emergency.drill')->group(function () {

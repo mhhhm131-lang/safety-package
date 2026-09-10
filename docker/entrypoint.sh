@@ -33,6 +33,8 @@ if [ "$RUN_MIGRATIONS" = "true" ]; then
   php artisan migrate --force --no-interaction
   echo "  البيانات المرجعية (الأماكن، الهيكل)..."
   php artisan db:seed --force --no-interaction
+  echo "  خطط الاستجابة من الوثائق الثماني..."
+  php artisan ipa:sync-plans --no-interaction || true
 fi
 
 # حساب مسؤول السلامة الأول في الإنتاج: من متغيرات البيئة (تُضبط في Render مرة واحدة ثم تُحذف).

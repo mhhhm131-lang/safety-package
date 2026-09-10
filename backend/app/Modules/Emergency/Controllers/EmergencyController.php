@@ -20,6 +20,7 @@ use App\Modules\Emergency\Models\EvacuationCheckIn;
 use App\Modules\Emergency\Models\EvacuationDrill;
 use App\Modules\Emergency\Models\Lockdown;
 use App\Modules\Emergency\Models\PanicAlert;
+use App\Modules\Emergency\Models\ResponsePlan;
 use App\Modules\Emergency\Services\AutoEscalationService;
 use App\Modules\Emergency\Services\DrillService;
 use App\Modules\Emergency\Services\EmergencyAnalyticsService;
@@ -28,7 +29,9 @@ use App\Modules\Emergency\Services\LockdownService;
 use App\Modules\Emergency\Services\MedicalProfileService;
 use App\Modules\Emergency\Services\PanicAlertService;
 use App\Modules\Emergency\Services\QrMusteringService;
+use App\Modules\Emergency\Services\ResponsePlanSync;
 use App\Modules\Emergency\Services\TeamSync;
+use App\Modules\Emergency\Support\RoleCards;
 use App\Modules\Emergency\Services\VisitorService;
 use App\Modules\Governance\Models\Place;
 use App\Modules\Governance\Models\Setting;
@@ -676,6 +679,36 @@ class EmergencyController extends Controller
     {
         $n = app(TeamSync::class)->sync();
         return back()->with('success', 'زُومن الفريق الأولي من ملف المكان: '.$n.' فريق');
+    }
+
+    // ==================== خطط الاستجابة (المرحلة ١٠-١: مشتقة من الوثائق الثماني، اطلاع فقط) ====================
+
+    public function plansIndex()
+    {
+        // الوثيقة هي الحقيقة: تُعاد قراءتها عند كل فتح إن تغيّرت بصمتها (رخيصة: sha1 لثمانية ملفات)
+        $summary = app(ResponsePlanSync::class)->sync();
+        $plans = ResponsePlan::with(['place', 'steps'])->get()->keyBy(fn ($p) => $p->place->code);
+        $places = Place::where('code', '!=', 'HZ-00')->orderBy('sort')->get();
+        $cards = RoleCards::byCategory();
+        return view('modules.emergency.plans.index', compact('summary', 'plans', 'places', 'cards'));
+    }
+
+    public function plansShow(string $place)
+    {
+        app(ResponsePlanSync::class)->sync();
+        $plan = ResponsePlan::whereHas('place', fn ($q) => $q->where('code', $place))->with(['place', 'steps'])->firstOrFail();
+        $byPath = $plan->stepsByPath();
+        return view('modules.emergency.plans.show', compact('plan', 'byPath'));
+    }
+
+    public function plansSync()
+    {
+        $r = app(ResponsePlanSync::class)->sync(null, true);
+        $n = count(array_filter($r, fn ($x) => $x['status'] === 'synced'));
+        $missing = array_keys(array_filter($r, fn ($x) => $x['status'] === 'missing'));
+        $msg = 'زُومنت خطط الاستجابة من الوثائق: '.$n.' خطة';
+        if ($missing) $msg .= ' — وثائق مفقودة: '.implode('، ', $missing);
+        return back()->with($missing ? 'warning' : 'success', $msg);
     }
 
     // ==================== جهات الاتصال ====================
