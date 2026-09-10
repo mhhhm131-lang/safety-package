@@ -283,6 +283,7 @@
                                         <option value="high">عالي</option>
                                         <option value="critical">حرج</option>
                                     </select>
+                                    @if($group->name === 'السمعة'){{-- قرار ٢٦: النطاق للسمعة وحدها --}}
                                     <select name="phases[{{ $phaseKey }}][affected_rep_scope][{{ $gid }}]" class="form-select form-select-sm" style="max-width:130px;">
                                         <option value="">— النطاق —</option>
                                         <option value="local">محلي</option>
@@ -290,6 +291,7 @@
                                         <option value="national">وطني</option>
                                         <option value="international">دولي</option>
                                     </select>
+                                    @endif
                                     <input type="text" name="phases[{{ $phaseKey }}][affected_detail][{{ $gid }}]" class="form-control form-control-sm"
                                            placeholder="ما الضرر تحديداً؟" maxlength="1000" value="{{ old("phases.{$phaseKey}.affected_detail.{$gid}", '') }}">
                                 </div>
