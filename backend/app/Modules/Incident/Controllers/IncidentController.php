@@ -120,13 +120,15 @@ class IncidentController extends Controller
         $risks = Risk::where('sub_category_id', $request->integer('sub_category_id'))
             ->where('risk_type', 'reference')->whereIn('status', ['approved', 'active'])
             ->orderBy('title')
-            ->with(['phases' => fn ($q) => $q->where('phase', RiskPhase::PHASE_PROACTIVE)])
+            ->with(['phases' => fn ($q) => $q->whereIn('phase', [RiskPhase::PHASE_OPERATIONAL, RiskPhase::PHASE_PROACTIVE])])
             ->get(['id', 'code', 'title', 'risk_score', 'severity', 'likelihood']);
-        return response()->json($risks->map(fn ($r) => [
-            'id' => $r->id, 'code' => $r->code, 'title' => $r->title, 'risk_score' => $r->risk_score,
-            'corrective_action' => $r->phases->first()?->corrective_action,
-            'preventive_action' => $r->phases->first()?->preventive_action,
-        ])->values());
+        // ما يراه المبلّغ: الطبقة التشغيلية (الضوابط القائمة والتصحيحي عند الانحراف)؛ وإن خلت فالاستباقية (٢٠٢٦-٠٩-١١)
+        return response()->json($risks->map(function ($r) {
+            $op = $r->phases->firstWhere('phase', RiskPhase::PHASE_OPERATIONAL); $pr = $r->phases->firstWhere('phase', RiskPhase::PHASE_PROACTIVE);
+            return ['id' => $r->id, 'code' => $r->code, 'title' => $r->title, 'risk_score' => $r->risk_score,
+                'corrective_action' => $op?->corrective_action ?: $pr?->corrective_action,
+                'preventive_action' => $op?->preventive_action ?: $pr?->preventive_action];
+        })->values());
     }
 
     // ───────────── شاشات المركز ─────────────

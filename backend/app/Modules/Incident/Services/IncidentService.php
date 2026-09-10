@@ -63,7 +63,7 @@ class IncidentService
             throw new InvalidArgumentException("نوع البلاغ غير معروف: $type");
         }
         $routing = $this->resolveRouting((int) ($data['risk_id'] ?? 0), $data['place_id'] ?? null);
-        $ctx = $this->buildRiskContext($routing['risk_id']);
+        $ctx = $this->buildRiskContext($routing['risk_id'], $type);
 
         $incident = DB::transaction(function () use ($type, $userId, $data, $routing, $ctx) {
             $incident = Incident::create([
@@ -485,14 +485,19 @@ class IncidentService
         return ['coordinator_id' => $coordinatorId, 'field_team_id' => $fieldTeamId, 'note' => implode('؛ ', $notes) ?: null, 'risk_id' => null, 'reference_id' => null];
     }
 
-    private function buildRiskContext(?int $riskId): array
+    /**
+     * الإجراء التصحيحي المنسوخ إلى البلاغ يأتي من الطبقة المناسبة لنوعه (قاعدة الجداول ٠٠-و، ٢٠٢٦-٠٩-١١):
+     * عادي/سري = انحراف تشغيلي ← التشغيلية؛ عاجل ← الاستجابة؛ وإن خلت الطبقة يُؤخذ من الاستباقية (بيانات OHSMS القديمة).
+     */
+    private function buildRiskContext(?int $riskId, string $type = 'normal'): array
     {
         $result = ['corrective_action' => null, 'notify_roles' => [], 'risk_title' => null];
         if (!$riskId) return $result;
         $risk = Risk::with(['phases.affectedGroupDetails'])->find($riskId);
         if (!$risk) return $result;
+        $key = $type === 'urgent' ? RiskPhase::PHASE_RESPONSE : RiskPhase::PHASE_OPERATIONAL;
         $proactive = $risk->phases->firstWhere('phase', RiskPhase::PHASE_PROACTIVE);
-        $result['corrective_action'] = $proactive?->corrective_action;
+        $result['corrective_action'] = $risk->phases->firstWhere('phase', $key)?->corrective_action ?: $proactive?->corrective_action;
         $result['risk_title'] = $risk->title;
         $impactRoles = ['critical' => ['top_management', 'safety_committee', 'safety_coordinator'], 'high' => ['safety_committee', 'safety_coordinator'], 'medium' => ['safety_coordinator'], 'low' => []];
         foreach ($risk->phases as $phase) {

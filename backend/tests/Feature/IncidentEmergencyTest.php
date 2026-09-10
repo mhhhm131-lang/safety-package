@@ -86,6 +86,7 @@ class IncidentEmergencyTest extends TestCase
         $i = Incident::first();
         $this->assertSame('urgent', $i->incident_type);
         $this->assertSame('forwarded', $i->status); // (ح-١) الاستلام بيد الفني
+        $this->assertSame('فحص فني قبل استعادة التشغيل', $i->corrective_action); // العاجل يرث تصحيحي طبقة الاستجابة (٢٠٢٦-٠٩-١١)
 
         // المركز يفتح البلاغ: الطبقة «الاستجابة» بنصها، والنوع المقترح «حريق»، وزر التفعيل
         $r = $this->actingAs($this->munawib)->get("/app/incidents/{$i->id}");
@@ -145,6 +146,8 @@ class IncidentEmergencyTest extends TestCase
         $i = Incident::first();
         $this->assertSame('forwarded', $i->status);
         $this->assertNull($i->field_received_at);
+        $this->assertSame('نقل المصاب لمكان بارد', $i->corrective_action); // العادي يرث تصحيحي الطبقة التشغيلية
+        $this->get('/incident/api/risks?sub_category_id='.$this->physRisk->sub_category_id)->assertOk()->assertJsonPath('0.corrective_action', 'نقل المصاب لمكان بارد')->assertJsonPath('0.preventive_action', 'ماء وظل وفترات راحة');
         $this->assertSame(['create', 'receive', 'refer', 'ref_receive', 'forward'], $i->events()->orderBy('id')->pluck('action')->all());
 
         // (ح-٢) الطبقة التشغيلية: الضوابط القائمة والإجراء التصحيحي — لا نص الاستجابة
