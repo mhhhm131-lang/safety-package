@@ -168,11 +168,12 @@ class InstituteBookTest extends TestCase
     public function test_activation_carries_title_description_and_affected_detail_into_active_registry(): void
     {
         $this->seed([PlacesSeeder::class, OrganizationUnitsSeeder::class, AffectedGroupsSeeder::class, RiskBookSeeder::class]);
-        $ref = Risk::where('code', 'PH-01-03')->firstOrFail(); // خطر بلا جدول معتمد بعد
+        $ref = Risk::where('code', 'PH-01-03')->firstOrFail(); // كل الأخطار لها جداول الآن (١٧٧/١٧٧) — نُعيد كتابة تفصيل الفئة لا إدراجه
         $group = AffectedGroup::where('name', 'الموظفون')->firstOrFail();
         $phase = $ref->phases()->where('phase', RiskPhase::PHASE_PROACTIVE)->firstOrFail();
         $phase->affectedGroups()->sync([$group->id]);
-        RiskPhaseAffectedGroupDetail::create(['risk_phase_id' => $phase->id, 'affected_group_id' => $group->id, 'impact' => 'high', 'rep_scope' => 'local', 'impact_description' => 'الأمن والمواقف']);
+        RiskPhaseAffectedGroupDetail::updateOrCreate(['risk_phase_id' => $phase->id, 'affected_group_id' => $group->id],
+            ['impact' => 'high', 'rep_scope' => 'local', 'impact_description' => 'الأمن والمواقف']);
         $ref->update(['description' => 'المصدر: حرارة الصيف', 'contact_channel' => 'مركز السلامة']);
 
         $manager = $this->makeUser('department_manager', 'hr');

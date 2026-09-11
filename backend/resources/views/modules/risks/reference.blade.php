@@ -431,7 +431,21 @@
         } else {
             headerEl.innerHTML = `
                 <span class="badge bg-success fs-6 me-2">${risks.length}</span>
-                <span class="fw-semibold flex-grow-1">مقارنة أطوار المخاطر المحددة</span>`;
+                <span class="fw-semibold flex-grow-1">الأخطار المحددة</span>`;
+        }
+
+        // صف عنوان الخطر فوق أطواره الثلاثة (عند اختيار أكثر من خطر)
+        function buildTitleRow(r) {
+            const crumbs = [r.category, r.sub_category].filter(Boolean)
+                .map(c => `<span style="color:var(--text-muted);">${escAttr(c)}</span>`)
+                .join(`<span style="margin:0 4px;color:var(--text-muted);opacity:.5;">›</span>`);
+            return `
+                <tr class="risk-title-row" data-risk-id="${r.id}" style="background:var(--bg-main);border-top:3px solid var(--border-color);">
+                    <td colspan="14" style="padding:6px 10px;font-size:.85rem;line-height:1.7;word-break:break-word;">
+                        ${crumbs ? crumbs + `<span style="margin:0 4px;color:var(--text-muted);opacity:.5;">›</span>` : ''}
+                        <strong style="color:var(--text-main);">${escAttr(r.title || '')}</strong>
+                    </td>
+                </tr>`;
         }
 
         // Column order: الكود+عنوان | الطور | الأسباب | المتأثرون | التقييم القبلي | الوقائي | التصحيحي | التقييم بعد | الجهة | المرجع القانوني | الفائدة
@@ -580,10 +594,8 @@
                         </td>`;
                 }
 
-                const borderTop = (showRiskCol && idx === 0) ? 'border-top:3px solid var(--border-color);' : '';
-
                 rows += `
-                    <tr style="background:${st.bg};${borderTop}">
+                    <tr style="background:${st.bg};">
                         ${riskCell}
                         <td class="text-nowrap align-top" style="width:100px;">
                             <span class="detail-phase-badge"
@@ -610,7 +622,7 @@
         }
 
         const showRiskCol = !single;
-        let allRows = risks.map(r => buildPhaseRows(r, showRiskCol)).join('');
+        let allRows = risks.map(r => (showRiskCol ? buildTitleRow(r) : '') + buildPhaseRows(r, showRiskCol)).join('');
 
         bodyEl.innerHTML = `
             <div class="table-responsive">
