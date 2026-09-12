@@ -52,8 +52,8 @@ class IntentRegistry
             $add(true, 'portal', 'بوابتي', route('contractor.home'), 'bi-building', 'المقاولون', true, 'طرفي ومشاريعي وعمالي ووثائقي');
         }
         // البلاغ
-        $add($can('incident.create'), 'report', 'أبلّغ عن خطر', route('incident.form', 'normal'), 'bi-megaphone-fill', 'البلاغ', true, 'يُرسل باسمك');
-        $add(!$can('incident.create'), 'report_guest', 'أبلّغ عن خطر', route('incident.landing'), 'bi-megaphone-fill', 'البلاغ', true, 'بلا حساب، يُقيَّد برقم ووقت');
+        // قرار المستخدم ٢٠٢٦-٠٩-١٣: زر واحد للجميع يفتح اختيار النوع (عادي/سري/عاجل) بميزة كل نوع له
+        $add(true, 'report', 'أبلّغ عن خطر', route('incident.landing'), 'bi-megaphone-fill', 'البلاغ', true, 'عادي لا يُغلق إلا بموافقتك · سري يخفي هويتك · عاجل اتصل بالمركز');
         $add($can('incident.list'), 'incidents', 'سجل البلاغات', route('incidents.index'), 'bi-journal-text', 'البلاغ');
         // الفني: مكانه
         $add($ui === 'tech' && $folder, 'inspect', 'أفحص مكاني', $folder ? '/'.$folder.'/inspection-form.html' : null, 'bi-clipboard-check', 'الفحص', true, $placeCode ? 'نموذج فحص '.$placeCode : null);

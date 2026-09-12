@@ -19,7 +19,7 @@ class IncidentClosureService
 
     public function close(Incident $incident, int $userId): Incident
     {
-        $needsReporterApproval = $incident->actor_id !== null && in_array($incident->incident_type, ['normal', 'urgent'], true);
+        $needsReporterApproval = $incident->needsReporterApproval(); // قرار المستخدم ٢٠٢٦-٠٩-١٣: بحساب أو برمز التتبع سواء
 
         if ($needsReporterApproval && !$incident->reporter_approved_closure) {
             if (!$incident->pending_closure) {
@@ -28,12 +28,14 @@ class IncidentClosureService
                     $incident->closure_requested_at = now();
                     $incident->save();
                     IncidentEvent::create(['incident_id' => $incident->id, 'action' => 'request_closure', 'from_status' => $incident->status,
-                        'to_status' => $incident->status, 'note' => 'بانتظار موافقة المُبلِّغ على الإغلاق', 'actor_id' => $userId]);
+                        'to_status' => $incident->status, 'note' => 'بانتظار موافقة المُبلِّغ على الإغلاق'.($incident->actor_id ? '' : ' — يوافق من صفحة التتبع برمزه'), 'actor_id' => $userId]);
                 });
                 $this->incidentService->notifyUser($incident->actor_id, 'incident.closure',
                     'طلب موافقتك على إغلاق بلاغك '.$incident->code, 'عولج البلاغ ويحتاج موافقتك لإغلاقه.', "/app/incidents/{$incident->id}");
             }
-            throw new InvalidArgumentException('لا يمكن الإغلاق قبل موافقة المُبلِّغ. تم إرسال طلب الموافقة.');
+            throw new InvalidArgumentException($incident->actor_id
+                ? 'لا يمكن الإغلاق قبل موافقة المُبلِّغ. تم إرسال طلب الموافقة.'
+                : 'لا يمكن الإغلاق قبل موافقة المُبلِّغ. يوافق من صفحة التتبع برمزه.');
         }
 
         if (!$needsReporterApproval && !$incident->coord_verified_at) {
@@ -97,6 +99,31 @@ class IncidentClosureService
         $incident->pending_closure = false;
         $incident->save();
         return $this->incidentService->transition($incident, $userId, 'reject_closure', 'in_progress', $note);
+    }
+
+    /** المبلّغ بلا حساب يوافق برمز التتبع (قرار المستخدم ٢٠٢٦-٠٩-١٣: «العادي لا يُغلق إلا بموافقتك»). */
+    public function approveClosureByCode(Incident $incident): Incident
+    {
+        if ($incident->actor_id !== null) throw new InvalidArgumentException('هذا البلاغ لمبلّغ بحساب — يوافق من حسابه.');
+        if (!$incident->pending_closure) throw new InvalidArgumentException('لا يوجد طلب إغلاق قيد الانتظار على هذا البلاغ.');
+        DB::transaction(function () use ($incident) {
+            $incident->reporter_approved_closure = true;
+            $incident->pending_closure = false;
+            $incident->save();
+            IncidentEvent::create(['incident_id' => $incident->id, 'action' => 'reporter_approved', 'from_status' => $incident->status,
+                'to_status' => $incident->status, 'note' => 'وافق المُبلِّغ على الإغلاق برمز التتبع', 'actor_id' => null]);
+        });
+        return $incident->fresh();
+    }
+
+    /** المبلّغ بلا حساب يرفض الإغلاق برمز التتبع فيعود البلاغ إلى المعالجة. */
+    public function rejectClosureByCode(Incident $incident, string $note): Incident
+    {
+        if ($incident->actor_id !== null) throw new InvalidArgumentException('هذا البلاغ لمبلّغ بحساب — يرد من حسابه.');
+        if (!$incident->pending_closure) throw new InvalidArgumentException('لا يوجد طلب إغلاق قيد الانتظار على هذا البلاغ.');
+        $incident->pending_closure = false;
+        $incident->save();
+        return $this->incidentService->transition($incident, IncidentService::BOT_USER_ID, 'reject_closure', 'in_progress', 'رفض المُبلِّغ الإغلاق برمز التتبع: '.$note);
     }
 
     /** تحقق ميداني من شخص غير الذي علّم «عولج» (عينان مستقلتان). */

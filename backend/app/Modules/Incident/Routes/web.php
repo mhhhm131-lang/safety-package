@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/incident', [IncidentController::class, 'landing'])->name('incident.landing');
 Route::get('/incident/track', [IncidentController::class, 'track'])->name('incident.track');
 Route::post('/incident/track', [IncidentController::class, 'track'])->middleware('throttle:incident-public')->name('incident.track.post');
+// قرار المستخدم ٢٠٢٦-٠٩-١٣: «العادي لا يُغلق إلا بموافقتك» — للمبلّغ برمز التتبع أيضاً
+Route::post('/incident/track/approve', [IncidentController::class, 'trackApprove'])->middleware('throttle:incident-public')->name('incident.track.approve');
+Route::post('/incident/track/reject', [IncidentController::class, 'trackReject'])->middleware('throttle:incident-public')->name('incident.track.reject');
 Route::get('/incident/success', [IncidentController::class, 'success'])->name('incident.success');
 Route::get('/incident/api/sub-categories', [IncidentController::class, 'apiSubCategories'])->name('incident.api.sub-categories');
 Route::get('/incident/api/risks', [IncidentController::class, 'apiRisks'])->name('incident.api.risks');

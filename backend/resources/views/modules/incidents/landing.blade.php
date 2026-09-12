@@ -7,19 +7,22 @@
   <div class="text-muted small mb-3">لأي موظف أو متدرب أو زائر — بلا تسجيل دخول. يُقيَّد برقم ووقت في سجل بلاغات الشاغلين، وتتابعه برمز.
     @if($place) <span class="badge text-bg-success">المكان: {{ $places->firstWhere('code', $place)?->name ?? $place }}</span>@endif
   </div>
+  {{-- قرار المستخدم ٢٠٢٦-٠٩-١٣: اختر نوع البلاغ بميزته لك، لا بمصطلحاتنا --}}
   <div class="row g-3">
-    <div class="col-md-4"><a class="type-card urgent" href="{{ route('incident.form', 'urgent') }}{{ $q }}">
-      <div class="t"><i class="bi bi-exclamation-octagon-fill me-1"></i>عاجل</div>
-      <div class="small mt-1">خطر قائم الآن يهدد الناس أو المكان: حريق، دخان، تسرب، سقوط وشيك، شخص مصاب.</div>
-      <div class="small mt-2 fw-bold" style="color:var(--red)">وفي الخطر الداهم اتصل أولاً: ٩٩٨ الدفاع المدني · ٩٩٧ الهلال الأحمر</div>
-    </a></div>
-    <div class="col-md-4"><a class="type-card" href="{{ route('incident.form', 'normal') }}{{ $q }}">
+    <div class="col-md-4"><a class="type-card" href="{{ route('incident.form', 'normal') }}{{ $q }}" data-type="normal">
       <div class="t"><i class="bi bi-flag-fill me-1" style="color:var(--g)"></i>عادي</div>
-      <div class="small mt-1">ملاحظة سلامة تحتاج معالجة: طفاية مفقودة، مخرج مسدود، سلك مكشوف، بلاط مكسور، رائحة غريبة.</div>
+      <div class="small mt-1 fw-bold" style="color:var(--g)">لا يُغلق إلا بموافقتك.</div>
+      <div class="small mt-1">ملاحظة سلامة تحتاج معالجة: طفاية مفقودة، مخرج مسدود، سلك مكشوف، بلاط مكسور، رائحة غريبة. تتابعه برمز، وتُسأل في النهاية: هل عولج فعلاً؟</div>
     </a></div>
-    <div class="col-md-4"><a class="type-card secret" href="{{ route('incident.form', 'secret') }}{{ $q }}">
+    <div class="col-md-4"><a class="type-card secret" href="{{ route('incident.form', 'secret') }}{{ $q }}" data-type="secret">
       <div class="t"><i class="bi bi-incognito me-1"></i>سري</div>
-      <div class="small mt-1">هويتك مخفية تماماً. البلاغ يُرى ويُعالج كالبقية، ولا يُسجَّل من أرسله.</div>
+      <div class="small mt-1 fw-bold" style="color:#4a3d8f">يخفي هويتك تماماً.</div>
+      <div class="small mt-1">لا اسم ولا هاتف ولا حساب، ولا يُسجَّل من أرسله. تستفيد منه المنظمة ويُعالج كالبقية، ولا يمنحك حق المطالبة.</div>
+    </a></div>
+    <div class="col-md-4"><a class="type-card urgent" href="{{ route('incident.form', 'urgent') }}{{ $q }}" data-type="urgent">
+      <div class="t"><i class="bi bi-exclamation-octagon-fill me-1"></i>عاجل</div>
+      <div class="small mt-1 fw-bold" style="color:var(--red)">حالة طارئة الآن: اتصل بمركز السلامة.</div>
+      <div class="small mt-1">حريق، دخان، تسرب، سقوط وشيك، شخص مصاب. اتصل <a href="tel:0505498966" dir="ltr">0505498966</a> أو <a href="https://wa.me/966505498966" target="_blank" rel="noopener">واتساب</a>، ثم أرسل البلاغ ليصل المركز والفني فوراً.</div>
     </a></div>
   </div>
 </div>

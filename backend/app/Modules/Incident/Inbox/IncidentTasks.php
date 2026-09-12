@@ -61,7 +61,7 @@ class IncidentTasks implements TaskSource
             if ($i->status === 'referred') return $mk('center', 'بلاغ '.$i->code.$where.': عند المنسق بلا فني — حوّله', ['label' => 'حوّله', 'url' => $show]);
             if ($i->status === 'resolved') {
                 // قواعد الإغلاق القائمة (IncidentClosureService::close): مبلّغ بحساب ← موافقته أولاً؛ وإلا ← تحقق شخص غير المنفّذ
-                $needsReporter = $i->actor_id !== null && in_array($i->incident_type, ['normal', 'urgent'], true);
+                $needsReporter = $i->needsReporterApproval();
                 if ($needsReporter && !$i->reporter_approved_closure) {
                     if ($i->pending_closure) return null; // بانتظار المبلّغ — مهمته هو
                     return $mk('center', 'بلاغ '.$i->code.$where.': عولج — اطلب موافقة المبلّغ على الإغلاق', ['label' => 'اطلب موافقته', 'url' => route('incidents.close', $i), 'method' => 'POST'], ['label' => 'التفاصيل / رفض', 'url' => $show]);

@@ -126,6 +126,15 @@ class Incident extends Model
         return $this->incident_type === 'secret';
     }
 
+    /**
+     * قرار المستخدم (٢٠٢٦-٠٩-١٣): «العادي لا يُغلق إلا بموافقتك» — للمبلّغ بحساب أو برمز التتبع سواء.
+     * السري لا يمنح حق المطالبة، فيُغلق بتحقق شخص غير المنفّذ.
+     */
+    public function needsReporterApproval(): bool
+    {
+        return in_array($this->incident_type, ['normal', 'urgent'], true) && ($this->actor_id !== null || $this->secret_tracking_code);
+    }
+
     /** هل تجاوز المهلة (البند ج) ولم يصل الفني بعد؟ */
     public function isOverdue(): bool
     {

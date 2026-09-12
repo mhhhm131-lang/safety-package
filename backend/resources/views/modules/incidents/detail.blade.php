@@ -123,7 +123,7 @@
         <form method="post" action="{{ route('incidents.close', $incident) }}">@csrf<button class="btn btn-dark">إغلاق</button></form>
       @endif
       @if($incident->status === 'resolved')
-        @php($needsReporter = $incident->actor_id !== null && in_array($incident->incident_type, ['normal', 'urgent'], true))
+        @php($needsReporter = $incident->needsReporterApproval())
         @if(auth()->id() === $incident->actor_id && $incident->pending_closure)
           <form method="post" action="{{ route('incidents.approveClosure', $incident) }}">@csrf<button class="btn btn-success"><i class="bi bi-hand-thumbs-up me-1"></i> أوافق على الإغلاق — عولج فعلاً</button></form>
           <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">لم يُعالج — أعِده</button>

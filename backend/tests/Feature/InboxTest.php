@@ -97,10 +97,14 @@ class InboxTest extends TestCase
         $this->actingAs($this->fani)->post("/app/incidents/{$i->id}/resolve", ['resolution_summary' => 'بُدّل البلاط المكسور ونُظّف الممر وأُعيد فتحه للمارة',
             'evidence' => UploadedFile::fake()->createWithContent('after.png', base64_decode(self::PNG))])->assertSessionHas('success');
         $this->assertSame(0, $this->pending($this->fani));
-        // مبلّغ بلا حساب: قاعدة الإغلاق القائمة تطلب تحقق شخص غير المنفّذ ← مهمة «تحققتُ ميدانياً» ثم «أغلق»
+        // مبلّغ بلا حساب برمز: «العادي لا يُغلق إلا بموافقتك» ← مهمة المركز «اطلب موافقته» ← المبلّغ يوافق من التتبع ← «أغلق»
         $r = $this->actingAs($this->salama)->get('/app')->assertOk();
-        $r->assertSee('تحقق ميدانياً قبل الإغلاق')->assertSee('action="'.url("/app/incidents/{$i->id}/verify").'"', false);
-        $this->actingAs($this->salama)->post("/app/incidents/{$i->id}/verify")->assertSessionHas('success');
+        $r->assertSee('اطلب موافقة المبلّغ')->assertSee('action="'.url("/app/incidents/{$i->id}/close").'"', false);
+        $this->actingAs($this->salama)->post("/app/incidents/{$i->id}/close"); // يطلب الموافقة
+        $this->assertTrue($i->fresh()->pending_closure);
+        $this->assertSame(0, $this->pending($this->salama)); // بانتظار المبلّغ
+        auth()->logout();
+        $this->post('/incident/track/approve', ['tracking_code' => $i->secret_tracking_code])->assertRedirect();
         $r = $this->actingAs($this->salama)->get('/app')->assertOk();
         $r->assertSee('عولج — أغلقه؟')->assertSee('action="'.url("/app/incidents/{$i->id}/close").'"', false);
         // المركز يغلق من البطاقة نفسها ← لا مهمة

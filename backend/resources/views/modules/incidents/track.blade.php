@@ -23,6 +23,17 @@
   </div>
   <div class="mt-2"><b>{{ $incident->title }}</b><div class="small text-muted">{{ $incident->place?->name ?? '' }}{{ $incident->location_text ? ' — '.$incident->location_text : '' }}</div></div>
   @if($incident->resolution_summary)<div class="mt-2 p-2 rounded small" style="background:#eef5f1"><b>ما تم:</b> {{ $incident->resolution_summary }}</div>@endif
+  @if($incident->pending_closure && !$incident->reporter_approved_closure && $incident->actor_id === null)
+    {{-- قرار المستخدم ٢٠٢٦-٠٩-١٣: العادي لا يُغلق إلا بموافقة المبلّغ — وهنا يوافق برمزه --}}
+    <div class="mt-3 p-3 rounded border" style="background:#fffbea" id="closureApproval">
+      <div class="fw-bold mb-2">عولج بلاغك. هل عولج فعلاً؟ لا يُغلق إلا بموافقتك.</div>
+      <div class="d-flex gap-2 flex-wrap align-items-start">
+        <form method="post" action="{{ route('incident.track.approve') }}">@csrf<input type="hidden" name="tracking_code" value="{{ $incident->secret_tracking_code }}"><button class="btn btn-g"><i class="bi bi-hand-thumbs-up"></i> نعم، عولج</button></form>
+        <form method="post" action="{{ route('incident.track.reject') }}" class="d-flex gap-2 flex-wrap">@csrf<input type="hidden" name="tracking_code" value="{{ $incident->secret_tracking_code }}">
+          <input name="note" class="form-control form-control-sm" placeholder="لم يُعالج لأن…" minlength="5" required style="max-width:260px"><button class="btn btn-outline-danger btn-sm">لا، أعِده</button></form>
+      </div>
+    </div>
+  @endif
   <hr>
   <div class="fw-bold mb-2">الخط الزمني</div>
   <div class="tl">

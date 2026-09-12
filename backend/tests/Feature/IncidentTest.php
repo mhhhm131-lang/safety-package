@@ -184,13 +184,27 @@ class IncidentTest extends TestCase
         $this->assertCount(0, $doc2['reports']);
         // لا يُحذف من اللوحة
         $this->actingAs($this->salama)->deleteJson('/api/store/ipa-occ')->assertStatus(422);
-        // بلا مبلّغ معروف: الإغلاق بعد تحقق شخص آخر
+        // مبلّغ بلا حساب برمز تتبع: «العادي لا يُغلق إلا بموافقتك» (قرار المستخدم ٢٠٢٦-٠٩-١٣) — يوافق من صفحة التتبع
         $this->actingAs($this->fani2)->post("/app/incidents/{$incident->id}/upload", ['file' => UploadedFile::fake()->createWithContent('p.png', base64_decode(self::PNG))]);
         $this->actingAs($this->fani2)->post("/app/incidents/{$incident->id}/resolve", ['resolution_summary' => 'رُكّبت طفاية جديدة معتمدة عند المدخل الغربي وفُحصت'])->assertSessionHas('success');
-        $this->actingAs($this->fani2)->post("/app/incidents/{$incident->id}/verify")->assertSessionHas('error'); // المنفّذ نفسه
-        $this->actingAs($this->salama)->post("/app/incidents/{$incident->id}/verify")->assertSessionHas('success');
+        $this->actingAs($this->salama)->post("/app/incidents/{$incident->id}/close")->assertSessionHas('error'); // يطلب موافقة المبلّغ
+        $this->assertTrue($incident->fresh()->pending_closure);
+        auth()->logout();
+        $code = $incident->secret_tracking_code;
+        $this->get('/incident/track?code='.$code)->assertOk()->assertSee('id="closureApproval"', false)->assertSee('هل عولج فعلاً؟');
+        // يرفض أولاً بملاحظة ← يعود للمعالجة ← يُعالج ثانية ← يوافق
+        $this->post('/incident/track/reject', ['tracking_code' => $code, 'note' => 'الطفاية بلا خرطوم'])->assertRedirect();
+        $this->assertSame('in_progress', $incident->fresh()->status);
+        $this->assertFalse($incident->fresh()->pending_closure);
+        $this->actingAs($this->fani2)->post("/app/incidents/{$incident->id}/resolve", ['resolution_summary' => 'رُكّب الخرطوم وفُحصت الطفاية كاملة وعُلّقت في مكانها'])->assertSessionHas('success');
+        $this->actingAs($this->salama)->post("/app/incidents/{$incident->id}/close")->assertSessionHas('error');
+        auth()->logout();
+        $this->post('/incident/track/approve', ['tracking_code' => $code])->assertRedirect();
+        $this->assertTrue($incident->fresh()->reporter_approved_closure);
+        $this->get('/incident/track?code='.$code)->assertOk()->assertDontSee('id="closureApproval"', false)->assertSee('وافق المُبلِّغ على الإغلاق');
         $this->actingAs($this->salama)->post("/app/incidents/{$incident->id}/close")->assertSessionHas('success');
         $this->assertSame('closed', $incident->fresh()->status);
+        $this->post('/incident/track/approve', ['tracking_code' => 'NOPE1'])->assertSessionHasErrors('tracking_code');
     }
 
     public function test_center_can_close_with_note_and_mark_out_of_scope_and_reporter_with_account_approves_closure(): void

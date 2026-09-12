@@ -95,13 +95,16 @@ h, nt3, _ = inbox(st); key, _ = task_of(h, icode)
 log('2 tech resolved', (fl2[:40], 'resolved=' + str('عولج' in track), f'count={nt3}', f'task_gone={key is None}'))
 assert 'عولج' in track and key is None
 
-# المركز: «تحققتُ ميدانياً» ← «أغلق» ← لا شيء
+# المركز: «اطلب موافقته» ← المبلّغ يوافق من التتبع برمزه (قرار ٢٠٢٦-٠٩-١٣) ← «أغلق» ← لا شيء
 h, nc, _ = inbox(sa); key, btn = task_of(h, icode)
-log('2 center verify task', (f'task={key}', f'button={btn}'))
-assert btn == 'تحققتُ ميدانياً'
-rv, flv = post(sa, f'/app/incidents/{iid}/verify', {}, h)
+log('2 center ask-approval task', (f'task={key}', f'button={btn}'))
+assert btn == 'اطلب موافقته'
+rv, flv = post(sa, f'/app/incidents/{iid}/close', {}, h)
+tr = g.get(BASE + f'/incident/track?code={tcode}', timeout=120).text
+assert 'id="closureApproval"' in tr, 'صفحة التتبع لا تعرض طلب الموافقة'
+g.post(BASE + '/incident/track/approve', data={'_token': token(tr), 'tracking_code': tcode}, allow_redirects=True, timeout=120)
 h, nc2, _ = inbox(sa); key, btn = task_of(h, icode)
-log('2 center close task', (flv[:30], f'task={key}', f'button={btn}'))
+log('2 center close task after reporter approval', (f'task={key}', f'button={btn}'))
 assert btn == 'أغلق'
 rc, flc = post(sa, f'/app/incidents/{iid}/close', {}, h)
 track = g.get(BASE + f'/incident/track?code={tcode}', timeout=120).text

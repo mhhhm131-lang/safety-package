@@ -112,6 +112,33 @@ class IncidentController extends Controller
         return view('modules.incidents.track', ['incident' => $incident, 'tracking_code' => $code]);
     }
 
+    /** قرار المستخدم ٢٠٢٦-٠٩-١٣: المبلّغ بلا حساب يوافق على الإغلاق أو يرفضه من صفحة التتبع برمزه. */
+    public function trackApprove(Request $request)
+    {
+        $v = $request->validate(['tracking_code' => ['required', 'string', 'max:20']]);
+        $incident = Incident::where('secret_tracking_code', strtoupper(trim($v['tracking_code'])))->first();
+        if (!$incident) return redirect()->route('incident.track')->withErrors(['tracking_code' => 'لا يوجد بلاغ بهذا الرمز.']);
+        try {
+            $this->closureService->approveClosureByCode($incident);
+            return redirect()->route('incident.track', ['code' => $incident->secret_tracking_code])->with('success', 'شكراً — سُجّلت موافقتك، ويُغلق البلاغ.');
+        } catch (\Throwable $e) {
+            return redirect()->route('incident.track', ['code' => $incident->secret_tracking_code])->with('error', $e->getMessage());
+        }
+    }
+
+    public function trackReject(Request $request)
+    {
+        $v = $request->validate(['tracking_code' => ['required', 'string', 'max:20'], 'note' => ['required', 'string', 'min:5', 'max:2000']], ['note.required' => 'اكتب لماذا لم يُعالج.']);
+        $incident = Incident::where('secret_tracking_code', strtoupper(trim($v['tracking_code'])))->first();
+        if (!$incident) return redirect()->route('incident.track')->withErrors(['tracking_code' => 'لا يوجد بلاغ بهذا الرمز.']);
+        try {
+            $this->closureService->rejectClosureByCode($incident, $v['note']);
+            return redirect()->route('incident.track', ['code' => $incident->secret_tracking_code])->with('success', 'أُعيد البلاغ إلى المعالجة.');
+        } catch (\Throwable $e) {
+            return redirect()->route('incident.track', ['code' => $incident->secret_tracking_code])->with('error', $e->getMessage());
+        }
+    }
+
     public function apiSubCategories(Request $request): JsonResponse
     {
         $request->validate(['category_id' => ['required', 'integer', 'exists:risk_categories,id']]);

@@ -8,11 +8,11 @@
     <a class="small ms-auto" href="{{ route('incident.landing') }}">تغيير النوع</a>
   </div>
   @if($type === 'urgent')
-    <div class="alert alert-danger py-2 small"><b>خطر داهم؟</b> اتصل أولاً: <b dir="ltr">998</b> الدفاع المدني · <b dir="ltr">997</b> الهلال الأحمر. ثم أرسل هذا البلاغ ليصل مركز السلامة والفني فوراً.</div>
+    <div class="alert alert-danger py-2 small"><b>حالة طارئة الآن؟</b> اتصل بمركز السلامة <a href="tel:0505498966" dir="ltr"><b>0505498966</b></a> أو <a href="https://wa.me/966505498966" target="_blank" rel="noopener">واتساب</a> — المركز يُنادي الجهات. ثم أرسل هذا البلاغ ليصل المركز والفني فوراً.</div>
   @elseif($type === 'secret')
-    <div class="alert alert-secondary py-2 small"><b>هويتك مخفية.</b> لا اسم ولا هاتف ولا حساب. يصلك رمز تتبع بعد الإرسال — احفظه، فهو الطريقة الوحيدة لمتابعة بلاغك.</div>
+    <div class="alert alert-secondary py-2 small"><b>هويتك مخفية تماماً.</b> لا اسم ولا هاتف ولا حساب. تستفيد منه المنظمة ولا يمنحك حق المطالبة. يصلك رمز تتبع بعد الإرسال — احفظه، فهو الطريقة الوحيدة لمتابعة بلاغك.</div>
   @else
-    <div class="text-muted small mb-2">لا يتطلب تسجيل دخول. يصل مركز السلامة ويُحال إلى فني المكان.</div>
+    <div class="text-muted small mb-2">لا يتطلب تسجيل دخول. يصل مركز السلامة ويُحال إلى فني المكان، <b>ولا يُغلق إلا بموافقتك</b> (من حسابك أو برمز التتبع).</div>
   @endif
 
   <form method="post" action="{{ route('incident.store', $type) }}" id="incForm">
