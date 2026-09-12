@@ -35,7 +35,7 @@
             @if($t->primaryMethod() === 'POST')
               <form method="post" action="{{ $t->primary['url'] }}" class="m-0">@csrf<button class="btn btn-g">{{ $t->primary['label'] }}</button></form>
             @else
-              <a class="btn btn-g" href="{{ $t->primary['url'] }}">{{ $t->primary['label'] }}</a>
+              <a class="btn btn-g" href="{{ route('app.inbox.open', ['url' => $t->primary['url']]) }}" data-target="{{ $t->primary['url'] }}">{{ $t->primary['label'] }}</a>
             @endif
             @if($t->secondary)
               @if($t->secondaryMethod() === 'POST')

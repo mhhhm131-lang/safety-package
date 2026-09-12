@@ -2,7 +2,7 @@
 @section('title', 'الإشعارات')
 @section('content')
 <div class="d-flex align-items-center mb-3">
-  <h1 class="h4 m-0">الإشعارات</h1>
+  <h1 class="h4 m-0">سجل الإشعارات</h1><span class="small text-muted">ما يحتاج فعلك في <a href="{{ route('app.home') }}">ما ينتظرك</a></span>
   <button class="btn btn-sm btn-outline-secondary ms-auto" onclick="fetch('{{ route('app.notifications.read-all') }}',{method:'POST',credentials:'same-origin',headers:{'X-CSRF-TOKEN':document.querySelector('meta[name=csrf-token]').content,'Accept':'application/json'}}).then(()=>location.reload())">تعليم الكل مقروءاً</button>
 </div>
 <div class="list-group">

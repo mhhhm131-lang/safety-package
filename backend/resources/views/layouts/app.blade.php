@@ -29,21 +29,31 @@
 </style>
 </head>
 <body>
-<nav class="topbar px-3 py-2 d-flex align-items-center gap-3">
-  <a class="brand" href="{{ route('app.home') }}"><i class="bi bi-shield-check"></i> منظومة السلامة والصحة المهنية</a>
-  <span class="text-white-50 small d-none d-md-inline">معهد الإدارة العامة</span>
+{{-- المرحلة ١١-٤ (قرار ٣٤): ثلاثة أبواب في الشريط — ما ينتظرك · بحث · المزيد. القائمة كلها خلف «المزيد» ولا تتكدس فوق المحتوى --}}
+<nav class="topbar px-3 py-2 d-flex align-items-center gap-2 flex-wrap">
+  <a class="brand" href="{{ route('app.home') }}"><i class="bi bi-shield-check"></i> <span class="d-none d-sm-inline">منظومة السلامة</span></a>
+  <a class="btn btn-sm {{ request()->routeIs('app.home') ? 'btn-light' : 'btn-outline-light' }}" href="{{ route('app.home') }}" id="navInbox"><i class="bi bi-inbox-fill"></i> ما ينتظرك <span class="badge text-bg-danger" id="inboxN" hidden>0</span></a>
+  <form method="get" action="{{ route('app.search') }}" class="m-0 d-flex" role="search" id="navSearch">
+    <input name="q" class="form-control form-control-sm" placeholder="بحث…" value="{{ request()->routeIs('app.search') ? request('q') : '' }}" style="max-width:180px" aria-label="بحث">
+  </form>
+  <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="offcanvas" data-bs-target="#moreNav" id="navMore"><i class="bi bi-list"></i> المزيد</button>
   <span class="ms-auto"></span>
   <a class="bell" href="{{ route('app.notifications.index') }}" title="الإشعارات"><i class="bi bi-bell fs-5"></i><span class="n" id="bellN" hidden>0</span></a>
-  <span class="small">{{ auth()->user()->name }} <span class="text-white-50">· {{ auth()->user()->roleName() }}</span></span>
+  <span class="small d-none d-md-inline">{{ auth()->user()->name }} <span class="text-white-50">· {{ auth()->user()->roleName() }}</span></span>
   <form method="post" action="/logout" class="m-0">@csrf<button class="btn btn-sm btn-outline-light">خروج</button></form>
 </nav>
 
 <div class="container-fluid">
   <div class="row">
-    <aside class="col-md-2 py-3 side">
+    <aside class="offcanvas offcanvas-end side" tabindex="-1" id="moreNav" aria-labelledby="moreNavTitle">
+      <div class="offcanvas-header"><h5 class="offcanvas-title" id="moreNavTitle">المزيد</h5><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="إغلاق"></button></div>
+      <div class="offcanvas-body py-2">
       @php($role = auth()->user()->role())
-      {{-- ١١-٢ (قرار ٣٤): الصفحة الأولى «ما ينتظرك» بشارة العدد --}}
-      <a href="{{ route('app.home') }}" class="{{ request()->routeIs('app.home') ? 'active' : '' }}"><i class="bi bi-inbox-fill"></i>ما ينتظرك <span class="badge text-bg-danger" id="inboxN" hidden>0</span></a>
+      @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'system.settings'))
+        <a href="{{ route('app.settings') }}" class="{{ request()->routeIs('app.settings') ? 'active' : '' }}"><i class="bi bi-sliders"></i>الإعدادات</a>
+        <hr>
+      @endif
+      <div class="small text-muted px-2 mb-1">السجلات</div>
       @if(\App\Core\Permissions\PermissionRegistry::uiRole($role))
         <a href="/dashboard.html"><i class="bi bi-speedometer2"></i>العمل اليومي</a>
       @endif
@@ -161,8 +171,9 @@
       @endif
       <hr>
       <a href="/index.html"><i class="bi bi-folder2-open"></i>الوثائق (المنظومة)</a>
+      </div>
     </aside>
-    <main class="col-md-10 py-3">
+    <main class="col-12 py-3" style="max-width:1100px;margin:0 auto">
       @if(session('ok'))<div class="alert alert-success py-2">{{ session('ok') }}</div>@endif
       @if(session('success'))<div class="alert alert-success py-2">{{ session('success') }}</div>@endif
       @if(session('err'))<div class="alert alert-danger py-2">{{ session('err') }}</div>@endif

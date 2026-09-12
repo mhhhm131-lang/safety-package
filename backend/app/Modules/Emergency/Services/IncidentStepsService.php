@@ -116,11 +116,15 @@ class IncidentStepsService
         return $n;
     }
 
-    /** د) تنبيه أصحاب الأدوار بخطواتهم لحظة التفعيل. يعيد عدد المستخدمين المنبَّهين. */
-    public function notifyOwners(EmergencyIncident $incident): int
+    /**
+     * من يملك أي خطوة في هذه الحالة: user_id => [step_id => step]. من بطاقات الأدوار (دور نظامي أو عضو الفريق الأولي بحساب).
+     * المرحلة ١١-٣: استُخرج من notifyOwners ليغذّي «ما ينتظرك» بالمنطق نفسه.
+     * @return array<int, array<int, EmergencyIncidentStep>>
+     */
+    public function ownersOf(EmergencyIncident $incident): array
     {
         $steps = $incident->planSteps()->orderBy('sort')->get();
-        if ($steps->isEmpty()) return 0;
+        if ($steps->isEmpty()) return [];
         $perUser = []; // user_id => [steps]
         $teamMembers = EmergencyTeam::active()->with('members.user')->where('place_id', $incident->place_id)->get()->flatMap->members;
         foreach ($steps as $step) {
@@ -137,6 +141,14 @@ class IncidentStepsService
                 }
             }
         }
+        return $perUser;
+    }
+
+    /** د) تنبيه أصحاب الأدوار بخطواتهم لحظة التفعيل. يعيد عدد المستخدمين المنبَّهين. */
+    public function notifyOwners(EmergencyIncident $incident): int
+    {
+        $perUser = $this->ownersOf($incident);
+        if (!$perUser) return 0;
         $place = $incident->place?->name ?? '';
         $users = User::whereIn('id', array_keys($perUser))->get()->keyBy('id');
         $n = 0;

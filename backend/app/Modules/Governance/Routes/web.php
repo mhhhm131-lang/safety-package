@@ -16,6 +16,9 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['web', 'auth'])->prefix('app')->name('app.')->group(function () {
     Route::get('/', [HomeController::class, 'index'])->name('home');
     Route::get('/inbox/count', [\App\Modules\Governance\Controllers\InboxController::class, 'count'])->name('inbox.count'); // ١١-٢: شارة «ما ينتظرك»
+    Route::get('/inbox/open', [\App\Modules\Governance\Controllers\InboxController::class, 'open'])->name('inbox.open'); // ١١-٥: فتح مهمة يعلّم إشعارها مقروءاً
+    Route::get('/search', [\App\Modules\Governance\Controllers\SearchController::class, 'index'])->name('search'); // ١١-٤: الباب الثاني
+    Route::middleware('permission:system.settings')->get('/settings', [\App\Modules\Governance\Controllers\SettingsController::class, 'index'])->name('settings'); // ١١-٤: الباب الثالث
 
     Route::middleware('permission:system.users')->prefix('users')->name('users.')->group(function () {
         Route::get('/', [UsersController::class, 'index'])->name('index');

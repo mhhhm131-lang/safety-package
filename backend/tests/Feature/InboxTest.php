@@ -136,7 +136,7 @@ class InboxTest extends TestCase
         $form = FormTemplate::create(['title' => 'إقرار بمخاطر المكاتب', 'form_type' => FormTemplate::TYPE_AWARENESS, 'is_active' => true, 'created_by_id' => $this->salama->id]);
         $a = FormAssignment::create(['form_id' => $form->id, 'assigned_to_id' => $this->fani->id, 'assigned_by_id' => $this->salama->id, 'due_date' => now()->subDay()->toDateString()]);
         $r = $this->actingAs($this->fani)->get('/app')->assertOk();
-        $r->assertSee('إقرار بمخاطر المكاتب')->assertSee('عبّئه')->assertSee('متأخر')->assertSee('href="'.url("/app/forms/{$form->id}/fill").'"', false);
+        $r->assertSee('إقرار بمخاطر المكاتب')->assertSee('عبّئه')->assertSee('متأخر')->assertSee('data-target="'.url("/app/forms/{$form->id}/fill").'"', false);
         $this->assertSame(0, $this->pending($this->emp));
         $a->update(['status' => FormAssignment::STATUS_COMPLETED]);
         $this->assertSame(0, $this->pending($this->fani));
@@ -152,7 +152,7 @@ class InboxTest extends TestCase
         $this->actingAs($this->idara)->get('/app')->assertOk()->assertSee('لحام بلا تصريح')->assertSee('ينتظر اعتمادك')->assertSee('action="'.url("/app/risk/{$risk->id}/approve").'"', false);
         $this->assertSame(1, $this->pending($this->salama));
         $this->assertSame(0, $this->pending($this->fani));   // لا يملك risk.approve
-        $this->assertSame(0, $this->pending($this->mudir));  // مدير إدارة لا يعتمد
+        $this->actingAs($this->mudir)->get('/app')->assertOk()->assertDontSee('ينتظر اعتمادك'); // مدير إدارة لا يعتمد (يرى اقتراح التفعيل فقط)
         $this->actingAs($this->idara)->post("/app/risk/{$risk->id}/approve")->assertSessionHas('success');
         $this->assertSame(0, $this->pending($this->idara));
     }
@@ -167,7 +167,7 @@ class InboxTest extends TestCase
         $this->assertSame(0, $this->pending($this->salama)); // مسودة: لا شيء ينتظر أحداً
         $permit->update(['status' => Permit::STATUS_SUBMITTED, 'submitted_at' => now()]);
 
-        $this->actingAs($this->coord)->get('/app')->assertOk()->assertSee($permit->code)->assertSee('ينتظر مراجعتك')->assertSee('href="'.url("/app/permits/{$permit->id}/review").'"', false);
+        $this->actingAs($this->coord)->get('/app')->assertOk()->assertSee($permit->code)->assertSee('ينتظر مراجعتك')->assertSee('data-target="'.url("/app/permits/{$permit->id}/review").'"', false);
         $this->assertSame(1, $this->pending($this->salama));
         $this->assertSame(0, $this->pending($this->fani));
         $this->assertSame(0, $this->pending($this->idara)); // لا يملك permit.review
@@ -179,6 +179,64 @@ class InboxTest extends TestCase
         $this->actingAs($this->salama)->get('/app')->assertOk()->assertSee('ينتظر اعتمادك النهائي');
         $permit->update(['status' => Permit::STATUS_APPROVED]);
         $this->assertSame(0, $this->pending($this->salama));
+    }
+
+    /** ١١-٣: بلاغ فحص فني في نموذج المعهد بمستوى ١ مُصعَّد ← مهمة لمدير المرافق (fm) ومسؤول السلامة، لا للفني؛ الرابط يفتح النموذج على السطر. */
+    public function test_inspection_report_task_reads_institute_form_document_for_level_holder(): void
+    {
+        $marafiq = $this->user('marafiq', 'facilities_manager');
+        $shuon = $this->user('shuon', 'admin_eng_manager');
+        $stamp = now()->subHours(30)->format('Y/m/d').' — '.now()->subHours(30)->format('H:i');
+        $reports = [
+            ['row' => 'o03', 'id' => 'ب — ٠١', 'sys' => 'الإنذار', 'item' => 'طفاية منتهية الصلاحية في الممر', 'due' => '٢٤ ساعة', 'when' => $stamp, 'sent' => $stamp, 'path' => 'إداري',
+                'levels' => [1 => ['up' => true, 'back' => false, 'by' => 'الفني']]],
+            ['row' => 'o07', 'id' => 'ب — ٠٢', 'sys' => 'المخارج', 'item' => 'مخرج مسدود', 'due' => '٧٢ ساعة', 'when' => $stamp, 'sent' => $stamp, 'path' => 'إداري',
+                'levels' => [1 => ['up' => false, 'back' => false, 'by' => 'الفني']]], // أُغلق عند الفني
+            ['row' => 'o09', 'id' => 'ب — ٠٣', 'sys' => 'الإضاءة', 'item' => 'إضاءة طوارئ معطلة', 'due' => '٢٤ ساعة', 'when' => $stamp, 'sent' => '', 'path' => 'إداري', 'levels' => []], // عند الفني لم يُرسل
+        ];
+        \App\Modules\Store\Models\InstituteDocument::create(['key' => 'ipa-office-form-v10', 'version' => 1, 'data' => json_encode(['reports' => $reports], JSON_UNESCAPED_UNICODE)]);
+
+        $r = $this->actingAs($marafiq)->get('/app')->assertOk();
+        $r->assertSee('بلاغ فحص ب — ٠١ في المكاتب الإدارية')->assertSee('طفاية منتهية')->assertSee('متأخر')
+          ->assertSee('data-target="/HZ-06-offices/inspection-form.html#open=o03"', false)->assertDontSee('مخرج مسدود')->assertDontSee('إضاءة طوارئ');
+        $this->assertSame(1, $this->pending($marafiq));
+        $this->assertSame(0, $this->pending($shuon));   // المستوى ٢ ليس عنده بعد
+        $this->assertSame(1, $this->pending($this->fani)); // بلاغه هو الذي لم يُرسل (o09)
+        $this->actingAs($this->fani)->get('/app')->assertOk()->assertSee('إضاءة طوارئ')->assertSee('قرارك: عولج أم تعذّر');
+        $this->assertSame(2, $this->pending($this->salama)); // مسؤول السلامة يرى كل المفتوح
+        $this->assertSame(0, $this->pending($this->emp));
+    }
+
+    /** ١١-٣: وثيقة طرف خارجي غير متحقَّقة ← مهمة للمركز؛ إدارة بلا مخاطر مفعّلة ← اقتراح لمديرها يختفي بأول تفعيل. */
+    public function test_contractor_document_task_and_risk_activation_suggestion(): void
+    {
+        $party = \App\Modules\Project\Models\ExternalParty::create(['name' => 'مقاول التكييف', 'party_type' => 'contractor']);
+        $doc = \App\Modules\Project\Models\ExternalPartyDocument::create(['external_party_id' => $party->id, 'name' => 'السجل التجاري', 'document_type' => 'cr', 'file' => 'cr.pdf', 'is_verified' => false]);
+        $this->actingAs($this->salama)->get('/app')->assertOk()->assertSee('وثيقة من «مقاول التكييف» تنتظر تحققك')->assertSee('data-target="'.url("/app/external-parties/{$party->id}/documents").'"', false);
+        $this->assertSame(0, $this->pending($this->fani));
+        $doc->update(['is_verified' => true]);
+        $this->assertSame(0, $this->pending($this->salama));
+
+        // مدير الإدارة: إدارته بلا مخاطر مفعّلة
+        $unit = OrganizationUnit::first();
+        $this->actingAs($this->mudir)->get('/app')->assertOk()->assertSee('بلا مخاطر مفعّلة')->assertSee('ابدأ من السجل');
+        $cat = RiskCategory::create(['name' => 'الحريق والانفجار', 'abbreviation' => 'FI', 'created_at' => now()]);
+        Risk::create(['risk_type' => 'active', 'title' => 'حريق', 'description' => 'x', 'category_id' => $cat->id, 'organization_unit_id' => $unit->id, 'severity' => 3, 'likelihood' => 2, 'status' => 'active']);
+        $this->assertSame(0, $this->pending($this->mudir));
+        $this->assertSame(0, $this->pending($this->salama)); // لا اقتراح لأدوار الإشراف العام
+    }
+
+    /** ١١-٥: فتح المهمة من الصندوق يعلّم إشعارها مقروءاً ويحوّل إليها؛ الروابط الخارجية تُرفض. */
+    public function test_opening_a_task_marks_its_notification_read_and_redirects(): void
+    {
+        $this->post('/incident/normal', ['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')]);
+        $i = Incident::first();
+        $this->assertDatabaseHas('app_notifications', ['user_id' => $this->fani->id, 'type' => 'incident.forwarded', 'is_read' => false]);
+        $h = $this->actingAs($this->fani)->get('/app')->assertOk()->getContent();
+        $this->assertStringContainsString('/app/inbox/open?url=', $h);
+        $this->actingAs($this->fani)->get('/app/inbox/open?url='.urlencode(url("/app/incidents/{$i->id}")))->assertRedirect("/app/incidents/{$i->id}");
+        $this->assertDatabaseMissing('app_notifications', ['user_id' => $this->fani->id, 'type' => 'incident.forwarded', 'is_read' => false]);
+        $this->actingAs($this->fani)->get('/app/inbox/open?url='.urlencode('https://evil.example/x'))->assertRedirect('/app');
     }
 
     /** الترتيب: المتأخر أولاً ثم الأقرب مهلةً — والشارة في الشريط تستطلع /app/inbox/count. */

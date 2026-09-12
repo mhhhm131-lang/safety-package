@@ -89,6 +89,31 @@ class IncidentStepsTest extends TestCase
         return $i->planSteps()->where('path_key', $path)->where('title', $title)->firstOrFail();
     }
 
+    /** المرحلة ١١-٣ (قرار ٣٤): خطوتي في خطة المكان مهمةٌ في «ما ينتظرك» بزر «تم»، وتنبيه الذعر مهمة لمن يستجيب. */
+    public function test_plan_step_and_panic_alert_appear_in_inbox_of_their_owners(): void
+    {
+        $i = $this->fire();
+        $s3 = $this->step($i, 'التحكم بالأنظمة الحرجة');
+        $count = fn ($u) => $this->actingAs($u)->getJson('/app/inbox/count')->assertOk()->json('count');
+        // مدير المرافق (بطاقة ٢): خطوته بزر POST «تم»؛ الموظف لا شيء
+        $r = $this->actingAs($this->marafiq)->get('/app')->assertOk();
+        $r->assertSee('خطوتك «التحكم بالأنظمة الحرجة»')->assertSee('action="'.url("/app/emergency/incidents/{$i->id}/steps/{$s3->id}/done").'"', false)->assertDontSee('استقبال الدفاع المدني');
+        $before = $count($this->marafiq);
+        $this->assertSame(0, $count($this->employee));
+        $this->actingAs($this->marafiq)->post("/app/emergency/incidents/{$i->id}/steps/{$s3->id}/done")->assertRedirect();
+        $this->assertSame('done', $s3->fresh()->status);
+        $this->assertSame($before - 1, $count($this->marafiq));
+        $this->actingAs($this->marafiq)->get('/app')->assertOk()->assertDontSee('خطوتك «التحكم بالأنظمة الحرجة»');
+        // المركز: نداء هاتفي معلّق (الإطفائي بلا رقم) مهمةٌ متأخرة
+        $this->actingAs($this->salama)->get('/app')->assertOk()->assertSee('نادِ هاتفياً');
+        // تنبيه ذعر مفتوح: لمن يملك emergency.respond (الفني) لا للموظف
+        $alert = \App\Modules\Emergency\Models\PanicAlert::create(['user_id' => $this->employee->id, 'building_id' => $this->building->id, 'place_id' => Place::idByCode('HZ-06'), 'status' => 'triggered']);
+        $this->actingAs($this->fani)->get('/app')->assertOk()->assertSee('تنبيه ذعر من «اسم emp»')->assertSee('data-target="'.url("/app/emergency/panic/{$alert->id}").'"', false);
+        $this->assertSame(0, $count($this->employee));
+        $alert->update(['status' => 'resolved']);
+        $this->actingAs($this->fani)->get('/app')->assertOk()->assertDontSee('تنبيه ذعر');
+    }
+
     public function test_fire_in_hz06_copies_12_steps_with_deadlines_and_notifies_owners(): void
     {
         $i = $this->fire();
