@@ -44,6 +44,20 @@ class IncidentEmergencyBridge
         return EmergencyIncident::TYPE_OTHER;
     }
 
+    /**
+     * المرحلة ١١-١ (د، قرار ٣٤): الخطورة المقترحة من خطورة الخطر المربوط (مقياس ١–٥، قرار ٢٧):
+     * ١–٢ منخفض، ٣ متوسط، ٤ مرتفع، ٥ حرج. بلا خطر: العاجل مرتفع والعادي متوسط (الافتراض القائم في الشاشة).
+     */
+    public function proposeSeverity(Incident $incident): string
+    {
+        $s = (int) ($incident->risk?->severity ?? 0);
+        if ($s >= 5) return 'critical';
+        if ($s === 4) return 'high';
+        if ($s === 3) return 'medium';
+        if ($s >= 1) return 'low';
+        return $incident->incident_type === 'urgent' ? 'high' : 'medium';
+    }
+
     /** الحالة الطارئة المفعَّلة من هذا البلاغ إن وُجدت (أحدثها). */
     public function linkedEmergency(Incident $incident): ?EmergencyIncident
     {

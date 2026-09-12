@@ -58,7 +58,8 @@ class IncidentController extends Controller
         $validated = $request->validate([
             'title' => ['nullable', 'string', 'max:200'],
             'description' => ['required', 'string', 'min:5', 'max:5000'],
-            'risk_id' => [$type === 'secret' ? 'nullable' : 'required', 'integer', 'exists:risks,id'],
+            // المرحلة ١١-١ (أ، قرار ٣٤): التصنيف عمل المركز لا الشاغل — الخطر اختياري في الأنواع الثلاثة، والتوجيه بالمكان
+            'risk_id' => ['nullable', 'integer', 'exists:risks,id'],
             'place_id' => ['required', 'integer', 'exists:places,id'], // المكان إلزامي: عليه يقوم التوجيه إلى فني المكان
             'location_text' => ['nullable', 'string', 'max:200'],
             'reporter_name' => ['nullable', 'string', 'max:120'],
@@ -68,7 +69,6 @@ class IncidentController extends Controller
         ], [
             'description.required' => 'اكتب ما رأيته قبل الإرسال.',
             'place_id.required' => 'اختر المكان — عليه تُحال البلاغات إلى فني المكان.',
-            'risk_id.required' => 'اختر نوع الخطر من التصنيف (الفئة ← الفرعية ← الخطر).',
         ]);
 
         try {
@@ -161,6 +161,11 @@ class IncidentController extends Controller
             abort(403, 'لا تملك صلاحية عرض هذا البلاغ.');
         }
         $incident = $this->incidentService->getDetail($incident->id) ?? $incident;
+        // المرحلة ١١-١ (ب، قرار ٣٤): فتح الفني المعيَّن للبلاغ = استلامه؛ وقت أول فتح يُسجَّل لقياس فجوة البلاغ
+        if ($incident->incident_field_team_id === $user->id) {
+            $incident = $this->incidentService->fieldOpened($incident, $user->id);
+            $incident = $this->incidentService->getDetail($incident->id) ?? $incident;
+        }
         $fieldWorkers = User::whereHas('profile', fn ($q) => $q->where('is_active', true)->where('role', 'field_worker'))
             ->with('profile.place')->orderBy('name')->get()
             ->sortByDesc(fn ($u) => (int) ($u->profile?->place_id && $u->profile->place_id === $incident->place_id));
@@ -172,6 +177,7 @@ class IncidentController extends Controller
             // المرحلة ١٠-٣: الطبقة بنوع البلاغ، والحالة الطارئة المفعَّلة منه، والنوع المقترح
             'layer' => $bridge->riskLayer($incident), 'linkedEmergency' => $bridge->linkedEmergency($incident),
             'proposedType' => $bridge->proposeType($incident), 'emergencyTypes' => IncidentEmergencyBridge::TYPE_OPTIONS,
+            'proposedSeverity' => $bridge->proposeSeverity($incident), // ١١-١ (د): الخطورة من خطورة الخطر — زر واحد
             'canTrigger' => $user->can('manage', $incident) && \App\Core\Permissions\PermissionRegistry::hasPermission($role, 'emergency.trigger'),
             'isCenter' => in_array($role, ['system_admin', 'system_staff'], true),
             'isField' => $incident->incident_field_team_id === $user->id,
@@ -253,10 +259,16 @@ class IncidentController extends Controller
         return redirect()->route('incidents.show', $incident)->with('success', 'حُدّثت الإجراءات لهذا البلاغ.');
     }
 
+    /** المرحلة ١١-١ (ج، قرار ٣٤): الصورة في طلب «عولج» نفسه — تُرفق دليلاً، وأول دليل من «استلمه الفني» = بدء المعالجة. */
     public function resolve(Request $request, Incident $incident)
     {
-        $v = $request->validate(['resolution_summary' => ['required', 'string', 'min:30', 'max:5000']]);
-        return $this->act(fn () => $this->incidentService->resolve($incident, Auth::id(), $v['resolution_summary']), 'سُجّل أن البلاغ عولج.');
+        $v = $request->validate([
+            'resolution_summary' => ['required', 'string', 'min:30', 'max:5000'],
+            'evidence' => ['nullable', 'file', 'max:3072', 'mimes:jpg,jpeg,png,webp,pdf'],
+        ]);
+        $f = $request->file('evidence');
+        $evidence = $f ? ['mime' => $f->getMimeType(), 'binary' => file_get_contents($f->getRealPath()), 'name' => $f->getClientOriginalName()] : null;
+        return $this->act(fn () => $this->incidentService->resolve($incident, Auth::id(), $v['resolution_summary'], $evidence), 'سُجّل أن البلاغ عولج.');
     }
 
     public function close(Incident $incident)

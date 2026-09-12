@@ -62,7 +62,10 @@ class IncidentService
         if (!in_array($type, ['normal', 'urgent'], true)) {
             throw new InvalidArgumentException("نوع البلاغ غير معروف: $type");
         }
-        $routing = $this->resolveRouting((int) ($data['risk_id'] ?? 0), $data['place_id'] ?? null);
+        // المرحلة ١١-١ (أ، قرار ٣٤): بلا خطر ← التوجيه بالمكان وحده (كمسار السري)؛ التصنيف عمل المركز من صفحة البلاغ
+        $riskId = !empty($data['risk_id']) ? (int) $data['risk_id'] : null;
+        $routing = $riskId ? $this->resolveRouting($riskId, $data['place_id'] ?? null)
+            : $this->routingByPlace($data['place_id'] ?? null, null, null, 'بلا خطر — يصنّفه المركز');
         $ctx = $this->buildRiskContext($routing['risk_id'], $type);
 
         $incident = DB::transaction(function () use ($type, $userId, $data, $routing, $ctx) {
@@ -251,6 +254,27 @@ class IncidentService
         return $this->transition($incident, $userId, 'field_receive', 'field_received');
     }
 
+    /**
+     * المرحلة ١١-١ (ب، قرار ٣٤ — يعكس ح-١): فتح الفني المعيَّن للبلاغ = استلامه، فلا يُسأل عمّا يعرفه النظام.
+     * وقت أول فتح يُسجَّل في `field_opened_at` فتبقى «فجوة البلاغ» (الإحالة ← الفتح) مقيسة كما كانت بالزر.
+     */
+    public function fieldOpened(Incident $incident, int $userId): Incident
+    {
+        if ($incident->incident_field_team_id !== $userId) return $incident;
+        if (!$incident->field_opened_at) {
+            $incident->field_opened_at = now();
+            $incident->save();
+        }
+        if ($incident->status === 'forwarded') {
+            try {
+                $incident = $this->transition($incident, $userId, 'field_receive', 'field_received', 'سُجّل الاستلام بفتح البلاغ');
+            } catch (TransitionException $e) {
+                // ليس دوره الاستلام (مثلاً منسق تولّى المعالجة): يبقى كما هو
+            }
+        }
+        return $incident;
+    }
+
     public function beginWork(Incident $incident, int $userId): Incident
     {
         return $this->transition($incident, $userId, 'begin_work', 'in_progress');
@@ -281,15 +305,25 @@ class IncidentService
             'to_status' => $incident->status, 'note' => $note, 'actor_id' => $userId]);
     }
 
-    /** عولج: ملخص ≥ ٣٠ حرفاً ومرفق دليل واحد على الأقل (من OHSMS). */
-    public function resolve(Incident $incident, int $userId, string $summary): Incident
+    /**
+     * عولج: ملخص ≥ ٣٠ حرفاً ومرفق دليل واحد على الأقل (من OHSMS).
+     * المرحلة ١١-١ (ج، قرار ٣٤): الدليل يأتي في الطلب نفسه (`$evidence` = mime/binary/name)، ومن «استلمه الفني» يُسجَّل البدء آلياً.
+     */
+    public function resolve(Incident $incident, int $userId, string $summary, ?array $evidence = null): Incident
     {
         $summary = trim($summary);
         if (mb_strlen($summary) < 30) {
             throw new InvalidArgumentException('ملخص المعالجة يجب أن يكون ٣٠ حرفاً على الأقل لإثبات تنفيذها فعلياً.');
         }
+        if ($evidence) {
+            $this->addAttachment($incident, $userId, 'evidence', $evidence['mime'], $evidence['binary'], $evidence['name'] ?? null);
+            $incident->refresh();
+        }
         if ($incident->attachments()->where('kind', 'evidence')->count() === 0) {
-            throw new InvalidArgumentException('أرفق صورة أو مستنداً واحداً على الأقل دليلاً على إنجاز المعالجة في الميدان.');
+            throw new InvalidArgumentException('أرفق صورة بعد المعالجة (أو مستنداً) دليلاً على إنجازها في الميدان.');
+        }
+        if ($incident->status === 'field_received' && $incident->incident_field_team_id === $userId) {
+            $incident = $this->transition($incident, $userId, 'begin_work', 'in_progress', 'بدأت المعالجة عند تسجيل «عولج»');
         }
         $incident->resolution_summary = $summary;
         $incident->save();
@@ -384,8 +418,17 @@ class IncidentService
         if (strlen($binary) > IncidentAttachment::MAX_BYTES) {
             throw new InvalidArgumentException('حجم الملف أكبر من ٣ ميغابايت.');
         }
-        return $incident->attachments()->create(['kind' => $kind, 'original_name' => $name, 'mime' => $mime, 'size' => strlen($binary),
+        $row = $incident->attachments()->create(['kind' => $kind, 'original_name' => $name, 'mime' => $mime, 'size' => strlen($binary),
             'data' => base64_encode($binary), 'uploaded_by_id' => $userId, 'created_at' => now()]);
+        // المرحلة ١١-١ (ج، قرار ٣٤): أول دليل من الفني المعيَّن وهو في «استلمه الفني» = بدأ المعالجة (نمط linkInspection)
+        if ($kind === 'evidence' && $userId && $incident->status === 'field_received' && $incident->incident_field_team_id === $userId) {
+            try {
+                $this->transition($incident, $userId, 'begin_work', 'in_progress', 'بدأت المعالجة بأول دليل مرفوع');
+            } catch (TransitionException $e) {
+                // ليس دوره: يبقى المرفق مسجَّلاً بلا انتقال
+            }
+        }
+        return $row;
     }
 
     // ── اللوحة والتفاصيل ──

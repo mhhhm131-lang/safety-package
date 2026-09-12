@@ -21,6 +21,7 @@ use Database\Seeders\EmergencySeeder;
 use Database\Seeders\OrganizationUnitsSeeder;
 use Database\Seeders\PlacesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 /**
@@ -92,8 +93,10 @@ class IncidentEmergencyTest extends TestCase
         $r = $this->actingAs($this->munawib)->get("/app/incidents/{$i->id}");
         $r->assertOk()->assertSee('الطبقة الاستجابة')->assertSee('تنبيه المركز والفريق الأولي يباشر الإطفاء')->assertDontSee('جولات تفقد وإطفاء الأجهزة')
             ->assertSee('تفعيل حالة طارئة')->assertSee('<option value="fire" selected>', false)->assertSee('trigger-emergency');
+        // ١١-١ (د): الخطورة مقترحة من خطورة الخطر (٤ ← مرتفع) والزر الواحد يسمّي النوع المقترح
+        $r->assertSee('<option value="high" selected>', false)->assertSee('فعّل حالة حريق الآن');
         // مدير الإدارة يرى البلاغ (إن رآه) بلا زر؛ الفني بلا زر؛ الموظف ممنوع من التفعيل
-        $this->actingAs($this->fani)->get("/app/incidents/{$i->id}")->assertOk()->assertDontSee('trigger-emergency');
+        $this->actingAs($this->fani)->get("/app/incidents/{$i->id}")->assertOk()->assertDontSee('trigger-emergency'); // ١١-١ (ب): هذا الفتح = استلام
         $this->actingAs($this->fani)->post("/app/incidents/{$i->id}/trigger-emergency", ['incident_type' => 'fire', 'severity' => 'high'])->assertForbidden();
         $this->actingAs($this->employee)->post("/app/incidents/{$i->id}/trigger-emergency", ['incident_type' => 'fire', 'severity' => 'high'])->assertForbidden();
         $this->actingAs($this->munawib)->post("/app/incidents/{$i->id}/trigger-emergency", ['incident_type' => 'lockdown', 'severity' => 'high'])->assertSessionHasErrors('incident_type');
@@ -113,7 +116,7 @@ class IncidentEmergencyTest extends TestCase
 
         // البلاغ يحمل الحدث ويكمل مساره برقمه ومهله
         $i->refresh();
-        $this->assertSame('forwarded', $i->status);
+        $this->assertSame('field_received', $i->status); // استلمه الفني بفتحه أعلاه (١١-١ ب)
         $ev = IncidentEvent::where('incident_id', $i->id)->where('action', 'emergency_triggered')->first();
         $this->assertNotNull($ev);
         $this->assertStringContainsString('فُعّلت الحالة الطارئة '.$e->incident_code, $ev->note);
@@ -127,10 +130,9 @@ class IncidentEmergencyTest extends TestCase
         $this->actingAs($this->salama)->post("/app/incidents/{$i->id}/trigger-emergency", ['incident_type' => 'fire', 'severity' => 'high'])->assertSessionHas('error');
         $this->assertSame(1, EmergencyIncident::count());
 
-        // البلاغ يكمل مساره: الفني يستلم بيده ويبدأ
-        $this->actingAs($this->fani)->post("/app/incidents/{$i->id}/field-receive")->assertSessionHas('success');
-        $this->assertSame('field_received', $i->fresh()->status);
+        // البلاغ يكمل مساره: استُلم بالفتح، والفني يبدأ
         $this->assertNotNull($i->fresh()->field_received_at);
+        $this->assertNotNull($i->fresh()->field_opened_at);
         $this->actingAs($this->fani)->post("/app/incidents/{$i->id}/begin-work")->assertSessionHas('success');
         // تقرير الحالة يذكر البلاغ المرتبط
         $this->actingAs($this->salama)->post("/app/emergency/incidents/{$e->id}/end", ['final_report' => 'انتهى'])->assertRedirect();
@@ -140,7 +142,7 @@ class IncidentEmergencyTest extends TestCase
         $this->actingAs($this->salama)->post("/app/incidents/{$i->id}/trigger-emergency", ['incident_type' => 'fire', 'severity' => 'high'])->assertSessionHas('error');
     }
 
-    public function test_normal_report_shows_operational_layer_and_tech_receives_by_hand(): void
+    public function test_normal_report_shows_operational_layer_and_tech_receives_by_opening(): void
     {
         $this->post('/incident/normal', ['description' => 'حرارة مرتفعة في المكتب', 'place_id' => Place::idByCode('HZ-06'), 'risk_id' => $this->physRisk->id, 'reporter_name' => 'سعد'])->assertRedirect();
         $i = Incident::first();
@@ -155,15 +157,49 @@ class IncidentEmergencyTest extends TestCase
         $r->assertOk()->assertSee('الطبقة التشغيلية')->assertSee('ماء وظل وفترات راحة')->assertSee('نقل المصاب لمكان بارد')->assertDontSee('تبريد واستدعاء الطبيب');
         // الزر متاح للمركز على أي بلاغ مفتوح (القرار بيده) والنوع المقترح «أخرى» لصنف فيزيائي
         $r->assertSee('trigger-emergency')->assertSee('<option value="other" selected>', false);
-        // الفني يرى «استلمتُ البلاغ» ولا يرى «بدء المعالجة» قبلها
-        $this->actingAs($this->fani)->get("/app/incidents/{$i->id}")->assertOk()->assertSee('استلمتُ البلاغ')->assertDontSee('بدء المعالجة');
-        // (ح-١) الاستلام بيد الفني المعيَّن وحده
-        $this->actingAs($this->coord)->post("/app/incidents/{$i->id}/field-receive")->assertSessionHas('error');
-        $this->actingAs($this->fani)->post("/app/incidents/{$i->id}/field-receive")->assertSessionHas('success');
+        // ١١-١ (د): خطورة الخطر ٥ ← «حرج» مقترحاً
+        $this->physRisk->update(['severity' => 5]);
+        $this->actingAs($this->munawib)->get("/app/incidents/{$i->id}")->assertOk()->assertSee('<option value="critical" selected>', false);
+
+        // ١١-١ (ب، قرار ٣٤): فتح الفني المعيَّن للبلاغ = استلمه؛ غير المعيَّن لا يستلم بالفتح
+        $this->actingAs($this->coord)->get("/app/incidents/{$i->id}")->assertOk();
+        $this->assertSame('forwarded', $i->fresh()->status);
+        $this->assertNull($i->fresh()->field_opened_at);
+        $r = $this->actingAs($this->fani)->get("/app/incidents/{$i->id}")->assertOk();
         $i->refresh();
         $this->assertSame('field_received', $i->status);
         $this->assertNotNull($i->field_received_at);
-        $this->assertSame($this->fani->id, IncidentEvent::where('incident_id', $i->id)->where('action', 'field_receive')->value('actor_id'));
-        $this->actingAs($this->fani)->get("/app/incidents/{$i->id}")->assertOk()->assertSee('بدء المعالجة');
+        $this->assertNotNull($i->field_opened_at);
+        $ev = IncidentEvent::where('incident_id', $i->id)->where('action', 'field_receive')->first();
+        $this->assertSame($this->fani->id, $ev->actor_id);
+        $this->assertStringContainsString('بفتح البلاغ', (string) $ev->note);
+        $r->assertDontSee('استلمتُ البلاغ')->assertSee('عولج');
+        // الفتح الثاني لا يكرر الاستلام
+        $this->actingAs($this->fani)->get("/app/incidents/{$i->id}")->assertOk();
+        $this->assertSame(1, IncidentEvent::where('incident_id', $i->id)->where('action', 'field_receive')->count());
     }
+
+    /** المرحلة ١١-١ (ج): «عولج» بصورة في الطلب نفسه من «استلمه الفني» — الصورة تُرفق، والبدء يُسجَّل، ثم عولج. */
+    public function test_resolve_with_inline_photo_from_field_received(): void
+    {
+        $this->post('/incident/normal', ['description' => 'حرارة مرتفعة في المكتب', 'place_id' => Place::idByCode('HZ-06'), 'risk_id' => $this->physRisk->id]);
+        $i = Incident::first();
+        $this->actingAs($this->fani)->get("/app/incidents/{$i->id}"); // = استلم
+        $this->assertSame('field_received', $i->fresh()->status);
+        $summary = 'نُقل الجهاز وضُبط التكييف وعادت الحرارة إلى طبيعتها';
+        // بلا صورة ولا دليل سابق: يُرفض
+        $this->actingAs($this->fani)->post("/app/incidents/{$i->id}/resolve", ['resolution_summary' => $summary])->assertSessionHas('error');
+        $this->assertSame('field_received', $i->fresh()->status);
+        // بصورة في الطلب نفسه: تُرفق ← يبدأ ← عولج
+        $this->actingAs($this->fani)->post("/app/incidents/{$i->id}/resolve", ['resolution_summary' => $summary,
+            'evidence' => UploadedFile::fake()->createWithContent('after.png', base64_decode(self::PNG))])->assertSessionHas('success');
+        $i->refresh();
+        $this->assertSame('resolved', $i->status);
+        $this->assertNotNull($i->in_progress_at);
+        $this->assertSame(1, $i->attachments()->where('kind', 'evidence')->count());
+        $this->assertSame(['field_receive', 'begin_work', 'resolve'],
+            IncidentEvent::where('incident_id', $i->id)->whereIn('action', ['field_receive', 'begin_work', 'resolve'])->orderBy('id')->pluck('action')->all());
+    }
+
+    private const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 }

@@ -74,7 +74,7 @@
             <button class="btn btn-sm btn-outline-secondary">حفظ</button></form></details>
       @endif
     @else
-      <div class="text-muted small">لم يُربط بخطر (بلاغ سري بلا تصنيف).</div>
+      <div class="text-muted small">لم يُصنَّف بعد — {{ $incident->isSecret() ? 'بلاغ سري بلا تصنيف' : 'الشاغل لا يصنّف' }}؛ يصنّفه المركز من السجل العام.</div>
       @if($isCenter && !$terminal)
         <form method="post" action="{{ route('incidents.linkRisk', $incident) }}" class="d-flex gap-2 mt-2">@csrf
           <select name="risk_id" class="form-select form-select-sm" required><option value="">اختر من السجل العام…</option>@foreach($referenceRisks as $r)<option value="{{ $r->id }}">{{ $r->code }} — {{ $r->title }}</option>@endforeach</select>
@@ -110,9 +110,8 @@
         <form method="post" action="{{ route('incidents.beginWork', $incident) }}">@csrf<button class="btn btn-g"><i class="bi bi-play-circle me-1"></i> بدء المعالجة</button></form>
       @endif
       @if($isField && in_array($incident->status, ['field_received', 'in_progress'], true))
-        @if($incident->status === 'in_progress')
-          <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#resolveModal"><i class="bi bi-check-circle me-1"></i> عولج (صورة + ملخص)</button>
-        @endif
+        {{-- ١١-١ (ج): «عولج» متاح من «استلمه الفني» أيضاً — الصورة في النافذة نفسها، والبدء يُسجَّل آلياً --}}
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#resolveModal"><i class="bi bi-check-circle me-1"></i> عولج (صورة + ملخص)</button>
         <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#escCoordModal"><i class="bi bi-arrow-up-circle me-1"></i> تصعيد للمنسق</button>
       @endif
       @if($isCoord && $incident->status === 'escalated_to_coord')
@@ -152,14 +151,20 @@
   <div class="modal fade" id="emergencyModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><form method="post" action="{{ route('incidents.triggerEmergency', $incident) }}">@csrf
     <div class="modal-header"><h5 class="modal-title"><i class="bi bi-broadcast me-1"></i> تفعيل حالة طارئة من البلاغ {{ $incident->code }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
     <div class="modal-body">
-      <p class="small text-muted">تُنشأ الحالة في مركز الطوارئ بمكان البلاغ ({{ $incident->place?->code }} {{ $incident->place?->name }}) وتظهر خطوات خطة المكان بعدّاداتها فوراً. البلاغ يبقى برقمه ومساره ومهله.</p>
-      <label class="form-label small">نوع الحالة <span class="text-muted">(مقترح من صنف الخطر{{ $incident->risk?->category ? ': '.$incident->risk->category->name : '' }})</span></label>
-      <select name="incident_type" class="form-select mb-2" required>@foreach($emergencyTypes as $t)<option value="{{ $t }}" @selected($t === $proposedType)>{{ \App\Modules\Emergency\Models\EmergencyIncident::TYPES[$t] ?? $t }}</option>@endforeach</select>
-      <label class="form-label small">الخطورة</label>
-      <select name="severity" class="form-select mb-2">@foreach(\App\Modules\Emergency\Models\EmergencyIncident::SEVERITIES as $k => $l)<option value="{{ $k }}" @selected($k === ($incident->incident_type === 'urgent' ? 'high' : 'medium'))>{{ $l }}</option>@endforeach</select>
-      <textarea name="note" class="form-control" rows="2" placeholder="ما يعرفه المركز الآن (اختياري)"></textarea>
+      {{-- ١١-١ (د، قرار ٣٤): زر واحد بالنوع والخطورة المقترحين من الخطر؛ التغيير خلف «تغيير» --}}
+      @php($E = \App\Modules\Emergency\Models\EmergencyIncident::class)
+      <p class="mb-2">حالة <b>{{ $E::TYPES[$proposedType] ?? $proposedType }}</b> بخطورة <b>{{ $E::SEVERITIES[$proposedSeverity] ?? $proposedSeverity }}</b> في {{ $incident->place?->code }} {{ $incident->place?->name }}.
+        <span class="text-muted small">النوع من صنف الخطر{{ $incident->risk?->category ? ' ('.$incident->risk->category->name.')' : '' }} والخطورة من خطورته. خطوات خطة المكان تظهر بعدّاداتها فوراً؛ البلاغ يبقى برقمه ومساره ومهله.</span></p>
+      <details class="small">
+        <summary class="text-muted">تغيير النوع أو الخطورة أو إضافة ملاحظة</summary>
+        <label class="form-label small mt-2">نوع الحالة</label>
+        <select name="incident_type" class="form-select form-select-sm mb-2" required>@foreach($emergencyTypes as $t)<option value="{{ $t }}" @selected($t === $proposedType)>{{ $E::TYPES[$t] ?? $t }}</option>@endforeach</select>
+        <label class="form-label small">الخطورة</label>
+        <select name="severity" class="form-select form-select-sm mb-2">@foreach($E::SEVERITIES as $k => $l)<option value="{{ $k }}" @selected($k === $proposedSeverity)>{{ $l }}</option>@endforeach</select>
+        <textarea name="note" class="form-control form-control-sm" rows="2" placeholder="ما يعرفه المركز الآن (اختياري)"></textarea>
+      </details>
     </div>
-    <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">رجوع</button><button class="btn btn-danger"><i class="bi bi-broadcast me-1"></i> تفعيل الآن</button></div>
+    <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">رجوع</button><button class="btn btn-danger btn-lg"><i class="bi bi-broadcast me-1"></i> فعّل حالة {{ $E::TYPES[$proposedType] ?? $proposedType }} الآن</button></div>
   </form></div></div></div>
   @endif
   @endif
@@ -235,14 +240,17 @@
   <div class="modal-body"><label class="form-label">ما الذي تم أو سبب الإغلاق (يُقيَّد في السجل) <span class="text-danger">*</span></label><textarea name="note" class="form-control" rows="3" required minlength="5"></textarea></div>
   <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button><button class="btn btn-dark">إغلاق البلاغ</button></div></form></div></div>
 
-<div class="modal fade" id="resolveModal"><div class="modal-dialog modal-lg"><form method="post" action="{{ route('incidents.resolve', $incident) }}" class="modal-content">@csrf
-  <div class="modal-header"><h5 class="modal-title">عولج — تأكيد</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+{{-- ١١-١ (ج، قرار ٣٤): الصورة في نافذة «عولج» نفسها — ضغطة واحدة: صورة + سطر + إرسال --}}
+<div class="modal fade" id="resolveModal"><div class="modal-dialog modal-lg"><form method="post" action="{{ route('incidents.resolve', $incident) }}" class="modal-content" enctype="multipart/form-data">@csrf
+  <div class="modal-header"><h5 class="modal-title">عولج — صورة بعد المعالجة وما تم</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
   <div class="modal-body">
     @php($ev = $incident->attachments->where('kind', 'evidence')->count())
-    <div class="alert alert-light border small">المطلوب: ملخص ≥ ٣٠ حرفاً + صورة/مستند دليل واحد على الأقل (ارفعه من قسم المرفقات). الأدلة المرفوعة: <b>{{ $ev }}</b>@if(!$ev) <span class="text-danger">— ارفع دليلاً أولاً</span>@endif</div>
-    <textarea name="resolution_summary" class="form-control" rows="5" required minlength="30" placeholder="ما الذي تم في الميدان: الإجراء، الأدوات، الوقت، حالة الموقع بعد المعالجة…"></textarea>
+    <label class="form-label fw-bold">صورة بعد المعالجة @if(!$ev)<span class="text-danger">*</span>@else<span class="text-muted small">(مرفوع {{ $ev }} من قبل — يمكن إضافة أخرى)</span>@endif</label>
+    <input type="file" name="evidence" class="form-control mb-3" accept="image/*,application/pdf" capture="environment" @required(!$ev)>
+    <label class="form-label fw-bold">ما الذي تم <span class="text-muted small">(٣٠ حرفاً على الأقل)</span></label>
+    <textarea name="resolution_summary" class="form-control" rows="4" required minlength="30" placeholder="الإجراء، الأدوات، حالة الموقع بعد المعالجة…"></textarea>
   </div>
-  <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button><button class="btn btn-success" @disabled(!$ev)>تأكيد</button></div></form></div></div>
+  <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button><button class="btn btn-success btn-lg"><i class="bi bi-send-fill me-1"></i> إرسال</button></div></form></div></div>
 
 <div class="modal fade" id="escCoordModal"><div class="modal-dialog"><form method="post" action="{{ route('incidents.escalateToCoordinator', $incident) }}" class="modal-content">@csrf
   <div class="modal-header"><h5 class="modal-title">تصعيد إلى منسق السلامة</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>

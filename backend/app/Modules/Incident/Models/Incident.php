@@ -57,7 +57,7 @@ class Incident extends Model
         'code', 'title', 'description', 'incident_type', 'status', 'organization_unit_id', 'place_id', 'location_text',
         'actor_id', 'reporter_name', 'reporter_phone',
         'assigned_to_id', 'assigned_by_id', 'assigned_at', 'received_by_id', 'received_at', 'referred_at', 'ref_received_at',
-        'forwarded_at', 'field_received_at', 'in_progress_at', 'resolved_at', 'escalated_at', 'closed_at',
+        'forwarded_at', 'field_received_at', 'field_opened_at', 'in_progress_at', 'resolved_at', 'escalated_at', 'closed_at',
         'executor_id', 'risk_reference_id', 'risk_id', 'incident_coordinator_id', 'incident_field_team_id',
         'corrective_action', 'preventive_action', 'resolution_summary', 'escalation_reason', 'escalation_level',
         'coord_verified_at', 'coord_verified_by_id', 'pending_closure', 'reporter_approved_closure',
@@ -68,7 +68,7 @@ class Incident extends Model
     protected $casts = [
         'pending_closure' => 'boolean', 'reporter_approved_closure' => 'boolean',
         'assigned_at' => 'datetime', 'received_at' => 'datetime', 'referred_at' => 'datetime', 'ref_received_at' => 'datetime',
-        'forwarded_at' => 'datetime', 'field_received_at' => 'datetime', 'in_progress_at' => 'datetime', 'resolved_at' => 'datetime',
+        'forwarded_at' => 'datetime', 'field_received_at' => 'datetime', 'field_opened_at' => 'datetime', 'in_progress_at' => 'datetime', 'resolved_at' => 'datetime',
         'escalated_at' => 'datetime', 'closed_at' => 'datetime', 'closure_requested_at' => 'datetime', 'handled_at' => 'datetime',
         'coord_verified_at' => 'datetime', 'escalation_level' => 'integer', 'inspection_ref' => 'array',
         'deadline_at' => 'datetime', 'overdue_at' => 'datetime',

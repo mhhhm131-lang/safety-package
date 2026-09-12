@@ -33,10 +33,10 @@ class IncidentControllerTest extends TestCase
 
     public function test_normal_store_requires_title_and_description(): void
     {
-        // المعهد: العنوان اختياري (يُشتق من الخطر والمكان)؛ الإلزامي: الوصف والمكان والخطر
+        // المعهد: العنوان اختياري (يُشتق من الخطر أو الوصف والمكان)؛ الإلزامي: الوصف والمكان. الخطر اختياري (١١-١ أ، قرار ٣٤)
         $this->post('/incident/normal', [])
-            ->assertSessionHasErrors(['description', 'risk_id'])
-            ->assertSessionDoesntHaveErrors('title');
+            ->assertSessionHasErrors(['description', 'place_id'])
+            ->assertSessionDoesntHaveErrors(['title', 'risk_id']);
         // المكان إلزامي في النموذج (required في الواجهة) — لكن IncidentController::store يتحقق منه nullable:
         // ضيف يتجاوز الواجهة يرسل بلاغاً بلا مكان فلا يوجَّه آلياً. يبقى هذا التأكيد حتى يُحسم في المتحكم.
         $this->post('/incident/normal', [])->assertSessionHasErrors('place_id');

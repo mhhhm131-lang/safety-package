@@ -72,16 +72,17 @@ class IncidentRiskInheritanceTest extends TestCase
         $this->assertSame('تدريب دوري + صيانة وقائية', $incident->preventive_action);
     }
 
-    public function test_creating_incident_without_risk_id_is_rejected(): void
+    /** المرحلة ١١-١ (أ، قرار ٣٤): كان OHSMS يرفض البلاغ العادي بلا خطر؛ صار الخطر اختيارياً والمركز يصنّف. */
+    public function test_creating_incident_without_risk_id_is_allowed(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Incident creation requires risk_id');
-
-        Incident::create([
+        $incident = Incident::create([
             'title' => 'بلاغ بلا خطر',
             'description' => '...',
             'incident_type' => 'normal',
         ]);
+        $this->assertNotNull($incident->id);
+        $this->assertNull($incident->risk_id);
+        $this->assertSame('new', $incident->status);
     }
 
     public function test_secret_incident_is_allowed_without_risk_id(): void

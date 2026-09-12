@@ -3,7 +3,7 @@
 @section('content')
 @php($open = $incident->isOpen())
 @php($alertClass = $incident->status === 'active' ? 'danger' : ($incident->status === 'contained' ? 'warning' : 'secondary'))
-<div class="alert alert-{{ $alertClass }} mb-3">
+<div class="alert alert-{{ $alertClass }} mb-3" id="statusPanel">
   <div class="d-flex align-items-center gap-3 flex-wrap">
     <i class="bi bi-broadcast fs-3"></i>
     <div class="flex-grow-1">
@@ -83,7 +83,7 @@
 <div class="row g-3">
   <div class="col-lg-6">
     {{-- الفريق الأولي: تنبيه ← وصول --}}
-    <div class="card mb-3 border-success">
+    <div class="card mb-3 border-success" id="teamPanel">
       <div class="card-header bg-success text-white d-flex align-items-center"><strong><i class="bi bi-people-fill"></i> الفريق الأولي — الوصول</strong><span class="ms-auto badge text-bg-light">وصل <span id="stat-team-arrived">{{ $stats['team_arrived'] }}</span> / <span id="stat-team-total">{{ $stats['team_total'] }}</span></span></div>
       <div class="card-body p-0">
         @if($teamCheckIns->isEmpty())
@@ -113,7 +113,7 @@
 
     {{-- نداءات هاتفية يدوية --}}
     @if($manualCalls->isNotEmpty())
-    <div class="card mb-3 border-warning">
+    <div class="card mb-3 border-warning" id="manualCallsPanel">
       <div class="card-header bg-warning"><strong><i class="bi bi-telephone-outbound"></i> يُنادى هاتفياً من المركز</strong> <span class="small">(بلا حساب أو بريد)</span></div>
       <ul class="list-group list-group-flush small">
         @foreach($manualCalls as $n)
@@ -253,22 +253,33 @@
   @endif
   const sevClass={critical:'danger',warning:'warning',info:'info'};
   let lastId=Math.max(0,...[...document.querySelectorAll('#eventLog li')].map(li=>+li.dataset.id));
+  // ١١-١ (هـ، قرار ٣٤): تحديث الأجزاء التي تغيّرت بدل إعادة تحميل الصفحة — لا يضيع التمرير ولا ما يكتبه المناوب
+  let refreshing=false;
+  async function refreshPanels(){
+    if(refreshing)return;refreshing=true;
+    try{
+      const r=await fetch(location.href,{credentials:'same-origin',headers:{'Accept':'text/html'}});if(!r.ok)return;
+      const doc=new DOMParser().parseFromString(await r.text(),'text/html');
+      ['statusPanel','planStepsCard','teamPanel','manualCallsPanel'].forEach(id=>{const n=doc.getElementById(id),o=document.getElementById(id);if(n&&o)o.replaceWith(n);});
+      tickSteps();
+    }catch(e){}finally{refreshing=false;}
+  }
   async function poll(){
     try{
       const r=await fetch(`/api/emergency/incidents/${incidentId}/stats`,{headers:{'Accept':'application/json'},credentials:'same-origin'});
       if(r.ok){const j=await r.json();const s=j.data;['total','safe','evacuating','missing','injured','needs_help','team_arrived','team_total'].forEach(k=>{const el=document.getElementById('stat-'+k.replace(/_/g,'-'));if(el&&el.textContent!=String(s[k]))el.textContent=s[k];});
-        if(open&&j.status!=='{{ $incident->status }}'){location.reload();}}
+        if(open&&j.status!=='{{ $incident->status }}'){refreshPanels();}}
       const e=await fetch(`/api/emergency/incidents/${incidentId}/events?after=${lastId}`,{headers:{'Accept':'application/json'},credentials:'same-origin'});
       if(e.ok){const j=await e.json();const ul=document.getElementById('eventLog');(j.data||[]).forEach(ev=>{if(ev.id<=lastId)return;lastId=ev.id;const li=document.createElement('li');li.className='list-group-item py-2';li.dataset.id=ev.id;li.innerHTML=`<div class="d-flex justify-content-between"><div><span class="badge text-bg-${sevClass[ev.severity]||'info'}">${ev.type_label}</span> ${ev.message}${ev.user?' <span class="text-muted">— '+ev.user+'</span>':''}</div><small class="text-muted text-nowrap">${ev.at||''}</small></div>`;ul.prepend(li);});}
     }catch(err){}
   }
   if(open){setInterval(poll,5000);}
-  // خطوات الخطة (١٠-٢): عدّاد لكل خطوة معلّقة من لحظة التفعيل؛ ما تجاوز نافذته يحمرّ؛ وتغيّر الحالة من جهاز آخر يعيد التحميل
+  // خطوات الخطة (١٠-٢): عدّاد لكل خطوة معلّقة من لحظة التفعيل؛ ما تجاوز نافذته يحمرّ؛ وتغيّر الحالة من جهاز آخر يحدّث البطاقة (١١-١ هـ)
   const fmt=s=>[Math.floor(s/3600),Math.floor(s%3600/60),s%60].map(x=>String(x).padStart(2,'0')).join(':');
   function tickSteps(){let over=0;document.querySelectorAll('.step-timer[data-due]').forEach(el=>{const left=Math.round(+el.dataset.due-Date.now()/1000);const tr=el.closest('tr');if(left>=0){el.textContent='متبقٍ '+fmt(left);el.className='badge text-bg-warning step-timer';}else{over++;el.textContent='متأخر +'+fmt(-left);el.className='badge text-bg-danger step-timer';if(tr)tr.classList.add('table-danger');}});
     const b=document.getElementById('steps-overdue-badge');if(b){b.hidden=over===0;document.getElementById('steps-overdue').textContent=over;}}
   if(document.getElementById('planSteps')){tickSteps();if(open)setInterval(tickSteps,1000);
-    if(open)setInterval(async()=>{try{const r=await fetch(`/api/emergency/incidents/${incidentId}/steps`,{headers:{'Accept':'application/json'},credentials:'same-origin'});if(!r.ok)return;const j=await r.json();let changed=false;(j.data||[]).forEach(s=>{const tr=document.querySelector(`#planSteps tr[data-step="${s.id}"]`);if(tr&&tr.dataset.status!==s.status)changed=true;});if(changed)location.reload();}catch(e){}},5000);}
+    if(open)setInterval(async()=>{try{const r=await fetch(`/api/emergency/incidents/${incidentId}/steps`,{headers:{'Accept':'application/json'},credentials:'same-origin'});if(!r.ok)return;const j=await r.json();let changed=false;(j.data||[]).forEach(s=>{const tr=document.querySelector(`#planSteps tr[data-step="${s.id}"]`);if(tr&&tr.dataset.status!==s.status)changed=true;});if(changed)refreshPanels();}catch(e){}},5000);}
   const btn=document.getElementById('qrBtn');
   if(btn){btn.addEventListener('click',async()=>{
     let token=(document.getElementById('qrToken').value||'').trim();const m=token.match(/checkin\/([a-f0-9]{64})/);if(m)token=m[1];
@@ -276,7 +287,7 @@
     if(!token){msg.innerHTML='<span class="text-danger">أدخل الرمز</span>';return;}
     const r=await fetch('/api/emergency/verify-qr',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':csrf},body:JSON.stringify({qr_token:token,assembly_point_id:point||null})});
     const j=await r.json().catch(()=>({}));msg.innerHTML=`<span class="${r.ok?'text-success':'text-danger'}">${j.message||''}${j.data&&j.data.person_name?' — '+j.data.person_name:''}</span>`;
-    if(r.ok){document.getElementById('qrToken').value='';setTimeout(()=>location.reload(),800);}
+    if(r.ok){document.getElementById('qrToken').value='';setTimeout(refreshPanels,800);}
   });}
 })();
 </script>

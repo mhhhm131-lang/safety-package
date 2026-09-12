@@ -104,14 +104,15 @@ class IncidentTest extends TestCase
 
         // ٣) الرؤية: المركز والفني المعيَّن يريانه، فني مكان آخر لا
         $this->actingAs($this->salama)->get('/app/incidents')->assertOk()->assertSee($incident->code);
-        $this->actingAs($this->fani)->get("/app/incidents/{$incident->id}")->assertOk()->assertSee('استلمتُ البلاغ');
         $this->actingAs($this->fani2)->get("/app/incidents/{$incident->id}")->assertForbidden();
+        $this->assertSame('forwarded', $incident->fresh()->status);
+        // ١١-١ (ب، قرار ٣٤): فتح الفني المعيَّن للبلاغ = استلمه؛ وقت الفتح يُسجَّل فتبقى فجوة البلاغ مقيسة
+        $this->actingAs($this->fani)->get("/app/incidents/{$incident->id}")->assertOk()->assertDontSee('استلمتُ البلاغ');
+        $this->assertNotNull($incident->fresh()->field_opened_at);
 
         // ٤) الفني: يبدأ، يرفع دليلاً، يعلّم «عولج». فني آخر لا يستطيع
         $this->actingAs($this->fani2)->post("/app/incidents/{$incident->id}/begin-work")->assertSessionHas('error');
-        // ١٠-٣ (ح-١): الفني يستلم بضغطة — فتصح فجوة البلاغ
         $this->actingAs($this->fani2)->post("/app/incidents/{$incident->id}/field-receive")->assertSessionHas('error');
-        $this->actingAs($this->fani)->post("/app/incidents/{$incident->id}/field-receive")->assertSessionHas('success');
         $this->assertSame('field_received', $incident->fresh()->status);
         $this->assertNotNull($incident->fresh()->field_received_at);
         $this->get('/incident/track?code='.$incident->secret_tracking_code)->assertOk()->assertSee('استلمه الفني')->assertDontSee('اسم fani');
@@ -224,6 +225,26 @@ class IncidentTest extends TestCase
         $this->assertSame('closed', $b->fresh()->status);
     }
 
+    /** المرحلة ١١-١ (أ، قرار ٣٤): الخطر اختياري للشاغل — التوجيه بالمكان وحده، والمركز يصنّف من صفحة البلاغ. */
+    public function test_normal_report_without_risk_routes_by_place_and_center_classifies(): void
+    {
+        $this->post('/incident/normal', ['description' => 'بلاط مكسور قرب المصعد', 'place_id' => $this->placeId('HZ-06')])->assertRedirect()->assertSessionHasNoErrors();
+        $i = Incident::first();
+        $this->assertNotNull($i, 'البلاغ بلا خطر لم يُنشأ');
+        $this->assertNull($i->risk_id);
+        $this->assertSame($this->fani->id, $i->incident_field_team_id); // فني المكان من ملفات المستخدمين
+        $this->assertSame('forwarded', $i->status);
+        $this->assertStringStartsWith('بلاط مكسور قرب المصعد', $i->title); // العنوان من الوصف حين لا خطر
+        // الصفحة العامة: قوائم التصنيف الثلاث ليست إلزامية
+        $html = $this->get('/incident/normal')->assertOk()->getContent();
+        $this->assertDoesNotMatchRegularExpression('/id="riskId"[^>]*required/', $html);
+        $this->assertDoesNotMatchRegularExpression('/id="riskCat"[^>]*required/', $html);
+        // المركز يرى أن البلاغ لم يُصنَّف ويصنّفه بزر الربط القائم
+        $this->actingAs($this->salama)->get("/app/incidents/{$i->id}")->assertOk()->assertSee('لم يُصنَّف بعد');
+        $this->actingAs($this->salama)->post("/app/incidents/{$i->id}/link-risk", ['risk_id' => $this->reference->id])->assertSessionHas('success');
+        $this->assertSame($this->reference->id, $i->fresh()->risk_id);
+    }
+
     public function test_escalation_chain_and_permissions(): void
     {
         $lajna = $this->user('lajna', 'safety_committee');
@@ -255,8 +276,8 @@ class IncidentTest extends TestCase
         $this->get('/incident/normal')->assertOk()->assertSee('name="risk_id"', false)->assertSee('HZ-06');
         $this->get('/incident?place=HZ-06')->assertOk()->assertSee('?place=HZ-06', false);
         $this->get('/incident/api/risks?sub_category_id='.$this->reference->sub_category_id)->assertOk()->assertJsonPath('0.id', $this->reference->id)->assertJsonPath('0.corrective_action', 'فصل التيار وعزل السلك فوراً');
-        // الخطر إلزامي في العادي لا في السري
-        $this->post('/incident/normal', ['description' => 'بلا خطر مختار', 'place_id' => $this->placeId('HZ-06')])->assertSessionHasErrors('risk_id');
+        // ١١-١ (أ، قرار ٣٤): الخطر اختياري في الأنواع الثلاثة — كان إلزامياً في العادي
+        $this->post('/incident/normal', ['description' => 'بلا خطر مختار', 'place_id' => $this->placeId('HZ-06')])->assertRedirect()->assertSessionHasNoErrors();
         $this->post('/incident/secret', ['description' => 'بلاغ سري بلا تصنيف', 'place_id' => $this->placeId('HZ-06')])->assertRedirect();
         $s = Incident::latest('id')->first();
         $this->assertNull($s->risk_id);

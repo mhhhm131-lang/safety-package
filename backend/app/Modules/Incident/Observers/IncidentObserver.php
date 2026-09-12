@@ -33,9 +33,7 @@ class IncidentObserver
         if (!in_array($incident->status, Incident::STATUSES, true)) {
             throw new InvalidArgumentException("Unknown incident status '{$incident->status}'. Must be one of: ".implode(', ', Incident::STATUSES));
         }
-        if ($incident->risk_id === null && $incident->incident_type !== 'secret') {
-            throw new InvalidArgumentException('Incident creation requires risk_id. Use the risks registry to pick a main category → sub-category → risk type.');
-        }
+        // المرحلة ١١-١ (أ، قرار ٣٤): الخطر اختياري في الأنواع الثلاثة — التصنيف عمل المركز (OHSMS كان يشترطه في غير السري)
         if ($incident->risk_id !== null) {
             $this->inheritFromRisk($incident);
         }

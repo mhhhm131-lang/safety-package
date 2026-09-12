@@ -36,23 +36,6 @@
         <textarea name="description" class="form-control" rows="4" required minlength="5" placeholder="صف الخطر بكلماتك: ما هو، أين بالضبط، منذ متى، هل يوجد مصاب">{{ old('description') }}</textarea>
       </div>
 
-      {{-- تصنيف الخطر من السجل العام للمعهد: فئة ← فرعية ← خطر --}}
-      <div class="col-12">
-        <div class="p-3 rounded" style="background:#eef5f1;border:1px solid var(--line)">
-          <div class="fw-bold mb-2"><i class="bi bi-shield-exclamation me-1"></i> نوع الخطر من سجل المعهد @if($type !== 'secret')<span class="text-danger">*</span>@else<span class="text-muted small">(اختياري في السري)</span>@endif</div>
-          <div class="row g-2">
-            <div class="col-md-4"><select id="riskCat" class="form-select form-select-sm" @if($type !== 'secret') required @endif>
-              <option value="">١. الفئة الرئيسية</option>
-              @foreach($riskCategories as $c)<option value="{{ $c->id }}">{{ $c->name }}</option>@endforeach
-            </select></div>
-            <div class="col-md-4"><select id="riskSub" class="form-select form-select-sm" disabled><option value="">٢. الفئة الفرعية</option></select></div>
-            <div class="col-md-4"><select id="riskId" name="risk_id" class="form-select form-select-sm" disabled @if($type !== 'secret') required @endif><option value="">٣. الخطر</option></select></div>
-          </div>
-          <div id="riskHint" class="small mt-2 text-muted" hidden></div>
-          <div class="small mt-2 text-muted">لا تجد ما يطابق؟ اختر الأقرب واكتب التفاصيل في الوصف — مركز السلامة يصحّح التصنيف.</div>
-        </div>
-      </div>
-
       <div class="col-12">
         <label class="form-label fw-bold">صورة (اختياري)</label>
         <input type="file" id="img" accept="image/*" capture="environment" class="form-control">
@@ -70,6 +53,22 @@
       @else
         <div class="col-12"><label class="form-label">سبب طلب السرية (اختياري)</label><input name="secrecy_reason" class="form-control" value="{{ old('secrecy_reason') }}" maxlength="1000"></div>
       @endif
+
+      {{-- المرحلة ١١-١ (أ، قرار ٣٤): التصنيف عمل المركز لا الشاغل — القوائم الثلاث اختيارية ومطوية --}}
+      <div class="col-12">
+        <details class="p-2 rounded" style="background:#eef5f1;border:1px solid var(--line)">
+          <summary class="small text-muted"><i class="bi bi-shield-exclamation me-1"></i> تعرف نوع الخطر من سجل المعهد؟ حدّده هنا (اختياري — مركز السلامة يصنّف)</summary>
+          <div class="row g-2 mt-1">
+            <div class="col-md-4"><select id="riskCat" class="form-select form-select-sm">
+              <option value="">١. الفئة الرئيسية</option>
+              @foreach($riskCategories as $c)<option value="{{ $c->id }}">{{ $c->name }}</option>@endforeach
+            </select></div>
+            <div class="col-md-4"><select id="riskSub" class="form-select form-select-sm" disabled><option value="">٢. الفئة الفرعية</option></select></div>
+            <div class="col-md-4"><select id="riskId" name="risk_id" class="form-select form-select-sm" disabled><option value="">٣. الخطر</option></select></div>
+          </div>
+          <div id="riskHint" class="small mt-2 text-muted" hidden></div>
+        </details>
+      </div>
 
       <div class="col-12 d-grid mt-2">
         <button class="btn {{ $type === 'urgent' ? 'btn-red' : 'btn-g' }} btn-lg"><i class="bi bi-send-fill me-1"></i> إرسال البلاغ</button>

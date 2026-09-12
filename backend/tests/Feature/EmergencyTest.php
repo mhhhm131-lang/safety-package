@@ -176,7 +176,8 @@ class EmergencyTest extends TestCase
 
         // الرؤية والصلاحيات: الموظف لا يرى؛ المدير العام يرى ولا يفعّل؛ الفني يصل للتتبع
         $this->actingAs($this->employee)->get('/app/emergency')->assertForbidden();
-        $this->actingAs($this->exec)->get("/app/emergency/incidents/{$incident->id}/live")->assertOk()->assertSee('ط-0001');
+        // ١١-١ (هـ): الشاشة الحية تحدّث أجزاءها ولا تعيد تحميل الصفحة
+        $this->actingAs($this->exec)->get("/app/emergency/incidents/{$incident->id}/live")->assertOk()->assertSee('ط-0001')->assertDontSee('location.reload', false)->assertSee('refreshPanels');
         $this->actingAs($this->exec)->post("/app/emergency/buildings/{$this->building->id}/trigger", ['incident_type' => 'fire', 'severity' => 'high', 'place_id' => $this->placeId('HZ-06')])->assertForbidden();
         $this->actingAs($this->fani)->get("/app/emergency/incidents/{$incident->id}/live")->assertOk()->assertSee('أحمد المنسق');
 
