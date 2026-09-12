@@ -28,4 +28,15 @@
   <div class="flex-grow-1"><b>أرسلت بلاغاً من قبل؟</b> <span class="text-muted small">تابع حالته وخطه الزمني برمز التتبع الذي أُعطيته.</span></div>
   <a class="btn btn-outline-success btn-sm" href="{{ route('incident.track') }}">تتبع بلاغ</a>
 </div>
+{{-- المرحلة ١٢ (قرار ٣٥): «أريد أن…» للشاغل والزائر بلا دخول --}}
+@if(!empty($intents))
+<div class="card p-3 mt-3" id="intents">
+  <div class="fw-bold mb-2"><i class="bi bi-hand-index-thumb me-1"></i> أريد أن…</div>
+  <div class="d-flex flex-wrap gap-2">
+    @foreach($intents as $i)
+      <a class="btn btn-sm {{ $i->primary ? 'btn-g' : 'btn-outline-success' }}" href="{{ $i->url }}" data-intent="{{ $i->key }}" title="{{ $i->hint }}"><i class="bi {{ $i->icon }}"></i> {{ $i->label }}</a>
+    @endforeach
+  </div>
+</div>
+@endif
 @endsection

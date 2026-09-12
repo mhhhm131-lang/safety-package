@@ -38,16 +38,21 @@ class IncidentController extends Controller
 
     public function landing(Request $request)
     {
-        return view('modules.incidents.landing', ['places' => Place::orderBy('sort')->get(), 'place' => $request->query('place')]);
+        // المرحلة ١٢ (قرار ٣٥): نوايا الضيف على أول صفحة يراها
+        return view('modules.incidents.landing', ['places' => Place::orderBy('sort')->get(), 'place' => $request->query('place'),
+            'intents' => Auth::check() ? \App\Core\Intents\IntentRegistry::forUser(Auth::user()) : \App\Core\Intents\IntentRegistry::guest()]);
     }
 
     public function form(Request $request, string $type)
     {
         abort_unless(in_array($type, ['normal', 'urgent', 'secret'], true), 404);
+        // المرحلة ١٢-٢: قادم من كتاب المعهد بخطر محدد (?risk=) — لا يُسأل عنه ثانية
+        $presetRisk = ($rid = (int) $request->query('risk', 0)) ? Risk::where('id', $rid)->where('risk_type', 'reference')->first() : null;
         return view('modules.incidents.form', [
             'type' => $type,
             'places' => Place::orderBy('sort')->get(),
             'preset' => $request->query('place'),
+            'presetRisk' => $presetRisk,
             'riskCategories' => RiskCategory::where('is_active', true)->orderBy('name')->get(),
         ]);
     }

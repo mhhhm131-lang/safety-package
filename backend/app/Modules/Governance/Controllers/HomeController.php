@@ -20,6 +20,7 @@ class HomeController extends Controller
         if ($user->isContractor()) {
             return redirect()->route('contractor.home');
         }
-        return view('governance.inbox', ['tasks' => $inbox->forUser($user)]);
+        // المرحلة ١٢ (قرار ٣٥): «ما ينتظرك» + «أريد أن…»
+        return view('governance.inbox', ['tasks' => $inbox->forUser($user), 'intents' => \App\Core\Intents\IntentRegistry::forUser($user)]);
     }
 }

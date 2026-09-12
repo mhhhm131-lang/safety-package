@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Route;
  * الصلاحيات: risk.list للعرض والشجرة، risk.create للكتاب والسجل العام، risk.activate لتفعيل خطر في سجل إدارة،
  * risk.approve للاعتماد (BACKEND.md ٤-٣-ب).
  */
+// المرحلة ١٢-٢ (قرار ٣٥): كتاب المعهد للتوعية — عام بلا دخول
+Route::middleware(['web'])->get('/hazards', [\App\Modules\Risk\Controllers\HazardsController::class, 'index'])->name('hazards.index');
+
 Route::middleware(['web', 'auth'])->prefix('app/risk')->name('risk.')->group(function () {
 
     Route::middleware('permission:risk.list')->group(function () {

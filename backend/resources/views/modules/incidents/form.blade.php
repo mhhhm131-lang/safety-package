@@ -55,6 +55,16 @@
       @endif
 
       {{-- المرحلة ١١-١ (أ، قرار ٣٤): التصنيف عمل المركز لا الشاغل — القوائم الثلاث اختيارية ومطوية --}}
+      @if(!empty($presetRisk))
+      {{-- المرحلة ١٢-٢: جاء من كتاب المعهد — الخطر محدد ولا يُسأل عنه --}}
+      <div class="col-12">
+        <div class="p-2 rounded d-flex align-items-center gap-2 flex-wrap" style="background:#eef5f1;border:1px solid var(--line)" id="presetRisk">
+          <input type="hidden" name="risk_id" value="{{ $presetRisk->id }}">
+          <i class="bi bi-shield-exclamation"></i> <span>الخطر: <b>{{ $presetRisk->title }}</b> <span class="text-muted small">({{ $presetRisk->code }})</span></span>
+          <a class="small ms-auto" href="{{ route('incident.form', $type) }}{{ $preset ? '?place='.$preset : '' }}">ليس هذا؟ أرسل بلا تصنيف</a>
+        </div>
+      </div>
+      @else
       <div class="col-12">
         <details class="p-2 rounded" style="background:#eef5f1;border:1px solid var(--line)">
           <summary class="small text-muted"><i class="bi bi-shield-exclamation me-1"></i> تعرف نوع الخطر من سجل المعهد؟ حدّده هنا (اختياري — مركز السلامة يصنّف)</summary>
@@ -69,6 +79,7 @@
           <div id="riskHint" class="small mt-2 text-muted" hidden></div>
         </details>
       </div>
+      @endif
 
       <div class="col-12 d-grid mt-2">
         <button class="btn {{ $type === 'urgent' ? 'btn-red' : 'btn-g' }} btn-lg"><i class="bi bi-send-fill me-1"></i> إرسال البلاغ</button>
@@ -83,14 +94,14 @@
   const cat=document.getElementById('riskCat'),sub=document.getElementById('riskSub'),rk=document.getElementById('riskId'),hint=document.getElementById('riskHint');
   const subUrl=@json(route('incident.api.sub-categories')),riskUrl=@json(route('incident.api.risks'));
   function reset(el,ph){el.innerHTML='<option value="">'+ph+'</option>';el.disabled=true;}
-  cat.addEventListener('change',function(){
+  if(cat)cat.addEventListener('change',function(){
     reset(sub,'جارٍ التحميل…');reset(rk,'٣. الخطر');hint.hidden=true;
     if(!this.value){reset(sub,'٢. الفئة الفرعية');return;}
     fetch(subUrl+'?category_id='+this.value,{headers:{'Accept':'application/json'}}).then(r=>r.json()).then(d=>{
       sub.innerHTML='<option value="">٢. الفئة الفرعية</option>';d.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=s.name;sub.appendChild(o);});sub.disabled=false;
     }).catch(()=>reset(sub,'تعذّر التحميل'));
   });
-  sub.addEventListener('change',function(){
+  if(sub)sub.addEventListener('change',function(){
     reset(rk,'جارٍ التحميل…');hint.hidden=true;
     if(!this.value){reset(rk,'٣. الخطر');return;}
     fetch(riskUrl+'?sub_category_id='+this.value,{headers:{'Accept':'application/json'}}).then(r=>r.json()).then(d=>{
@@ -99,7 +110,7 @@
       d.forEach(r=>{const o=document.createElement('option');o.value=r.id;o.textContent=(r.code?r.code+' — ':'')+r.title;o.dataset.c=r.corrective_action||'';rk.appendChild(o);});rk.disabled=false;
     }).catch(()=>reset(rk,'تعذّر التحميل'));
   });
-  rk.addEventListener('change',function(){const o=this.options[this.selectedIndex];const c=o?o.dataset.c:'';hint.hidden=!c;hint.textContent=c?'الإجراء المتوقع من سجل المخاطر: '+c:'';});
+  if(rk)rk.addEventListener('change',function(){const o=this.options[this.selectedIndex];const c=o?o.dataset.c:'';hint.hidden=!c;hint.textContent=c?'الإجراء المتوقع من سجل المخاطر: '+c:'';});
   /* صورة مضغوطة في المتصفح (كما في report.html): ≤١٠٢٤ بكسل، JPEG ٧٠٪ */
   document.getElementById('img').addEventListener('change',e=>{
     const f=e.target.files[0],ph=document.getElementById('photo'),pv=document.getElementById('prev');

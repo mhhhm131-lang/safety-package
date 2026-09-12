@@ -15,7 +15,7 @@
 @if($tasks->isEmpty())
   <div class="card"><div class="card-body text-center py-5 text-muted">
     <i class="bi bi-check-circle fs-1 text-success d-block mb-2"></i>
-    لا شيء ينتظر قرارك. حين يحتاجك شيء يظهر هنا، ويصلك إشعار به.
+    لا شيء ينتظر قرارك. حين يحتاجك شيء يظهر هنا، ويصلك إشعار به. وما تريد أن تبدأه بنفسك تجده تحت «أريد أن…».
   </div></div>
 @else
   <div class="d-grid gap-2" id="inboxList">
@@ -50,6 +50,7 @@
     @endforeach
   </div>
 @endif
+@include('governance._intents', ['intents' => $intents])
 @endsection
 @push('scripts')
 <script>
