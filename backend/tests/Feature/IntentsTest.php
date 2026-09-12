@@ -99,6 +99,15 @@ class IntentsTest extends TestCase
 
         $salama = $this->user('salama', 'system_admin', 'HZ-00');
         $h = $this->actingAs($salama)->get('/app')->assertOk()->getContent();
+        // قرار ٢٠٢٦-٠٩-١٣: «نماذج الفحص» لمن يملك اللوحة — العشرة بمكانها وبلاغاتها المفتوحة، وكل نموذج بضغطة
+        $this->assertStringContainsString('data-intent="forms"', $h);
+        \App\Modules\Store\Models\InstituteDocument::create(['key' => 'ipa-office-form-v10', 'version' => 1, 'data' => json_encode(['reports' => [
+            ['row' => 'o09', 'item' => 'إضاءة طوارئ معطلة', 'due' => '٢٤ ساعة', 'levels' => []]], 'rounds' => [['date' => '٢٠٢٦/٠٩/١٢']]], JSON_UNESCAPED_UNICODE)]);
+        $p = $this->actingAs($salama)->get('/app/inspections')->assertOk();
+        $p->assertSee('data-form="ipa-office-form-v10"', false)->assertSee('href="/HZ-06-offices/inspection-form.html"', false)->assertSee('href="/HZ-00-safety-center/fire-inspection.html"', false)
+          ->assertSee('آخر جولة: <b>٢٠٢٦/٠٩/١٢</b>', false)->assertSee('لم يُفتح بعد');
+        $this->assertSame(10, substr_count($p->getContent(), 'data-form="'));
+        $this->actingAs($this->user('emp2', 'employee'))->get('/app/inspections')->assertForbidden();
         foreach (['trigger', 'lockdown', 'drill', 'teams', 'systems', 'permit', 'sendform', 'worker', 'project', 'party', 'reports', 'settings'] as $k) {
             $this->assertStringContainsString('data-intent="'.$k.'"', $h, $k);
         }
