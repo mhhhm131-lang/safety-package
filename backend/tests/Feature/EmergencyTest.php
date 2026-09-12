@@ -11,6 +11,7 @@ use App\Modules\Emergency\Models\EmergencyTeam;
 use App\Modules\Emergency\Models\EvacuationCheckIn;
 use App\Modules\Emergency\Models\EvacuationDrill;
 use App\Modules\Emergency\Models\Lockdown;
+use App\Modules\Emergency\Models\PanicAlert;
 use App\Modules\Emergency\Services\TeamSync;
 use App\Modules\Governance\Models\OrganizationUnit;
 use App\Modules\Governance\Models\Place;
@@ -240,6 +241,37 @@ class EmergencyTest extends TestCase
         $this->assertSame('cancelled', $incident->fresh()->status);
         $this->assertSame('normal', $this->building->fresh()->emergency_status);
         $this->assertDatabaseHas('app_notifications', ['user_id' => $this->coord->id, 'type' => 'emergency.cancelled']);
+    }
+
+    /** قرار ٣٣: الشاشات الخمس (الذعر، الزوار، الطبية، الأساور، الكاميرات) لها مدخل في القائمة وبطاقتا عدّ في مركز الطوارئ. */
+    public function test_dashboard_links_the_five_screens_and_counts_open_alerts(): void
+    {
+        $screens = ['/app/emergency/panic', '/app/emergency/visitors', '/app/emergency/medical', '/app/emergency/iot/wearables', '/app/emergency/iot/cameras'];
+
+        // بلا تنبيهات: الروابط الخمسة في القائمة والبطاقتان بصفر
+        $r = $this->actingAs($this->munawib)->get('/app/emergency')->assertOk();
+        foreach ($screens as $u) {
+            $r->assertSee('href="'.url($u).'"', false);
+        }
+        $r->assertSeeInOrder(['<div class="fs-4 fw-bold">0</div><div class="small text-muted">تنبيهات ذعر مفتوحة'], false);
+        $r->assertSeeInOrder(['<div class="fs-4 fw-bold">0</div><div class="small text-muted">تنبيهات أساور مفتوحة'], false);
+
+        // تنبيه ذعر مفتوح وآخر محلول، وتنبيه سوار مفتوح وآخر محلول: العدّ للمفتوح فقط
+        PanicAlert::create(['user_id' => $this->employee->id, 'building_id' => $this->building->id, 'place_id' => $this->placeId('HZ-06'), 'status' => 'triggered']);
+        PanicAlert::create(['user_id' => $this->employee->id, 'building_id' => $this->building->id, 'status' => 'resolved']);
+        $w = \App\Modules\Emergency\Models\EmergencyWearable::create(['user_id' => $this->employee->id, 'device_id' => 'W-TEST-1']);
+        \App\Modules\Emergency\Models\WearableAlert::create(['wearable_id' => $w->id, 'alert_type' => 'sos', 'status' => 'triggered']);
+        \App\Modules\Emergency\Models\WearableAlert::create(['wearable_id' => $w->id, 'alert_type' => 'fall', 'status' => 'resolved']);
+
+        $r = $this->actingAs($this->munawib)->get('/app/emergency')->assertOk();
+        $r->assertSeeInOrder(['<div class="fs-4 fw-bold">1</div><div class="small text-muted">تنبيهات ذعر مفتوحة'], false);
+        $r->assertSeeInOrder(['<div class="fs-4 fw-bold">1</div><div class="small text-muted">تنبيهات أساور مفتوحة'], false);
+
+        // الشاشات الخمس تفتح لمن يملك emergency.view وتُرفض لمن لا يملكها؛ الروابط تظهر في كل صفحة من صفحات الوحدة لا في المركز وحده
+        foreach ($screens as $u) {
+            $this->actingAs($this->munawib)->get($u)->assertOk()->assertSee('href="'.url('/app/emergency/panic').'"', false);
+            $this->actingAs($this->employee)->get($u)->assertForbidden();
+        }
     }
 
     public function test_drill_runs_through_the_same_path_and_is_scored(): void

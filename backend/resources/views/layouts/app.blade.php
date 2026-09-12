@@ -121,6 +121,12 @@
         <a href="{{ route('emergency.buildings.index') }}" class="{{ request()->routeIs('emergency.buildings.*') ? 'active' : '' }}"><i class="bi bi-building"></i>المبنى</a>
         <a href="{{ route('emergency.analytics.index') }}" class="{{ request()->routeIs('emergency.analytics.*') ? 'active' : '' }}"><i class="bi bi-graph-up"></i>مؤشرات الطوارئ</a>
         <a href="{{ route('emergency.iot.dashboard') }}" class="{{ request()->routeIs('emergency.iot.dashboard') || request()->routeIs('emergency.iot.events') ? 'active' : '' }}"><i class="bi bi-cpu"></i>أنظمة المبنى</a>
+        {{-- قرار ٣٣: الشاشات الخمس كانت مبنية بلا مدخل --}}
+        <a href="{{ route('emergency.panic.dashboard') }}" class="{{ request()->routeIs('emergency.panic.*') ? 'active' : '' }}"><i class="bi bi-exclamation-diamond"></i>تنبيهات الذعر</a>
+        <a href="{{ route('emergency.iot.wearables.dashboard') }}" class="{{ request()->routeIs('emergency.iot.wearables.*') ? 'active' : '' }}"><i class="bi bi-smartwatch"></i>الأساور</a>
+        <a href="{{ route('emergency.iot.cameras.dashboard') }}" class="{{ request()->routeIs('emergency.iot.cameras.*') ? 'active' : '' }}"><i class="bi bi-camera-video"></i>الكاميرات</a>
+        <a href="{{ route('emergency.visitors.dashboard') }}" class="{{ request()->routeIs('emergency.visitors.*') ? 'active' : '' }}"><i class="bi bi-person-vcard"></i>الزوار</a>
+        <a href="{{ route('emergency.medical.dashboard') }}" class="{{ request()->routeIs('emergency.medical.*') ? 'active' : '' }}"><i class="bi bi-heart-pulse"></i>الملفات الطبية</a>
         @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'integration.manage'))
           <a href="{{ route('emergency.iot.devices.index') }}" class="{{ request()->routeIs('emergency.iot.devices.*') ? 'active' : '' }}"><i class="bi bi-hdd-network"></i>الأجهزة الموصولة</a>
         @endif

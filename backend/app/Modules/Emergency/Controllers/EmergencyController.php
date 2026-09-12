@@ -69,6 +69,9 @@ class EmergencyController extends Controller
             : \App\Modules\Emergency\Models\EmergencyNotification::whereIn('incident_id', EmergencyIncident::open()->pluck('id'))->manual()->count();
         $mainBuilding = EmergencyBuilding::main();
         $escalationRules = app(AutoEscalationService::class)->getEscalationRules();
+        // قرار ٣٣: تنبيهات الذعر والأساور المفتوحة تُعدّ في المركز، وشاشتاهما لهما مدخل في القائمة
+        $panicOpen = PanicAlert::active()->count();
+        $wearableOpen = \App\Modules\Emergency\Models\WearableAlert::active()->count();
         // المرحلة ١٠-٤ (ز): بند الخطة في جاهزية كل مكان — مزامَنة من الوثيقة، عدد الخطوات، أدوار بلا شاغل
         $plansByPlace = ResponsePlan::with('steps')->get()->keyBy('place_id');
         $activeByRole = \App\Modules\Governance\Models\UserProfile::where('is_active', true)->selectRaw('role, COUNT(*) as c')->groupBy('role')->pluck('c', 'role')->all();
@@ -78,7 +81,8 @@ class EmergencyController extends Controller
         ])->all();
 
         return view('modules.emergency.dashboard', compact(
-            'stats', 'buildings', 'activeIncidents', 'recentIncidents', 'upcomingDrills', 'places', 'teamsByPlace', 'pendingCalls', 'mainBuilding', 'escalationRules', 'planReadiness'
+            'stats', 'buildings', 'activeIncidents', 'recentIncidents', 'upcomingDrills', 'places', 'teamsByPlace', 'pendingCalls', 'mainBuilding', 'escalationRules', 'planReadiness',
+            'panicOpen', 'wearableOpen'
         ));
     }
 

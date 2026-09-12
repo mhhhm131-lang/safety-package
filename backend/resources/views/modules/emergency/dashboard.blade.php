@@ -29,6 +29,8 @@
   @foreach([
     ['حالات مفتوحة', $stats['active_incidents'], $stats['active_incidents'] ? 'danger' : 'success', route('emergency.incidents.index', ['status' => 'active'])],
     ['نداءات هاتفية معلّقة', $pendingCalls, $pendingCalls ? 'warning' : 'secondary', $activeIncidents->first() ? route('emergency.incidents.live', $activeIncidents->first()) : route('emergency.incidents.index')],
+    ['تنبيهات ذعر مفتوحة', $panicOpen, $panicOpen ? 'danger' : 'secondary', route('emergency.panic.dashboard')],
+    ['تنبيهات أساور مفتوحة', $wearableOpen, $wearableOpen ? 'danger' : 'secondary', route('emergency.iot.wearables.dashboard')],
     ['تمارين قادمة (٣٠ يوماً)', $stats['upcoming_drills'], 'info', route('emergency.drills.index')],
     ['تمارين متأخرة', $stats['overdue_drills'], $stats['overdue_drills'] ? 'warning' : 'secondary', route('emergency.drills.index')],
     ['معدات تحتاج فحصاً', $stats['equipment_needs_inspection'], $stats['equipment_needs_inspection'] ? 'warning' : 'secondary', route('emergency.equipment.index')],
