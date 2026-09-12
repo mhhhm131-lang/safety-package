@@ -42,7 +42,8 @@
   <div class="row">
     <aside class="col-md-2 py-3 side">
       @php($role = auth()->user()->role())
-      <a href="{{ route('app.home') }}" class="{{ request()->routeIs('app.home') ? 'active' : '' }}"><i class="bi bi-house"></i>الرئيسية</a>
+      {{-- ١١-٢ (قرار ٣٤): الصفحة الأولى «ما ينتظرك» بشارة العدد --}}
+      <a href="{{ route('app.home') }}" class="{{ request()->routeIs('app.home') ? 'active' : '' }}"><i class="bi bi-inbox-fill"></i>ما ينتظرك <span class="badge text-bg-danger" id="inboxN" hidden>0</span></a>
       @if(\App\Core\Permissions\PermissionRegistry::uiRole($role))
         <a href="/dashboard.html"><i class="bi bi-speedometer2"></i>العمل اليومي</a>
       @endif
@@ -174,7 +175,8 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 (function(){
-  function poll(){fetch('{{ route('app.notifications.count') }}',{credentials:'same-origin',headers:{'Accept':'application/json'}}).then(r=>r.ok?r.json():null).then(j=>{if(!j)return;var b=document.getElementById('bellN');b.textContent=j.count;b.hidden=!j.count;}).catch(()=>{});}
+  function poll(){fetch('{{ route('app.notifications.count') }}',{credentials:'same-origin',headers:{'Accept':'application/json'}}).then(r=>r.ok?r.json():null).then(j=>{if(!j)return;var b=document.getElementById('bellN');b.textContent=j.count;b.hidden=!j.count;}).catch(()=>{});
+    fetch('{{ route('app.inbox.count') }}',{credentials:'same-origin',headers:{'Accept':'application/json'}}).then(r=>r.ok?r.json():null).then(j=>{if(!j)return;var b=document.getElementById('inboxN');if(b){b.textContent=j.count;b.hidden=!j.count;}}).catch(()=>{});}
   poll();setInterval(poll,60000);
 })();
 </script>

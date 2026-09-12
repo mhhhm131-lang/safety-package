@@ -2,52 +2,24 @@
 
 namespace App\Modules\Governance\Controllers;
 
-use App\Core\Permissions\PermissionRegistry;
+use App\Core\Inbox\InboxService;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
-/** الصفحة الأولى بعد الدخول لشاشات الوحدات: روابط ما يملك المستخدم صلاحيته. */
+/**
+ * المرحلة ١١-٢ (قرار ٣٤): الصفحة الأولى بعد الدخول هي «ما ينتظرك الآن» — لا بطاقات روابط.
+ * كل بند سؤال وزر؛ ما ليس مهمة يُفتح من القائمة أو البحث (١١-٤).
+ */
 class HomeController extends Controller
 {
-    public function index(Request $request): View|\Illuminate\Http\RedirectResponse
+    public function index(Request $request, InboxService $inbox): View|\Illuminate\Http\RedirectResponse
     {
         $user = $request->user();
-        $role = $user->role();
         // المرحلة ٦: حساب الطرف الخارجي يفتح بوابته مباشرة
         if ($user->isContractor()) {
             return redirect()->route('contractor.home');
         }
-        $cards = [];
-        if (PermissionRegistry::uiRole($role)) {
-            $cards[] = ['title' => 'العمل اليومي', 'desc' => 'اللوحة: البلاغات والتصعيد، مهامي، ملف المكان', 'url' => '/dashboard.html', 'icon' => 'bi-speedometer2'];
-        }
-        if (PermissionRegistry::hasPermission($role, 'system.users')) {
-            $cards[] = ['title' => 'المستخدمون', 'desc' => 'الحسابات والأدوار', 'url' => route('app.users.index'), 'icon' => 'bi-people'];
-        }
-        if (PermissionRegistry::hasPermission($role, 'system.org')) {
-            $cards[] = ['title' => 'الهيكل التنظيمي', 'desc' => 'الإدارات والأقسام وأماكنها', 'url' => route('app.org.index'), 'icon' => 'bi-diagram-3'];
-        }
-        if (PermissionRegistry::hasPermission($role, 'system.settings')) {
-            $cards[] = ['title' => 'الأماكن', 'desc' => 'الأماكن التسعة (٨+١)', 'url' => route('app.places.index'), 'icon' => 'bi-geo-alt'];
-        }
-        if (PermissionRegistry::hasPermission($role, 'incident.list')) {
-            $cards[] = ['title' => 'بلاغات الشاغلين', 'desc' => 'سجل مركز السلامة: الإحالة للفني، المتابعة، الإغلاق', 'url' => route('incidents.index'), 'icon' => 'bi-megaphone'];
-        }
-        if (PermissionRegistry::hasPermission($role, 'risk.list')) {
-            $cards[] = ['title' => 'المخاطر', 'desc' => 'كتاب المخاطر، السجل العام للمعهد، مخاطر الإدارات والأماكن', 'url' => route('risk.reference.index'), 'icon' => 'bi-exclamation-triangle'];
-        }
-        if (PermissionRegistry::hasPermission($role, 'emergency.view') || PermissionRegistry::hasPermission($role, 'emergency.respond')) {
-            $cards[] = ['title' => 'الطوارئ', 'desc' => 'التفعيل، تنبيه الفريق الأولي، التتبع المباشر، التمارين، التقرير', 'url' => route('emergency.dashboard'), 'icon' => 'bi-exclamation-octagon'];
-        }
-        if (PermissionRegistry::hasPermission($role, 'project.list')) {
-            $cards[] = ['title' => 'المقاولون والمشاريع', 'desc' => 'الأطراف الخارجية وتأهيلها، المشاريع في أماكنها، عمال المقاولين وكفاءاتهم', 'url' => route('external-parties.index'), 'icon' => 'bi-buildings'];
-        }
-        if (PermissionRegistry::hasPermission($role, 'system.audit')) {
-            $cards[] = ['title' => 'سجل التدقيق', 'desc' => 'من فعل ماذا ومتى', 'url' => route('app.audit'), 'icon' => 'bi-journal-text'];
-        }
-        $cards[] = ['title' => 'الوثائق', 'desc' => 'المنظومة: الخطط والبطاقات والنماذج — مفتوحة للجميع', 'url' => '/index.html', 'icon' => 'bi-folder2-open'];
-
-        return view('governance.home', compact('cards'));
+        return view('governance.inbox', ['tasks' => $inbox->forUser($user)]);
     }
 }

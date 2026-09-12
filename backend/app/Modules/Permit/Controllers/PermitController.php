@@ -106,11 +106,9 @@ class PermitController extends Controller
     /** طابور من ينتظر إجراءً: للمراجعة، وما يوشك على الانتهاء، وما عولج حديثاً. */
     public function queue()
     {
-        $pending = Permit::query()
-            ->whereIn('status', [Permit::STATUS_SUBMITTED, Permit::STATUS_UNDER_REVIEW, Permit::STATUS_SAFETY_APPROVED])
+        // المرحلة ١١-٢: الاستعلام نفسه يغذّي «ما ينتظرك» (Permit::pendingDecision)
+        $pending = Permit::pendingDecision()
             ->with(['type', 'project', 'externalParty', 'place', 'requestedBy'])
-            ->orderByRaw("CASE status WHEN 'submitted' THEN 1 WHEN 'under_review' THEN 2 ELSE 3 END")
-            ->orderBy('submitted_at')
             ->get();
 
         $expiring = Permit::query()

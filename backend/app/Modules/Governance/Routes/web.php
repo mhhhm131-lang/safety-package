@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Route;
  */
 Route::middleware(['web', 'auth'])->prefix('app')->name('app.')->group(function () {
     Route::get('/', [HomeController::class, 'index'])->name('home');
+    Route::get('/inbox/count', [\App\Modules\Governance\Controllers\InboxController::class, 'count'])->name('inbox.count'); // ١١-٢: شارة «ما ينتظرك»
 
     Route::middleware('permission:system.users')->prefix('users')->name('users.')->group(function () {
         Route::get('/', [UsersController::class, 'index'])->name('index');

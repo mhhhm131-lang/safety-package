@@ -92,6 +92,14 @@ class Permit extends Model
 
     // ── العلاقات ──
 
+    /** المرحلة ١١-٢: ما ينتظر قراراً — يغذّي شاشة الطابور و«ما ينتظرك» بالاستعلام نفسه. */
+    public function scopePendingDecision($query)
+    {
+        return $query->whereIn('status', [self::STATUS_SUBMITTED, self::STATUS_UNDER_REVIEW, self::STATUS_SAFETY_APPROVED])
+            ->orderByRaw("CASE status WHEN 'submitted' THEN 1 WHEN 'under_review' THEN 2 ELSE 3 END")
+            ->orderBy('submitted_at');
+    }
+
     public function type(): BelongsTo          { return $this->belongsTo(PermitType::class, 'permit_type_id'); }
     public function parent(): BelongsTo        { return $this->belongsTo(self::class, 'parent_permit_id'); }
     public function children(): HasMany        { return $this->hasMany(self::class, 'parent_permit_id'); }
