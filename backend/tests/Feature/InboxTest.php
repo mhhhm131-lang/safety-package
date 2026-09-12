@@ -243,6 +243,26 @@ class InboxTest extends TestCase
         $this->actingAs($this->fani)->get('/app/inbox/open?url='.urlencode('https://evil.example/x'))->assertRedirect('/app');
     }
 
+    /** قرار المستخدم ٢٠٢٦-٠٩-١٣: بلاغات الشاغلين وبلاغات الفحص قسمان منفصلان بأيقونتين، لا يختلطان. */
+    public function test_inbox_separates_occupant_reports_from_inspection_reports(): void
+    {
+        $this->post('/incident/normal', ['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')]);
+        $stamp = now()->subHour()->format('Y/m/d').' — '.now()->subHour()->format('H:i');
+        \App\Modules\Store\Models\InstituteDocument::create(['key' => 'ipa-office-form-v10', 'version' => 1, 'data' => json_encode(['reports' => [
+            ['row' => 'o09', 'id' => 'ب — ٠٣', 'sys' => 'الإضاءة', 'item' => 'إضاءة طوارئ معطلة', 'due' => '٢٤ ساعة', 'when' => $stamp, 'sent' => '', 'path' => 'إداري', 'levels' => []],
+        ]], JSON_UNESCAPED_UNICODE)]);
+        $h = $this->actingAs($this->fani)->get('/app')->assertOk()->getContent();
+        $this->assertStringContainsString('data-module="بلاغات الشاغلين"', $h);
+        $this->assertStringContainsString('data-module="بلاغات الفحص"', $h);
+        $this->assertStringContainsString('bi-megaphone-fill', $h);
+        $this->assertStringContainsString('bi-clipboard-check', $h);
+        // البلاغ في قسمه والفحص في قسمه
+        $occ = substr($h, strpos($h, 'data-module="بلاغات الشاغلين"'), strpos($h, 'data-module="بلاغات الفحص"') - strpos($h, 'data-module="بلاغات الشاغلين"'));
+        $this->assertStringContainsString('بلاط مكسور', $occ);
+        $this->assertStringNotContainsString('إضاءة طوارئ', $occ);
+        $this->assertStringContainsString('عندك <span id="inboxCount">2</span>', $h);
+    }
+
     /** الترتيب: المتأخر أولاً ثم الأقرب مهلةً — والشارة في الشريط تستطلع /app/inbox/count. */
     public function test_overdue_first_and_badge_endpoint_in_layout(): void
     {

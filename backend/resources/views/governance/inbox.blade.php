@@ -18,14 +18,21 @@
     لا شيء ينتظر قرارك. حين يحتاجك شيء يظهر هنا، ويصلك إشعار به. وما تريد أن تبدأه بنفسك تجده تحت «أريد أن…».
   </div></div>
 @else
-  <div class="d-grid gap-2" id="inboxList">
-    @foreach($tasks as $t)
+  {{-- قرار المستخدم ٢٠٢٦-٠٩-١٣: لا خلط — كل نوع في قسمه بأيقونته وعدّه. بلاغات الشاغلين ≠ بلاغات الفحص الفني --}}
+  @php($ICONS = ['بلاغات الشاغلين' => 'bi-megaphone-fill', 'بلاغات الفحص' => 'bi-clipboard-check', 'الطوارئ' => 'bi-broadcast', 'التصاريح' => 'bi-file-earmark-check', 'المخاطر' => 'bi-lightning-charge', 'النماذج' => 'bi-ui-checks', 'المقاولون' => 'bi-buildings'])
+  @php($ORDER = array_keys($ICONS))
+  @php($groups = $tasks->groupBy('module')->sortBy(fn ($g, $m) => array_search($m, $ORDER) === false ? 99 : array_search($m, $ORDER)))
+  <div class="d-grid gap-3" id="inboxList">
+  @foreach($groups as $module => $items)
+    <section data-module="{{ $module }}">
+      <h2 class="h6 d-flex align-items-center gap-2 mb-2"><i class="bi {{ $ICONS[$module] ?? 'bi-dot' }} fs-5"></i> {{ $module }} <span class="badge text-bg-dark">{{ $items->count() }}</span></h2>
+      <div class="d-grid gap-2">
+    @foreach($items as $t)
       <div class="card {{ $t->isOverdue ? 'border-danger' : '' }}" data-task="{{ $t->key }}">
         <div class="card-body py-3 d-flex flex-wrap align-items-center gap-3">
           <div class="flex-grow-1" style="min-width:220px">
             <div class="fw-bold">{{ $t->question }}</div>
             <div class="small text-muted mt-1">
-              <span class="badge text-bg-light border">{{ $t->module }}</span>
               @if($t->isOverdue)<span class="badge text-bg-danger">متأخر</span>
               @elseif($t->dueAt)<span class="badge text-bg-warning">المهلة {{ $t->dueAt->format('m/d H:i') }}</span>@endif
               @if($t->createdAt) · {{ $t->createdAt->diffForHumans() }}@endif
@@ -48,6 +55,9 @@
         </div>
       </div>
     @endforeach
+      </div>
+    </section>
+  @endforeach
   </div>
 @endif
 @include('governance._intents', ['intents' => $intents])
