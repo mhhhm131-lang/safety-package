@@ -116,6 +116,29 @@ class CloseoutTest extends TestCase
         $this->assertSame($usersBefore, User::count(), 'الحسابات لا تُحذف — تُعطَّل');
     }
 
+    /**
+     * ظهر على المنشور ٢٠٢٦-٠٩-١٣: البلاغات حُذفت وبقيت وثيقة `ipa-occ` المشتقة تعرضها،
+     * فظل شريط «بلاغات شاغلين لهذا المكان» في نماذج الفحص يعرض بلاغات لا وجود لها.
+     */
+    public function test_purge_refreshes_the_derived_occupants_document(): void
+    {
+        // الوثيقة تحمل ما ينتظر فنياً في نموذج مكانه: محال وبمكان وبلا ربط بنموذج
+        Incident::create([
+            'code' => 'ش-0001', 'title' => 'بلاغ تجربة', 'description' => 'وصف',
+            'incident_type' => 'normal', 'status' => 'forwarded',
+            'risk_id' => Risk::where('risk_type', 'reference')->value('id'),
+            'place_id' => Place::idByCode('HZ-06'),
+        ]);
+        app(\App\Modules\Incident\Services\OccSync::class)->refresh();
+        $before = json_decode(\App\Modules\Store\Models\InstituteDocument::where('key', 'ipa-occ')->value('data'), true);
+        $this->assertNotEmpty($before['reports'] ?? [], 'الوثيقة تحمل البلاغ قبل المسح');
+
+        app(CloseoutService::class)->purge();
+
+        $after = json_decode(\App\Modules\Store\Models\InstituteDocument::where('key', 'ipa-occ')->value('data'), true);
+        $this->assertSame([], $after['reports'] ?? null, 'بعد المسح لا بلاغ في وثيقة الشاغلين');
+    }
+
     public function test_purge_keeps_category_level_controls(): void
     {
         // بنود التحكم على مستوى الفئة (risk_id فارغ) مرجعية — لا تُحذف مع الخطر الفعّال

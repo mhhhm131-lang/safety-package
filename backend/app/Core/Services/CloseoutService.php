@@ -279,6 +279,13 @@ class CloseoutService
                     $deleted[$table] = $n;
                 }
             }
+
+            /**
+             * ظهر عند المسح الفعلي على المنشور (٢٠٢٦-٠٩-١٣): `institute_documents` مرجعي فلا يُمسح،
+             * ووثيقة `ipa-occ` مشتقة من جدول البلاغات — فبقيت تعرض ١٦ بلاغاً لا وجود لها في القاعدة،
+             * وظل شريط «بلاغات شاغلين لهذا المكان» في نماذج الفحص يعرضها. أي وثيقة مشتقة تُعاد بعد المسح.
+             */
+            app(\App\Modules\Incident\Services\OccSync::class)->refresh();
         });
 
         return $deleted;
