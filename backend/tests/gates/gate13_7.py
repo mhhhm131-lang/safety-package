@@ -5,8 +5,9 @@
     python tests/gates/gate13_7.py [BASE] [--user=اسم:كلمة]
 
 يكتب صفحة اختبار مؤقتة في public/ ويفتحها بـEdge headless (ملف الاختبار يدخل بالحساب ثم يحمّل ipa-store.js نفسه):
-  ١) وثيقة نموذج تُنشأ (v1) ← جهاز آخر يكتب فوقها (v2) ← هذا الجهاز يكتب عمله ← الخادم يرد 409 ← يُعاد الإرسال بنسخة الخادم
-     ← الخادم يحمل عمل هذا الجهاز (v3) ولم يُكتب فوق المحلي.
+  ١) وثيقة نموذج تُنشأ (v1) ← جهاز آخر يكتب فوقها (v2) ← هذا الجهاز يكتب نسخته الأقدم ← الخادم يرد 409
+     ← الخادم يكسب: يبقى v2 كما هو، وتُستبدل نسخة هذا الجهاز بنسخة الخادم، ولا إعادة إرسال ولا معلّق.
+     (منع النافذة القديمة من الحفظ في النموذج نفسه: بوابة sendrepro، لا هذا الاختبار.)
   ٢) صورة تُكتب ← `?all=1` يعيدها كسولة بلا بيانات ← `ipaStore.fetchDoc` يجلبها كاملة.
 يعمل على الخادم المحلي (الصفحة تُكتب في public/) — وعلى المنشور يُشغَّل الجزء الخادمي فقط بطلبات HTTP.
 """
@@ -36,7 +37,7 @@ HARNESS = r"""<!doctype html><meta charset="utf-8"><title>PENDING</title><body><
   const other=await api('PUT',KEY,{data:'{"v":"other"}',version:1}); R.push('other='+other.status);
   localStorage.setItem(KEY,'{"v":2,"reports":[1]}'); await sleep(2500);
   g=await (await api('GET',KEY)).json();
-  R.push('after409: version='+g.version+' server='+(g.data==='{"v":2,"reports":[1]}')+' local='+(localStorage.getItem(KEY)==='{"v":2,"reports":[1]}')+' resent='+(ipaStore.log.some(e=>e.resent))+' pending='+Object.keys(ipaStore.pending()).length);
+  R.push('after409: version='+g.version+' server-kept-other='+(g.version===2&&g.data==='{"v":"other"}')+' local-replaced='+(localStorage.getItem(KEY)==='{"v":"other"}')+' resent='+(ipaStore.log.some(e=>e.resent))+' pending='+Object.keys(ipaStore.pending()).length);
   localStorage.setItem(PKEY,JSON.stringify({img:'data:image/jpeg;base64,'+'A'.repeat(3000),rep:'x'})); await sleep(1500);
   const all=await (await fetch('/api/store?all=1',{credentials:'same-origin',headers:{'Accept':'application/json'}})).json();
   const d=all.docs[PKEY]; R.push('lazy='+(!!d&&d.lazy===true&&d.data===null&&d.version===1));
@@ -58,5 +59,5 @@ finally:
 m = re.search(r'<title>(GATE13_7[^<]*)</title>', pr.stdout.decode('utf-8', 'replace'))
 line = m.group(1) if m else 'NO RESULT'
 log('1-2 browser', line)
-ok = all(k in line for k in ['loaded=true', 'v1=true', 'other=200', 'server=true', 'local=true', 'resent=true', 'pending=0', 'lazy=true', 'fetchDoc=true notInLocal=true'])
+ok = all(k in line for k in ['loaded=true', 'v1=true', 'other=200', 'server-kept-other=true', 'local-replaced=true', 'resent=false', 'pending=0', 'lazy=true', 'fetchDoc=true notInLocal=true'])
 print('GATE 13-7 PASSED' if ok else 'GATE 13-7 FAILED')

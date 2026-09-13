@@ -26,10 +26,8 @@
   var LOG = [];
   window.ipaStore = { log: LOG, versions: VER, pending: function () { return readPending(); }, fetchDoc: fetchDoc, queued: function () { return Object.keys(Q); } };
   var isKey = function (k) { return typeof k === 'string' && k.indexOf('ipa-') === 0 && !SKIP[k]; };
-  /* ١٣-٧-٢ (قرار ٤١ مشكلة ١): وثائق مالكها واحد — نماذج الفحص العشرة وصورها وعلامات القراءة — عند تعارض النسخ (409)
-     لا يُسقَط عمل الجهاز بل يُعاد إرساله فوق نسخة الخادم (آخر كتابة تكسب). ipa-occ وipa-depts وipa-place تبقى: الخادم مصدرها. */
-  var OWNED = function (k) { return /-form-v\d+$/.test(k) || k.indexOf('ipa-photo-') === 0 || k === 'ipa-seen'; };
-  var RESENT = {};
+  /* ١٣-٧-٢: أُزيلت «آخر كتابة تكسب» (1260876) بعد أن أثبتت البوابة أنها تجعل نافذة قديمة تمسح الأحدث من اللمسة الأولى.
+     عند التعارض (409) الخادم يكسب، والنموذج نفسه يمنع النافذة القديمة من الحفظ (نسخة واحدة تحفظ). */
   var MEM = {};
   /* صورة أو وثيقة كسولة تُجلب عند الحاجة (مشكلة ٣): من الذاكرة ثم من الجهاز ثم من الخادم — ولا تُكتب في localStorage حتى لا تُرفع من جديد */
   function fetchDoc(k) {
@@ -91,11 +89,6 @@
   if (pendKeys.length) {
     pendKeys.forEach(function (k) {
       var r = syncSend(k, pend[k].op, pend[k].version);
-      /* وثيقة مالكها واحد رُفضت لأن الخادم أحدث: تُعاد بنسخة الخادم بدل إسقاطها */
-      if (r.status === 409 && OWNED(k) && r.json && r.json.version !== undefined) {
-        r = syncSend(k, pend[k].op, r.json.version);
-        LOG.push({ k: k, op: pend[k].op, replay: true, resent: true, status: r.status });
-      }
       LOG.push({ k: k, op: pend[k].op, replay: true, status: r.status, body: (r.status >= 400 && r.json) ? (r.json.error || r.json.message || '') : '' });
       if (r.status === 200 || r.status === 404 || r.status === 409 || r.status === 422) clearPending(k);
       if (r.status === 401 || r.status === 419) { toLogin(); return; }
@@ -185,12 +178,6 @@
         if (r.status === 409) {
           return r.json().then(function (j) {
             VER[k] = j.version;
-            if (OWNED(k) && (RESENT[k] = (RESENT[k] || 0) + 1) <= 3) {
-              /* عمل هذا الجهاز أحدث فيُعاد فوق نسخة الخادم — لا يُسقَط */
-              entry.resent = true;
-              Q[k] = op; clearTimeout(T); T = setTimeout(flush, 50);
-              return;
-            }
             clearPending(k);
             origSet(k, j.data);
             bar('تغيّرت البيانات من جهاز آخر — أُعيد تحميلها من الخادم', 'warn');
@@ -201,7 +188,7 @@
         if (!r.ok) { retry(k, op, 'تعذّر الحفظ في الخادم — سيُعاد'); return; }
         return r.json().then(function (j) {
           if (op === 'del') delete VER[k]; else VER[k] = j.version;
-          delete RESENT[k]; delete MEM[k];
+          delete MEM[k];
           clearPending(k);
           bar('');
         });
