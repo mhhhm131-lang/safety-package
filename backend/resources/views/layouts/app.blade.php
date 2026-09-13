@@ -9,26 +9,86 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{--g:#0f4c3a;--g2:#166a4f;--bg:#f3f6f4;
+  /* المرحلة ١٣ (قرار ٣٩) — المظهر الموحد: أخضر المعهد وذهبيه؛ الأصفر والأحمر للتنبيه فقط. كل الشاشات تأخذ شكلها من هنا. */
+  :root{--g:#0f4c3a;--g2:#166a4f;--gold:#d9b25a;--red:#c62828;--ink:#1a2a24;--mut:#6b7a74;--line:#d9e2de;--bg:#f3f6f4;--tint:#e3ede8;
     /* متغيرات شاشات OHSMS المنقولة (سمة فاتحة بدل الداكنة) */
     --bg-main:#f3f6f4;--bg-card:#ffffff;--bg-dark:#e9efec;--border-color:#d9e2de;--text-main:#1a2a24;--text-muted:#6b7a74;--accent:#0f4c3a;--accent-color:#0f4c3a}
   .btn-accent{background:var(--g);color:#fff}.btn-accent:hover{background:var(--g2);color:#fff}
   .container-fluid .card{background:var(--bg-card)}
-  body{font-family:Cairo,"Segoe UI",Tahoma,sans-serif;background:var(--bg);min-height:100vh}
-  .topbar{background:var(--g);color:#fff}
+  body{font-family:Cairo,"Segoe UI",Tahoma,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+  .text-g{color:var(--g)}
+  /* الشريط: أخضر بخط ذهبي */
+  .topbar{background:var(--g);color:#fff;border-bottom:3px solid var(--gold)}
   .topbar a{color:#fff;text-decoration:none}
-  .topbar .brand{font-weight:700}
-  .side a{display:block;padding:8px 12px;border-radius:6px;color:#1a2a24;text-decoration:none}
-  .side a.active,.side a:hover{background:#e3ede8;color:var(--g)}
+  .topbar a.btn-light{color:var(--g);font-weight:700}
+  .topbar .brand{font-weight:900}.topbar .brand i{color:var(--gold)}
+  /* ألوان Bootstrap «الأساسية» تصير أخضر المعهد — فتتوحّد الشاشات المنقولة بلا تعديل فيها؛ الأحمر والأصفر والأخضر الفاتح تبقى للحالة */
+  :root{--bs-primary:#0f4c3a;--bs-primary-rgb:15,76,58;--bs-info:#d9b25a;--bs-info-rgb:217,178,90;--bs-link-color:#0f4c3a;--bs-link-color-rgb:15,76,58;--bs-link-hover-color:#166a4f;--bs-link-hover-color-rgb:22,106,79}
+  .text-primary{color:var(--g)!important}.bg-primary,.text-bg-primary{background-color:var(--g)!important}
+  .btn-info{--bs-btn-bg:var(--tint);--bs-btn-border-color:#c7d3cd;--bs-btn-color:var(--g);--bs-btn-hover-bg:#d3e2da;--bs-btn-hover-border-color:#b5c6bd;--bs-btn-hover-color:var(--g)}
+  .btn-success{--bs-btn-bg:var(--g);--bs-btn-border-color:var(--g);--bs-btn-hover-bg:var(--g2);--bs-btn-hover-border-color:var(--g2);--bs-btn-active-bg:var(--g2);--bs-btn-active-border-color:var(--g2)}
+  .btn-outline-success{--bs-btn-color:var(--g);--bs-btn-border-color:var(--g);--bs-btn-hover-bg:var(--g);--bs-btn-hover-border-color:var(--g);--bs-btn-active-bg:var(--g);--bs-btn-active-border-color:var(--g)}
+  .bg-info,.text-bg-info{background-color:var(--gold)!important;color:var(--ink)!important}.text-info{color:#8a6d1d!important}
+  .border-info{border-color:var(--gold)!important}.border-primary{border-color:var(--g)!important}.border-success{border-color:var(--g)!important}
+  .list-group-item.active{background:var(--g);border-color:var(--g)}
+  .page-link{color:var(--g)}.active>.page-link,.page-link.active{background:var(--g);border-color:var(--g)}
+  .side a{display:block;padding:8px 12px;border-radius:6px;color:var(--ink);text-decoration:none}
+  .side a.active,.side a:hover{background:var(--tint);color:var(--g)}
   .side i{margin-inline-end:6px}
-  .card{border:1px solid #d9e2de}
-  .btn-g{background:var(--g);color:#fff}.btn-g:hover{background:var(--g2);color:#fff}
-  .badge-role{background:#e3ede8;color:var(--g);font-weight:600}
+  /* بطاقة واحدة، زر واحد، عنوان واحد، شارة حالة بأربعة ألوان */
+  .card{border:1px solid var(--line);border-radius:10px}
+  .btn-g{background:var(--g);color:#fff;font-weight:700}.btn-g:hover,.btn-g:focus{background:var(--g2);color:#fff}
+  .btn-o{background:#fff;color:var(--ink);border:1px solid #c7d3cd;font-weight:600}.btn-o:hover{background:var(--tint);color:var(--g)}
+  .btn-red{background:var(--red);color:#fff;font-weight:700}.btn-red:hover{background:#a02020;color:#fff}
+  .btn-primary{--bs-btn-bg:var(--g);--bs-btn-border-color:var(--g);--bs-btn-hover-bg:var(--g2);--bs-btn-hover-border-color:var(--g2);--bs-btn-active-bg:var(--g2);--bs-btn-active-border-color:var(--g2)}
+  .btn-outline-primary{--bs-btn-color:var(--g);--bs-btn-border-color:var(--g);--bs-btn-hover-bg:var(--g);--bs-btn-hover-border-color:var(--g);--bs-btn-active-bg:var(--g);--bs-btn-active-border-color:var(--g)}
+  .page-h{font-size:1.35rem;font-weight:900;margin-bottom:.75rem}
+  h1.h4,h1.h5,h1.h3{font-weight:900}
+  .sec-h{font-size:1.05rem;font-weight:700;display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem}
+  .sec-h>i{color:var(--gold)}.sec-h-lg{font-size:1.2rem}
+  .st-done{background:var(--tint);color:var(--g)}.st-going{background:var(--gold);color:var(--ink)}.st-wait{background:#fff3cd;color:#7a5a00}.st-late{background:var(--red);color:#fff}
+  .badge-role{background:var(--tint);color:var(--g);font-weight:600}
+  .progress-bar{background:var(--g)}
+  .nav-tabs .nav-link.active,.nav-pills .nav-link.active{color:var(--g);font-weight:700}.nav-pills .nav-link.active{background:var(--g);color:#fff}
+  .form-control:focus,.form-select:focus{border-color:var(--g2);box-shadow:0 0 0 .2rem rgba(15,76,58,.15)}
+  .table thead th{color:var(--mut);font-weight:600;font-size:.85rem;border-bottom-width:1px}
   table td,table th{vertical-align:middle}
-  .bell{position:relative}.bell .n{position:absolute;top:-6px;inset-inline-start:-8px;background:#c62828;color:#fff;border-radius:10px;font-size:11px;padding:0 6px}
+  .bell{position:relative}.bell .n{position:absolute;top:-6px;inset-inline-start:-8px;background:var(--red);color:#fff;border-radius:10px;font-size:11px;padding:0 6px}
+  /* الشاشة الأولى: الأرقام الكبيرة والرسم والخريطة والمهام وآخر الإجراءات */
+  .tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem}
+  .tile{display:flex;flex-direction:column;gap:2px;padding:14px 16px;border-top:3px solid var(--gold);color:var(--ink);text-decoration:none}
+  .tile:hover{border-color:var(--gold);box-shadow:0 2px 8px rgba(15,76,58,.12);color:var(--ink)}
+  .tile .lbl{color:var(--mut);font-size:.8rem}.tile .n{font-size:2.4rem;font-weight:900;line-height:1.15;color:var(--g)}.tile .n small{font-size:1rem;font-weight:700}
+  .places{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .place{border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:0;color:var(--ink)}
+  .place .pn{font-size:.75rem;line-height:1.3}.place .pc{font-size:1.4rem;font-weight:900;line-height:1.2}
+  .place.lvl0{background:var(--tint)}.place.lvl1{background:#c9dfd3}.place.lvl2{background:#9fc7b4}.place.lvl3{background:var(--g);color:#fff}
+  .task-late{border-color:var(--red)}
+  .task-actions{display:flex;gap:.5rem;flex-wrap:wrap}
+  .row-act{display:flex;gap:.75rem;padding:.5rem 0;border-bottom:1px solid #edf1ef;color:var(--ink);text-decoration:none;font-size:.95rem}
+  .row-act:last-child{border-bottom:0}.row-act:hover{color:var(--g)}.row-act .when{color:var(--mut);min-width:3.5rem;font-size:.85rem}
+  /* الجوال: نسخة واحدة تتشكل بحسب العرض — أرقام تُمرَّر، أزرار بعرض الشاشة، وزر أحمر ثابت أسفل الشاشة */
+  .sos-bar{display:none}
+  @media (max-width:767.98px){
+    #navSearch{order:9;flex:1 1 100%}#navSearch input{max-width:none!important}
+    .topbar .ms-auto{display:none}
+    .tiles{display:flex;overflow-x:auto;gap:.6rem;padding-bottom:.25rem;margin-inline:-.5rem;padding-inline:.5rem;scroll-snap-type:x mandatory}
+    .tile{min-width:150px;scroll-snap-align:start}.tile .n{font-size:2rem}
+    .task-actions{width:100%}.task-actions>*,.task-actions .btn{flex:1 1 0}.task-actions form .btn{width:100%}
+    .btn{min-height:44px}
+    .sos-bar{display:block;position:fixed;bottom:0;inset-inline:0;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--line);z-index:1030}
+    .sos-bar .btn{width:100%;height:56px;font-size:1.15rem;font-weight:900;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:.5rem}
+    body.has-sos main{padding-bottom:96px!important}
+    body.has-sos .panic-button-floating{bottom:100px}
+  }
 </style>
 </head>
-<body>
+@php
+  /* المرحلة ١٣-٢: الزر الأحمر الثابت على الجوال — نية الطوارئ القائمة (فعّل حالة طارئة / أستغيث الآن) لمن يملكها؛ لا نية جديدة */
+  $sosIntent = (isset($intents) ? $intents : \App\Core\Intents\IntentRegistry::forUser(auth()->user()))
+      ->first(fn ($i) => in_array($i->key, ['trigger', 'sos'], true));
+@endphp
+<body class="{{ $sosIntent ? 'has-sos' : '' }}">
 {{-- المرحلة ١١-٤ (قرار ٣٤): ثلاثة أبواب في الشريط — ما ينتظرك · بحث · المزيد. القائمة كلها خلف «المزيد» ولا تتكدس فوق المحتوى --}}
 <nav class="topbar px-3 py-2 d-flex align-items-center gap-2 flex-wrap">
   <a class="brand" href="{{ route('app.home') }}"><i class="bi bi-shield-check"></i> <span class="d-none d-sm-inline">منظومة السلامة</span></a>
@@ -183,6 +243,9 @@
     </main>
   </div>
 </div>
+@if($sosIntent)
+<div class="sos-bar" id="sosBar"><a class="btn btn-red" href="{{ $sosIntent->url }}" data-intent="{{ $sosIntent->key }}"><i class="bi {{ $sosIntent->icon }}"></i> {{ $sosIntent->label }}</a></div>
+@endif
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 (function(){

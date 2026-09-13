@@ -1,7 +1,7 @@
 {{-- المرحلة ١٢ (قرار ٣٥): «أريد أن…» — أزرار بلغة الناس مشتقة من الصلاحيات. $intents: Collection<Intent> --}}
 @if($intents->isNotEmpty())
 <div class="mt-4" id="intents">
-  <h2 class="h5 mb-2"><i class="bi bi-hand-index-thumb"></i> أريد أن…</h2>
+  <h2 class="sec-h sec-h-lg mb-2"><i class="bi bi-hand-index-thumb"></i> أريد أن…</h2>
   @php($primary = $intents->where('primary', true))
   @if($primary->isNotEmpty())
     <div class="d-flex flex-wrap gap-2 mb-3">

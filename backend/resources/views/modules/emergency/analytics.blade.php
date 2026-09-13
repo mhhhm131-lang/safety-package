@@ -45,19 +45,19 @@
                 <div class="col-md-3">
                     <div class="p-3 rounded" style="background: var(--bg-main);">
                         <small style="color: var(--text-muted);">معدل الحل</small>
-                        <h3 style="color: #10b981;">{{ $summary['key_metrics']['resolution_rate'] }}</h3>
+                        <h3 style="color: var(--g);">{{ $summary['key_metrics']['resolution_rate'] }}</h3>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="p-3 rounded" style="background: var(--bg-main);">
                         <small style="color: var(--text-muted);">متوسط وقت الاستجابة</small>
-                        <h3 style="color: #3b82f6;">{{ $summary['key_metrics']['avg_response_time'] }}</h3>
+                        <h3 style="color: var(--g);">{{ $summary['key_metrics']['avg_response_time'] }}</h3>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="p-3 rounded" style="background: var(--bg-main);">
                         <small style="color: var(--text-muted);">نجاح الإشعارات</small>
-                        <h3 style="color: #8b5cf6;">{{ $summary['key_metrics']['notification_success_rate'] }}</h3>
+                        <h3 style="color: #8a6d1d;">{{ $summary['key_metrics']['notification_success_rate'] }}</h3>
                     </div>
                 </div>
             </div>
@@ -67,7 +67,7 @@
                 @if(!empty($summary['highlights']))
                 <div class="col-md-4">
                     <div class="p-3 rounded" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);">
-                        <h6 style="color: #10b981;"><i class="bi bi-star me-1"></i>النقاط الإيجابية</h6>
+                        <h6 style="color: var(--g);"><i class="bi bi-star me-1"></i>النقاط الإيجابية</h6>
                         <ul class="mb-0 ps-3" style="color: var(--text-main);">
                             @foreach($summary['highlights'] as $highlight)
                                 <li>{{ $highlight }}</li>
@@ -93,7 +93,7 @@
                 @if(!empty($summary['recommendations']))
                 <div class="col-md-4">
                     <div class="p-3 rounded" style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3);">
-                        <h6 style="color: #3b82f6;"><i class="bi bi-lightbulb me-1"></i>التوصيات</h6>
+                        <h6 style="color: var(--g);"><i class="bi bi-lightbulb me-1"></i>التوصيات</h6>
                         <ul class="mb-0 ps-3" style="color: var(--text-main);">
                             @foreach($summary['recommendations'] as $rec)
                                 <li>{{ $rec }}</li>

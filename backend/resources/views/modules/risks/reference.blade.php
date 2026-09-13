@@ -551,7 +551,7 @@
                     legalCell = `
                         <td rowspan="3" class="align-top" style="vertical-align:top!important;min-width:110px;">
                             ${r.legal_reference
-                                ? `<span style="font-size:.75rem;color:#0d6efd;line-height:1.6;"><i class="bi bi-book-half me-1"></i>${escAttr(r.legal_reference)}</span>`
+                                ? `<span style="font-size:.75rem;color:var(--g);line-height:1.6;"><i class="bi bi-book-half me-1"></i>${escAttr(r.legal_reference)}</span>`
                                 : dash}
                         </td>`;
                 }

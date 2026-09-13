@@ -31,9 +31,19 @@
   .tl .ev:before{content:"";position:absolute;inset-inline-start:-24px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--g)}
   .tl .ev small{color:var(--mut)}
   .badge-st{font-size:.85rem}
+  /* المرحلة ١٣-٢ (قرار ٣٩): ذهبي المعهد تحت الشريط، وزر أحمر ثابت أسفل شاشة الجوال يفتح البلاغ من أي صفحة عامة غير صفحته */
+  .top{border-bottom:3px solid #d9b25a}.top .bi-shield-check{color:#d9b25a}
+  .sos-bar{display:none}
+  @media (max-width:767.98px){
+    .sos-bar{display:block;position:fixed;bottom:0;inset-inline:0;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--line);z-index:1030}
+    .sos-bar .btn{width:100%;height:56px;font-size:1.15rem;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:.5rem}
+    body.has-sos .wrap{padding-bottom:96px}
+    .btn{min-height:44px}
+  }
 </style>
 </head>
-<body>
+@php($showReportBar = !request()->routeIs('incident.landing') && !request()->routeIs('incident.form') && !request()->routeIs('incident.store'))
+<body class="{{ $showReportBar ? 'has-sos' : '' }}">
 <div class="top d-flex align-items-center gap-2">
   <i class="bi bi-shield-check fs-5"></i>
   <div><div class="fw-bold">منظومة السلامة والصحة المهنية</div><div class="small text-white-50">معهد الإدارة العامة — مركز السلامة</div></div>
@@ -46,6 +56,9 @@
   @yield('content')
   <div class="foot">حزمة السلامة والصحة المهنية — معهد الإدارة العامة · <a href="/index.html">المنظومة</a> · <a href="/HZ-00-safety-center/reporting-channels.html">قنوات الإبلاغ الأخرى</a> · <a href="{{ route('incident.track') }}">تتبع بلاغ برمزه</a></div>
 </div>
+@if($showReportBar)
+<div class="sos-bar" id="sosBar"><a class="btn btn-red" href="{{ route('incident.landing') }}" data-intent="report"><i class="bi bi-megaphone-fill"></i> أبلّغ عن خطر</a></div>
+@endif
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 @stack('scripts')
 </body>

@@ -110,7 +110,8 @@ class InboxTest extends TestCase
         // المركز يغلق من البطاقة نفسها ← لا مهمة
         $this->actingAs($this->salama)->post("/app/incidents/{$i->id}/close")->assertSessionHas('success');
         $this->assertSame('closed', $i->fresh()->status);
-        $this->actingAs($this->salama)->get('/app')->assertOk()->assertDontSee($i->code);
+        // المرحلة ١٣-٢: الرمز قد يظهر في «آخر الإجراءات» (سجل التدقيق) — الاختبار على المهمة نفسها
+        $this->actingAs($this->salama)->get('/app')->assertOk()->assertDontSee('data-task="incident:'.$i->id.':', false);
     }
 
     /** بلاغ بلا فني للمكان: المركز يرى «أحِله»؛ ومبلّغ بحساب يرى «هل عولج فعلاً؟» بزر POST. */
