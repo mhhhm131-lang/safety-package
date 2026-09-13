@@ -1839,6 +1839,11 @@ DIRTY=false;
   #mob .sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}#mob .sum div{border:1px solid var(--line);border-radius:8px;padding:8px;text-align:center;font-size:12px}#mob .sum b{display:block;font-size:22px;color:var(--green)}
 }
 @media print{#mob,#mobBack,#mobHead{display:none!important}body.mobon .tblview,body.mobon .headview{display:revert!important}}
+/* صورة المخالفة في البلاغ (قرار ٤٠-ب): تُلتقط بالجوال أو تُختار من الجهاز، تُصغَّر وتُحفظ مفتاحاً مستقلاً بجانب البلاغ */
+#mPhotoBox{margin-top:4px}#mPhotoRow{display:flex;gap:8px;flex-wrap:wrap}
+#mPhotoImg{display:block;max-width:100%;max-height:260px;border:1px solid var(--line);border-radius:6px;margin-top:8px}
+@media(max-width:680px){#mPhotoRow .btn{min-height:44px;font-size:14px;flex:1}}
+#mob .mc img.mth{width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
 </style>
 <script>
 (function(){
@@ -1905,7 +1910,8 @@ DIRTY=false;
     h+='<div class="mb"><button type="button" data-r="ok" class="'+(curR==='ok'?'on':'')+'"'+(dis?' disabled':'')+'>✓ مطابق</button>'
       +'<button type="button" data-r="no" class="'+(curR==='no'?'on':'')+'"'+(dis?' disabled':'')+'>✗ غير مطابق</button>'
       +(tr.querySelector('input[data-r="na"]')?'<button type="button" data-r="na" class="'+(curR==='na'?'on':'')+'"'+(dis?' disabled':'')+'>لا ينطبق</button>':'')+'</div>';
-    var cell=tr.querySelector('.cell'); h+='<div class="mc">'+(cell?cell.innerHTML:'')+'</div>';
+    var cell=tr.querySelector('.cell'), ph=(window.ipaPhoto&&window.ipaPhoto.get(tr.dataset.row));
+    h+='<div class="mc">'+(ph?'<img class="mth" src="'+ph.img+'" alt="صورة المخالفة">':'')+(cell?cell.innerHTML:'')+'</div>';
     if(dis)h+='<div class="ms">التأشير للفني المنفّذ والمكتب الاستشاري فقط</div>';
     h+='<div class="mn"><button type="button" data-nav="-1"'+(MI===0?' disabled':'')+'>السابق</button><button type="button" class="nx" data-nav="1">'+(MI===n-1?'الختام':'التالي')+'</button></div>'
       +'<div class="ms"><button type="button" data-tbl="1">عرض الجدول</button></div>';
@@ -1919,6 +1925,56 @@ DIRTY=false;
   if(typeof window.paintRow==='function'){var _paint=window.paintRow;window.paintRow=function(){var r=_paint.apply(this,arguments);sched();return r;};}
   if(typeof window.lockByRole==='function'){var _lock=window.lockByRole;window.lockByRole=function(){var r=_lock.apply(this,arguments);sched();return r;};}
   if(init())show();
+})();
+(function(){
+  'use strict';
+  /* صورة المخالفة: زر في قسم «وصف الملاحظة» بالبلاغ. تُحفظ عند إرسال/حفظ البلاغ تحت مفتاح ipa-photo-<النموذج>-<البند> فتصل الخادم كبقية مفاتيح ipa-* وتظهر لكل من يفتح البلاغ. */
+  var PEND=null, FORM=(typeof AKEY==='string'?AKEY:'ipa-form');
+  function g(id){return document.getElementById(id);}
+  function keyOf(row){return 'ipa-photo-'+FORM+'-'+row;}
+  function get(row){try{var v=localStorage.getItem(keyOf(row));return v?JSON.parse(v):null;}catch(e){return null;}}
+  function ui(){
+    var box=g('descBox'); if(!box||g('mPhotoBox'))return;
+    var d=document.createElement('div'); d.id='mPhotoBox';
+    d.innerHTML='<div class="fl">صورة المخالفة <span class="muted">— اختيارية، تُحفظ مع البلاغ</span></div>'
+      +'<input type="file" id="mPhotoIn" accept="image/*" capture="environment" hidden>'
+      +'<div id="mPhotoRow"><button type="button" class="btn btn-gh" id="mPhotoBtn">التقاط صورة</button><button type="button" class="btn btn-gh" id="mPhotoDel" hidden>حذف الصورة</button></div>'
+      +'<img id="mPhotoImg" alt="صورة المخالفة" hidden>';
+    box.appendChild(d);
+    g('mPhotoBtn').addEventListener('click',function(){g('mPhotoIn').click();});
+    g('mPhotoIn').addEventListener('change',function(){var f=this.files&&this.files[0];this.value='';if(f)shrink(f,attach);});
+    g('mPhotoDel').addEventListener('click',function(){PEND='';paint('');});
+  }
+  function shrink(file,cb){
+    var img=new Image(), u=URL.createObjectURL(file);
+    img.onload=function(){var M=1024,w=img.width,h=img.height,s=Math.min(1,M/Math.max(w,h)),c=document.createElement('canvas');c.width=Math.round(w*s);c.height=Math.round(h*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);cb(c.toDataURL('image/jpeg',0.7));};
+    img.onerror=function(){URL.revokeObjectURL(u);alert('تعذّر قراءة الصورة');};
+    img.src=u;
+  }
+  function attach(url){PEND=url;paint(url);}
+  function paint(url){
+    var im=g('mPhotoImg'),b=g('mPhotoBtn'),x=g('mPhotoDel'),d=g('mDesc'); if(!im)return;
+    var ro=!d||d.disabled;
+    im.hidden=!url; if(url)im.src=url; else im.removeAttribute('src');
+    b.hidden=ro; x.hidden=ro||!url; b.textContent=url?'استبدال الصورة':'التقاط صورة';
+    g('mPhotoBox').hidden=ro&&!url; /* لغير الفني: تظهر الصورة إن وُجدت، ولا زر */
+  }
+  function commit(row){
+    if(PEND===null||!row)return false;
+    try{
+      if(PEND){var rep=(typeof REPORTS!=='undefined')?REPORTS.find(function(r){return r.row===row;}):null;
+        localStorage.setItem(keyOf(row),JSON.stringify({img:PEND,at:new Date().toISOString(),rep:rep?rep.id:''}));}
+      else localStorage.removeItem(keyOf(row));
+    }catch(e){alert('لم تُحفظ الصورة — ذاكرة الجهاز ممتلئة');PEND=null;return false;}
+    PEND=null; if(typeof refreshRows==='function')refreshRows(); return true;
+  }
+  function onOpen(){ui();PEND=null;var row=g('ov')?g('ov').dataset.row:'';var p=get(row);paint(p?p.img:'');}
+  function afterSave(){var ov=g('ov');if(!ov)return;var row=ov.dataset.row;if(!ov.classList.contains('on')||PEND!==null&&g('mId'))commit(row);}
+  if(typeof window.openM==='function'){var _o=window.openM;window.openM=function(){var r=_o.apply(this,arguments);onOpen();return r;};}
+  if(typeof window.sendReport==='function'){var _s=window.sendReport;window.sendReport=function(){var ov=g('ov'),row=ov.dataset.row,r=_s.apply(this,arguments);if(!ov.classList.contains('on'))commit(row);return r;};}
+  if(typeof window.saveM==='function'){var _m=window.saveM;window.saveM=function(keep){var ov=g('ov'),row=ov.dataset.row,r=_m.apply(this,arguments);if(!ov.classList.contains('on')||keep===true)commit(row);return r;};}
+  if(typeof window.lockModalByRole==='function'){var _l=window.lockModalByRole;window.lockModalByRole=function(){var r=_l.apply(this,arguments);if(g('mPhotoImg'))paint(g('mPhotoImg').hidden?'':g('mPhotoImg').src);return r;};}
+  window.ipaPhoto={attach:attach,commit:commit,get:get,keyOf:keyOf};
 })();
 </script>
 </body>
