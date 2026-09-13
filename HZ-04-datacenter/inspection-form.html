@@ -1814,6 +1814,17 @@ DIRTY=false;
   #mobSys{display:block;flex:1;min-width:0;height:44px;border:0;border-radius:8px;font:700 14px Cairo,Arial,sans-serif;padding:0 10px;background:#fff;color:var(--ink)}
   #mobMore{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:8px;border:1px solid rgba(255,255,255,.5);background:transparent;color:#fff;font:900 20px Cairo,Arial,sans-serif;flex:none}
   body.mobon main.sheet{padding:12px 12px 110px}
+  /* شريط بلاغات الشاغلين: سطر واحد يُفتح بالنقر، ولا يظهر إلا في محطتي البداية والبنود (كان يزحم كل محطة بطوله) */
+  body.mobon .occbar{margin:12px 12px 0;border-radius:10px;padding:0 12px;max-height:none}
+  body.mobon .occbar .occ-h{display:flex;align-items:center;gap:8px;min-height:48px;margin:0;cursor:pointer;font-size:13px}
+  body.mobon:not(.occopen) .occbar .occ-h .hint{display:none}
+  body.mobon .occbar .occ-h .hint{font-weight:400;font-size:12px}
+  body.mobon .occbar .occ-h::after{content:"▾";margin-inline-start:auto;font-weight:900}
+  body.mobon.occopen .occbar .occ-h::after{content:"▴"}
+  body.mobon:not(.occopen) .occbar .occ-r{display:none}
+  body.mobon.occopen .occbar{max-height:50vh;overflow:auto;padding-bottom:10px}
+  body.mobon .occbar .occ-r{padding:10px 0}
+  body.mobon .occbar .occ-r .act{min-height:44px;font-size:14px;flex:1 1 100%}
   body.mobon .head{border-bottom:2px solid var(--green);padding-bottom:8px;flex-direction:column;gap:4px}body.mobon .head h1{font-size:16px}body.mobon .head .sub{font-size:11px}body.mobon .head .stamp{display:none}
   body.mobon #mob,body.mobon #mobS1,body.mobon #mobS5,body.mobon #mobLog{display:block}
   body.mobon #mobBack{display:block;width:100%;margin-top:12px;font:700 14px Cairo,Arial,sans-serif;min-height:44px;border-radius:8px;border:1px solid var(--green);background:#fff;color:var(--green);cursor:pointer}
@@ -2016,6 +2027,10 @@ DIRTY=false;
     bindS1(); bindS5();
     mob.addEventListener('click',onClick);
     g('mobLog').addEventListener('click',function(e){var c=e.target.closest('.lc');if(c&&typeof openM==='function')openM(c.dataset.row,true);});
+    /* شريط بلاغات الشاغلين خارج main.sheet: يُطوى بالنقر على رأسه، وأزراره تعمل كما هي */
+    var ob=g('occBar');
+    if(ob)ob.addEventListener('click',function(e){if(e.target.closest('.act'))return;if(e.target.closest('.occ-h'))document.body.classList.toggle('occopen');});
+    fixOccHead(); /* الشريط رُسم عند الدخول قبل هذه الكتلة */
     built=true;
     /* القفل والدور قد يسبقان البناء */
     setInterval(saveStatus,1000);
@@ -2065,6 +2080,8 @@ DIRTY=false;
       if(on && el.dataset.st==='5' && ST===5 && S[7]&&S[7].indexOf(el)>=0){hide=!document.querySelector('.mfold[data-fold="7"].open');}
       el.classList.toggle('mob-hide',hide);
     });
+    /* بلاغات الشاغلين: في البداية للعلم وفي البنود للربط — لا في السجل ولا الختام */
+    var ob=g('occBar'); if(ob)ob.classList.toggle('mob-hide', on && !(ST===1||ST===2));
     if(on){ var name={1:'١ بداية الجولة',2:'٢ البنود',4:'٤ السجل',5:'٥ الختام'}[ST]; g('mobStName').textContent='المحطة '+name;
       g('mobPrev').disabled=ST===1; g('mobNext').textContent=ST===5?'الختام':'التالي'; g('mobNext').disabled=ST===5; }
   }
@@ -2105,6 +2122,11 @@ DIRTY=false;
     if(b.dataset.nextsys){var t=document.querySelector('nav.bar .tab[aria-selected="true"]'),n=t&&t.nextElementSibling;if(n&&n.classList.contains('tab')){n.click();MI=0;show();scrollTop();}return;}
   }
   function scrollTop(){if(mob)window.scrollTo({top:Math.max(0,mob.offsetTop-70),behavior:'smooth'});}
+  /* جملة الإرشاد الطويلة في رأس شريط الشاغلين تُفصَل ليبقى الرأس سطراً واحداً على الجوال */
+  function fixOccHead(){
+    var h=document.querySelector('#occBar .occ-h'); if(!h||h.querySelector('.hint'))return;
+    var i=h.innerHTML.indexOf(' — '); if(i>0)h.innerHTML=h.innerHTML.slice(0,i)+'<span class="hint">'+h.innerHTML.slice(i)+'</span>';
+  }
   function mark(r){
     var R=rows(), tr=R[MI]; if(!tr)return;
     var cb=tr.querySelector('input[data-r="'+r+'"]'); if(!cb||cb.disabled)return;
@@ -2155,6 +2177,9 @@ DIRTY=false;
   if(typeof window.paintRow==='function'){var _paint=window.paintRow;window.paintRow=function(){var r=_paint.apply(this,arguments);sched();return r;};}
   if(typeof window.lockByRole==='function'){var _lock=window.lockByRole;window.lockByRole=function(){var r=_lock.apply(this,arguments);if(built){bindS1();}sched();return r;};}
   if(typeof window.renderLog==='function'){var _rl=window.renderLog;window.renderLog=function(){var r=_rl.apply(this,arguments);sched();return r;};}
+  /* شريط بلاغات الشاغلين يُعاد رسمه بنفسه: تُفصَل جملة الإرشاد الطويلة عن الرأس ليبقى سطراً واحداً، ثم تُطبَّق المحطة */
+  if(typeof window.drawOcc==='function'){var _dw=window.drawOcc;window.drawOcc=function(){
+    var r=_dw.apply(this,arguments); fixOccHead(); applyStation(); return r;};}
   MQ.addEventListener?MQ.addEventListener('change',function(){applyStation();}):MQ.addListener(function(){applyStation();});
   if(build()){ var hasMarks=(typeof MARKS!=='undefined')&&Object.keys(MARKS).some(function(k){return MARKS[k];}); ST=hasMarks?2:1; applyStation(); sched(); }
   window.ipaMob={go:go,station:function(){return ST;}};
