@@ -24,8 +24,23 @@
   var origSet = LS.setItem.bind(LS), origGet = LS.getItem.bind(LS), origRemove = LS.removeItem.bind(LS);
   var VER = {}, Q = {}, T = null, HAVE_SESSION = false, CSRF = '';
   var LOG = [];
-  window.ipaStore = { log: LOG, versions: VER, pending: function () { return readPending(); } };
+  window.ipaStore = { log: LOG, versions: VER, pending: function () { return readPending(); }, fetchDoc: fetchDoc, queued: function () { return Object.keys(Q); } };
   var isKey = function (k) { return typeof k === 'string' && k.indexOf('ipa-') === 0 && !SKIP[k]; };
+  /* ١٣-٧-٢ (قرار ٤١ مشكلة ١): وثائق مالكها واحد — نماذج الفحص العشرة وصورها وعلامات القراءة — عند تعارض النسخ (409)
+     لا يُسقَط عمل الجهاز بل يُعاد إرساله فوق نسخة الخادم (آخر كتابة تكسب). ipa-occ وipa-depts وipa-place تبقى: الخادم مصدرها. */
+  var OWNED = function (k) { return /-form-v\d+$/.test(k) || k.indexOf('ipa-photo-') === 0 || k === 'ipa-seen'; };
+  var RESENT = {};
+  var MEM = {};
+  /* صورة أو وثيقة كسولة تُجلب عند الحاجة (مشكلة ٣): من الذاكرة ثم من الجهاز ثم من الخادم — ولا تُكتب في localStorage حتى لا تُرفع من جديد */
+  function fetchDoc(k) {
+    if (MEM[k] !== undefined) return Promise.resolve(MEM[k]);
+    var local = origGet(k);
+    if (local != null) return Promise.resolve(local);
+    return fetch(API + '/' + encodeURIComponent(k), { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { if (j && j.data != null) { MEM[k] = j.data; VER[k] = j.version; return j.data; } return null; })
+      .catch(function () { return null; });
+  }
 
   function readPending() { try { return JSON.parse(origGet(PKEY)) || {}; } catch (e) { return {}; } }
   function writePending(p) { try { if (Object.keys(p).length) origSet(PKEY, JSON.stringify(p)); else origRemove(PKEY); } catch (e) {} }
@@ -47,7 +62,9 @@
     if (!BAR) {
       BAR = document.createElement('div');
       BAR.id = 'ipaStoreBar';
-      BAR.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:9999;padding:6px 12px;text-align:center;font:700 13px/1.4 Segoe UI,Tahoma,Arial,sans-serif;color:#fff;direction:rtl';
+      /* على الشاشة الضيقة أعلى الصفحة حتى لا يغطي أزرار الجوال الثابتة أسفلها (مشكلة ٩) */
+      var narrow = window.matchMedia && window.matchMedia('(max-width:680px)').matches;
+      BAR.style.cssText = 'position:fixed;' + (narrow ? 'top:0' : 'bottom:0') + ';left:0;right:0;z-index:9999;padding:6px 12px;text-align:center;font:700 13px/1.4 Segoe UI,Tahoma,Arial,sans-serif;color:#fff;direction:rtl';
       (document.body || document.documentElement).appendChild(BAR);
     }
     BAR.style.background = kind === 'bad' ? '#9b1c1c' : '#5b4d00';
@@ -74,6 +91,11 @@
   if (pendKeys.length) {
     pendKeys.forEach(function (k) {
       var r = syncSend(k, pend[k].op, pend[k].version);
+      /* وثيقة مالكها واحد رُفضت لأن الخادم أحدث: تُعاد بنسخة الخادم بدل إسقاطها */
+      if (r.status === 409 && OWNED(k) && r.json && r.json.version !== undefined) {
+        r = syncSend(k, pend[k].op, r.json.version);
+        LOG.push({ k: k, op: pend[k].op, replay: true, resent: true, status: r.status });
+      }
       LOG.push({ k: k, op: pend[k].op, replay: true, status: r.status, body: (r.status >= 400 && r.json) ? (r.json.error || r.json.message || '') : '' });
       if (r.status === 200 || r.status === 404 || r.status === 409 || r.status === 422) clearPending(k);
       if (r.status === 401 || r.status === 419) { toLogin(); return; }
@@ -104,6 +126,7 @@
   var stillPending = readPending();
   Object.keys(docs).forEach(function (k) {
     VER[k] = docs[k].version;
+    if (docs[k].lazy) return; /* صورة: نسختها فقط؛ تُجلب عند فتح بلاغها ولا تُخزَّن في كل جهاز */
     if (stillPending[k]) return; /* كتابة محلية لم تصل بعد: لا تُكتب فوقها */
     origSet(k, docs[k].data);
   });
@@ -162,6 +185,12 @@
         if (r.status === 409) {
           return r.json().then(function (j) {
             VER[k] = j.version;
+            if (OWNED(k) && (RESENT[k] = (RESENT[k] || 0) + 1) <= 3) {
+              /* عمل هذا الجهاز أحدث فيُعاد فوق نسخة الخادم — لا يُسقَط */
+              entry.resent = true;
+              Q[k] = op; clearTimeout(T); T = setTimeout(flush, 50);
+              return;
+            }
             clearPending(k);
             origSet(k, j.data);
             bar('تغيّرت البيانات من جهاز آخر — أُعيد تحميلها من الخادم', 'warn');
@@ -172,6 +201,7 @@
         if (!r.ok) { retry(k, op, 'تعذّر الحفظ في الخادم — سيُعاد'); return; }
         return r.json().then(function (j) {
           if (op === 'del') delete VER[k]; else VER[k] = j.version;
+          delete RESENT[k]; delete MEM[k];
           clearPending(k);
           bar('');
         });
@@ -226,6 +256,7 @@
           .then(function (res2) {
             if (!res2) return;
             changed.forEach(function (k) {
+              if (res2.docs[k] && res2.docs[k].lazy) { VER[k] = res2.docs[k].version; delete MEM[k]; return; }
               if (res2.docs[k]) { VER[k] = res2.docs[k].version; origSet(k, res2.docs[k].data); }
               else { origRemove(k); delete VER[k]; }
               window.dispatchEvent(new StorageEvent('storage', { key: k }));

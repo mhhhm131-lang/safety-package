@@ -55,6 +55,25 @@ class StoreApiTest extends TestCase
             ->assertJsonPath('data', '["a","b"]');
     }
 
+    /** ١٣-٧-٢ (قرار ٤١ مشكلة ٣): الصور لا تُرسل مع الفتح الأولي — نسختها فقط — وتُجلب بمفتاحها عند الحاجة أو بـ ?photos=1 */
+    public function test_photos_are_lazy_in_index_and_full_on_show(): void
+    {
+        $u = $this->safety();
+        $img = json_encode(['img' => 'data:image/jpeg;base64,'.str_repeat('A', 5000), 'rep' => 'ب — ٠١']);
+        $this->actingAs($u)->putJson('/api/store/ipa-photo-ipa-park-form-v10-p01-r-0', ['data' => $img, 'version' => 0])->assertOk();
+        $this->actingAs($u)->putJson('/api/store/ipa-park-form-v10', ['data' => '{"reports":[]}', 'version' => 0])->assertOk();
+
+        $docs = $this->actingAs($u)->getJson('/api/store?all=1')->assertOk()->json('docs');
+        $this->assertTrue($docs['ipa-photo-ipa-park-form-v10-p01-r-0']['lazy']);
+        $this->assertNull($docs['ipa-photo-ipa-park-form-v10-p01-r-0']['data']);
+        $this->assertSame(1, $docs['ipa-photo-ipa-park-form-v10-p01-r-0']['version']);
+        $this->assertSame('{"reports":[]}', $docs['ipa-park-form-v10']['data']);
+
+        $this->actingAs($u)->getJson('/api/store/ipa-photo-ipa-park-form-v10-p01-r-0')->assertOk()->assertJsonPath('data', $img);
+        $full = $this->actingAs($u)->getJson('/api/store?all=1&photos=1')->assertOk()->json('docs');
+        $this->assertSame($img, $full['ipa-photo-ipa-park-form-v10-p01-r-0']['data']);
+    }
+
     public function test_versions_listing_and_keys_filter(): void
     {
         $u = $this->safety();

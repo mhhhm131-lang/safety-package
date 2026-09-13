@@ -49,9 +49,15 @@ class StoreController extends Controller
             $keys = array_filter(explode(',', (string) $request->query('keys')));
             $q->whereIn('key', $keys);
         }
+        // ١٣-٧-٢ (قرار ٤١ مشكلة ٣): صور المخالفات (ipa-photo-*) ثقيلة (مئات الكيلوبايتات للواحدة) ولا يحتاجها إلا من يفتح بلاغها —
+        // فلا تُرسل مع الفتح الأولي ولا تُخزَّن في كل جهاز؛ تُعاد بنسختها فقط (lazy) وتُجلب بـ show() عند الحاجة. `?photos=1` يعيدها كاملة.
+        $withPhotos = $request->boolean('photos');
         $docs = [];
         foreach ($q->get() as $doc) {
-            $docs[$doc->key] = ['version' => $doc->version, 'data' => $doc->data];
+            $lazy = !$withPhotos && str_starts_with($doc->key, 'ipa-photo-');
+            $docs[$doc->key] = $lazy
+                ? ['version' => $doc->version, 'data' => null, 'lazy' => true]
+                : ['version' => $doc->version, 'data' => $doc->data];
         }
 
         return response()->json(['session' => $session, 'csrf' => csrf_token(), 'docs' => $docs]);
