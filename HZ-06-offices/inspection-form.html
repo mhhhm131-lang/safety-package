@@ -985,7 +985,7 @@ function applyData(d){
   if(d.defs)Object.keys(d.defs).forEach(k=>{if(SYS[k]){SYS[k].items=d.defs[k].items;SYS[k].reads=d.defs[k].reads;}});
   const tab=document.querySelector(`.tab[data-sys="${d.sys||'o01'}"]`);
   if(tab){document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected','false'));
-    tab.setAttribute('aria-selected','true');render(d.sys);}
+    tab.setAttribute('aria-selected','true');render(d.sys||'o01');}
   else render('o01');
   restoreFields(d);
   const off=$('insQ').value.indexOf('مكتب مرخّص')===0;
@@ -1658,7 +1658,7 @@ function loadSelf(){
   if(d.defs)Object.keys(d.defs).forEach(k=>{if(SYS[k]){SYS[k].items=d.defs[k].items;SYS[k].reads=d.defs[k].reads;}});
   const tab=document.querySelector(`.tab[data-sys="${d.sys||'o01'}"]`);
   if(tab){document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected','false'));
-    tab.setAttribute('aria-selected','true');render(d.sys);}
+    tab.setAttribute('aria-selected','true');render(d.sys||'o01');}
   else render('o01');
   restoreFields(d);
   const off=$('insQ').value.indexOf('مكتب مرخّص')===0;
