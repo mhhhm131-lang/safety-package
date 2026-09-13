@@ -2244,6 +2244,50 @@ DIRTY=false;
   if(typeof window.lockModalByRole==='function'){var _l=window.lockModalByRole;window.lockModalByRole=function(){var r=_l.apply(this,arguments);if(g('mPhotoImg'))paint(g('mPhotoImg').hidden?'':g('mPhotoImg').src);return r;};}
   window.ipaPhoto={attach:attach,commit:commit,get:get,keyOf:keyOf};
 })();
+/* ===== د · نسخة واحدة تحفظ (١٣-٧-٢، أُثبت ببوابة sendrepro): آخر نافذة تُفتح للنموذج تحفظ وحدها.
+   نافذة أقدم، أو نافذة تغيّرت وثيقتها من مكان آخر، تتوقف وتطلب إعادة التحميل، فلا تكتب فوق الأحدث.
+   الفحص لحظة الفعل ولحظة الحفظ لا بالإشارة وحدها، لأن النافذة النائمة قد لا تلتقط الإشارة. ===== */
+(function(){
+  'use strict';
+  if(typeof AKEY!=='string')return;
+  var SLOT='ipa:active:'+AKEY;   /* لا يبدأ بـ«ipa-» فلا ترفعه طبقة الحفظ إلى الخادم ولا تحمله النسخة الاحتياطية */
+  var ME=Date.now().toString(36)+Math.random().toString(36).slice(2,8), LOCKED='';
+  try{localStorage.setItem(SLOT,ME);}catch(e){}
+  function active(){ if(LOCKED)return false; try{var v=localStorage.getItem(SLOT);return !v||v===ME;}catch(e){return true;} }
+  function lock(why){
+    if(!LOCKED)LOCKED=why;
+    try{DIRTY=false;}catch(e){}  /* لا شيء سيُحفظ من هذه النافذة، فلا سؤال «مغادرة الصفحة؟» */
+    if(document.getElementById('ipaLock'))return;
+    var g=document.createElement('div'); g.id='ipaLock';
+    g.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(10,20,16,.55);display:flex;align-items:center;justify-content:center;padding:16px;font-family:Cairo,Arial,sans-serif;direction:rtl';
+    g.innerHTML='<div style="background:#fff;border-top:4px solid #b8912f;border-radius:12px;padding:18px;max-width:420px;width:100%;text-align:center">'
+      +'<b style="display:block;font-size:17px;color:#0f3d2e;margin-bottom:6px"></b>'
+      +'<p style="font-size:14px;color:#6b6560;margin:0 0 14px;line-height:1.7"></p>'
+      +'<button type="button" style="font:700 15px Cairo,Arial,sans-serif;min-height:48px;width:100%;border:0;border-radius:8px;background:#0f3d2e;color:#fff;cursor:pointer">المتابعة هنا</button></div>';
+    g.querySelector('b').textContent=(LOCKED==='changed')?'تغيّر النموذج من مكان آخر':'النموذج مفتوح في نافذة أحدث';
+    g.querySelector('p').textContent='هذه النافذة لا تحفظ الآن، حتى لا تكتب فوق النسخة الأحدث. اضغط لتحميل آخر نسخة والمتابعة هنا.';
+    g.querySelector('button').onclick=function(){location.reload();};
+    document.body.appendChild(g);
+  }
+  /* أي لمسة أو كتابة في نافذة غير فاعلة تُوقَف قبل أن تغيّر شيئاً */
+  function guard(e){
+    if(e.target&&e.target.closest&&e.target.closest('#ipaLock'))return;
+    if(!active()){lock(LOCKED||'newer');e.preventDefault();e.stopPropagation();}
+  }
+  ['pointerdown','keydown','click'].forEach(function(t){document.addEventListener(t,guard,true);});
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&!active())lock(LOCKED||'newer');});
+  window.addEventListener('storage',function(e){
+    if(e.key===SLOT){ if(e.newValue&&e.newValue!==ME)lock('newer'); }   /* فُتح النموذج في نافذة أخرى على هذا الجهاز */
+    else if(e.key===AKEY){ lock('changed'); }                          /* وثيقته تغيّرت: من نافذة أخرى، أو من جهاز آخر عبر طبقة الحفظ */
+  });
+  /* خط الدفاع الأخير: الحفظ نفسه، والإرسال والقرار قبل أن يغيّرا الذاكرة أو يعرضا «تم الإرسال» */
+  ['autoSave','sendReport','saveM'].forEach(function(n){
+    if(typeof window[n]!=='function')return;
+    var fn=window[n];
+    window[n]=function(){ if(!active()){lock(LOCKED||'newer');return false;} return fn.apply(this,arguments); };
+  });
+  window.ipaActive=active;
+})();
 </script>
 </body>
 </html>
