@@ -11,11 +11,15 @@
  *    تعارض النسخة (409) يعيد ما عند الخادم. ما لم يصل الخادم يبقى في الطابور حتى يصل.
  *  - كل ٣٠ ثانية وعند العودة للصفحة: يستطلع أرقام النسخ ويحدّث ما تغيّر من جهاز آخر.
  *  - بلا جلسة: يحوّل إلى /login. حذف ipa-session (الخروج في الصفحة) = خروج من الخادم.
- *  - من file:// أو بلا خادم: لا يفعل شيئاً، والصفحة تعمل كما كانت.
+ *  - من file://: لا يفعل شيئاً، والصفحة تعمل كما كانت.
+ *  - شاشة الدخول القديمة (#login) لا تظهر تحت النظام. إن لم تُكمل الصفحة دخولها الآلي — الخادم لا يرد، أو يرفض،
+ *    أو خطأ في الصفحة — تظهر رسالة النظام (#ipaGate) بسببها، بدل شاشة دخول لا تعرف حسابات النظام.
  */
 (function () {
   'use strict';
   if (location.protocol === 'file:' || !window.localStorage) return;
+  /* المشكلة ٨: تُخفى شاشة الدخول القديمة من لحظة قراءة الرأس، فلا تظهر ولو للحظة */
+  try { var HIDE = document.createElement('style'); HIDE.textContent = '#login{display:none!important}'; (document.head || document.documentElement).appendChild(HIDE); } catch (e) {}
 
   var API = '/api/store';
   var PKEY = 'ipa-store-pending';
@@ -24,7 +28,28 @@
   var origSet = LS.setItem.bind(LS), origGet = LS.getItem.bind(LS), origRemove = LS.removeItem.bind(LS);
   var VER = {}, Q = {}, T = null, HAVE_SESSION = false, CSRF = '';
   var LOG = [];
-  window.ipaStore = { log: LOG, versions: VER, pending: function () { return readPending(); }, fetchDoc: fetchDoc, queued: function () { return Object.keys(Q); } };
+  window.ipaStore = { status: 'loading', log: LOG, versions: VER, pending: function () { return readPending(); }, fetchDoc: fetchDoc, queued: function () { return Object.keys(Q); } };
+  function fail(kind) { window.ipaStore.status = kind; }
+  /* بعد أن تعمل سكربتات الصفحة: إن بقيت شاشة الدخول بلا .off فالدخول الآلي لم يكتمل ← رسالة النظام بسببها */
+  document.addEventListener('DOMContentLoaded', function () {
+    var st = window.ipaStore.status;
+    if (st === 'login') return;
+    var L = document.getElementById('login');
+    if (!L || L.classList.contains('off')) return;
+    var M = {
+      offline: ['تعذّر الاتصال بالنظام', 'تحقق من اتصال الإنترنت ثم أعد المحاولة.', 'إعادة المحاولة', ''],
+      error: ['النظام لا يستجيب الآن', 'أعد المحاولة بعد قليل.', 'إعادة المحاولة', ''],
+      denied: ['حسابك لا يملك صلاحية هذه الصفحة', 'نماذج الفحص واللوحة لأدوار العمل اليومي.', 'العودة إلى النظام', '/app']
+    }[st] || ['تعذّر فتح الصفحة', 'أعد التحميل. إن تكرر ذلك فأخبر مسؤول السلامة.', 'إعادة التحميل', ''];
+    var g = document.createElement('div'); g.id = 'ipaGate';
+    g.style.cssText = 'position:fixed;inset:0;z-index:10001;background:#e9e6e0;display:flex;align-items:center;justify-content:center;padding:16px;font-family:Cairo,Arial,sans-serif;direction:rtl';
+    g.innerHTML = '<div style="background:#fff;border-top:4px solid #b8912f;border-radius:12px;padding:20px;max-width:420px;width:100%;text-align:center">'
+      + '<b style="display:block;font-size:18px;color:#0f3d2e;margin-bottom:8px"></b><p style="font-size:14px;color:#6b6560;margin:0 0 16px;line-height:1.7"></p>'
+      + '<button type="button" style="font:700 15px Cairo,Arial,sans-serif;min-height:48px;width:100%;border:0;border-radius:8px;background:#0f3d2e;color:#fff;cursor:pointer"></button></div>';
+    g.querySelector('b').textContent = M[0]; g.querySelector('p').textContent = M[1]; g.querySelector('button').textContent = M[2];
+    g.querySelector('button').onclick = function () { if (M[3]) location.href = M[3]; else location.reload(); };
+    document.body.appendChild(g);
+  });
   var isKey = function (k) { return typeof k === 'string' && k.indexOf('ipa-') === 0 && !SKIP[k]; };
   /* ١٣-٧-٢: أُزيلت «آخر كتابة تكسب» (1260876) بعد أن أثبتت البوابة أنها تجعل نافذة قديمة تمسح الأحدث من اللمسة الأولى.
      عند التعارض (409) الخادم يكسب، والنموذج نفسه يمنع النافذة القديمة من الحفظ (نسخة واحدة تحفظ). */
@@ -50,6 +75,7 @@
     return m ? decodeURIComponent(m[1]) : '';
   }
   function toLogin() {
+    window.ipaStore.status = 'login';
     location.replace('/login?next=' + encodeURIComponent(location.pathname + location.search + location.hash));
   }
 
@@ -101,11 +127,11 @@
     x.open('GET', API + '?all=1', false);
     x.setRequestHeader('Accept', 'application/json');
     x.send(null);
-  } catch (e) { return; }
+  } catch (e) { fail('offline'); return; }
   if (x.status === 401 || x.status === 419) { toLogin(); return; }
-  if (x.status !== 200) return;
+  if (x.status !== 200) { fail(x.status === 403 ? 'denied' : 'error'); return; }
   var res;
-  try { res = JSON.parse(x.responseText); } catch (e) { return; }
+  try { res = JSON.parse(x.responseText); } catch (e) { fail('error'); return; }
   HAVE_SESSION = true;
   CSRF = res.csrf || '';
 
@@ -114,6 +140,7 @@
   var s = { u: res.session.u, r: res.session.r, n: res.session.n, at: Date.now() };
   if (res.session.d) s.d = res.session.d; else if (cur && cur.d) s.d = cur.d;
   origSet('ipa-session', JSON.stringify(s));
+  window.ipaStore.status = 'ok';
 
   var docs = res.docs || {};
   var stillPending = readPending();
