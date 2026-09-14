@@ -101,8 +101,10 @@ class StoreController extends Controller
 
     private function store(string $key, string $data, int $clientVersion, int $userId): JsonResponse
     {
-        return DB::transaction(function () use ($key, $data, $clientVersion, $userId) {
+        $oldData = null;
+        $response = DB::transaction(function () use ($key, $data, $clientVersion, $userId, &$oldData) {
             $doc = InstituteDocument::where('key', $key)->lockForUpdate()->first();
+            $oldData = $doc?->data;
 
             // ipa-occ وثيقة مشتقة تُدمج (لا تُكتب فوقها) فلا تعارض نسخ فيها
             if ($doc && $clientVersion !== $doc->version && $key !== OccSync::KEY) {
@@ -150,6 +152,16 @@ class StoreController extends Controller
 
             return response()->json(['key' => $key, 'version' => $doc->version]);
         });
+
+        // المرحلة ١٤: إشعارات الفحص وسجل السلامة بعد إتمام الحفظ وخارج معاملته — تعثّرها لا يُسقط حفظ عمل الفني
+        if ($response->getStatusCode() === 200 && \App\Modules\Store\Services\InspectionWatch::form($key)) {
+            try {
+                app(\App\Modules\Store\Services\InspectionWatch::class)->afterSave($key, $oldData, $data);
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+        return $response;
     }
 
     public function destroy(Request $request, string $key): JsonResponse

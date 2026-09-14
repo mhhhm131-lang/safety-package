@@ -16,3 +16,9 @@ Route::middleware(['web', 'auth'])->prefix('api/store')->name('store.')->group(f
     Route::put('/{key}', [StoreController::class, 'put'])->name('put');
     Route::delete('/{key}', [StoreController::class, 'destroy'])->name('destroy');
 });
+
+// المرحلة ١٤: «الجولات السابقة» في النموذج — سجل السلامة للقراءة فقط
+Route::middleware(['web', 'auth'])->prefix('api/inspection-rounds')->name('inspection-rounds.')->group(function () {
+    Route::get('/', [\App\Modules\Store\Controllers\InspectionRoundsController::class, 'index'])->name('index');
+    Route::get('/{id}', [\App\Modules\Store\Controllers\InspectionRoundsController::class, 'show'])->whereNumber('id')->name('show');
+});

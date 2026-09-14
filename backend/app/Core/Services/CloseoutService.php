@@ -56,6 +56,8 @@ class CloseoutService
         'contractor_verifications', 'contractor_profiles',
         'external_party_documents', 'external_party_evaluations', 'external_party_risks',
         'external_parties',
+        // سجل السلامة وإشعارات الفحص (المرحلة ١٤)
+        'inspection_rounds', 'inspection_notices',
         // أثر التشغيل
         'app_notifications', 'audit_logs',
     ];
@@ -169,6 +171,7 @@ class CloseoutService
             'الأطراف الخارجية'     => ['external_parties'],
             'المشاريع'             => ['projects'],
             'العمال'               => ['workers'],
+            'سجل الجولات (سجل السلامة)' => ['inspection_rounds'],
             'الإشعارات'            => ['app_notifications'],
             'سجل التدقيق'          => ['audit_logs'],
         ];

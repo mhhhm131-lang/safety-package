@@ -14,6 +14,9 @@ Schedule::command('permits:expire-overdue')->dailyAt('00:10')->withoutOverlappin
 // المرحلة ٧ (BACKEND.md ٥-٨): تكليفات النماذج التي تجاوزت مهلتها تصير «متأخرة» ويُنبَّه أصحابها — مرة يومياً.
 Schedule::command('forms:check-overdue')->dailyAt('07:00')->withoutOverlapping();
 
+// المرحلة ١٤ (قرار ٤٢): مهام الفحص الدورية التي فات موعدها — فوراً بلا مهلة (جواب المستخدم «أ») — تُفحص كل ساعة.
+Schedule::command('inspections:check-overdue')->hourly()->withoutOverlapping();
+
 // المرحلة ٨-٣: نسخة احتياطية يومية تبقي آخر سبع. على Render المجاني لا قرص دائم فهذه شبكة
 // أمان داخل الحاوية؛ النسخة الباقية هي التي يُنزّلها المستخدم من شاشة الإغلاق.
 Schedule::command('ipa:backup --keep=7')->dailyAt('02:30')->withoutOverlapping();
