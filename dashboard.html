@@ -232,6 +232,8 @@ button{font-family:inherit}
 .rdc.ok .v{color:var(--green)}.rdc.warn .v{color:var(--amber)}.rdc.bad .v{color:var(--red)}
 .rdc .d{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.5}
 .team{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.staffl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:0 0 10px}.staffl b{color:var(--ink)}
+.teamh{font-size:12px;font-weight:900;color:var(--gold2);margin:14px 0 8px}.teamh small{color:var(--muted);font-weight:400}
 .tm{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
 .tm .r{font-size:11px;color:var(--gold);font-weight:700}
 .tm .n{font-size:14px;font-weight:900;margin-top:2px}
@@ -587,7 +589,7 @@ function draw(){
   /* الحالة الآن */
   const S=$('state');
   let word,glow,wc;
-  if(isDept){const st=D?D.st:'none';word=DEPT?'فريق إدارتك: '+UST[st][1]:'اختر إدارتك';glow=st==='none'?'rgba(255,92,92,.18)':(st==='nom'?'rgba(255,177,74,.2)':'rgba(62,207,142,.2)');wc=st==='none'?'var(--red)':(st==='nom'?'var(--amber)':'var(--green)');}
+  if(isDept){const st=D?D.st:'none';word=DEPT?'فريق إدارتك: '+UST[st][1]:'اختر إدارتك';glow=st==='none'?'rgba(255,92,92,.18)':((st==='nom'||st==='part')?'rgba(255,177,74,.2)':'rgba(62,207,142,.2)');wc=st==='none'?'var(--red)':((st==='nom'||st==='part')?'var(--amber)':'var(--green)');}
   else if(ROLE==='cons'){word=T.late?'جولات مستحقة على المكتب':'بنود الفحص وقيمها المرجعية';glow=T.late?'rgba(255,177,74,.2)':'rgba(217,178,90,.18)';wc=T.late?'var(--amber)':'var(--gold)';}
   else if(ROLE==='safety'&&O.n){word=AR(O.n)+' بلاغ شاغل جديد في المركز';glow='rgba(255,92,92,.22)';wc='var(--red)';}
   else if(qod){word='تأخر يستوجب قرارك';glow='rgba(255,92,92,.22)';wc='var(--red)';}
@@ -598,7 +600,7 @@ function draw(){
   else{word='لا شيء عالق عندك';glow='rgba(62,207,142,.2)';wc='var(--green)';}
   S.style.setProperty('--glow',glow);S.style.setProperty('--wc',wc);
   $('sWord').textContent=word;
-  if(isDept){$('sN').textContent=AR(D?D.named:0);$('sT').innerHTML='<b>من ٤ أدوار بأسماء</b>'+(DEPT?esc(deptName(DEPT)):'');}
+  if(isDept){$('sN').textContent=AR(D?D.named:0);$('sT').innerHTML='<b>من '+AR(D&&D.of?D.of:4)+' أدوار بأسماء</b>'+(DEPT?esc(deptName(DEPT)):'');}
   else if(ROLE==='cons'){$('sN').textContent=AR(T.due);$('sT').innerHTML='<b>جولة مستحقة على المكتب</b>'+(T.late?AR(T.late)+' متأخرة أو لم تُنفَّذ':'خلال أسبوع');}
   else{$('sN').textContent=AR(q.length);$('sT').innerHTML='<b>'+(ROLE==='safety'?'بلاغ مفتوح تتابعه':'بلاغ بانتظار قرارك')+'</b>'+(qnew?AR(qnew)+' تغيّر منذ آخر مرة':'مرتّبة بالأشد تأخراً');}
   $('sSub').innerHTML=[qod?`<span><b>${AR(qod)}</b> متجاوز المهلة</span>`:'',O.open?`<span>${O.n?'<b>'+AR(O.n)+'</b> جديد من ':''}${AR(O.open)} بلاغ شاغل مفتوح</span>`:'',WHO_ROLE[ROLE]&&ROLE!=='cons'?`<span>${T.late?'<b>'+AR(T.late)+'</b> جولة متأخرة عليك':AR(T.due)+' جولة مستحقة عليك'}</span>`:'',`<span>${AR(open.length)} مفتوح في المبنى</span>`,openOd?`<span>${AR(openOd)} متجاوز في المبنى</span>`:''].filter(Boolean).join('');
@@ -857,7 +859,7 @@ function saveDept(id){
 function delDept(id){
   const A=deptsAll(),d=A.find(x=>x.id===id);if(!d)return;
   if(A.some(x=>x.parent===id)){alert('لهذه الإدارة أقسام تابعة — انقلها أولاً');return;}
-  const used=Object.keys(placeAll()).some(hz=>{const u=(placeAll()[hz].units||{});return Object.keys(u).some(k=>(k===id||u[k].dept===id)&&(u[k].team||[]).some(t=>t&&t.name));});
+  const used=Object.keys(placeAll()).some(hz=>{const u=(placeAll()[hz].units||{});return Object.keys(u).some(k=>(k===id||u[k].dept===id)&&[u[k]].concat(u[k].more||[]).some(x=>((x&&x.team)||[]).some(t=>t&&t.name)));});
   if(used){alert('لهذه الإدارة فريق أولي مرشَّح — انقله أو امسح أسماءه أولاً');return;}
   if(!confirm('حذف «'+d.name+'» من الهيكل؟'))return;
   deptsSave(A.filter(x=>x.id!==id));load();
@@ -886,18 +888,37 @@ function unitGet(p,uid){return p.units[uid]||(p.units[uid]={team:[],nom:{},appr:
 const canPlans=()=>ROLE==='safety'||ROLE==='adm';
 const canUnit=un=>canPlans()||(ROLE==='dept'&&!!DEPT&&un.dept===DEPT);
 function unitState(u){return u.hr.date?'hr':(u.appr.date?'appr':(u.nom.date?'nom':'none'));}
-const UST={hr:['ok','معتمد ومُحال للموارد البشرية'],appr:['ok','معتمد'],nom:['warn','مرشَّح — بانتظار الاعتماد'],none:['bad','لم يُرشَّح']};
+const UST={hr:['ok','معتمد ومُحال للموارد البشرية'],appr:['ok','معتمد'],nom:['warn','مرشَّح — بانتظار الاعتماد'],part:['warn','ينقص فريق'],none:['bad','لم يُرشَّح']};
+/* المرحلة ١٥-٣ (قرار ٤٣): فريق لكل ٢٥ موظفاً أو جزء منها — عدد الموظفين في u.staff، والفريق الأول في جذر الوحدة كما كان، والباقي في u.more بترتيبه */
+const PER_TEAM=25;
+const teamsNeeded=u=>{const n=parseInt(u.staff,10)||0;return n>0?Math.ceil(n/PER_TEAM):1;};
+const teamsWord=n=>n===1?'فريق واحد':(n===2?'فريقان':AR(n)+' فرق');
+function teamPeek(u,k){const t=k?((u.more||[])[k-1]||{}):u;return {team:t.team||[],nom:t.nom||{},appr:t.appr||{},hr:t.hr||{}};}
+function teamAt(u,k){if(!k)return u;u.more=u.more||[];while(u.more.length<k)u.more.push({team:[],nom:{},appr:{},hr:{}});const t=u.more[k-1];t.team=t.team||[];t.nom=t.nom||{};t.appr=t.appr||{};t.hr=t.hr||{};return t;}
+/* المعروض: المطلوب بالعدد، أو أكثر إن بقي فريق زائد مرشَّح بعد نقص العدد */
+function teamCount(u){let last=0;(u.more||[]).forEach((t,i)=>{if(t&&(((t.team||[]).some(x=>x&&x.name))||(t.nom&&t.nom.date)))last=i+1;});return Math.max(teamsNeeded(u),last+1);}
+function unitStateAll(u){
+  const s=Array.from({length:teamsNeeded(u)},(_,k)=>unitState(teamPeek(u,k)));
+  if(s.every(x=>x==='hr'))return 'hr';if(s.every(x=>x==='hr'||x==='appr'))return 'appr';if(s.every(x=>x==='none'))return 'none';
+  return s.some(x=>x==='none')?'part':'nom';
+}
 function daysSince(d){const t=toDate(d);return t?Math.floor((Date.now()-t)/DAY):null;}
-function unitActions(hz,un,u){
-  const st=unitState(u);let h='';
-  if(canUnit(un)&&st==='none')h+=`<button class="main" onclick="openUnitEdit('${hz}','${un.uid}')">تسجيل الترشيح</button>`;
-  else if(canUnit(un))h+=`<button onclick="openUnitEdit('${hz}','${un.uid}')">تعديل</button>`;
-  if(ROLE==='adm'&&st==='nom')h+=`<button class="main" onclick="approveTeam('${hz}','${un.uid}')">اعتماد</button>`;
-  if(canPlans()&&st==='appr')h+=`<button class="main" onclick="referHR('${hz}','${un.uid}')">تسجيل الإحالة</button>`;
+function unitActions(hz,un,u,k){
+  k=k||0;const st=unitState(u);let h='';
+  if(canUnit(un)&&st==='none')h+=`<button class="main" onclick="openUnitEdit('${hz}','${un.uid}',${k})">تسجيل الترشيح</button>`;
+  else if(canUnit(un))h+=`<button onclick="openUnitEdit('${hz}','${un.uid}',${k})">تعديل</button>`;
+  if(ROLE==='adm'&&st==='nom')h+=`<button class="main" onclick="approveTeam('${hz}','${un.uid}',${k})">اعتماد</button>`;
+  if(canPlans()&&st==='appr')h+=`<button class="main" onclick="referHR('${hz}','${un.uid}',${k})">تسجيل الإحالة</button>`;
   return h;
 }
-/* الفريق كاملاً: أربع بطاقات ومسار الخطوات الثلاث */
+/* الوحدة كاملة: عدد موظفيها ثم فرقها — فريق لكل ٢٥ موظفاً أو جزء منها */
 function unitFull(hz,un,u){
+  const n=teamCount(u),need=teamsNeeded(u),staff=parseInt(u.staff,10)||0;
+  const head=`<div class="staffl">${staff?`عدد الموظفين في المكان: <b>${AR(staff)}</b> ← ${teamsWord(need)} (فريق لكل ${AR(PER_TEAM)} موظفاً)`:'لم يُسجَّل عدد الموظفين — فريق واحد حتى يُسجَّل'}${canUnit(un)?`<button class="btn btn-gh" style="padding:2px 10px;font-size:11px" onclick="openStaffEdit('${hz}','${un.uid}')">${staff?'تعديل العدد':'تسجيل العدد'}</button>`:''}</div>`;
+  return head+Array.from({length:n},(_,k)=>(n>1?`<div class="teamh">الفريق ${AR(k+1)} من ${AR(n)}${k>=need?' <small>زائد عن المطلوب</small>':''}</div>`:'')+teamBlock(hz,un,teamPeek(u,k),k)).join('');
+}
+/* فريق واحد: أربع بطاقات ومسار الخطوات الثلاث */
+function teamBlock(hz,un,u,k){
   const steps=[
     {t:'ترشيح مدير الإدارة',done:!!u.nom.date,sub:u.nom.date?esc(u.nom.by||'')+' · '+fmtD(u.nom.date):(un.label?esc(un.label):'')},
     {t:'اعتماد مدير الشؤون الإدارية والهندسية',done:!!u.appr.date,sub:u.appr.date?fmtD(u.appr.date):(u.nom.date?'بانتظار الاعتماد':'')},
@@ -905,23 +926,30 @@ function unitFull(hz,un,u){
   ];
   const cur=steps.findIndex(s=>!s.done);
   return `<div class="team">${TEAM.map((r,i)=>{const t=u.team[i]||{};const tr=daysSince(t.trained);return `<div class="tm"><div class="r">${r}</div><div class="n${t.name?'':' none'}">${t.name?esc(t.name):'لم يُسمَّ بعد'}</div><div class="m">${t.dept?esc(t.dept)+'<br>':''}${t.phone?'<b>'+esc(t.phone)+'</b><br>':''}${t.trained?'تدريب '+fmtD(t.trained)+(t.trainer?' · '+esc(t.trainer):'')+(tr!==null&&tr>730?' <span style="color:var(--amber)">· يحتاج تجديداً</span>':''):(t.name?'<span style="color:var(--amber)">لم يُدرَّب</span>':'')}</div></div>`}).join('')}</div>
-    <div class="flowline">${steps.map((s,i)=>`${i?'<span class="fsep"></span>':''}<span class="fstep${s.done?' done':(i===cur?' cur':'')}"><i>${s.done?'✓':AR(i+1)}</i>${s.t}${s.sub?' <small>'+s.sub+'</small>':''}</span>`).join('')}<span style="margin-inline-start:auto;display:flex;gap:6px">${unitActions(hz,un,u).replace(/<button class="main"/g,'<button class="btn btn-main" style="padding:4px 12px;font-size:11px"').replace(/<button onclick/g,'<button class="btn btn-gh" style="padding:4px 12px;font-size:11px" onclick')}</span></div>`;
+    <div class="flowline">${steps.map((s,i)=>`${i?'<span class="fsep"></span>':''}<span class="fstep${s.done?' done':(i===cur?' cur':'')}"><i>${s.done?'✓':AR(i+1)}</i>${s.t}${s.sub?' <small>'+s.sub+'</small>':''}</span>`).join('')}<span style="margin-inline-start:auto;display:flex;gap:6px">${unitActions(hz,un,u,k).replace(/<button class="main"/g,'<button class="btn btn-main" style="padding:4px 12px;font-size:11px"').replace(/<button onclick/g,'<button class="btn btn-gh" style="padding:4px 12px;font-size:11px" onclick')}</span></div>`;
 }
 /* صف مختصر لكل إدارة في المكاتب الإدارية */
 function unitRow(hz,un,u){
-  const st=unitState(u),S=UST[st],named=u.team.filter(t=>t&&t.name).length;
-  return `<div class="urow ${S[0]}"><div class="un">${esc(un.label)}<small>${un.mgr?'مديرها: '+esc(un.mgr):'مدير الإدارة غير مسمّى'}${u.nom.date?' · ترشيح '+fmtD(u.nom.date):''}</small></div>
-    <span class="tag t-${S[0]==='ok'?'grn':(S[0]==='warn'?'amb':'dim')}">${S[1]}</span>
-    <div class="names">${TEAM.map((r,i)=>{const t=u.team[i]||{};return `${r}: ${t.name?'<b>'+esc(t.name)+'</b>':'<i>—</i>'}`}).join(' · ')}${named&&named<4?` <span style="color:var(--amber)">(${AR(named)} من ٤)</span>`:''}</div>
-    <div class="acts">${unitActions(hz,un,u)}</div></div>`;
+  const st=unitStateAll(u),S=UST[st],n=teamCount(u),need=teamsNeeded(u),staff=parseInt(u.staff,10)||0;
+  const okN=Array.from({length:need},(_,k)=>unitState(teamPeek(u,k))).filter(s=>s==='appr'||s==='hr').length;
+  const tcls=c=>c==='ok'?'grn':(c==='warn'?'amb':'dim');
+  const names=t=>{const named=t.team.filter(x=>x&&x.name).length;return TEAM.map((r,i)=>{const m=t.team[i]||{};return `${r}: ${m.name?'<b>'+esc(m.name)+'</b>':'<i>—</i>'}`}).join(' · ')+(named&&named<4?` <span style="color:var(--amber)">(${AR(named)} من ٤)</span>`:'');};
+  const staffBtn=canUnit(un)?`<button onclick="openStaffEdit('${hz}','${un.uid}')">${staff?'عدد الموظفين':'تسجيل عدد الموظفين'}</button>`:'';
+  const body=n===1
+    ?`<div class="names">${names(teamPeek(u,0))}</div><div class="acts">${unitActions(hz,un,teamPeek(u,0),0)}${staffBtn}</div>`
+    :`<div class="names">${Array.from({length:n},(_,k)=>{const t=teamPeek(u,k),ts=UST[unitState(t)];return `<div style="margin-bottom:4px"><b>الفريق ${AR(k+1)}</b> <span class="tag t-${tcls(ts[0])}">${ts[1]}</span> ${names(t)} <span class="acts" style="display:inline-flex">${unitActions(hz,un,t,k)}</span></div>`}).join('')}</div><div class="acts">${staffBtn}</div>`;
+  return `<div class="urow ${S[0]}"><div class="un">${esc(un.label)}<small>${un.mgr?'مديرها: '+esc(un.mgr):'مدير الإدارة غير مسمّى'}${staff?' · '+AR(staff)+' موظفاً ← '+teamsWord(need):''}${u.nom.date?' · ترشيح '+fmtD(u.nom.date):''}</small></div>
+    <span class="tag t-${tcls(S[0])}">${need>1&&(st==='part'||st==='nom')?AR(okN)+' من '+AR(need)+' فرق معتمدة':S[1]}</span>
+    ${body}</div>`;
 }
 function readiness(hz,S){
   const p=placeGet(hz),pl=p.plans,units=unitList(hz,p);
   const inspOk=S.filter(x=>x.st==='ok').length,drillD=daysSince(pl.drill);
-  const states=units.map(un=>unitState(unitGet(p,un.uid)));
+  const states=[].concat(...units.map(un=>{const u=unitGet(p,un.uid);return Array.from({length:teamsNeeded(u)},(_,k)=>unitState(teamPeek(u,k)));}));
+  const need=states.length,byDept=need===units.length;
   const okN=states.filter(s=>s==='appr'||s==='hr').length,nomN=states.filter(s=>s==='nom').length;
-  let t4;const multi=hz===HUB||units.length>1;
-  if(multi)t4={cls:!units.length?'bad':(okN===units.length?'ok':(okN||nomN?'warn':'bad')),v:AR(okN)+' من '+AR(units.length)+' إدارة لها فريق معتمد',d:(nomN?AR(nomN)+' مرشَّح بانتظار الاعتماد · ':'')+'فريق لكل إدارة تشغل المكان'};
+  let t4;const rows=hz===HUB||units.length>1,multi=rows||need>1;
+  if(multi)t4={cls:!units.length?'bad':(okN===need?'ok':(okN||nomN?'warn':'bad')),v:byDept?AR(okN)+' من '+AR(units.length)+' إدارة لها فريق معتمد':AR(okN)+' من '+AR(need)+' فريق معتمد',d:(nomN?AR(nomN)+' مرشَّح بانتظار الاعتماد · ':'')+(byDept?'فريق لكل إدارة تشغل المكان':'فريق لكل '+AR(PER_TEAM)+' موظفاً')};
   else{const u=unitGet(p,units[0].uid),st=unitState(u);t4={cls:UST[st][0],v:UST[st][1],d:AR(u.team.filter(t=>t&&t.name).length)+' من ٤ أدوار بأسماء'+(u.nom.by?' · ترشيح: '+esc(u.nom.by):'')};}
   const C=[
     {l:'خطة السلامة',cls:pl.sa?'ok':'bad',v:pl.sa?'معتمدة':'غير معتمدة',d:pl.sa?'بتاريخ '+fmtD(pl.sa)+(pl.saBy?' · '+esc(pl.saBy):''):'تُعتمد بقرار الإدارة العليا'},
@@ -929,19 +957,19 @@ function readiness(hz,S){
     {l:'نماذج الفحص',cls:!S.length?'bad':(inspOk===S.length?'ok':'warn'),v:!S.length?'لم تُفعَّل':AR(inspOk)+' من '+AR(S.length)+' في موعده',d:S.length?'تُحسب تلقائياً من سجل الجولات':'افتح النموذج وسجّل أول جولة'},
     Object.assign({l:multi?'الفرق الأولية':'الفريق الأولي'},t4)
   ];
-  const teams=multi
-    ?`<div class="h" style="margin-top:14px"><h2>الفرق الأولية بحسب الإدارة</h2><span class="cnt">${AR(units.length)}</span><em>كل إدارة ترشّح فريقها الأربعة · <a href="#depts" style="color:var(--gold2)">الإدارات والهيكل</a></em></div>${units.map(un=>unitRow(hz,un,unitGet(p,un.uid))).join('')||'<div class="empty">لا إدارات مسجّلة في هذا المكان</div>'}`
+  const teams=rows
+    ?`<div class="h" style="margin-top:14px"><h2>الفرق الأولية بحسب الإدارة</h2><span class="cnt">${AR(units.length)}</span><em>كل إدارة ترشّح فريقها الأربعة، وفريقاً لكل ${AR(PER_TEAM)} موظفاً · <a href="#depts" style="color:var(--gold2)">الإدارات والهيكل</a></em></div>${units.map(un=>unitRow(hz,un,unitGet(p,un.uid))).join('')||'<div class="empty">لا إدارات مسجّلة في هذا المكان</div>'}`
     :unitFull(hz,units[0],unitGet(p,units[0].uid));
   return `<div class="h"><h2>الجاهزية</h2><em>الخطتان والفحص والفريق — ما فُعّل فعلاً لا ما وُثّق</em>${canPlans()?`<button class="editl" onclick="openPlansEdit('${hz}')">تحرير الخطتين</button>`:''}</div>
     <div class="rd">${C.map(c=>`<div class="rdc ${c.cls}"><div class="l">${c.l}</div><div class="v">${c.v}</div><div class="d">${c.d}</div></div>`).join('')}</div>${teams}`;
 }
-function approveTeam(hz,uid){
-  const p=placeGet(hz),u=unitGet(p,uid);if(!u.team.filter(t=>t&&t.name).length){alert('لا أسماء في الترشيح');return;}
+function approveTeam(hz,uid,k){
+  const p=placeGet(hz),u=teamAt(unitGet(p,uid),k||0);if(!u.team.filter(t=>t&&t.name).length){alert('لا أسماء في الترشيح');return;}
   if(!confirm('اعتماد ترشيح الفريق الأولي؟'))return;
   u.appr={by:'مدير الشؤون الإدارية والهندسية',date:today()};placeSave(hz,p);load();
 }
-function referHR(hz,uid){
-  const p=placeGet(hz),u=unitGet(p,uid);if(!confirm('تسجيل إحالة التكليف إلى إدارة الموارد البشرية بتاريخ اليوم؟'))return;
+function referHR(hz,uid,k){
+  const p=placeGet(hz),u=teamAt(unitGet(p,uid),k||0);if(!confirm('تسجيل إحالة التكليف إلى إدارة الموارد البشرية بتاريخ اليوم؟'))return;
   u.hr={date:today()};placeSave(hz,p);load();
 }
 function openPlansEdit(hz){
@@ -958,32 +986,47 @@ function openPlansEdit(hz){
   $('pm').classList.add('on');
 }
 function savePlans(hz){const p=placeGet(hz),v=id=>($(id).value||'').trim();p.plans={sa:v('e_sa'),saBy:v('e_saBy'),ra:v('e_ra'),drill:v('e_drill')};placeSave(hz,p);closePlaceEdit();load();}
-function openUnitEdit(hz,uid){
+function openUnitEdit(hz,uid,k){
+  k=k||0;
   const p=placeGet(hz),un=unitList(hz,p).find(x=>x.uid===uid);if(!un||!canUnit(un))return;
-  const u=unitGet(p,uid),inp=(id,v,type,ph)=>`<input id="${id}" type="${type||'text'}" value="${esc(v||'')}"${ph?' placeholder="'+ph+'"':''}>`;
+  const unit=unitGet(p,uid),u=teamAt(unit,k),n=Math.max(teamCount(unit),k+1),inp=(id,v,type,ph)=>`<input id="${id}" type="${type||'text'}" value="${esc(v||'')}"${ph?' placeholder="'+ph+'"':''}>`;
   const nomBy=u.nom.by||un.mgr||'';
-  $('pmb').innerHTML=`<h2>الفريق الأولي — ${esc(placeName(hz))}${hz===HUB?' · '+esc(un.label):''}</h2><div class="sub">${hz} · ترشيح ${esc(un.label)} ← اعتماد مدير الشؤون الإدارية والهندسية ← إحالة للموارد البشرية</div>
+  $('pmb').innerHTML=`<h2>الفريق الأولي${n>1?' '+AR(k+1)+' من '+AR(n):''} — ${esc(placeName(hz))}${hz===HUB?' · '+esc(un.label):''}</h2><div class="sub">${hz} · ترشيح ${esc(un.label)} ← اعتماد مدير الشؤون الإدارية والهندسية ← إحالة للموارد البشرية</div>
     <h3>الترشيح</h3>
     <div class="fg">
       <div><label>المدير المرشِّح</label>${inp('e_nomBy',nomBy,'text','مدير الإدارة')}</div>
       <div><label>تاريخ الترشيح</label>${inp('e_nomDate',u.nom.date||today(),'date')}</div>
+      <div><label>عدد الموظفين في المكان</label>${inp('e_staff',unit.staff,'number','فريق لكل ٢٥')}</div>
     </div>
     <h3>أربعة أدوار</h3>
     <div class="trow" style="margin-bottom:0"><span></span><label>الاسم</label><label>الإدارة / القسم</label><label>الهاتف</label><label>تاريخ التدريب · الجهة</label></div>
     ${TEAM.map((r,i)=>{const t=u.team[i]||{};return `<div class="trow"><span class="r">${r}</span>${inp('t_n'+i,t.name)}${inp('t_d'+i,t.dept||(hz===HUB?un.label:''))}${inp('t_p'+i,t.phone,'tel')}<div style="display:flex;gap:6px">${inp('t_t'+i,t.trained,'date')}${inp('t_r'+i,t.trainer,'text','الدفاع المدني')}</div></div>`}).join('')}
-    <div class="pmf"><button class="btn btn-main" onclick="saveUnit('${hz}','${uid}')">حفظ</button><button class="btn btn-gh" onclick="closePlaceEdit()">إلغاء</button><span class="hint">${u.appr.date?'تعديل الأسماء بعد الاعتماد يُلغي الاعتماد ويعيد المسار إلى الترشيح':'بعد الحفظ يظهر الترشيح لمدير الشؤون الإدارية والهندسية لاعتماده'}</span></div>`;
+    <div class="pmf"><button class="btn btn-main" onclick="saveUnit('${hz}','${uid}',${k})">حفظ</button><button class="btn btn-gh" onclick="closePlaceEdit()">إلغاء</button><span class="hint">${u.appr.date?'تعديل الأسماء بعد الاعتماد يُلغي الاعتماد ويعيد المسار إلى الترشيح':'بعد الحفظ يظهر الترشيح لمدير الشؤون الإدارية والهندسية لاعتماده'}</span></div>`;
   $('pm').classList.add('on');
 }
 function closePlaceEdit(){$('pm').classList.remove('on');}
-function saveUnit(hz,uid){
-  const p=placeGet(hz),un=unitList(hz,p).find(x=>x.uid===uid),u=unitGet(p,uid),v=id=>($(id).value||'').trim();
+function saveUnit(hz,uid,k){
+  k=k||0;
+  const p=placeGet(hz),un=unitList(hz,p).find(x=>x.uid===uid),unit=unitGet(p,uid),u=teamAt(unit,k),v=id=>($(id).value||'').trim();
   const team=TEAM.map((r,i)=>({role:r,name:v('t_n'+i),dept:v('t_d'+i),phone:v('t_p'+i),trained:v('t_t'+i),trainer:v('t_r'+i)}));
   const changed=JSON.stringify(team.map(t=>t.name))!==JSON.stringify(u.team.map(t=>t&&t.name||''));
   if(u.appr.date&&changed){if(!confirm('تغيّرت الأسماء بعد الاعتماد. سيُلغى الاعتماد والإحالة ويعود المسار إلى الترشيح. متابعة؟'))return;u.appr={};u.hr={};}
-  u.team=team;u.dept=un.dept||u.dept||'';
+  u.team=team;unit.dept=un.dept||unit.dept||'';
   u.nom=team.some(t=>t.name)?{by:v('e_nomBy'),dept:un.dept,date:v('e_nomDate')||today()}:{};
+  setStaff(unit,v('e_staff'));
   placeSave(hz,p);closePlaceEdit();load();
 }
+/* عدد موظفي الوحدة في المكان وحده — فريق لكل ٢٥ موظفاً أو جزء منها */
+function setStaff(unit,val){const n=parseInt(String(val).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)),10);if(n>0)unit.staff=n;else delete unit.staff;}
+function openStaffEdit(hz,uid){
+  const p=placeGet(hz),un=unitList(hz,p).find(x=>x.uid===uid);if(!un||!canUnit(un))return;
+  const unit=unitGet(p,uid);
+  $('pmb').innerHTML=`<h2>عدد الموظفين — ${esc(un.label)}</h2><div class="sub">${hz} · ${esc(placeName(hz))} · فريق أولي لكل ${AR(PER_TEAM)} موظفاً أو جزء منها</div>
+    <div class="fg"><div><label>عدد الموظفين في المكان</label><input id="e_staff" type="number" min="0" value="${esc(unit.staff||'')}"></div></div>
+    <div class="pmf"><button class="btn btn-main" onclick="saveStaff('${hz}','${uid}')">حفظ</button><button class="btn btn-gh" onclick="closePlaceEdit()">إلغاء</button></div>`;
+  $('pm').classList.add('on');
+}
+function saveStaff(hz,uid){const p=placeGet(hz);setStaff(unitGet(p,uid),$('e_staff').value);placeSave(hz,p);closePlaceEdit();load();}
 $('pm').addEventListener('click',e=>{if(e.target.id==='pm')closePlaceEdit();});
 
 /* ================= بلاغات الشاغلين: سجل مركز السلامة ================= */
@@ -1056,7 +1099,8 @@ function renderMyDept(){
     <div class="panel" style="margin-bottom:12px"><h3>الفريق الأولي لإدارتي <em>يرشّحه مدير الإدارة، ويعتمده مدير الشؤون الإدارية والهندسية، ثم يُحال للموارد البشرية</em></h3>${unitFull(hz,un,u)}</div>
     <div class="panel"><h3>مكاني: ${esc(placeName(hz))} <em>الخطتان ونموذج الفحص للاطلاع</em></h3>
       <div class="pfh" style="margin:0"><div class="acts" style="margin:0"><a href="${dir}/safety-plan.html">خطة السلامة ←</a>${hz!=='HZ-00'?`<a href="${dir}/response-plan.html">خطة الاستجابة ←</a>`:''}${fs.map(f=>`<a href="${f.file}">${f.lbl} ←</a>`).join('')}<a href="#place=${hz}">ملف المكان ←</a></div></div></div>`;
-  return {named:u.team.filter(t=>t&&t.name).length,st:unitState(u)};
+  const need=teamsNeeded(u);
+  return {named:Array.from({length:need},(_,k)=>teamPeek(u,k).team.filter(t=>t&&t.name).length).reduce((a,b)=>a+b,0),of:4*need,st:unitStateAll(u)};
 }
 
 function route(scroll){

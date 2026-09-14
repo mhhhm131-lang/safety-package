@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
  * صيغة الوثيقة (dashboard.html: placeGet/unitGet/saveUnit):
  *   { "HZ-06": { plans:{sa,saBy,ra,drill}, units: { "<uid>": { team:[{role,name,dept,phone,trained,trainer}×4], nom:{by,dept,date}, appr:{by,date}, hr:{date}, dept } } } }
  *   uid = رمز الإدارة في المكاتب الإدارية، أو "_" في بقية الأماكن (وحدة واحدة ترشّحها الإدارة المشغّلة).
+ *   المرحلة ١٥-٣: staff = عدد موظفي الوحدة في المكان (فريق لكل ٢٥)، more = [{team,nom,appr,hr}…] الفرق بعد الأول؛ unit_key للفريق الثاني "<uid>#2".
  * الأدوار الأربعة بترتيبها: المنسق، المسعف، المنقذ، الإطفائي.
  */
 class TeamSync
@@ -47,53 +48,58 @@ class TeamSync
                     if (!empty($p['team'])) $unitsDoc = ['_' => ['team' => $p['team'], 'nom' => $p['nom'] ?? [], 'appr' => $p['appr'] ?? [], 'hr' => $p['hr'] ?? []]];
                     else continue;
                 }
-                foreach ($unitsDoc as $uid => $u) {
-                    if (!is_array($u)) continue;
+                foreach ($unitsDoc as $uid => $unit) {
+                    if (!is_array($unit)) continue;
                     $uid = (string) $uid;
-                    $teamRows = is_array($u['team'] ?? null) ? $u['team'] : [];
-                    $named = array_values(array_filter($teamRows, fn ($t) => is_array($t) && trim((string) ($t['name'] ?? '')) !== ''));
-                    $nom = $u['nom'] ?? [];
-                    if (!$named && empty($nom['date'])) continue; // لا ترشيح بعد: لا فريق
-
-                    $unitCode = $uid !== '_' ? $uid : (string) ($u['dept'] ?? $nom['dept'] ?? '');
+                    $unitCode = $uid !== '_' ? $uid : (string) ($unit['dept'] ?? $unit['nom']['dept'] ?? '');
                     $orgUnit = $unitCode !== '' ? ($units[$unitCode] ?? null) : null;
                     $label = $orgUnit?->name ?? ($uid === '_' ? 'الإدارة المشغّلة للمكان' : $uid);
 
-                    $team = EmergencyTeam::firstOrNew(['source' => 'place_profile', 'place_id' => $place->id, 'unit_key' => $uid]);
-                    $team->fill([
-                        'building_id' => $building?->id,
-                        'name' => 'الفريق الأولي — '.$place->name.($hz === 'HZ-06' || $orgUnit ? ' · '.$label : ''),
-                        'team_type' => EmergencyTeam::TYPE_INITIAL,
-                        'description' => 'مشتق من ملف المكان في اللوحة (ترشيح مدير الإدارة ← اعتماد مدير الشؤون الإدارية والهندسية ← إحالة للموارد البشرية)',
-                        'shift' => 'all',
-                        'is_active' => count($named) > 0,
-                        'organization_unit_id' => $orgUnit?->id,
-                        'readiness' => $this->readiness($u),
-                        'synced_at' => now(),
-                    ]);
-                    $team->save();
-                    $seen[] = $team->id;
+                    // المرحلة ١٥-٣ (قرار ٤٣): فريق لكل ٢٥ موظفاً — الأول في جذر الوحدة كما كان، والباقي في more بترتيبه
+                    $teamsDoc = array_merge([$unit], array_values(array_filter((array) ($unit['more'] ?? []), 'is_array')));
+                    foreach ($teamsDoc as $k => $u) {
+                        $teamRows = is_array($u['team'] ?? null) ? $u['team'] : [];
+                        $named = array_values(array_filter($teamRows, fn ($t) => is_array($t) && trim((string) ($t['name'] ?? '')) !== ''));
+                        $nom = $u['nom'] ?? [];
+                        if (!$named && empty($nom['date'])) continue; // لا ترشيح بعد: لا فريق
 
-                    // الأعضاء الأربعة بترتيب الأدوار — يُعاد بناؤهم من الوثيقة (لا تحرير هنا)
-                    $keep = [];
-                    foreach (self::ROLE_KEYS as $i => $roleKey) {
-                        $t = is_array($teamRows[$i] ?? null) ? $teamRows[$i] : [];
-                        $name = trim((string) ($t['name'] ?? ''));
-                        if ($name === '') continue;
-                        $member = EmergencyTeamMember::firstOrNew(['team_id' => $team->id, 'role_key' => $roleKey]);
-                        $member->fill([
-                            'name' => $name,
-                            'role' => $roleKey === 'coordinator' ? 'leader' : 'member',
-                            'department' => trim((string) ($t['dept'] ?? '')) ?: null,
-                            'phone' => trim((string) ($t['phone'] ?? '')) ?: null,
-                            'trained_at' => $this->date($t['trained'] ?? null),
-                            'trainer' => trim((string) ($t['trainer'] ?? '')) ?: null,
-                            'is_available' => true,
+                        $team = EmergencyTeam::firstOrNew(['source' => 'place_profile', 'place_id' => $place->id, 'unit_key' => $k ? $uid.'#'.($k + 1) : $uid]);
+                        $team->fill([
+                            'building_id' => $building?->id,
+                            'name' => 'الفريق الأولي — '.$place->name.($hz === 'HZ-06' || $orgUnit ? ' · '.$label : '')
+                                .($k ? ' · الفريق '.strtr((string) ($k + 1), ['0' => '٠', '1' => '١', '2' => '٢', '3' => '٣', '4' => '٤', '5' => '٥', '6' => '٦', '7' => '٧', '8' => '٨', '9' => '٩']) : ''),
+                            'team_type' => EmergencyTeam::TYPE_INITIAL,
+                            'description' => 'مشتق من ملف المكان في اللوحة (ترشيح مدير الإدارة ← اعتماد مدير الشؤون الإدارية والهندسية ← إحالة للموارد البشرية)',
+                            'shift' => 'all',
+                            'is_active' => count($named) > 0,
+                            'organization_unit_id' => $orgUnit?->id,
+                            'readiness' => $this->readiness($u),
+                            'synced_at' => now(),
                         ]);
-                        $member->save();
-                        $keep[] = $member->id;
+                        $team->save();
+                        $seen[] = $team->id;
+
+                        // الأعضاء الأربعة بترتيب الأدوار — يُعاد بناؤهم من الوثيقة (لا تحرير هنا)
+                        $keep = [];
+                        foreach (self::ROLE_KEYS as $i => $roleKey) {
+                            $t = is_array($teamRows[$i] ?? null) ? $teamRows[$i] : [];
+                            $name = trim((string) ($t['name'] ?? ''));
+                            if ($name === '') continue;
+                            $member = EmergencyTeamMember::firstOrNew(['team_id' => $team->id, 'role_key' => $roleKey]);
+                            $member->fill([
+                                'name' => $name,
+                                'role' => $roleKey === 'coordinator' ? 'leader' : 'member',
+                                'department' => trim((string) ($t['dept'] ?? '')) ?: null,
+                                'phone' => trim((string) ($t['phone'] ?? '')) ?: null,
+                                'trained_at' => $this->date($t['trained'] ?? null),
+                                'trainer' => trim((string) ($t['trainer'] ?? '')) ?: null,
+                                'is_available' => true,
+                            ]);
+                            $member->save();
+                            $keep[] = $member->id;
+                        }
+                        EmergencyTeamMember::where('team_id', $team->id)->whereNotIn('id', $keep)->delete();
                     }
-                    EmergencyTeamMember::where('team_id', $team->id)->whereNotIn('id', $keep)->delete();
                 }
             }
             // فرق اختفت من الوثيقة تُعطَّل (لا تُحذف: لها سجل في الحالات السابقة)
