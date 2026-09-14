@@ -1779,7 +1779,7 @@ DIRTY=false;
 #mob,#mobBack,#mobBar,#mobS1,#mobS5,#mobLog,#mobSys,#mobMore,#mobTop{display:none}
 #mobLast[hidden]{display:none!important}
 .mob-hide{display:none!important}
-#ipaToast{position:fixed;top:10px;inset-inline:10px;z-index:9998;background:#0f3d2e;color:#fff;border-radius:10px;padding:12px 16px;font:700 14px/1.6 Cairo,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.25);direction:rtl;white-space:pre-line}
+#ipaToast{position:fixed;top:10px;inset-inline:10px;z-index:9998;background:#0f3d2e;color:#fff;border-radius:10px;padding:14px 18px;font:700 16px/1.6 Cairo,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.25);direction:rtl;white-space:pre-line}
 #ipaToast.bad{background:#9b1c1c}#ipaToast.warn{background:#a8620f}
 #ipaAsk{position:fixed;top:10px;inset-inline:10px;z-index:9998;background:#fff;border:2px solid var(--gold);border-radius:10px;padding:14px;font:14px/1.6 Cairo,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.25);direction:rtl}
 #ipaAsk .b{display:flex;gap:8px;margin-top:10px}#ipaAsk button{font:inherit;font-weight:700;min-height:44px;flex:1;border-radius:8px;border:1px solid var(--green);background:#fff;color:var(--green);cursor:pointer}#ipaAsk button.y{background:var(--green);color:#fff}
@@ -1872,10 +1872,17 @@ DIRTY=false;
   /* (٢) alert يجمّد الصفحة فلا يصل الحفظ للخادم؛ رسالة داخل الصفحة بدلاً منه */
   window._nativeAlert=window.alert;
   var TT=0;
+  /* الرسالة تُرى ولوحة مفاتيح الجوال مفتوحة (٢٠٢٦-٠٩-١٤، بكلمة المستخدم «تظهر وتكون واضحة»): تُوضع أعلى الجزء الظاهر من الشاشة
+     (visualViewport) وتلحق به، و«✓» و«جارٍ الحفظ» تُغلقان لوحة المفاتيح، والخط أكبر، و«✓» تبقى ٧ ث والخطأ ١٥ ث، واللمس يخفيها */
+  function blurActive(){var a=document.activeElement;if(a&&a!==document.body&&typeof a.blur==='function')a.blur();}
+  function place(t){var vv=window.visualViewport;t.style.top=((vv?vv.offsetTop:0)+10)+'px';}
+  if(window.visualViewport){['resize','scroll'].forEach(function(ev){window.visualViewport.addEventListener(ev,function(){var t=g('ipaToast');if(t&&!t.hidden)place(t);});});}
   window.toast=function(msg,kind){
-    var t=g('ipaToast'); if(!t){t=document.createElement('div');t.id='ipaToast';document.body.appendChild(t);}
+    var t=g('ipaToast'); if(!t){t=document.createElement('div');t.id='ipaToast';t.addEventListener('click',function(){t.hidden=true;});document.body.appendChild(t);}
     var m=String(msg==null?'':msg); kind=kind||(/^\s*[✓✔]/.test(m)?'':(/تعذّر|خطأ|غير صحيح|لا يمكن|اكتب|حدّد|اختر|أقرّ/.test(m)?'bad':'warn'));
-    t.className=kind; t.textContent=m; t.hidden=false; clearTimeout(TT); TT=setTimeout(function(){t.hidden=true;},4500);
+    if(kind==='wait'||/^\s*[✓✔]/.test(m))blurActive();
+    t.className=(kind==='wait'?'warn':kind); t.textContent=m; t.hidden=false; place(t);
+    clearTimeout(TT); TT=setTimeout(function(){t.hidden=true;},kind==='wait'?25000:(kind==='bad'?15000:7000));
   };
   window.alert=function(m){window.toast(m);};
   /* «✓ تم…» لا تُعرض قبل تأكيد الخادم (٢٠٢٦-٠٩-١٤): إن كان حفظ في الطريق تظهر «جارٍ الحفظ في الخادم…»،
@@ -1885,7 +1892,7 @@ DIRTY=false;
     window.toast=function(msg,kind){
       var m=String(msg==null?'':msg), s=window.ipaStore, key=(typeof AKEY==='string')?AKEY:'';
       if(!/^\s*[✓✔]/.test(m)||!s||typeof s.busy!=='function'||!s.busy())return show(msg,kind);
-      show('جارٍ الحفظ في الخادم…','warn');
+      show('جارٍ الحفظ في الخادم…','wait');
       s.whenIdle(20000,function(k){return !key||k===key||k.indexOf('ipa-photo-'+key)===0;}).then(function(r){
         if(r.ok)show(msg,kind);
         else if(r.pending)show('لم يصل الخادم بعد — محفوظ على هذا الجهاز وسيُرسل تلقائياً. لا تغلق الصفحة قبل ظهور «تم».','bad');
