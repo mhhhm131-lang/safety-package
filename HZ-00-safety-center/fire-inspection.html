@@ -2007,6 +2007,22 @@ DIRTY=false;
     t.className=kind; t.textContent=m; t.hidden=false; clearTimeout(TT); TT=setTimeout(function(){t.hidden=true;},4500);
   };
   window.alert=function(m){window.toast(m);};
+  /* «✓ تم…» لا تُعرض قبل تأكيد الخادم (٢٠٢٦-٠٩-١٤): إن كان حفظ في الطريق تظهر «جارٍ الحفظ في الخادم…»،
+     ثم الرسالة بعد الرد، أو سبب عدم الحفظ. الحكم على وثيقة هذا النموذج وصوره وحدها */
+  (function(){
+    var show=window.toast;
+    window.toast=function(msg,kind){
+      var m=String(msg==null?'':msg), s=window.ipaStore, key=(typeof AKEY==='string')?AKEY:'';
+      if(!/^\s*[✓✔]/.test(m)||!s||typeof s.busy!=='function'||!s.busy())return show(msg,kind);
+      show('جارٍ الحفظ في الخادم…','warn');
+      s.whenIdle(20000,function(k){return !key||k===key||k.indexOf('ipa-photo-'+key)===0;}).then(function(r){
+        if(r.ok)show(msg,kind);
+        else if(r.pending)show('لم يصل الخادم بعد — محفوظ على هذا الجهاز وسيُرسل تلقائياً. لا تغلق الصفحة قبل ظهور «تم».','bad');
+        else if(r.conflict)show('لم يُحفظ في الخادم — تغيّر النموذج من مكان آخر. اضغط «المتابعة هنا» ثم أعد الإرسال.','bad');
+        else show('لم يُحفظ في الخادم — أعد المحاولة.','bad');
+      });
+    };
+  })();
   /* سؤال داخل الصفحة بزرين (بديل confirm حيث أمكن) */
   window.ask=function(msg,yes,onYes,no,onNo){
     var a=g('ipaAsk'); if(a)a.remove();
