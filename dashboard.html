@@ -390,7 +390,7 @@ button{font-family:inherit}
   </div>
 
   <div class="tools">
-    <button class="btn btn-gh" onclick="$('fpick').click()">استيراد جولات من أجهزة أخرى</button>
+    <button class="btn btn-gh" onclick="$('fpick').click()" style="display:none">استيراد جولات من أجهزة أخرى</button>
     <input type="file" id="fpick" accept=".json,.html" multiple hidden>
     <button class="btn btn-gh" onclick="load()">تحديث</button>
     <a class="btn btn-gh" href="#depts" style="text-decoration:none">الإدارات والهيكل</a>
@@ -400,7 +400,7 @@ button{font-family:inherit}
     <input type="file" id="bpick" accept=".json" hidden>
     <span class="upd" id="upd2"></span>
   </div>
-  <div class="note"><b>مصدر البيانات:</b> ما فُتح من نماذج على هذا الجهاز يظهر تلقائياً. بلاغات الفنيين على أجهزة أخرى تصل باستيراد ملف الجولة (HTML أو JSON) الذي يحفظه النموذج بزر «حفظ النموذج بالبيانات». عند ربط النظام بحسابات المعهد تُستبدل هذه الآلية بالمزامنة الآلية.<br><b>النسخة الاحتياطية:</b> ملف واحد يحمل بيانات المبنى كلها (النماذج العشرة وجولاتها وبلاغاتها وبيانات الأماكن). البيانات في المتصفح تضيع بمسح واحد، فاحفظ نسخة في نهاية كل يوم عمل إلى حين الربط.<br><b>الربط بنظام المعهد:</b> <a href="integration.html" style="color:var(--gold2)">متطلبات الربط لتقنية المعلومات ←</a></div>
+  <div class="note"><b>مصدر البيانات:</b> خادم المنظومة. ما يُحفظ في النماذج العشرة من أي جهاز يصل هنا تلقائياً، واللوحة تتحدث كل ٣٠ ثانية وعند العودة إليها.<br><b>النسخة الاحتياطية:</b> نسخة القاعدة كاملة ينزّلها مسؤول السلامة من شاشة «الإغلاق» في الإدارة. زرّا «نسخة احتياطية للمبنى» و«استعادة نسخة» هنا لنقل بيانات النماذج بملف عند الحاجة فقط — والاستعادة تكتب فوق ما على الخادم لكل المستخدمين.<br><b>الربط بنظام المعهد:</b> <a href="integration.html" style="color:var(--gold2)">متطلبات الربط لتقنية المعلومات ←</a></div>
 </div>
 
 <div class="footer">حزمة السلامة والصحة المهنية — معهد الإدارة العامة</div>
