@@ -1786,6 +1786,8 @@ DIRTY=false;
 #mob,#mobBack,#mobBar,#mobS1,#mobS5,#mobLog,#mobSys,#mobMore,#mobTop{display:none}
 #mobLast[hidden]{display:none!important}
 .mob-hide{display:none!important}
+/* أزرار زمن الملفات (تدقيق ١٣-٧ مشكلة ٥، بكلمة المستخدم ٢٠٢٦-٠٩-١٤): الحفظ على الخادم آلي، والاستيراد يستبدل بلاغات النموذج كلها فوق عمل الجميع — تُخفى على الحاسب والجوال، والدوال باقية */
+.bar .print[onclick="saveSelf()"],.bar .print[onclick="impFile()"]{display:none!important}
 #ipaToast{position:fixed;top:10px;inset-inline:10px;z-index:9998;background:#0f3d2e;color:#fff;border-radius:10px;padding:14px 18px;font:700 16px/1.6 Cairo,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.25);direction:rtl;white-space:pre-line}
 #ipaToast.bad{background:#9b1c1c}#ipaToast.warn{background:#a8620f}
 #ipaAsk{position:fixed;top:10px;inset-inline:10px;z-index:9998;background:#fff;border:2px solid var(--gold);border-radius:10px;padding:14px;font:14px/1.6 Cairo,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.25);direction:rtl}
