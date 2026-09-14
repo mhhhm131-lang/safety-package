@@ -264,7 +264,7 @@ button{font-family:inherit}
 .fg input,.fg select{width:100%;font-family:inherit;font-size:12.5px;padding:7px 9px;border:1px solid var(--line2);border-radius:7px;background:var(--bg2);color:var(--ink)}
 .fg input:focus{outline:0;border-color:var(--gold)}
 .fg input[readonly]{opacity:.6}
-.trow{display:grid;grid-template-columns:90px 1.4fr 1fr 1fr 1fr;gap:8px;align-items:end;margin-bottom:6px}
+.trow{display:grid;grid-template-columns:90px 1.3fr 1.2fr 1fr 1fr 1fr;gap:8px;align-items:end;margin-bottom:6px}
 .trow .r{font-size:12px;font-weight:900;color:var(--gold2);padding-bottom:8px}
 .pmf{display:flex;gap:8px;margin-top:18px;align-items:center;flex-wrap:wrap}
 .pmf .hint{font-size:11px;color:var(--muted);margin-inline-start:auto}
@@ -925,7 +925,7 @@ function teamBlock(hz,un,u,k){
     {t:'إحالة للموارد البشرية',done:!!u.hr.date,sub:u.hr.date?fmtD(u.hr.date):(u.appr.date?'بانتظار الإحالة':'')}
   ];
   const cur=steps.findIndex(s=>!s.done);
-  return `<div class="team">${TEAM.map((r,i)=>{const t=u.team[i]||{};const tr=daysSince(t.trained);return `<div class="tm"><div class="r">${r}</div><div class="n${t.name?'':' none'}">${t.name?esc(t.name):'لم يُسمَّ بعد'}</div><div class="m">${t.dept?esc(t.dept)+'<br>':''}${t.phone?'<b>'+esc(t.phone)+'</b><br>':''}${t.trained?'تدريب '+fmtD(t.trained)+(t.trainer?' · '+esc(t.trainer):'')+(tr!==null&&tr>730?' <span style="color:var(--amber)">· يحتاج تجديداً</span>':''):(t.name?'<span style="color:var(--amber)">لم يُدرَّب</span>':'')}</div></div>`}).join('')}</div>
+  return `<div class="team">${TEAM.map((r,i)=>{const t=u.team[i]||{};const tr=daysSince(t.trained);return `<div class="tm"><div class="r">${r}</div><div class="n${t.name?'':' none'}">${t.name?esc(t.name):'لم يُسمَّ بعد'}</div><div class="m">${t.user?'حساب: <b>'+esc(t.user)+'</b><br>':''}${t.dept?esc(t.dept)+'<br>':''}${t.phone?'<b>'+esc(t.phone)+'</b><br>':''}${t.trained?'تدريب '+fmtD(t.trained)+(t.trainer?' · '+esc(t.trainer):'')+(tr!==null&&tr>730?' <span style="color:var(--amber)">· يحتاج تجديداً</span>':''):(t.name?'<span style="color:var(--amber)">لم يُدرَّب</span>':'')}</div></div>`}).join('')}</div>
     <div class="flowline">${steps.map((s,i)=>`${i?'<span class="fsep"></span>':''}<span class="fstep${s.done?' done':(i===cur?' cur':'')}"><i>${s.done?'✓':AR(i+1)}</i>${s.t}${s.sub?' <small>'+s.sub+'</small>':''}</span>`).join('')}<span style="margin-inline-start:auto;display:flex;gap:6px">${unitActions(hz,un,u,k).replace(/<button class="main"/g,'<button class="btn btn-main" style="padding:4px 12px;font-size:11px"').replace(/<button onclick/g,'<button class="btn btn-gh" style="padding:4px 12px;font-size:11px" onclick')}</span></div>`;
 }
 /* صف مختصر لكل إدارة في المكاتب الإدارية */
@@ -999,22 +999,29 @@ function openUnitEdit(hz,uid,k){
       <div><label>عدد الموظفين في المكان</label>${inp('e_staff',unit.staff,'number','فريق لكل ٢٥')}</div>
     </div>
     <h3>أربعة أدوار</h3>
-    <div class="trow" style="margin-bottom:0"><span></span><label>الاسم</label><label>الإدارة / القسم</label><label>الهاتف</label><label>تاريخ التدريب · الجهة</label></div>
-    ${TEAM.map((r,i)=>{const t=u.team[i]||{};return `<div class="trow"><span class="r">${r}</span>${inp('t_n'+i,t.name)}${inp('t_d'+i,t.dept||(hz===HUB?un.label:''))}${inp('t_p'+i,t.phone,'tel')}<div style="display:flex;gap:6px">${inp('t_t'+i,t.trained,'date')}${inp('t_r'+i,t.trainer,'text','الدفاع المدني')}</div></div>`}).join('')}
-    <div class="pmf"><button class="btn btn-main" onclick="saveUnit('${hz}','${uid}',${k})">حفظ</button><button class="btn btn-gh" onclick="closePlaceEdit()">إلغاء</button><span class="hint">${u.appr.date?'تعديل الأسماء بعد الاعتماد يُلغي الاعتماد ويعيد المسار إلى الترشيح':'بعد الحفظ يظهر الترشيح لمدير الشؤون الإدارية والهندسية لاعتماده'}</span></div>`;
-  $('pm').classList.add('on');
+    <div class="trow" style="margin-bottom:0"><span></span><label>الاسم</label><label>الحساب (اسم الدخول) — لتصله التنبيهات</label><label>الإدارة / القسم</label><label>الهاتف</label><label>تاريخ التدريب · الجهة</label></div>
+    ${TEAM.map((r,i)=>{const t=u.team[i]||{};return `<div class="trow"><span class="r">${r}</span>${inp('t_n'+i,t.name)}${inp('t_u'+i,t.user,'text','اختياري').replace('<input','<input list="teamAccts" autocomplete="off"')}${inp('t_d'+i,t.dept||(hz===HUB?un.label:''))}${inp('t_p'+i,t.phone,'tel')}<div style="display:flex;gap:6px">${inp('t_t'+i,t.trained,'date')}${inp('t_r'+i,t.trainer,'text','الدفاع المدني')}</div></div>`}).join('')}
+    <div class="pmf"><button class="btn btn-main" onclick="saveUnit('${hz}','${uid}',${k})">حفظ</button><button class="btn btn-gh" onclick="closePlaceEdit()">إلغاء</button><span class="hint">${u.appr.date?'تعديل الأسماء بعد الاعتماد يُلغي الاعتماد ويعيد المسار إلى الترشيح':'بعد الحفظ يظهر الترشيح لمدير الشؤون الإدارية والهندسية لاعتماده'}</span></div><datalist id="teamAccts"></datalist>`;
+  $('pm').classList.add('on');loadTeamAccounts();
 }
 function closePlaceEdit(){$('pm').classList.remove('on');}
 function saveUnit(hz,uid,k){
   k=k||0;
   const p=placeGet(hz),un=unitList(hz,p).find(x=>x.uid===uid),unit=unitGet(p,uid),u=teamAt(unit,k),v=id=>($(id).value||'').trim();
-  const team=TEAM.map((r,i)=>({role:r,name:v('t_n'+i),dept:v('t_d'+i),phone:v('t_p'+i),trained:v('t_t'+i),trainer:v('t_r'+i)}));
+  const team=TEAM.map((r,i)=>({role:r,name:v('t_n'+i),user:v('t_u'+i).toLowerCase(),dept:v('t_d'+i),phone:v('t_p'+i),trained:v('t_t'+i),trainer:v('t_r'+i)}));
   const changed=JSON.stringify(team.map(t=>t.name))!==JSON.stringify(u.team.map(t=>t&&t.name||''));
   if(u.appr.date&&changed){if(!confirm('تغيّرت الأسماء بعد الاعتماد. سيُلغى الاعتماد والإحالة ويعود المسار إلى الترشيح. متابعة؟'))return;u.appr={};u.hr={};}
   u.team=team;unit.dept=un.dept||unit.dept||'';
   u.nom=team.some(t=>t.name)?{by:v('e_nomBy'),dept:un.dept,date:v('e_nomDate')||today()}:{};
   setStaff(unit,v('e_staff'));
   placeSave(hz,p);closePlaceEdit();load();
+}
+/* المرحلة ١٥-٤: اقتراح الحسابات بجانب الاسم (اسم الدخول يربط العضو بحسابه فيُنبَّه بخطوته في مكانه) */
+let TEAM_ACCTS=null;
+function loadTeamAccounts(){
+  const fill=()=>{const d=$('teamAccts');if(d&&TEAM_ACCTS)d.innerHTML=TEAM_ACCTS.map(a=>`<option value="${esc(a.u)}">${esc(a.n)} — ${esc(a.r)}</option>`).join('');};
+  if(TEAM_ACCTS)return fill();
+  fetch('/api/team-accounts',{credentials:'same-origin',headers:{Accept:'application/json'}}).then(r=>r.ok?r.json():[]).then(j=>{TEAM_ACCTS=Array.isArray(j)?j:[];fill();}).catch(()=>{});
 }
 /* عدد موظفي الوحدة في المكان وحده — فريق لكل ٢٥ موظفاً أو جزء منها */
 function setStaff(unit,val){const n=parseInt(String(val).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)),10);if(n>0)unit.staff=n;else delete unit.staff;}

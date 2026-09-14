@@ -2,6 +2,7 @@
 
 namespace App\Modules\Emergency\Services;
 
+use App\Models\User;
 use App\Modules\Emergency\Models\EmergencyBuilding;
 use App\Modules\Emergency\Models\EmergencyTeam;
 use App\Modules\Emergency\Models\EmergencyTeamMember;
@@ -36,8 +37,9 @@ class TeamSync
         $building = EmergencyBuilding::main();
         $places = Place::all()->keyBy('code');
         $units = OrganizationUnit::all()->keyBy('code');
+        $accounts = User::query()->get(['id', 'username', 'name'])->keyBy(fn ($u) => mb_strtolower($u->username));
 
-        return DB::transaction(function () use ($data, $building, $places, $units) {
+        return DB::transaction(function () use ($data, $building, $places, $units, $accounts) {
             $seen = [];
             foreach ($data as $hz => $p) {
                 if (!is_array($p) || !isset($places[$hz])) continue;
@@ -59,7 +61,7 @@ class TeamSync
                     $teamsDoc = array_merge([$unit], array_values(array_filter((array) ($unit['more'] ?? []), 'is_array')));
                     foreach ($teamsDoc as $k => $u) {
                         $teamRows = is_array($u['team'] ?? null) ? $u['team'] : [];
-                        $named = array_values(array_filter($teamRows, fn ($t) => is_array($t) && trim((string) ($t['name'] ?? '')) !== ''));
+                        $named = array_values(array_filter($teamRows, fn ($t) => is_array($t) && (trim((string) ($t['name'] ?? '')) !== '' || trim((string) ($t['user'] ?? '')) !== '')));
                         $nom = $u['nom'] ?? [];
                         if (!$named && empty($nom['date'])) continue; // لا ترشيح بعد: لا فريق
 
@@ -83,10 +85,13 @@ class TeamSync
                         $keep = [];
                         foreach (self::ROLE_KEYS as $i => $roleKey) {
                             $t = is_array($teamRows[$i] ?? null) ? $teamRows[$i] : [];
-                            $name = trim((string) ($t['name'] ?? ''));
+                            // المرحلة ١٥-٤: اسم الدخول بجانب الاسم يربط العضو بحسابه فيُنبَّه بخطوته (بلا حساسية لحالة الحروف؛ غير الموجود يبقى بلا ربط)
+                            $account = $accounts[mb_strtolower(trim((string) ($t['user'] ?? '')))] ?? null;
+                            $name = trim((string) ($t['name'] ?? '')) ?: (string) ($account?->name ?? '');
                             if ($name === '') continue;
                             $member = EmergencyTeamMember::firstOrNew(['team_id' => $team->id, 'role_key' => $roleKey]);
                             $member->fill([
+                                'user_id' => $account?->id,
                                 'name' => $name,
                                 'role' => $roleKey === 'coordinator' ? 'leader' : 'member',
                                 'department' => trim((string) ($t['dept'] ?? '')) ?: null,

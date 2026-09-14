@@ -17,6 +17,9 @@ Route::middleware(['web', 'auth'])->prefix('api/store')->name('store.')->group(f
     Route::delete('/{key}', [StoreController::class, 'destroy'])->name('destroy');
 });
 
+// المرحلة ١٥-٤: اقتراح الحسابات في ترشيح الفريق الأولي باللوحة — لمن يرشّح أو يعتمد
+Route::middleware(['web', 'auth'])->get('/api/team-accounts', [\App\Modules\Store\Controllers\TeamAccountsController::class, 'index'])->name('team-accounts');
+
 // المرحلة ١٤: «الجولات السابقة» في النموذج — سجل السلامة للقراءة فقط
 Route::middleware(['web', 'auth'])->prefix('api/inspection-rounds')->name('inspection-rounds.')->group(function () {
     Route::get('/', [\App\Modules\Store\Controllers\InspectionRoundsController::class, 'index'])->name('index');
