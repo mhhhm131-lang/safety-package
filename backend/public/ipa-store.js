@@ -26,9 +26,9 @@
   var SKIP = { 'ipa-session': 1, 'ipa-store-pending': 1 };
   var LS = window.localStorage;
   var origSet = LS.setItem.bind(LS), origGet = LS.getItem.bind(LS), origRemove = LS.removeItem.bind(LS);
-  var VER = {}, Q = {}, T = null, HAVE_SESSION = false, CSRF = '';
+  var VER = {}, Q = {}, T = null, HAVE_SESSION = false, CSRF = '', INFLIGHT = {}, BACKOFF = false;
   var LOG = [];
-  window.ipaStore = { status: 'loading', log: LOG, versions: VER, pending: function () { return readPending(); }, fetchDoc: fetchDoc, queued: function () { return Object.keys(Q); } };
+  window.ipaStore = { status: 'loading', log: LOG, versions: VER, pending: function () { return readPending(); }, fetchDoc: fetchDoc, queued: function () { return Object.keys(Q); }, busy: busy, whenIdle: whenIdle };
   function fail(kind) { window.ipaStore.status = kind; }
   /* بعد أن تعمل سكربتات الصفحة: إن بقيت شاشة الدخول بلا .off فالدخول الآلي لم يكتمل ← رسالة النظام بسببها */
   document.addEventListener('DOMContentLoaded', function () {
@@ -193,12 +193,17 @@
     T = setTimeout(flush, 400);
   }
 
+  /* حفظ واحد في كل مرة لكل مفتاح (٢٠٢٦-٠٩-١٤، ثبت بمحرك WebKit وشبكة بطيئة): كان الحفظ التالي يخرج قبل رد السابق
+     بنسخته القديمة فيرفضه الخادم (409) ويُقفل النموذج كأن جهازاً آخر كتب. الآن ينتظر الرد ثم يُرسل آخر ما كُتب بالنسخة الجديدة. */
   function flush() {
+    BACKOFF = false;
     Object.keys(Q).forEach(function (k) {
+      if (INFLIGHT[k]) return;
       var op = Q[k]; delete Q[k];
       var raw = origGet(k);
       if (op === 'put' && raw == null) { clearPending(k); return; }
       var body = op === 'put' ? JSON.stringify({ data: raw, version: VER[k] || 0 }) : null;
+      INFLIGHT[k] = true;
       fetch(API + '/' + encodeURIComponent(k), {
         method: op === 'del' ? 'DELETE' : 'PUT',
         credentials: 'same-origin',
@@ -216,6 +221,7 @@
         }
         if (r.status === 409) {
           return r.json().then(function (j) {
+            delete Q[k];
             VER[k] = j.version;
             clearPending(k);
             origSet(k, j.data);
@@ -228,23 +234,48 @@
         return r.json().then(function (j) {
           if (op === 'del') delete VER[k]; else VER[k] = j.version;
           delete MEM[k];
-          clearPending(k);
+          /* كتابة أحدث تنتظر هذا الرد: يبقى معلّقها ويُحدَّث رقم نسختها المحفوظ، وإلا يُمسح */
+          if (Q[k] === undefined) clearPending(k); else markPending(k, Q[k]);
           bar('');
         });
-      }).catch(function () { retry(k, op, 'لا اتصال بالخادم — الحفظ محلي وسيُعاد'); });
+      }).catch(function () { retry(k, op, 'لا اتصال بالخادم — الحفظ محلي وسيُعاد'); })
+        .then(function () {
+          delete INFLIGHT[k];
+          if (Q[k] !== undefined && !BACKOFF) { clearTimeout(T); T = setTimeout(flush, 0); }
+        });
     });
   }
   function retry(k, op, msg) {
     bar(msg, 'bad');
     if (Q[k] === undefined) Q[k] = op;
+    BACKOFF = true;
     clearTimeout(T);
     T = setTimeout(flush, 5000);
+  }
+  /* هل وصل الخادمَ كلُّ ما كُتب؟ للنموذج حتى لا يقول «تم» قبل تأكيد الخادم. only(k) يحصر الحكم في مفاتيح بعينها */
+  function busy() { return Object.keys(Q).length > 0 || Object.keys(INFLIGHT).length > 0; }
+  function whenIdle(ms, only) {
+    var from = LOG.length, t0 = Date.now();
+    return new Promise(function (resolve) {
+      (function check() {
+        if (!busy()) {
+          var last = {};
+          LOG.slice(from).forEach(function (e) { if (!only || only(e.k)) last[e.k] = e.status; });
+          var bad = Object.keys(last).filter(function (k) { return last[k] !== 200; });
+          resolve({ ok: bad.length === 0, conflict: bad.some(function (k) { return last[k] === 409; }), pending: false, failed: bad });
+          return;
+        }
+        if (Date.now() - t0 > (ms || 15000)) { resolve({ ok: false, conflict: false, pending: true, failed: [] }); return; }
+        setTimeout(check, 200);
+      })();
+    });
   }
 
   /* قبل مغادرة الصفحة: محاولة إرسال ما بقي (keepalive). ما لم يصل يبقى في الطابور المحفوظ ويُرسل في الصفحة التالية. */
   window.addEventListener('pagehide', function () {
     clearTimeout(T);
     Object.keys(Q).forEach(function (k) {
+      if (INFLIGHT[k]) return; /* حفظه السابق لم يُرد عليه: يبقى معلّقاً ويُرسل عند الفتح التالي */
       var op = Q[k]; delete Q[k];
       var raw = origGet(k);
       if (op === 'put' && raw == null) return;
