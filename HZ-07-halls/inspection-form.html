@@ -2020,7 +2020,7 @@ DIRTY=false;
       +'<div><div class="lb">موعد الفحص القادم</div><input type="date" id="mobNext"></div></div>'
       +'<button type="button" class="mfold" data-fold="6"><span>٦ · القيد في سجل السلامة</span><span class="lb">لمسؤول السلامة ▾</span></button>'
       +'<button type="button" class="mfold" data-fold="7"><span>٧ · الاعتماد</span><span class="lb">كلٌّ خانته ▾</span></button>'
-      +'<button type="button" class="mbtn g" style="margin-top:14px" id="mobFinish">حفظ الجولة ✓</button>';
+      +'<button type="button" class="mbtn g" style="margin-top:14px" id="mobFinish">إنهاء الجولة وإرسالها</button>';
     S[5][0].parentNode.insertBefore(s5,S[5][0]);
     /* الشريط العلوي: النظام قائمة منسدلة + المزيد */
     var bar=document.querySelector('nav.bar'), tabs=document.querySelectorAll('nav.bar .tab');
@@ -2043,7 +2043,14 @@ DIRTY=false;
       var b=e.target.closest('[data-go]'); if(b&&!b.getAttribute('onclick')){go(+b.dataset.go);return;}
       var f=e.target.closest('.mfold'); if(f){toggleFold(f.dataset.fold,f);return;}
     });
-    g('mobFinish').addEventListener('click',function(){if(typeof autoSave==='function')autoSave();window.toast('✓ حُفظت الجولة في الخادم — تبقى مفتوحة حتى تبدأ جولة جديدة من «المزيد»');});
+    /* المرحلة ١٤: «إنهاء الجولة وإرسالها» — يحفظ الجولة ومعها علامة الإنهاء فيُنبّه الخادمُ مسؤولَ السلامة والمناوب ومدير المرافق فوراً ويحفظها في سجل السلامة */
+    g('mobFinish').addEventListener('click',function(){
+      var d=g('dtRound')?g('dtRound').value:'', s=g('tStart')?g('tStart').value:'';
+      if(!d){window.toast('لا توجد جولة قائمة — ابدأ بتأشير البنود أولاً','bad');return;}
+      if(typeof autoSave==='function')autoSave();
+      try{var doc=JSON.parse(localStorage.getItem(AKEY)||'{}');doc.roundDone={d:d,s:s,at:Date.now()};localStorage.setItem(AKEY,JSON.stringify(doc));}catch(e){}
+      window.toast('✓ أُنهيت الجولة وحُفظت في سجل السلامة\nأُبلغ مسؤول السلامة والمناوب ومدير المرافق');
+    });
     /* ربط بطاقات المحطتين ١ و٥ بالحقول الأصلية */
     bindS1(); bindS5();
     mob.addEventListener('click',onClick);
@@ -2110,12 +2117,13 @@ DIRTY=false;
   function drawLog(){
     var lg=g('mobLog'); if(!lg)return;
     var R=(typeof REPORTS!=='undefined')?REPORTS:[];
-    if(!R.length){lg.innerHTML='<div class="mh1">٤ · السجل</div><div class="empty">لا توجد ملاحظات مسجّلة في هذه الجولة</div>';return;}
+    var ROUNDS_BTN='<button type="button" class="mbtn" style="margin-top:12px" data-rounds="1">الجولات السابقة — سجل السلامة</button>';
+    if(!R.length){lg.innerHTML='<div class="mh1">٤ · السجل</div><div class="empty">لا توجد ملاحظات مسجّلة في هذه الجولة</div>'+ROUNDS_BTN;return;}
     lg.innerHTML='<div class="mh1">٤ · سجل الملاحظات والبلاغات <span class="msub">'+R.length+'</span></div>'+R.map(function(r){
       var o=(typeof overdue==='function')?overdue(r):null, late=(o!==null&&o>=0);
       return '<div class="lc'+(late?' late':'')+'" data-row="'+esc(r.row)+'"><div class="h"><b>'+esc(r.id)+'</b>'+((typeof dispBadge==='function')?dispBadge(r):'')+'</div>'
         +'<div class="i">'+esc(r.item)+'</div><div class="m">'+esc(r.sev||'')+(r.due&&r.due!=='—'?' · المهلة '+esc(r.due):'')+(r.owner?' · لدى: '+esc(r.owner):'')+'</div></div>';
-    }).join('')+'<div class="msub" style="text-align:center;margin-top:10px">النقر على البطاقة يفتح البلاغ ومساره</div>';
+    }).join('')+'<div class="msub" style="text-align:center;margin-top:10px">النقر على البطاقة يفتح البلاغ ومساره</div>'+ROUNDS_BTN;
   }
   function drawS5(){
     var M=(typeof MARKS!=='undefined')?MARKS:{}, ok=0,no=0,na=0;
@@ -2310,6 +2318,64 @@ DIRTY=false;
     window[n]=function(){ if(!active()){lock(LOCKED||'newer');return false;} return fn.apply(this,arguments); };
   });
   window.ipaActive=active;
+})();
+/* ===== هـ · الجولات السابقة (المرحلة ١٤، سجل السلامة): كل جولة كما حُفظت — للقراءة فقط، على الجوال من محطة السجل وعلى الحاسب فوق السجل ===== */
+(function(){
+  'use strict';
+  if(typeof AKEY!=='string'||!window.fetch)return;
+  function g(id){return document.getElementById(id);}
+  function esc(x){return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  var css=document.createElement('style');
+  css.textContent='#ipaRounds{position:fixed;inset:0;z-index:9997;background:#fff;overflow:auto;font-family:Cairo,Arial,sans-serif;direction:rtl}'
+   +'#ipaRounds .rh{position:sticky;top:0;background:#0f3d2e;color:#fff;display:flex;align-items:center;gap:8px;padding:10px 14px;font-weight:700}'
+   +'#ipaRounds .rh b{flex:1}#ipaRounds .rh button{font:700 14px Cairo,Arial,sans-serif;min-height:40px;border-radius:8px;border:1px solid rgba(255,255,255,.6);background:transparent;color:#fff;padding:0 12px;cursor:pointer}'
+   +'#ipaRounds .rb{padding:12px 14px 40px;max-width:760px;margin:0 auto}#ipaRounds .rc{border:1px solid #d9d4cc;border-radius:10px;padding:12px 14px;margin-top:10px;cursor:pointer;background:#fff}'
+   +'#ipaRounds .rc b{color:#0f3d2e}#ipaRounds .m{font-size:12px;color:#6b6560}#ipaRounds h3{font-size:15px;color:#0f3d2e;margin:16px 0 6px}'
+   +'#ipaRounds table{width:100%;border-collapse:collapse;font-size:13px}#ipaRounds td{border-bottom:1px solid #eee;padding:6px 4px;vertical-align:top}#ipaRounds td.k{width:56px;text-align:center;font-weight:700}'
+   +'#ipaRounds .ok{color:#1c6b3a}#ipaRounds .no{color:#9b1c1c}#ipaRounds .na{color:#6b6560}#roundsDesk{margin:10px 0}body.mobon #roundsDesk{display:none}';
+  document.head.appendChild(css);
+  function box(){var b=g('ipaRounds');if(!b){b=document.createElement('div');b.id='ipaRounds';document.body.appendChild(b);}return b;}
+  function head(title,back){return '<div class="rh"><b>'+esc(title)+'</b>'+(back?'<button type="button" data-rb="list">القائمة</button>':'')+'<button type="button" data-rb="close">إغلاق ✕</button></div>';}
+  function api(u){return fetch(u,{credentials:'same-origin',headers:{'Accept':'application/json'}}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json();});}
+  function list(){
+    var b=box(); b.hidden=false; b.innerHTML=head('الجولات السابقة — سجل السلامة')+'<div class="rb"><div class="m">جارٍ التحميل…</div></div>';
+    api('/api/inspection-rounds?key='+encodeURIComponent(AKEY)).then(function(j){
+      var R=j.rounds||[];
+      b.querySelector('.rb').innerHTML=R.length?R.map(function(r){
+        return '<div class="rc" data-rid="'+r.id+'"><b>'+esc(r.date)+(r.start?' · '+esc(r.start):'')+'</b> — '+esc(r.freq||'')
+          +'<div class="m">الفاحص: '+esc(r.inspector||'—')+' · '+(r.closed?'مُثبَّتة':(r.finished?'أُنهيت':'قائمة الآن'))+'</div></div>';
+      }).join('')+'<div class="m" style="margin-top:12px">كل جولة محفوظة كما كانت ولا تُعدَّل من هنا.</div>'
+      :'<div class="m">لا جولات محفوظة بعد لهذا النموذج — تُحفظ كل جولة من أول تأشير فيها.</div>';
+    }).catch(function(e){b.querySelector('.rb').innerHTML='<div class="m">تعذّر التحميل ('+esc(e.message)+') — تحقق من الاتصال.</div>';});
+  }
+  function one(id){
+    var b=box(); b.innerHTML=head('جولة محفوظة',true)+'<div class="rb"><div class="m">جارٍ التحميل…</div></div>';
+    api('/api/inspection-rounds/'+id).then(function(j){
+      var sn=j.snapshot||{}, M=sn.marks||{}, V=sn.vals||{}, F=sn.fields||{}, SY=sn.systems||{};
+      var sym={ok:['✓','ok'],no:['✗','no'],na:['—','na']};
+      var h='<h3>'+esc(j.date)+(j.start?' · '+esc(j.start):'')+'</h3><div class="m">الفاحص: '+esc(j.inspector||F.insN||'—')+(j.freq?' · الدورية: '+esc(j.freq):'')+(F.loc?' · الموقع: '+esc(F.loc):'')+'</div>';
+      Object.keys(SY).forEach(function(k){
+        var s=SY[k], rows='';
+        (s.reads||[]).forEach(function(t,i){var id=k+'-r-'+i, m=M[id]; if(!m&&!V[id+'|act'])return; var x=sym[m]||['',''];
+          rows+='<tr><td class="k '+x[1]+'">'+x[0]+'</td><td>'+esc(t)+(V[id+'|act']?' — القراءة: <b>'+esc(V[id+'|act'])+'</b>':'')+'</td></tr>';});
+        (s.items||[]).forEach(function(it,i){var id=k+'-i-'+i, m=M[id]; if(!m)return; var x=sym[m]||['',''];
+          rows+='<tr><td class="k '+x[1]+'">'+x[0]+'</td><td>'+esc(it&&it[0]!==undefined?it[0]:it)+'</td></tr>';});
+        if(rows)h+='<h3>'+esc(s.name||k)+'</h3><table>'+rows+'</table>';
+      });
+      if(F.mobSummary)h+='<h3>الملخص</h3><div>'+esc(F.mobSummary)+'</div>';
+      if(F.mobNext)h+='<div class="m">موعد الفحص القادم: '+esc(F.mobNext)+'</div>';
+      if((sn.reports||[]).length)h+='<h3>البلاغات في هذه الجولة</h3><div>'+sn.reports.map(esc).join('، ')+'</div>';
+      b.querySelector('.rb').innerHTML=h;
+    }).catch(function(e){b.querySelector('.rb').innerHTML='<div class="m">تعذّر التحميل ('+esc(e.message)+').</div>';});
+  }
+  document.addEventListener('click',function(e){
+    var t=e.target.closest('[data-rounds]'); if(t){list();return;}
+    var c=e.target.closest('#ipaRounds [data-rid]'); if(c){one(c.dataset.rid);return;}
+    var a=e.target.closest('#ipaRounds [data-rb]'); if(a){if(a.dataset.rb==='close')box().hidden=true;else list();}
+  });
+  /* على الحاسب: زر فوق سجل الملاحظات */
+  var lw=g('logWrap'); if(lw&&!g('roundsDesk')){var d=document.createElement('button');d.type='button';d.id='roundsDesk';d.className='btn btn-gh';d.dataset.rounds='1';d.textContent='الجولات السابقة — سجل السلامة';lw.parentNode.insertBefore(d,lw);}
+  window.ipaRounds={list:list,one:one};
 })();
 </script>
 </body>
