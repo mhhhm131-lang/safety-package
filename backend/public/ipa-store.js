@@ -158,16 +158,28 @@
   if (Object.keys(stillPending).length) { Object.keys(stillPending).forEach(function (k) { queue(k, stillPending[k].op === 'del'); }); }
 
   /* ---------- ٢) اعتراض الكتابة ---------- */
-  LS.setItem = function (k, v) {
+  /* على نموذج Storage لا على localStorage نفسه: في سفاري الإسناد `localStorage.setItem = fn` لا يستبدل الدالة
+     بل يخزّن عنصراً اسمه "setItem" فلا يُرسل أي حفظ (ثبت بمحرك WebKit ٢٠٢٦-٠٩-١٤، قائم منذ المرحلة ٠).
+     sessionStorage وأي Storage آخر يمرّ إلى الدالة الأصلية كما هو. */
+  var SP = Storage.prototype;
+  var nativeSet = SP.setItem, nativeRemove = SP.removeItem, nativeClear = SP.clear;
+  /* ما خزّنه الإسناد القديم في سفاري: عناصر بأسماء الدوال قيمتها نص الدالة — تُحذف مرة */
+  ['setItem', 'removeItem', 'clear'].forEach(function (n) {
+    try { var sv = origGet(n); if (sv !== null && /^function\s*\(/.test(sv)) origRemove(n); } catch (e) {}
+  });
+  SP.setItem = function (k, v) {
+    if (this !== LS) return nativeSet.call(this, k, v);
     origSet(k, v);
     if (isKey(k)) queue(k);
   };
-  LS.removeItem = function (k) {
+  SP.removeItem = function (k) {
+    if (this !== LS) return nativeRemove.call(this, k);
     if (k === 'ipa-session') { origRemove(k); serverLogout(); return; }
     origRemove(k);
     if (isKey(k)) queue(k, true);
   };
-  LS.clear = function () {
+  SP.clear = function () {
+    if (this !== LS) return nativeClear.call(this);
     var keys = [];
     for (var j = 0; j < LS.length; j++) keys.push(LS.key(j));
     keys.forEach(function (k) { LS.removeItem(k); });
