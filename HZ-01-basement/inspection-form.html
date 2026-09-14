@@ -2057,10 +2057,14 @@ DIRTY=false;
     setInterval(saveStatus,1000);
     return true;
   }
+  /* اسم الفاحص (الأمر ٣): من يؤشّر البنود فعلاً هو الفني والمكتب الاستشاري (lockByRole) */
+  function sessionName(){try{var s=JSON.parse(localStorage.getItem('ipa-session'));return (s&&s.n)||'';}catch(e){return '';}}
+  function isMarker(){var r=(typeof ROLE!=='undefined')?ROLE:'';return r==='tech'||r==='cons';}
+  function roundEmpty(){return !((typeof MARKS!=='undefined')&&Object.keys(MARKS).some(function(k){return MARKS[k];}));}
   function bindS1(){
     bindText(g('loc'),g('mobLoc'));
     var n=g('insN'), nn=g('mobInsN');
-    if(n&&nn){ if(!n.value){try{var s=JSON.parse(localStorage.getItem('ipa-session'));if(s&&s.n){n.value=s.n;}}catch(e){}} bindText(n,nn); }
+    if(n&&nn){ if(isMarker()&&(!n.value||roundEmpty())){var nm=sessionName();if(nm)n.value=nm;} bindText(n,nn); }
     var f=g('freq'), ff=g('mobFreq');
     if(f&&ff){ff.innerHTML=f.innerHTML;ff.value=f.value;if(!ff.dataset.bound){ff.dataset.bound='1';ff.addEventListener('change',function(){f.value=ff.value;fire(f,'change');});}}
     var a=g('ackIns'), aa=g('mobAck');
@@ -2198,6 +2202,11 @@ DIRTY=false;
   if(typeof window.render==='function'){var _render=window.render;window.render=function(k){var r=_render.apply(this,arguments);if(KEY!==k){KEY=k;MI=0;}if(build()){applyStation();sched();var s1=g('mobS1sub');if(s1){var t=document.querySelector('nav.bar .tab[aria-selected="true"]');s1.textContent=(t?t.textContent.trim():'')+' · '+(g('dtRound').value?AR(g('dtRound').value):'جولة جديدة');}var L=(typeof ROUNDS!=='undefined')?ROUNDS[k]:null,last=L&&L.length?L[L.length-1]:null,lc=g('mobLast');if(lc){lc.hidden=!last;if(last)g('mobLastTxt').textContent=AR(last.d)+' · '+last.tot+' بنداً · '+last.ok+' مطابق · '+last.no+' غير مطابق'+(last.na?' · '+last.na+' لا ينطبق':'');}}return r;};}
   if(typeof window.paintRow==='function'){var _paint=window.paintRow;window.paintRow=function(){var r=_paint.apply(this,arguments);sched();return r;};}
   if(typeof window.lockByRole==='function'){var _lock=window.lockByRole;window.lockByRole=function(){var r=_lock.apply(this,arguments);if(built){bindS1();}sched();return r;};}
+  /* جولة جديدة تبدأ بأول تأشير بعد «جولة جديدة»: اسم الفاحص يصير اسم من يؤشّر */
+  if(typeof window.startRound==='function'){var _sr=window.startRound;window.startRound=function(){
+    var dt=g('dtRound'), fresh=!(dt&&dt.value); var r=_sr.apply(this,arguments);
+    if(fresh&&isMarker()){var nm=sessionName(),n=g('insN'),nn=g('mobInsN');if(nm&&n){n.value=nm;if(nn)nn.value=nm;}}
+    return r;};}
   if(typeof window.renderLog==='function'){var _rl=window.renderLog;window.renderLog=function(){var r=_rl.apply(this,arguments);sched();return r;};}
   /* شريط بلاغات الشاغلين يُعاد رسمه بنفسه: تُفصَل جملة الإرشاد الطويلة عن الرأس ليبقى سطراً واحداً، ثم تُطبَّق المحطة */
   if(typeof window.drawOcc==='function'){var _dw=window.drawOcc;window.drawOcc=function(){
