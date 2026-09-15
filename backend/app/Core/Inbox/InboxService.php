@@ -18,6 +18,7 @@ class InboxService
         \App\Modules\Risk\Inbox\RiskTasks::class,
         \App\Modules\Permit\Inbox\PermitTasks::class,
         \App\Modules\Emergency\Inbox\EmergencyTasks::class,
+        \App\Modules\Emergency\Inbox\TeamGapTasks::class,
         \App\Modules\Project\Inbox\ContractorTasks::class,
         \App\Modules\Store\Inbox\InspectionReportTasks::class,
     ];
