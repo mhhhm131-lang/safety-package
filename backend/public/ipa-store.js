@@ -137,7 +137,8 @@
 
   var cur = null;
   try { cur = JSON.parse(origGet('ipa-session')); } catch (e) {}
-  var s = { u: res.session.u, r: res.session.r, n: res.session.n, at: Date.now() };
+  /* المرحلة ١٥-٦: role = الدور نفسه (لا دور الواجهة) — اللوحة تحتاجه لاعتماد فريق الفعالية برئيس الأمن والسلامة */
+  var s = { u: res.session.u, r: res.session.r, role: res.session.role || '', n: res.session.n, at: Date.now() };
   if (res.session.d) s.d = res.session.d; else if (cur && cur.d) s.d = cur.d;
   origSet('ipa-session', JSON.stringify(s));
   window.ipaStore.status = 'ok';

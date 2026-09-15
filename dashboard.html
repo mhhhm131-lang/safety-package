@@ -437,7 +437,7 @@ const EN=s=>String(s||'').replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 /* ================= الدخول ================= */
-let ROLE='',USER='',DEPT='';
+let ROLE='',USER='',DEPT='',ROLE_KEY='';
 function doLogin(){
   const u=($('uu').value||'').trim().toLowerCase(),p=$('pp').value,U=USERS[u];
   if(!U||U.p!==p){$('lerr').textContent='اسم المستخدم أو كلمة المرور غير صحيحة';return;}
@@ -449,7 +449,7 @@ function enter(u){
   $('lerr').textContent='';$('login').classList.add('off');
   $('uRole').textContent=U.n;$('uHint').textContent=U.h;
   let s={};try{s=JSON.parse(localStorage.getItem(SESSION))||{}}catch(e){}
-  DEPT=(ROLE==='dept'&&s.d&&deptById(s.d))?s.d:'';
+  DEPT=(ROLE==='dept'&&s.d&&deptById(s.d))?s.d:'';ROLE_KEY=s.role||'';
   load();
   if(ROLE==='dept'&&!DEPT)openDeptPick();
 }
@@ -948,16 +948,17 @@ function readiness(hz,S){
   const states=[].concat(...units.map(un=>{const u=unitGet(p,un.uid);return Array.from({length:teamsNeeded(u)},(_,k)=>unitState(teamPeek(u,k)));}));
   const need=states.length,byDept=need===units.length;
   const okN=states.filter(s=>s==='appr'||s==='hr').length,nomN=states.filter(s=>s==='nom').length;
-  let t4;const rows=hz===HUB||units.length>1,multi=rows||need>1;
-  if(multi)t4={cls:!units.length?'bad':(okN===need?'ok':(okN||nomN?'warn':'bad')),v:byDept?AR(okN)+' من '+AR(units.length)+' إدارة لها فريق معتمد':AR(okN)+' من '+AR(need)+' فريق معتمد',d:(nomN?AR(nomN)+' مرشَّح بانتظار الاعتماد · ':'')+(byDept?'فريق لكل إدارة تشغل المكان':'فريق لكل '+AR(PER_TEAM)+' موظفاً')};
+  let t4;const halls=hz===HALLS,rows=hz===HUB||units.length>1,multi=rows||need>1;
+  if(halls)t4=eventsCard(p);
+  else if(multi)t4={cls:!units.length?'bad':(okN===need?'ok':(okN||nomN?'warn':'bad')),v:byDept?AR(okN)+' من '+AR(units.length)+' إدارة لها فريق معتمد':AR(okN)+' من '+AR(need)+' فريق معتمد',d:(nomN?AR(nomN)+' مرشَّح بانتظار الاعتماد · ':'')+(byDept?'فريق لكل إدارة تشغل المكان':'فريق لكل '+AR(PER_TEAM)+' موظفاً')};
   else{const u=unitGet(p,units[0].uid),st=unitState(u);t4={cls:UST[st][0],v:UST[st][1],d:AR(u.team.filter(t=>t&&t.name).length)+' من ٤ أدوار بأسماء'+(u.nom.by?' · ترشيح: '+esc(u.nom.by):'')};}
   const C=[
     {l:'خطة السلامة',cls:pl.sa?'ok':'bad',v:pl.sa?'معتمدة':'غير معتمدة',d:pl.sa?'بتاريخ '+fmtD(pl.sa)+(pl.saBy?' · '+esc(pl.saBy):''):'تُعتمد بقرار الإدارة العليا'},
     {l:'خطة الاستجابة',cls:!pl.ra?'bad':(drillD===null||drillD>365?'warn':'ok'),v:!pl.ra?'غير معتمدة':(drillD===null?'معتمدة — بلا تمرين':(drillD>365?'معتمدة — التمرين قديم':'معتمدة ومُمرَّنة')),d:(pl.ra?'اعتُمدت '+fmtD(pl.ra):'')+(pl.drill?' · آخر تمرين '+fmtD(pl.drill):' · لم يُنفَّذ تمرين')},
     {l:'نماذج الفحص',cls:!S.length?'bad':(inspOk===S.length?'ok':'warn'),v:!S.length?'لم تُفعَّل':AR(inspOk)+' من '+AR(S.length)+' في موعده',d:S.length?'تُحسب تلقائياً من سجل الجولات':'افتح النموذج وسجّل أول جولة'},
-    Object.assign({l:multi?'الفرق الأولية':'الفريق الأولي'},t4)
+    Object.assign({l:halls?'فرق الفعاليات':(multi?'الفرق الأولية':'الفريق الأولي')},t4)
   ];
-  const teams=rows
+  const teams=halls?eventsBlock(hz,p):rows
     ?`<div class="h" style="margin-top:14px"><h2>الفرق الأولية بحسب الإدارة</h2><span class="cnt">${AR(units.length)}</span><em>كل إدارة ترشّح فريقها الأربعة، وفريقاً لكل ${AR(PER_TEAM)} موظفاً · <a href="#depts" style="color:var(--gold2)">الإدارات والهيكل</a></em></div>${units.map(un=>unitRow(hz,un,unitGet(p,un.uid))).join('')||'<div class="empty">لا إدارات مسجّلة في هذا المكان</div>'}`
     :unitFull(hz,units[0],unitGet(p,units[0].uid));
   return `<div class="h"><h2>الجاهزية</h2><em>الخطتان والفحص والفريق — ما فُعّل فعلاً لا ما وُثّق</em>${canPlans()?`<button class="editl" onclick="openPlansEdit('${hz}')">تحرير الخطتين</button>`:''}</div>
@@ -1016,6 +1017,74 @@ function saveUnit(hz,uid,k){
   setStaff(unit,v('e_staff'));
   placeSave(hz,p);closePlaceEdit();load();
 }
+/* ===== المرحلة ١٥-٦ (قرار ٤٣): القاعات — المحاضر منسق ومسعف لقاعته (بطاقة ٦)، والأمن القريب منقذ وإطفائي (بطاقة ٥)؛
+   والفعاليات الكبرى فريق يُكلَّف قبل كل فعالية: إدارة القاعات ترشّحه ورئيس الأمن والسلامة يعتمده، وينتهي بانتهاء تاريخها ===== */
+const HALLS='HZ-07';
+function evAll(p){p.events=Array.isArray(p.events)?p.events:[];p.events.forEach(e=>{e.team=Array.isArray(e.team)?e.team:[];e.nom=e.nom||{};e.appr=e.appr||{};});return p.events;}
+const canEvents=()=>canPlans()||(ROLE==='dept'&&!!DEPT&&(deptById(DEPT)||{}).place===HALLS);
+const canApproveEvent=()=>canPlans()||ROLE_KEY==='security_safety_head';
+function eventsCard(p){
+  const up=evAll(p).filter(e=>!e.date||e.date>=today()),ok=up.filter(e=>e.appr.date).length;
+  return {l:'فرق الفعاليات',cls:!up.length?'warn':(ok===up.length?'ok':'warn'),
+    v:!up.length?'لا فعالية قادمة مسجّلة':AR(ok)+' من '+AR(up.length)+' فعالية قادمة بفريق معتمد',
+    d:'المحاضر منسق ومسعف لقاعته · الأمن المكلّف منقذ وإطفائي'};
+}
+function eventRow(hz,e,i){
+  const past=!!(e.date&&e.date<today()),st=e.appr.date?['ok','معتمد']:(e.nom.date?['warn','مرشَّح — بانتظار اعتماد رئيس الأمن والسلامة']:['bad','لم يُرشَّح']);
+  const named=e.team.filter(t=>t&&t.name).length,cls=past?'bad':st[0];
+  return `<div class="urow ${cls}"><div class="un">${esc(e.name||'فعالية بلا اسم')}<small>${e.date?fmtD(e.date):'بلا تاريخ'}${past?' · انتهت':''}${e.nom.by?' · كلّفها '+esc(e.nom.by):''}${e.appr.date?' · اعتُمد '+fmtD(e.appr.date):''}</small></div>
+    <span class="tag t-${past?'dim':(cls==='ok'?'grn':(cls==='warn'?'amb':'dim'))}">${past?'منتهية':st[1]}</span>
+    <div class="names">${TEAM.map((r,j)=>{const t=e.team[j]||{};return `${r}: ${t.name?'<b>'+esc(t.name)+'</b>':'<i>—</i>'}`}).join(' · ')}${named&&named<4?` <span style="color:var(--amber)">(${AR(named)} من ٤)</span>`:''}</div>
+    <div class="acts">${canEvents()?`<button onclick="openEventEdit('${hz}',${i})">تعديل</button>`:''}${(!e.appr.date&&e.nom.date&&canApproveEvent())?`<button class="main" onclick="approveEvent('${hz}',${i})">اعتماد</button>`:''}${canEvents()?`<button onclick="deleteEvent('${hz}',${i})">حذف</button>`:''}</div></div>`;
+}
+function eventsBlock(hz,p){
+  const ev=evAll(p).map((e,i)=>({e,i})),up=ev.filter(x=>!x.e.date||x.e.date>=today()),past=ev.filter(x=>x.e.date&&x.e.date<today());
+  return `<div class="panel" style="margin-top:14px;padding:12px 14px"><b style="color:var(--gold2)">قاعدة القاعات</b>
+      <div style="font-size:12px;color:var(--muted);line-height:1.9;margin-top:4px">المحاضر منسق ومسعف لقاعته (بطاقة ٦) · أفراد الأمن القريبون منقذ وإطفائي للقاعات (بطاقة ٥) — لا ترشيح أسماء لكل قاعة.<br>
+      وفي الفعاليات الكبرى فريق يُكلَّف قبل كل فعالية: إدارة القاعات ترشّحه، ورئيس الأمن والسلامة يعتمده.</div></div>
+    <div class="h" style="margin-top:14px"><h2>فرق الفعاليات</h2><span class="cnt">${AR(up.length)}</span><em>القادمة${past.length?' · و'+AR(past.length)+' منتهية':''}</em>${canEvents()?`<button class="editl" onclick="openEventEdit('${hz}',-1)">فعالية جديدة</button>`:''}</div>
+    ${up.length?up.map(x=>eventRow(hz,x.e,x.i)).join(''):'<div class="empty">لا فعالية قادمة مسجّلة</div>'}${past.map(x=>eventRow(hz,x.e,x.i)).join('')}`;
+}
+function openEventEdit(hz,i){
+  if(!canEvents())return;
+  const p=placeGet(hz),ev=evAll(p),e=i>=0?ev[i]:{name:'',date:today(),team:[],nom:{},appr:{}};
+  const inp=(id,v,type,ph)=>`<input id="${id}" type="${type||'text'}" value="${esc(v||'')}"${ph?' placeholder="'+ph+'"':''}>`;
+  $('pmb').innerHTML=`<h2>فريق فعالية — ${esc(placeName(hz))}</h2><div class="sub">${hz} · ترشيح إدارة القاعات ← اعتماد رئيس الأمن والسلامة · الفريق ليوم الفعالية</div>
+    <div class="fg">
+      <div><label>اسم الفعالية</label>${inp('e_evName',e.name,'text','حفل التخرج')}</div>
+      <div><label>تاريخها</label>${inp('e_evDate',e.date,'date')}</div>
+      <div><label>المكلِّف</label>${inp('e_evBy',e.nom.by,'text','إدارة القاعات')}</div>
+    </div>
+    <h3>أربعة أدوار</h3>
+    <div class="trow" style="margin-bottom:0"><span></span><label>الاسم</label><label>الحساب (اسم الدخول)</label><label>الإدارة / القسم</label><label>الهاتف</label><label></label></div>
+    ${TEAM.map((r,j)=>{const t=e.team[j]||{};return `<div class="trow"><span class="r">${r}</span>${inp('v_n'+j,t.name)}${inp('v_u'+j,t.user,'text','اختياري').replace('<input','<input list="teamAccts" autocomplete="off"')}${inp('v_d'+j,t.dept)}${inp('v_p'+j,t.phone,'tel')}<span></span></div>`}).join('')}
+    <div class="pmf"><button class="btn btn-main" onclick="saveEvent('${hz}',${i})">حفظ</button><button class="btn btn-gh" onclick="closePlaceEdit()">إلغاء</button><span class="hint">${e.appr.date?'تعديل الأسماء يُلغي الاعتماد':'بعد الحفظ يظهر لرئيس الأمن والسلامة لاعتماده'}</span></div><datalist id="teamAccts"></datalist>`;
+  $('pm').classList.add('on');loadTeamAccounts();
+}
+function saveEvent(hz,i){
+  const p=placeGet(hz),ev=evAll(p),v=id=>($(id).value||'').trim();
+  const team=TEAM.map((r,j)=>({role:r,name:v('v_n'+j),user:v('v_u'+j).toLowerCase(),dept:v('v_d'+j),phone:v('v_p'+j)}));
+  const e=i>=0?ev[i]:{team:[],nom:{},appr:{}};
+  if(e.appr.date&&JSON.stringify(team.map(t=>t.name))!==JSON.stringify(e.team.map(t=>t&&t.name||'')))e.appr={};
+  e.name=v('e_evName');e.date=v('e_evDate');e.team=team;
+  e.nom=team.some(t=>t.name)?{by:v('e_evBy'),date:(e.nom&&e.nom.date)||today()}:{};
+  if(i<0)ev.push(e);
+  placeSave(hz,p);closePlaceEdit();load();
+}
+function approveEvent(hz,i){
+  if(!canApproveEvent())return;
+  const p=placeGet(hz),e=evAll(p)[i];if(!e)return;
+  if(!e.team.filter(t=>t&&t.name).length){alert('لا أسماء في الترشيح');return;}
+  if(!confirm('اعتماد فريق فعالية «'+(e.name||'')+'»؟'))return;
+  e.appr={by:'رئيس الأمن والسلامة',date:today()};placeSave(hz,p);load();
+}
+function deleteEvent(hz,i){
+  if(!canEvents())return;
+  const p=placeGet(hz),ev=evAll(p),e=ev[i];if(!e)return;
+  if(!confirm('حذف فعالية «'+(e.name||'')+'» وفريقها؟'))return;
+  ev.splice(i,1);placeSave(hz,p);load();
+}
+
 /* المرحلة ١٥-٤: اقتراح الحسابات بجانب الاسم (اسم الدخول يربط العضو بحسابه فيُنبَّه بخطوته في مكانه) */
 let TEAM_ACCTS=null;
 function loadTeamAccounts(){
