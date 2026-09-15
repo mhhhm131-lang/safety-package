@@ -1022,7 +1022,8 @@ function saveUnit(hz,uid,k){
 const HALLS='HZ-07';
 function evAll(p){p.events=Array.isArray(p.events)?p.events:[];p.events.forEach(e=>{e.team=Array.isArray(e.team)?e.team:[];e.nom=e.nom||{};e.appr=e.appr||{};});return p.events;}
 const canEvents=()=>canPlans()||(ROLE==='dept'&&!!DEPT&&(deptById(DEPT)||{}).place===HALLS);
-const canApproveEvent=()=>canPlans()||ROLE_KEY==='security_safety_head';
+/* الاعتماد لرئيس الأمن والسلامة وحده، كما في الوثيقة (قرار ٤٣) — مسؤول السلامة والشؤون يريان ولا يعتمدان */
+const canApproveEvent=()=>ROLE_KEY==='security_safety_head';
 function eventsCard(p){
   const up=evAll(p).filter(e=>!e.date||e.date>=today()),ok=up.filter(e=>e.appr.date).length;
   return {l:'فرق الفعاليات',cls:!up.length?'warn':(ok===up.length?'ok':'warn'),
@@ -1032,7 +1033,7 @@ function eventsCard(p){
 function eventRow(hz,e,i){
   const past=!!(e.date&&e.date<today()),st=e.appr.date?['ok','معتمد']:(e.nom.date?['warn','مرشَّح — بانتظار اعتماد رئيس الأمن والسلامة']:['bad','لم يُرشَّح']);
   const named=e.team.filter(t=>t&&t.name).length,cls=past?'bad':st[0];
-  return `<div class="urow ${cls}"><div class="un">${esc(e.name||'فعالية بلا اسم')}<small>${e.date?fmtD(e.date):'بلا تاريخ'}${past?' · انتهت':''}${e.nom.by?' · كلّفها '+esc(e.nom.by):''}${e.appr.date?' · اعتُمد '+fmtD(e.appr.date):''}</small></div>
+  return `<div class="urow ${cls}"><div class="un">${esc(e.name||'فعالية بلا اسم')}<small>${e.date?fmtD(e.date):'بلا تاريخ'}${past?' · انتهت':''}${e.nom.by?' · كلّفها '+esc(e.nom.by):''}${e.appr.date?' · اعتمده '+esc(e.appr.by||'')+' '+fmtD(e.appr.date):''}</small></div>
     <span class="tag t-${past?'dim':(cls==='ok'?'grn':(cls==='warn'?'amb':'dim'))}">${past?'منتهية':st[1]}</span>
     <div class="names">${TEAM.map((r,j)=>{const t=e.team[j]||{};return `${r}: ${t.name?'<b>'+esc(t.name)+'</b>':'<i>—</i>'}`}).join(' · ')}${named&&named<4?` <span style="color:var(--amber)">(${AR(named)} من ٤)</span>`:''}</div>
     <div class="acts">${canEvents()?`<button onclick="openEventEdit('${hz}',${i})">تعديل</button>`:''}${(!e.appr.date&&e.nom.date&&canApproveEvent())?`<button class="main" onclick="approveEvent('${hz}',${i})">اعتماد</button>`:''}${canEvents()?`<button onclick="deleteEvent('${hz}',${i})">حذف</button>`:''}</div></div>`;
@@ -1076,7 +1077,7 @@ function approveEvent(hz,i){
   const p=placeGet(hz),e=evAll(p)[i];if(!e)return;
   if(!e.team.filter(t=>t&&t.name).length){alert('لا أسماء في الترشيح');return;}
   if(!confirm('اعتماد فريق فعالية «'+(e.name||'')+'»؟'))return;
-  e.appr={by:'رئيس الأمن والسلامة',date:today()};placeSave(hz,p);load();
+  e.appr={by:(USERS[USER]&&USERS[USER].n)||USER||'رئيس الأمن والسلامة',date:today()};placeSave(hz,p);load();
 }
 function deleteEvent(hz,i){
   if(!canEvents())return;

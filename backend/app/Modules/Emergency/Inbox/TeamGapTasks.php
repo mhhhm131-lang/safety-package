@@ -57,7 +57,7 @@ class TeamGapTasks implements TaskSource
                     key: 'team-gap:'.$hz.':'.$uid,
                     module: 'الفرق الأولية',
                     question: $label.' في '.$places[$hz]->name.': '.$this->ar($staff).' موظفاً تحتاج '.$this->word($need)
-                        .' — الجاهز: '.($ready ? $this->word($ready) : 'لا فريق'),
+                        .' — المعتمد: '.($ready ? $this->word($ready) : 'لا فريق'),
                     primary: ['label' => 'افتح ملف المكان', 'url' => '/dashboard.html#place='.$hz],
                     place: $hz.' '.$places[$hz]->name,
                     detailsUrl: '/dashboard.html#place='.$hz,
@@ -67,17 +67,13 @@ class TeamGapTasks implements TaskSource
         return $out;
     }
 
-    /** الفريق الجاهز: أدواره الأربعة بأسماء (الأول في جذر الوحدة، والباقي في more) */
+    /** الفريق المعتمد: اعتُمد أو أُحيل للموارد البشرية — كما تعدّه اللوحة (unitState appr/hr)؛ الأول في جذر الوحدة والباقي في more */
     private function readyTeams(array $u): int
     {
         $teams = array_merge([$u], array_values(array_filter((array) ($u['more'] ?? []), 'is_array')));
         $ready = 0;
         foreach ($teams as $t) {
-            $named = 0;
-            foreach ((array) ($t['team'] ?? []) as $r) {
-                if (is_array($r) && trim((string) ($r['name'] ?? '')) !== '') $named++;
-            }
-            if ($named >= 4) $ready++;
+            if (!empty($t['appr']['date']) || !empty($t['hr']['date'])) $ready++;
         }
         return $ready;
     }

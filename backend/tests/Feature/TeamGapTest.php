@@ -62,33 +62,38 @@ class TeamGapTest extends TestCase
         $otherMudir = $this->user('mudir2', 'department_manager', $this->other->id);
         $employee = $this->user('emp', 'employee');
 
-        // ٣٠ موظفاً وفريق واحد جاهز ← ينقص فريق
-        $this->doc(['staff' => 30, 'team' => $this->team('أول'), 'nom' => ['by' => 'م', 'dept' => $this->unit->code, 'date' => '2026-09-01'], 'appr' => [], 'hr' => []]);
+        $nom = ['by' => 'م', 'dept' => $this->unit->code, 'date' => '2026-09-01'];
+        $appr = ['by' => 'مدير الشؤون', 'date' => '2026-09-02'];
+
+        // ٣٠ موظفاً وفريق واحد مرشَّح غير معتمد ← ينقص فريقان، والمعتمد لا فريق (كما تعدّ اللوحة: المعتمد وحده)
+        $this->doc(['staff' => 30, 'team' => $this->team('أول'), 'nom' => $nom, 'appr' => [], 'hr' => []]);
         foreach ([$salama, $mudir] as $u) {
             $q = $this->questions($u);
             $this->assertCount(1, $q, 'لا مهمة نقص فريق');
             $this->assertStringContainsString($this->unit->name, $q[0]);
             $this->assertStringContainsString('٣٠', $q[0]);
             $this->assertStringContainsString('فريقين', $q[0]);
+            $this->assertStringContainsString('المعتمد: لا فريق', $q[0]);
         }
         $this->assertSame([], $this->questions($otherMudir), 'مدير إدارة أخرى يرى نقص غيره');
         $this->assertSame([], $this->questions($employee));
         $this->actingAs($mudir)->get('/app')->assertOk()->assertSee('الفرق الأولية');
 
-        // فريق ثانٍ جاهز ← تختفي
-        $this->doc(['staff' => 30, 'team' => $this->team('أول'), 'nom' => ['by' => 'م', 'dept' => $this->unit->code, 'date' => '2026-09-01'], 'appr' => [], 'hr' => [],
-            'more' => [['team' => $this->team('ثانٍ'), 'nom' => ['by' => 'م', 'dept' => $this->unit->code, 'date' => '2026-09-02'], 'appr' => [], 'hr' => []]]]);
-        $this->assertSame([], $this->questions($salama), 'اكتمل العدد والمهمة باقية');
+        // الأول معتمد والثاني مرشَّح ← المعتمد فريق واحد
+        $this->doc(['staff' => 30, 'team' => $this->team('أول'), 'nom' => $nom, 'appr' => $appr, 'hr' => [],
+            'more' => [['team' => $this->team('ثانٍ'), 'nom' => $nom, 'appr' => [], 'hr' => []]]]);
+        $this->assertStringContainsString('المعتمد: فريق واحد', $this->questions($salama)[0]);
 
-        // ٢٥ موظفاً بفريق واحد ← لا نقص؛ و٦٠ بفريق واحد ← ينقص فريقان
-        $this->doc(['staff' => 25, 'team' => $this->team('أول'), 'nom' => ['by' => 'م', 'dept' => $this->unit->code, 'date' => '2026-09-01'], 'appr' => [], 'hr' => []]);
+        // الثاني معتمد أيضاً (أو مُحال للموارد البشرية) ← تختفي
+        $this->doc(['staff' => 30, 'team' => $this->team('أول'), 'nom' => $nom, 'appr' => $appr, 'hr' => ['date' => '2026-09-03'],
+            'more' => [['team' => $this->team('ثانٍ'), 'nom' => $nom, 'appr' => $appr, 'hr' => []]]]);
+        $this->assertSame([], $this->questions($salama), 'اكتمل العدد المعتمد والمهمة باقية');
+
+        // ٢٥ موظفاً بفريق معتمد ← لا نقص؛ و٦٠ بفريق معتمد ← «ثلاثة فرق»
+        $this->doc(['staff' => 25, 'team' => $this->team('أول'), 'nom' => $nom, 'appr' => $appr, 'hr' => []]);
         $this->assertSame([], $this->questions($salama));
-        $this->doc(['staff' => 60, 'team' => $this->team('أول'), 'nom' => ['by' => 'م', 'dept' => $this->unit->code, 'date' => '2026-09-01'], 'appr' => [], 'hr' => []]);
+        $this->doc(['staff' => 60, 'team' => $this->team('أول'), 'nom' => $nom, 'appr' => $appr, 'hr' => []]);
         $this->assertStringContainsString('ثلاثة فرق', $this->questions($salama)[0]);
-
-        // فريق ناقص الأسماء لا يُعدّ جاهزاً
-        $this->doc(['staff' => 25, 'team' => $this->team('أول', 3), 'nom' => ['by' => 'م', 'dept' => $this->unit->code, 'date' => '2026-09-01'], 'appr' => [], 'hr' => []]);
-        $this->assertStringContainsString('الجاهز: لا فريق', $this->questions($salama)[0]);
     }
 
     public function test_no_staff_recorded_means_no_task(): void
