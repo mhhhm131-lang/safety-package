@@ -187,6 +187,28 @@ body {
   transform: translateX(-6px);
 }
 
+/* بلاغ الخطر: لأي شاغل بلا دخول */
+.enter-btn.report {
+  background: linear-gradient(135deg, #9b1c1c 0%, #7a1414 100%);
+  color: #fff;
+  box-shadow: 0 8px 32px rgba(155,28,28,0.3);
+  margin-inline-start: 12px;
+}
+
+.enter-btn.report:hover {
+  box-shadow: 0 12px 40px rgba(155,28,28,0.4);
+}
+
+/* الوثائق: مفتوحة للجميع */
+.enter-link {
+  display: block;
+  margin-top: 18px;
+  color: rgba(255,255,255,0.85);
+  font-size: 15px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
 /* الخلفية المتحركة */
 .bg-glow {
   position: fixed;
@@ -276,6 +298,36 @@ body {
     width: 100%;
     max-width: 300px;
   }
+
+  /* الجوال: النص نفسه بحجم يترك المخارج الثلاثة ظاهرة بلا تمرير (iPhone 13) */
+  .vision-main {
+    font-size: 21px !important;
+    line-height: 1.7 !important;
+  }
+
+  .vision-main br {
+    display: none;
+  }
+
+  .logo-section {
+    margin-bottom: 20px;
+  }
+
+  .vision-text {
+    margin-bottom: 24px;
+  }
+
+  .enter-btn {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    padding: 16px 24px;
+    font-size: 17px;
+  }
+
+  .enter-btn.report {
+    margin: 12px 0 0;
+  }
 }
 
 @media print {
@@ -315,12 +367,17 @@ body {
       </h1>
     </div>
 
-    <!-- زر الدخول -->
+    <!-- المخارج الثلاثة (المرحلة ١٧ «باب واحد»): دخول المنظومة · بلاغ خطر بلا دخول · الوثائق -->
     <div class="enter-section">
-      <a href="index.html" class="enter-btn">
+      <a href="/login" class="enter-btn">
         <span>الدخول للمنظومة</span>
         <span class="arrow">←</span>
       </a>
+      <a href="/incident" class="enter-btn report">
+        <span>أبلغ عن خطر</span>
+        <span class="arrow">←</span>
+      </a>
+      <a href="index.html" class="enter-link">الوثائق — السياسة والخطط والبطاقات</a>
     </div>
 
   </div>

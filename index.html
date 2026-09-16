@@ -398,7 +398,7 @@ body {
       <div class="pulse" id="pulse"></div>
       <div class="pulse" id="sess" style="display:none"><span>مسجّل الدخول الآن: <b id="sessRole"></b></span><a href="#" id="sessOut" style="color:#fff;text-decoration:underline;font-weight:700">تسجيل الخروج ⎋</a></div>
     </div>
-    <a class="btn" id="enterBtn" href="dashboard.html">تسجيل الدخول ←</a>
+    <a class="btn" id="enterBtn" href="/login">تسجيل الدخول ←</a>
   </div>
 
   <div class="section">
@@ -780,7 +780,7 @@ body {
     const names={tech:'الفني المنفّذ',fm:'مدير المرافق والصيانة',adm:'مدير الشؤون الإدارية والهندسية',exec:'الإدارة العليا',safety:'مسؤول السلامة',cons:'المكتب الاستشاري'};
     document.getElementById('sessRole').textContent=names[s.r]||s.n||s.u;
     document.getElementById('sess').style.display='flex';
-    document.getElementById('enterBtn').textContent='فتح اللوحة ←';
+    document.getElementById('enterBtn').textContent='فتح اللوحة ←';document.getElementById('enterBtn').href='dashboard.html';
     document.getElementById('sessOut').addEventListener('click',e=>{e.preventDefault();try{localStorage.removeItem('ipa-session')}catch(x){}location.reload();});
   }
 })();
