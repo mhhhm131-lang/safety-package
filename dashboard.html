@@ -303,23 +303,11 @@ button{font-family:inherit}
 <div class="login" id="login">
   <div class="lbox">
     <div class="lseal">س</div>
-    <h1>تسجيل الدخول — العمل اليومي</h1>
+    <h1>العمل اليومي</h1>
     <p class="lsub">معهد الإدارة العامة — مبنى الملز · نماذج الفحص والبلاغات والتصعيد</p>
-    <div class="lwarn"><b>واجهة عرض.</b> الدخول هنا لتوضيح الأدوار فقط. في النظام الفعلي يدخل كل مستخدم بحسابه الوظيفي في المعهد، ويُشتق دوره من نظام الصلاحيات.</div>
-    <div class="lf"><label>اسم المستخدم</label><input type="text" id="uu" autocomplete="off" placeholder="salama"></div>
-    <div class="lf"><label>كلمة المرور</label><input type="password" id="pp" autocomplete="off" placeholder="1234"></div>
     <div id="lerr" class="lerr"></div>
-    <button class="btn btn-main" style="width:100%;margin-top:6px;padding:12px" onclick="doLogin()">دخول</button>
-    <table class="lusers"><thead><tr><th>الدور</th><th>اسم المستخدم</th><th>كلمة المرور</th></tr></thead><tbody>
-      <tr><td>الفني المنفّذ</td><td class="mono">fani</td><td class="mono">1234</td></tr>
-      <tr><td>مدير المرافق والصيانة</td><td class="mono">marafiq</td><td class="mono">1234</td></tr>
-      <tr><td>مدير الشؤون الإدارية والهندسية</td><td class="mono">shuon</td><td class="mono">1234</td></tr>
-      <tr><td>الإدارة العليا</td><td class="mono">idara</td><td class="mono">1234</td></tr>
-      <tr><td>مسؤول السلامة</td><td class="mono">salama</td><td class="mono">1234</td></tr>
-      <tr><td>المكتب الاستشاري</td><td class="mono">maktab</td><td class="mono">1234</td></tr>
-      <tr><td>مدير إدارة <span style="color:var(--dim)">(يختار إدارته بعد الدخول)</span></td><td class="mono">mudir</td><td class="mono">1234</td></tr>
-    </tbody></table>
-    <div class="lnote">بيانات الدخول معروضة عمداً — هذه واجهة عرض لا نظام مؤمَّن.</div>
+    <a class="btn btn-main" style="display:block;width:100%;margin-top:6px;padding:12px;text-align:center;text-decoration:none" href="/login">تسجيل الدخول بحساب المنظومة ←</a>
+    <div class="lnote">الدخول بحسابك في المنظومة، ويُشتق دورك من نظام الصلاحيات.</div>
     <a class="lback" href="index.html">→ العودة إلى المنظومة</a>
   </div>
 </div>
@@ -421,14 +409,15 @@ const FORMS=[
 const HZ_ORDER=['HZ-01','HZ-02','HZ-03','HZ-04','HZ-00','HZ-05','HZ-06','HZ-07','HZ-08'];
 const LNAME={1:'الفني المنفّذ',2:'مدير المرافق والصيانة',3:'مدير الشؤون الإدارية والهندسية',4:'الإدارة العليا'};
 const LSHORT={1:'الفني',2:'المرافق والصيانة',3:'الشؤون الإدارية',4:'الإدارة العليا'};
+/* أسماء الأدوار وتعريفها للعرض — لا كلمات مرور: الدخول من /login والدور من الخادم (المرحلة ١٦، الدفعة ١) */
 const USERS={
- fani:{p:'1234',r:'tech',n:'الفني المنفّذ',h:'يسجّل البلاغ ويرسله، ويقرر: أصلحتُ أم تعذّر'},
- marafiq:{p:'1234',r:'fm',n:'مدير المرافق والصيانة',h:'يقرر في المستوى الثاني: يوفّر المطلوب أو يصعّد'},
- shuon:{p:'1234',r:'adm',n:'مدير الشؤون الإدارية والهندسية',h:'يقرر في المستوى الثالث'},
- idara:{p:'1234',r:'exec',n:'الإدارة العليا',h:'القرار النهائي — وبإبلاغها يتحقق شرط المادة السابعة'},
- salama:{p:'1234',r:'safety',n:'مسؤول السلامة',h:'يراقب ويتابع ويوصي، ويصعّد رقابياً عند توقّف المسار'},
- maktab:{p:'1234',r:'cons',n:'المكتب الاستشاري',h:'يعتمد بنود الفحص والقراءات وقيمها المرجعية'},
- mudir:{p:'1234',r:'dept',n:'مدير إدارة',h:'يرشّح الفريق الأولي لإدارته، ويطّلع على خطط مكانه ونموذج فحصه'}
+ fani:{r:'tech',n:'الفني المنفّذ',h:'يسجّل البلاغ ويرسله، ويقرر: أصلحتُ أم تعذّر'},
+ marafiq:{r:'fm',n:'مدير المرافق والصيانة',h:'يقرر في المستوى الثاني: يوفّر المطلوب أو يصعّد'},
+ shuon:{r:'adm',n:'مدير الشؤون الإدارية والهندسية',h:'يقرر في المستوى الثالث'},
+ idara:{r:'exec',n:'الإدارة العليا',h:'القرار النهائي — وبإبلاغها يتحقق شرط المادة السابعة'},
+ salama:{r:'safety',n:'مسؤول السلامة',h:'يراقب ويتابع ويوصي، ويصعّد رقابياً عند توقّف المسار'},
+ maktab:{r:'cons',n:'المكتب الاستشاري',h:'يعتمد بنود الفحص والقراءات وقيمها المرجعية'},
+ mudir:{r:'dept',n:'مدير إدارة',h:'يرشّح الفريق الأولي لإدارته، ويطّلع على خطط مكانه ونموذج فحصه'}
 };
 const SESSION='ipa-session';
 const $=id=>document.getElementById(id);
@@ -438,12 +427,6 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;',
 
 /* ================= الدخول ================= */
 let ROLE='',USER='',DEPT='',ROLE_KEY='';
-function doLogin(){
-  const u=($('uu').value||'').trim().toLowerCase(),p=$('pp').value,U=USERS[u];
-  if(!U||U.p!==p){$('lerr').textContent='اسم المستخدم أو كلمة المرور غير صحيحة';return;}
-  try{localStorage.setItem(SESSION,JSON.stringify({u,r:U.r,n:U.n,at:Date.now()}))}catch(e){}
-  enter(u);
-}
 function enter(u){
   const U=USERS[u];ROLE=U.r;USER=u;
   $('lerr').textContent='';$('login').classList.add('off');
@@ -454,7 +437,6 @@ function enter(u){
   if(ROLE==='dept'&&!DEPT)openDeptPick();
 }
 function logout(){try{localStorage.removeItem(SESSION)}catch(e){}location.reload()}
-['uu','pp'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()}));
 
 /* ================= المهلة والتأخر — نفس حساب النماذج ================= */
 const DUE_H={'فوري':1,'٢٤ ساعة':24,'٧٢ ساعة':72};
@@ -1226,7 +1208,8 @@ window.addEventListener('focus',()=>{if(ROLE)load();});
 /* جلسة قائمة؟ */
 (function(){
   let s=null;try{s=JSON.parse(localStorage.getItem(SESSION))}catch(e){}
-  if(s&&s.r&&!USERS[s.u])USERS[s.u]={p:'',r:s.r,n:s.n||'',h:''}; /* حساب حقيقي من الخادم (المرحلة ١) */
+  /* دور الخادم هو المعتمد دائماً، ولو طابق اسمُ الحساب اسماً في قائمة العرض (المرحلة ١٦، الدفعة ١) */
+  if(s&&s.r){const D=USERS[s.u]||{};USERS[s.u]={r:s.r,n:s.n||D.n||'',h:D.h||''};}
   if(s&&USERS[s.u])enter(s.u);
 })();
 </script>
