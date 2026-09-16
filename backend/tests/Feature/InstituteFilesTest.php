@@ -36,6 +36,14 @@ class InstituteFilesTest extends TestCase
             'الجلسة ما زالت تُهمل دور الخادم حين يطابق الاسم حساباً تجريبياً');
     }
 
+    /** الدفعة ٢: لا مسار استيراد يستبدل بلاغات النماذج — الزر والمدخل والمعالج تُحذف معاً */
+    public function test_dashboard_has_no_file_import_path(): void
+    {
+        $html = $this->dashboard();
+        $this->assertStringNotContainsString('fpick', $html, 'مدخل الاستيراد أو معالجه ما زال في اللوحة');
+        $this->assertStringNotContainsString('استيراد جولات', $html);
+    }
+
     /** ما يجب ألا يُحذف: شاشة رسالة النظام ودوال الدخول بالجلسة */
     public function test_dashboard_keeps_system_gate_and_session_entry(): void
     {

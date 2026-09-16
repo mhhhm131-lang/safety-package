@@ -380,8 +380,6 @@ button{font-family:inherit}
   </div>
 
   <div class="tools">
-    <button class="btn btn-gh" onclick="$('fpick').click()" style="display:none">استيراد جولات من أجهزة أخرى</button>
-    <input type="file" id="fpick" accept=".json,.html" multiple hidden>
     <button class="btn btn-gh" onclick="load()">تحديث</button>
     <a class="btn btn-gh" href="#depts" style="text-decoration:none">الإدارات والهيكل</a>
     <span style="width:1px;height:22px;background:var(--line2)"></span>
@@ -1172,35 +1170,6 @@ function route(scroll){
   if(scroll===true)window.scrollTo({top:0});
 }
 window.addEventListener('hashchange',()=>route(true));
-
-/* ================= استيراد جولات من أجهزة أخرى ================= */
-$('fpick').addEventListener('change',e=>{
-  const files=[...e.target.files];e.target.value='';
-  let done=0,msgs=[];
-  files.forEach(f=>{
-    const rd=new FileReader();
-    rd.onload=()=>{
-      try{
-        let raw=rd.result,d=null;
-        if(/^\s*[{[]/.test(raw))d=JSON.parse(raw);
-        else{const m=raw.match(/<script id="SAVED"[^>]*>([\s\S]*?)<\/script>/);if(m)d=JSON.parse(m[1].replace(/\\u003c/g,'<'));}
-        if(d&&d.ipaOcc===1){const cur=occAll();let n=0;(d.reports||[]).forEach(o=>{if(!cur.reports.some(x=>x.id===o.id&&x.at===o.at)){o.dev=false;cur.reports.push(o);n++;}});occSave(cur);msgs.push('✓ بلاغات شاغلين من «'+f.name+'»: '+AR(n)+' جديد');return;}
-        if(!d||!Array.isArray(d.reports))throw 0;
-        const pre=(d.defs&&Object.keys(d.defs)[0]||d.sys||(d.reports[0]||{}).row||'').charAt(0);
-        const F=FORMS.find(x=>x.pre===pre);
-        if(!F)throw 0;
-        let cur=null;try{cur=JSON.parse(localStorage.getItem(F.key))}catch(e){}
-        if(cur&&cur.reports&&cur.reports.length&&JSON.stringify(cur)!==JSON.stringify(d)){
-          if(!confirm(`«${f.name}»\n\nيوجد على هذا الجهاز جولة سابقة لـ ${F.hz} ${F.name} فيها ${AR(cur.reports.length)} بلاغ.\nاستبدالها بالملف المستورد؟`)){msgs.push('تُرك: '+f.name);return;}
-        }
-        localStorage.setItem(F.key,JSON.stringify(d));
-        msgs.push('✓ '+F.hz+' '+F.name+' ('+F.lbl+'): '+AR(d.reports.length)+' بلاغ');
-      }catch(err){msgs.push('✕ تعذّر قراءة: '+f.name);}
-      finally{if(++done===files.length){load();alert(msgs.join('\n'));}}
-    };
-    rd.readAsText(f);
-  });
-});
 
 window.addEventListener('storage',e=>{if(ROLE&&e.key&&e.key.indexOf('ipa-')===0&&e.key!==SESSION)load();});
 window.addEventListener('focus',()=>{if(ROLE)load();});
