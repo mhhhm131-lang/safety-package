@@ -133,20 +133,20 @@ class IncidentServiceLifecycleTest extends TestCase
         $this->addEvidence($incident, $field->id);
         $this->service->resolve($incident->fresh(), $field->id, 'تم تنفيذ الإجراء التصحيحي وإغلاق الموقع');
 
-        // أول محاولة إغلاق → استثناء وتعليم pending_closure
-        try {
-            $this->closure->close($incident->fresh(), $admin->id);
-            $this->fail('should have thrown');
-        } catch (\InvalidArgumentException $e) {
-            $this->assertStringContainsString('موافقة المُبلِّغ', $e->getMessage());
-        }
+        // المرحلة ١٨-١ (أ، قرار ٤٦): أول «أغلق» = طلب موافقة المبلّغ، ينجح بلا استثناء ويعلّم pending_closure
+        $pending = $this->closure->close($incident->fresh(), $admin->id);
+        $this->assertSame('resolved', $pending->status);
         $this->assertTrue((bool) $incident->fresh()->pending_closure);
         $this->assertDatabaseHas('app_notifications', ['user_id' => $this->user->id, 'type' => 'incident.closure']);
+        // الطلب مرة ثانية لا يكرر الإشعار
+        $this->closure->close($incident->fresh(), $admin->id);
+        $this->assertSame(1, \App\Modules\Governance\Models\AppNotification::where('user_id', $this->user->id)->where('type', 'incident.closure')->count());
 
-        // المبلّغ يوافق → الإغلاق ينجح
-        $this->closure->approveClosure($incident->fresh(), $this->user->id);
-        $closed = $this->closure->close($incident->fresh(), $admin->id);
+        // المرحلة ١٨-١ (ب): المبلّغ يوافق → يُغلق وحده، باسم النظام
+        $closed = $this->closure->approveClosure($incident->fresh(), $this->user->id);
         $this->assertSame('closed', $closed->status);
+        $this->assertNotNull($closed->handled_at);
+        $this->assertDatabaseHas('incident_events', ['incident_id' => $incident->id, 'action' => 'close', 'actor_id' => null]);
         $this->assertSame(1, $risk->fresh()->incident_count);
     }
 
@@ -227,19 +227,25 @@ class IncidentServiceLifecycleTest extends TestCase
         $this->service->beginWork($incident, $field->id);
         $this->addEvidence($incident, $field->id);
         $this->service->resolve($incident->fresh(), $field->id, 'تم تنفيذ الإجراء التصحيحي وإغلاق الموقع');
-        // طلب الإغلاق من المركز يعلّم pending_closure، ثم يوافق المبلّغ — فتبقى بوابة الدور وحدها
-        try { $this->closure->close($incident->fresh(), $admin->id); } catch (\InvalidArgumentException $e) {}
-        $this->closure->approveClosure($incident->fresh(), $this->user->id);
-
+        // بوابة الدور وحدها: بلاغ سري (لا موافقة مبلّغ) بعد تحقق المنسق — الفني لا يملك «عولج ← مغلق»
+        // (١٨-١ ب: في البلاغ العادي موافقة المبلّغ تُغلق وحدها فلا يبقى ما يغلقه أحد)
+        $secret = $this->service->createSecretIncident(['title' => 'بلاغ سري', 'description' => 'd', 'risk_id' => $risk->id])['incident'];
+        $this->service->fieldReceive($secret, $field->id);
+        $this->service->beginWork($secret, $field->id);
+        $this->addEvidence($secret, $field->id);
+        $this->service->resolve($secret->fresh(), $field->id, 'تم تنفيذ الإجراء التصحيحي وإغلاق الموقع');
+        $this->closure->verifyByCoordinator($secret->fresh(), $coord->id);
         try {
-            $this->closure->close($incident->fresh(), $field->id);
+            $this->closure->close($secret->fresh(), $field->id);
             $this->fail('field worker must not close');
         } catch (TransitionException $e) {
             $this->assertStringContainsString('لا يملك الانتقال', $e->getMessage());
         }
-        $this->assertSame('resolved', $incident->fresh()->status);
+        $this->assertSame('resolved', $secret->fresh()->status);
 
-        // إعادة للمعالجة ثم تصعيد ثم تولّي المنسق
+        // البلاغ العادي: طلب الموافقة من المركز ثم إعادة للمعالجة ثم تصعيد ثم تولّي المنسق
+        $this->closure->close($incident->fresh(), $admin->id);
+        $this->assertTrue((bool) $incident->fresh()->pending_closure);
         $this->closure->rejectClosure($incident->fresh(), $coord->id, 'لم يُعالج فعلاً');
         $this->service->escalateToCoordinator($incident->fresh(), $field->id, 'يحتاج قراراً من المنسق');
         $taken = $this->service->resolveEscalation($incident->fresh(), $coord->id);

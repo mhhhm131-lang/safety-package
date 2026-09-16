@@ -26,7 +26,7 @@
     <thead><tr><th>الاسم</th><th>النوع</th><th>الانتهاء</th><th>الحالة</th><th>المصدر</th><th>موثّق</th><th>الملف</th><th></th></tr></thead>
     <tbody>
     @forelse($documents as $doc)
-      <tr data-doc="{{ $doc->id }}" data-type="{{ $doc->document_type }}" data-verified="{{ $doc->is_verified ? 1 : 0 }}">
+      <tr id="doc-{{ $doc->id }}" data-doc="{{ $doc->id }}" data-type="{{ $doc->document_type }}" data-verified="{{ $doc->is_verified ? 1 : 0 }}">
         <td>{{ $doc->name }}</td>
         <td>{{ $types[$doc->document_type] ?? $doc->document_type }}</td>
         <td dir="ltr">{{ $doc->expiry_date?->toDateString() ?? '—' }}</td>

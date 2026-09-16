@@ -32,6 +32,8 @@ Route::middleware(['auth'])->prefix('app/incidents')->name('incidents.')->group(
     Route::get('/{incident}', [IncidentController::class, 'show'])->name('show')->whereNumber('incident');
     Route::get('/{incident}/attachments/{attachment}', [IncidentController::class, 'attachment'])->name('attachment')->whereNumber('incident');
     Route::post('/{incident}/approve-closure', [IncidentController::class, 'approveClosure'])->name('approveClosure');
+    // المرحلة ١٨-١ (ج، قرار ٤٦): المبلّغ بحساب يرفض الإغلاق بنفسه — كان زرّه يفتح نافذة إرسالها ممنوع (incident.manage)
+    Route::post('/{incident}/reject-closure-as-reporter', [IncidentController::class, 'rejectClosureAsReporter'])->name('rejectClosureAsReporter');
 
     Route::middleware('permission:incident.manage')->group(function () {
         Route::post('/{incident}/refer', [IncidentController::class, 'refer'])->name('refer');

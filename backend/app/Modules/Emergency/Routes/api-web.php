@@ -86,6 +86,8 @@ Route::middleware(['web', 'auth'])->prefix('api/emergency')->name('api.emergency
         Route::get('/pending', [EmergencyMessageController::class, 'pending'])->name('pending');
         Route::get('/{message}', [EmergencyMessageController::class, 'show'])->name('show');
         Route::post('/{message}/respond', [EmergencyMessageController::class, 'respond'])->name('respond');
+        // المرحلة ١٨-١ (د، قرار ٤٦): ردّ بضغطة من بطاقة «ما ينتظرك» — يعيد إلى الصفحة لا JSON
+        Route::post('/{message}/quick/{type}', [EmergencyMessageController::class, 'quick'])->whereIn('type', ['safe', 'need_help'])->name('quick');
     });
     Route::middleware('permission:emergency.view,emergency.respond')->get('/incidents/{incident}/messages', [EmergencyMessageController::class, 'incidentMessages'])->name('incidents.messages');
 

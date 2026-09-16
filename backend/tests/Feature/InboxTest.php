@@ -100,16 +100,14 @@ class InboxTest extends TestCase
         // مبلّغ بلا حساب برمز: «العادي لا يُغلق إلا بموافقتك» ← مهمة المركز «اطلب موافقته» ← المبلّغ يوافق من التتبع ← «أغلق»
         $r = $this->actingAs($this->salama)->get('/app')->assertOk();
         $r->assertSee('اطلب موافقة المبلّغ')->assertSee('action="'.url("/app/incidents/{$i->id}/close").'"', false);
-        $this->actingAs($this->salama)->post("/app/incidents/{$i->id}/close"); // يطلب الموافقة
+        $this->actingAs($this->salama)->post("/app/incidents/{$i->id}/close")->assertSessionHas('success'); // يطلب الموافقة (١٨-١ أ: نجاح لا خطأ)
         $this->assertTrue($i->fresh()->pending_closure);
         $this->assertSame(0, $this->pending($this->salama)); // بانتظار المبلّغ
         auth()->logout();
         $this->post('/incident/track/approve', ['tracking_code' => $i->secret_tracking_code])->assertRedirect();
-        $r = $this->actingAs($this->salama)->get('/app')->assertOk();
-        $r->assertSee('عولج — أغلقه؟')->assertSee('action="'.url("/app/incidents/{$i->id}/close").'"', false);
-        // المركز يغلق من البطاقة نفسها ← لا مهمة
-        $this->actingAs($this->salama)->post("/app/incidents/{$i->id}/close")->assertSessionHas('success');
+        // ١٨-١ (ب، قرار ٤٦): موافقة المبلّغ تُغلق البلاغ وحدها — لا مهمة «أغلق» للمركز بعدها
         $this->assertSame('closed', $i->fresh()->status);
+        $this->assertSame(0, $this->pending($this->salama));
         // المرحلة ١٣-٢: الرمز قد يظهر في «آخر الإجراءات» (سجل التدقيق) — الاختبار على المهمة نفسها
         $this->actingAs($this->salama)->get('/app')->assertOk()->assertDontSee('data-task="incident:'.$i->id.':', false);
     }
@@ -217,7 +215,7 @@ class InboxTest extends TestCase
     {
         $party = \App\Modules\Project\Models\ExternalParty::create(['name' => 'مقاول التكييف', 'party_type' => 'contractor']);
         $doc = \App\Modules\Project\Models\ExternalPartyDocument::create(['external_party_id' => $party->id, 'name' => 'السجل التجاري', 'document_type' => 'cr', 'file' => 'cr.pdf', 'is_verified' => false]);
-        $this->actingAs($this->salama)->get('/app')->assertOk()->assertSee('وثيقة من «مقاول التكييف» تنتظر تحققك')->assertSee('data-target="'.url("/app/external-parties/{$party->id}/documents").'"', false);
+        $this->actingAs($this->salama)->get('/app')->assertOk()->assertSee('وثيقة من «مقاول التكييف» تنتظر تحققك')->assertSee('data-target="'.url("/app/external-parties/{$party->id}/documents")."#doc-{$doc->id}\"", false); // ١٨-١ (هـ): إلى الصف
         $this->assertSame(0, $this->pending($this->fani));
         $doc->update(['is_verified' => true]);
         $this->assertSame(0, $this->pending($this->salama));

@@ -8,6 +8,7 @@ use App\Core\Permissions\PermissionRegistry;
 use App\Http\Controllers\Controller;
 use App\Modules\Governance\Models\AppNotification;
 use App\Modules\Governance\Models\AuditLog;
+use App\Modules\Governance\Models\Setting;
 use App\Modules\Report\Services\DashboardService;
 use App\Modules\Report\Services\ReportScope;
 use Illuminate\Http\Request;
@@ -63,12 +64,21 @@ class HomeController extends Controller
                 ->map(fn (AppNotification $n) => ['at' => $n->created_at, 'text' => $n->title, 'url' => $n->url ?: route('app.notifications.index')]);
         }
 
+        // المرحلة ١٨-١ (ز، قرار ٤٦): مهلة بلاغ الشاغل بلا رقم = لا «متأخر» ولا تصعيد آلي — تنبيه لمن يملك الإعدادات، بلا عدّ (ليس مهمة)
+        $deadlinesUnset = [];
+        if (PermissionRegistry::hasPermission($role, 'system.settings')) {
+            foreach (Setting::DEADLINE_KEYS as $key => $label) {
+                if (Setting::deadlineHours(substr($key, strrpos($key, '.') + 1)) === null) $deadlinesUnset[] = $label;
+            }
+        }
+
         // المرحلة ١٢ (قرار ٣٥): «ما ينتظرك» + «أريد أن…»
         return view('governance.inbox', [
             'tasks' => $tasks,
             'intents' => IntentRegistry::forUser($user),
             'overview' => $overview,
             'recent' => $recent,
+            'deadlinesUnset' => $deadlinesUnset,
         ]);
     }
 }

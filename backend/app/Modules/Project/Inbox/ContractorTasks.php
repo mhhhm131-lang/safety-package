@@ -43,7 +43,8 @@ class ContractorTasks implements TaskSource
                 $out->push(new Task(
                     key: "contractor:{$pc->id}:review", module: 'المقاولون',
                     question: 'تأهيل «'.($pc->externalParty?->name ?? '—').'» في مشروع «'.($pc->project?->name ?? '—').'» ينتظر مراجعتك',
-                    primary: ['label' => 'راجعه', 'url' => route('projects.contractors', $pc->project_id)],
+                    // المرحلة ١٨-١ (هـ، قرار ٤٦): إلى الصف المعني لا القائمة كلها
+                    primary: ['label' => 'راجعه', 'url' => route('projects.contractors', $pc->project_id).'#contractor-'.$pc->id],
                     detailsUrl: route('projects.contractors', $pc->project_id), createdAt: $pc->updated_at ?? $pc->created_at,
                 ));
             }
@@ -53,7 +54,7 @@ class ContractorTasks implements TaskSource
                 $out->push(new Task(
                     key: "epdoc:{$d->id}:verify", module: 'المقاولون',
                     question: 'وثيقة من «'.($d->externalParty?->name ?? '—').'» تنتظر تحققك',
-                    primary: ['label' => 'تحقق منها', 'url' => route('external-parties.documents', $d->external_party_id)],
+                    primary: ['label' => 'تحقق منها', 'url' => route('external-parties.documents', $d->external_party_id).'#doc-'.$d->id],
                     dueAt: $d->expiry_date, isOverdue: (bool) ($d->expiry_date && $d->expiry_date->isPast()),
                     detailsUrl: route('external-parties.documents', $d->external_party_id), createdAt: $d->created_at,
                 ));

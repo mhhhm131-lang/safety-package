@@ -120,7 +120,8 @@ class IncidentController extends Controller
         if (!$incident) return redirect()->route('incident.track')->withErrors(['tracking_code' => 'لا يوجد بلاغ بهذا الرمز.']);
         try {
             $this->closureService->approveClosureByCode($incident);
-            return redirect()->route('incident.track', ['code' => $incident->secret_tracking_code])->with('success', 'شكراً — سُجّلت موافقتك، ويُغلق البلاغ.');
+            $this->occSync->refresh(null);
+            return redirect()->route('incident.track', ['code' => $incident->secret_tracking_code])->with('success', 'شكراً — سُجّلت موافقتك وأُغلق البلاغ.');
         } catch (\Throwable $e) {
             return redirect()->route('incident.track', ['code' => $incident->secret_tracking_code])->with('error', $e->getMessage());
         }
@@ -217,8 +218,13 @@ class IncidentController extends Controller
             'isCommittee' => $role === 'safety_committee' || $role === 'system_admin',
             'canManage' => $user->can('manage', $incident),
             'referenceRisks' => $incident->risk_id ? collect() : Risk::where('risk_type', 'reference')->whereIn('status', ['approved', 'active'])->orderBy('code')->get(['id', 'code', 'title']),
+            // المرحلة ١٨-١ (ج، قرار ٤٦): زر «ما ينتظرك» يفتح الصفحة والنافذة معاً — ?do=resolve|escalate|escalate-manager|reject
+            'openModal' => self::OPEN_MODALS[request()->query('do')] ?? null,
         ]);
     }
+
+    /** ما يفتحه ?do= من نوافذ صفحة البلاغ؛ الشرط في القالب يبقى (النافذة لا تظهر لمن لا يملك زرّها). */
+    private const OPEN_MODALS = ['resolve' => 'resolveModal', 'escalate' => 'escCoordModal', 'escalate-manager' => 'escMgrModal', 'reject' => 'rejectModal'];
 
     public function attachment(Incident $incident, IncidentAttachment $attachment)
     {
@@ -305,7 +311,11 @@ class IncidentController extends Controller
 
     public function close(Incident $incident)
     {
-        return $this->act(fn () => $this->closureService->close($incident, Auth::id()), 'أُغلق البلاغ.');
+        // المرحلة ١٨-١ (أ، قرار ٤٦): الزر نفسه إما يغلق أو يطلب موافقة المبلّغ — والرسالة تقول ما حدث فعلاً
+        return $this->act(function () use ($incident) {
+            $r = $this->closureService->close($incident, Auth::id());
+            return $r->status === 'closed' ? null : 'أُرسل طلب الموافقة إلى المبلّغ — يُغلق البلاغ فور موافقته.';
+        }, 'أُغلق البلاغ.');
     }
 
     public function approveClosure(Incident $incident)
@@ -317,6 +327,13 @@ class IncidentController extends Controller
     {
         $v = $request->validate(['note' => ['required', 'string', 'max:5000']]);
         return $this->act(fn () => $this->closureService->rejectClosure($incident, Auth::id(), $v['note']), 'رُفض الإغلاق وأُعيد البلاغ إلى المعالجة.');
+    }
+
+    /** المرحلة ١٨-١ (ج، قرار ٤٦): المبلّغ بحساب يرفض الإغلاق من زرّه — كالمبلّغ برمز التتبع. */
+    public function rejectClosureAsReporter(Request $request, Incident $incident)
+    {
+        $v = $request->validate(['note' => ['required', 'string', 'min:5', 'max:5000']], ['note.required' => 'اكتب لماذا لم يُعالج.']);
+        return $this->act(fn () => $this->closureService->rejectClosureByReporter($incident, Auth::id(), $v['note']), 'أُعيد البلاغ إلى المعالجة.');
     }
 
     public function escalateToCoordinator(Request $request, Incident $incident)
@@ -373,9 +390,9 @@ class IncidentController extends Controller
     private function act(callable $fn, string $ok)
     {
         try {
-            $fn();
+            $r = $fn(); // ١٨-١: الدالة قد تعيد رسالة نجاح أدق (نصاً) بدل الافتراضية
             $this->occSync->refresh(Auth::id());
-            return redirect()->back()->with('success', $ok);
+            return redirect()->back()->with('success', is_string($r) ? $r : $ok);
         } catch (\Throwable $e) {
             return redirect()->back()->withInput()->with('error', $e->getMessage());
         }

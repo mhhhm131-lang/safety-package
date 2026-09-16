@@ -97,7 +97,7 @@
                 </thead>
                 <tbody>
                     @forelse($contractors as $pc)
-                        <tr>
+                        <tr id="contractor-{{ $pc->id }}">
                             <td>
                                 <strong>{{ $pc->externalParty?->name ?? '—' }}</strong>
                                 @if($pc->externalParty?->cr_number)

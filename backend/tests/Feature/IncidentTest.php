@@ -187,7 +187,7 @@ class IncidentTest extends TestCase
         // مبلّغ بلا حساب برمز تتبع: «العادي لا يُغلق إلا بموافقتك» (قرار المستخدم ٢٠٢٦-٠٩-١٣) — يوافق من صفحة التتبع
         $this->actingAs($this->fani2)->post("/app/incidents/{$incident->id}/upload", ['file' => UploadedFile::fake()->createWithContent('p.png', base64_decode(self::PNG))]);
         $this->actingAs($this->fani2)->post("/app/incidents/{$incident->id}/resolve", ['resolution_summary' => 'رُكّبت طفاية جديدة معتمدة عند المدخل الغربي وفُحصت'])->assertSessionHas('success');
-        $this->actingAs($this->salama)->post("/app/incidents/{$incident->id}/close")->assertSessionHas('error'); // يطلب موافقة المبلّغ
+        $this->actingAs($this->salama)->post("/app/incidents/{$incident->id}/close")->assertSessionHas('success'); // ١٨-١ (أ): يطلب موافقة المبلّغ — نجاحٌ لا خطأ
         $this->assertTrue($incident->fresh()->pending_closure);
         auth()->logout();
         $code = $incident->secret_tracking_code;
@@ -197,13 +197,13 @@ class IncidentTest extends TestCase
         $this->assertSame('in_progress', $incident->fresh()->status);
         $this->assertFalse($incident->fresh()->pending_closure);
         $this->actingAs($this->fani2)->post("/app/incidents/{$incident->id}/resolve", ['resolution_summary' => 'رُكّب الخرطوم وفُحصت الطفاية كاملة وعُلّقت في مكانها'])->assertSessionHas('success');
-        $this->actingAs($this->salama)->post("/app/incidents/{$incident->id}/close")->assertSessionHas('error');
+        $this->actingAs($this->salama)->post("/app/incidents/{$incident->id}/close")->assertSessionHas('success');
         auth()->logout();
         $this->post('/incident/track/approve', ['tracking_code' => $code])->assertRedirect();
         $this->assertTrue($incident->fresh()->reporter_approved_closure);
-        $this->get('/incident/track?code='.$code)->assertOk()->assertDontSee('id="closureApproval"', false)->assertSee('وافق المُبلِّغ على الإغلاق');
-        $this->actingAs($this->salama)->post("/app/incidents/{$incident->id}/close")->assertSessionHas('success');
+        // ١٨-١ (ب، قرار ٤٦): الموافقة تُغلق البلاغ وحدها — لا ضغطة ثانية من المركز
         $this->assertSame('closed', $incident->fresh()->status);
+        $this->get('/incident/track?code='.$code)->assertOk()->assertDontSee('id="closureApproval"', false)->assertSee('وافق المُبلِّغ على الإغلاق');
         $this->post('/incident/track/approve', ['tracking_code' => 'NOPE1'])->assertSessionHasErrors('tracking_code');
     }
 
@@ -229,13 +229,13 @@ class IncidentTest extends TestCase
         $this->actingAs($this->fani)->post("/app/incidents/{$b->id}/begin-work");
         $this->actingAs($this->fani)->post("/app/incidents/{$b->id}/upload", ['file' => UploadedFile::fake()->createWithContent('p.png', base64_decode(self::PNG))]);
         $this->actingAs($this->fani)->post("/app/incidents/{$b->id}/resolve", ['resolution_summary' => 'فُحصت اللوحة وبُدّل القاطع المحترق وأُعيد التيار'])->assertSessionHas('success');
-        $this->actingAs($this->salama)->post("/app/incidents/{$b->id}/close")->assertSessionHas('error');
+        $this->actingAs($this->salama)->post("/app/incidents/{$b->id}/close")->assertSessionHas('success'); // ١٨-١ (أ): طلب الموافقة نجاح
         $this->assertTrue($b->fresh()->pending_closure);
         $this->assertDatabaseHas('app_notifications', ['user_id' => $emp->id, 'type' => 'incident.closure']);
         $this->actingAs($this->fani)->post("/app/incidents/{$b->id}/approve-closure")->assertSessionHas('error'); // ليس المبلّغ
         $this->actingAs($emp)->get("/app/incidents/{$b->id}")->assertOk()->assertSee('أوافق على الإغلاق');
         $this->actingAs($emp)->post("/app/incidents/{$b->id}/approve-closure")->assertSessionHas('success');
-        $this->actingAs($this->salama)->post("/app/incidents/{$b->id}/close")->assertSessionHas('success');
+        // ١٨-١ (ب، قرار ٤٦): الموافقة تُغلق البلاغ وحدها
         $this->assertSame('closed', $b->fresh()->status);
     }
 

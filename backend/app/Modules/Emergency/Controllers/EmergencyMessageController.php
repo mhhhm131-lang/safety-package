@@ -55,6 +55,17 @@ class EmergencyMessageController extends Controller
         }
     }
 
+    /** المرحلة ١٨-١ (د، قرار ٤٦): ردّ بضغطة من بطاقة «ما ينتظرك» («أنا بخير» / «أحتاج مساعدة») ثم العودة إلى الصفحة. */
+    public function quick(EmergencyMassMessage $message, string $type)
+    {
+        try {
+            $this->messagingService->recordResponse($message, auth()->user(), ['response_type' => $type]);
+            return redirect()->back()->with('success', $type === 'safe' ? 'سُجّل أنك بخير.' : 'سُجّل طلب المساعدة وأُبلغ المركز.');
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', 'تعذّر تسجيل الرد: '.$e->getMessage());
+        }
+    }
+
     /**
      * Respond to a message
      */

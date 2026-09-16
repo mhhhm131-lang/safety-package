@@ -12,6 +12,14 @@
   <span class="small text-muted">{{ auth()->user()->name }} · {{ auth()->user()->roleName() }}@if($overview) · الشهر الجاري@endif</span>
 </div>
 <p class="small text-muted mb-3" id="inboxHint">كل ما يحتاجك يظهر هنا. لا تبحث عنه. <a href="#" id="inboxHintHide" class="text-muted">فهمت</a></p>
+{{-- المرحلة ١٨-١ (ز، قرار ٤٦): بلا رقم للمهلة لا «متأخر» ولا تصعيد آلي — الرقم يُدخله مسؤول السلامة بيده --}}
+@if(!empty($deadlinesUnset))
+  <div class="alert alert-warning py-2 small mb-3 d-flex flex-wrap align-items-center gap-2" id="deadlineUnset">
+    <i class="bi bi-hourglass"></i>
+    <span class="flex-grow-1">لم تُضبط مهلة بلاغ الشاغل ({{ implode('، ', $deadlinesUnset) }}) — بلا رقم لا يظهر «متأخر» ولا يُصعَّد شيء آلياً.</span>
+    <a class="btn btn-sm btn-o" href="{{ route('incidents.settings') }}">اضبط المهل</a>
+  </div>
+@endif
 
 @if($overview)
   @php

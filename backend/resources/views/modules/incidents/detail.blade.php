@@ -106,9 +106,7 @@
       @if($isField && $incident->status === 'forwarded')
         <form method="post" action="{{ route('incidents.fieldReceive', $incident) }}">@csrf<button class="btn btn-g"><i class="bi bi-hand-thumbs-up me-1"></i> استلمتُ البلاغ</button></form>
       @endif
-      @if($isField && $incident->status === 'field_received')
-        <form method="post" action="{{ route('incidents.beginWork', $incident) }}">@csrf<button class="btn btn-g"><i class="bi bi-play-circle me-1"></i> بدء المعالجة</button></form>
-      @endif
+      {{-- المرحلة ١٨-١ (و، قرار ٤٦): لا زر «بدء المعالجة» — «عولج» ينقل الحالة وحده (IncidentService::resolve) --}}
       @if($isField && in_array($incident->status, ['field_received', 'in_progress'], true))
         {{-- ١١-١ (ج): «عولج» متاح من «استلمه الفني» أيضاً — الصورة في النافذة نفسها، والبدء يُسجَّل آلياً --}}
         <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#resolveModal"><i class="bi bi-check-circle me-1"></i> عولج (صورة + ملخص)</button>
@@ -262,9 +260,11 @@
   <div class="modal-body"><label class="form-label">السبب <span class="text-danger">*</span></label><textarea name="reason" class="form-control" rows="3" required minlength="10"></textarea><div class="small text-muted mt-1">حتى تشكيل اللجنة يصل التصعيد إلى مسؤول السلامة.</div></div>
   <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button><button class="btn btn-danger">تصعيد</button></div></form></div></div>
 
-<div class="modal fade" id="rejectModal"><div class="modal-dialog"><form method="post" action="{{ route('incidents.rejectClosure', $incident) }}" class="modal-content">@csrf
-  <div class="modal-header"><h5 class="modal-title">رفض الإغلاق — إعادة للمعالجة</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-  <div class="modal-body"><label class="form-label">لماذا؟ <span class="text-danger">*</span></label><textarea name="note" class="form-control" rows="3" required></textarea></div>
+{{-- المرحلة ١٨-١ (ج، قرار ٤٦): المبلّغ بحساب يرسل إلى مساره هو (كان يرسل إلى مسار المركز فيُرفض بلا صلاحية) --}}
+@php($rejectAsReporter = !$isCenter && !$isCoord && auth()->id() === $incident->actor_id)
+<div class="modal fade" id="rejectModal"><div class="modal-dialog"><form method="post" action="{{ $rejectAsReporter ? route('incidents.rejectClosureAsReporter', $incident) : route('incidents.rejectClosure', $incident) }}" class="modal-content">@csrf
+  <div class="modal-header"><h5 class="modal-title">{{ $rejectAsReporter ? 'لم يُعالج — أعِده للمعالجة' : 'رفض الإغلاق — إعادة للمعالجة' }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body"><label class="form-label">لماذا؟ <span class="text-danger">*</span></label><textarea name="note" class="form-control" rows="3" required minlength="5"></textarea></div>
   <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button><button class="btn btn-outline-danger">إعادة</button></div></form></div></div>
 
 <div class="modal fade" id="oosModal"><div class="modal-dialog"><form method="post" action="{{ route('incidents.outOfScope', $incident) }}" class="modal-content">@csrf
@@ -272,3 +272,11 @@
   <div class="modal-body"><label class="form-label">ملاحظة</label><textarea name="note" class="form-control" rows="2"></textarea></div>
   <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button><button class="btn btn-outline-secondary">تأكيد</button></div></form></div></div>
 @endsection
+@if(!empty($openModal))
+@push('scripts')
+{{-- المرحلة ١٨-١ (ج، قرار ٤٦): جئت من زر «ما ينتظرك» ← النافذة مفتوحة فوراً؛ إن لم تكن النافذة في الصفحة (لا يملك زرّها) لا شيء يحدث --}}
+<script data-open-modal="{{ $openModal }}">
+(function(){var m=document.getElementById(@json($openModal));if(m&&window.bootstrap){bootstrap.Modal.getOrCreateInstance(m).show();}})();
+</script>
+@endpush
+@endif

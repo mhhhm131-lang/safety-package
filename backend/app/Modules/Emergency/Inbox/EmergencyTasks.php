@@ -57,13 +57,14 @@ class EmergencyTasks implements TaskSource
                 ));
             }
         }
-        // رسالة جماعية تنتظر إقراري
+        // رسالة جماعية تنتظر ردّي — المرحلة ١٨-١ (د، قرار ٤٦): الرد من البطاقة بضغطة؛ كان «أقرّ» يفتح مركز الطوارئ ولا يُقرّ شيئاً
         foreach ($this->messages->getPendingResponses($user) as $m) {
             $out->push(new Task(
                 key: "emsg:{$m->id}", module: 'الطوارئ',
-                question: 'رسالة من المركز تنتظر ردّك: '.mb_substr((string) ($m->subject ?? $m->body ?? ''), 0, 70),
-                primary: ['label' => 'أقرّ', 'url' => route('emergency.dashboard')],
-                createdAt: $m->sent_at,
+                question: 'رسالة من المركز: «'.mb_substr((string) ($m->title ?: $m->message), 0, 70).'» — أنت بخير؟',
+                primary: ['label' => 'أنا بخير', 'url' => route('api.emergency.messages.quick', [$m, 'safe']), 'method' => 'POST'],
+                secondary: ['label' => 'أحتاج مساعدة', 'url' => route('api.emergency.messages.quick', [$m, 'need_help']), 'method' => 'POST'],
+                isOverdue: true, createdAt: $m->sent_at,
             ));
         }
         // تنبيهات الذعر والأساور المفتوحة — لمن يستجيب

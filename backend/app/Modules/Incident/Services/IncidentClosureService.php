@@ -17,6 +17,10 @@ class IncidentClosureService
 {
     public function __construct(private IncidentService $incidentService, private AuditLogService $auditLogService) {}
 
+    /**
+     * المرحلة ١٨-١ (أ، قرار ٤٦): طلب موافقة المبلّغ نجاحٌ لا خطأ — كان يُسجَّل ثم يُرمى استثناء فتظهر «خطأ» بالأحمر.
+     * يعيد البلاغ كما هو (resolved + pending_closure) والرسالة في IncidentController::close.
+     */
     public function close(Incident $incident, int $userId): Incident
     {
         $needsReporterApproval = $incident->needsReporterApproval(); // قرار المستخدم ٢٠٢٦-٠٩-١٣: بحساب أو برمز التتبع سواء
@@ -33,9 +37,7 @@ class IncidentClosureService
                 $this->incidentService->notifyUser($incident->actor_id, 'incident.closure',
                     'طلب موافقتك على إغلاق بلاغك '.$incident->code, 'عولج البلاغ ويحتاج موافقتك لإغلاقه.', "/app/incidents/{$incident->id}");
             }
-            throw new InvalidArgumentException($incident->actor_id
-                ? 'لا يمكن الإغلاق قبل موافقة المُبلِّغ. تم إرسال طلب الموافقة.'
-                : 'لا يمكن الإغلاق قبل موافقة المُبلِّغ. يوافق من صفحة التتبع برمزه.');
+            return $incident->fresh();
         }
 
         if (!$needsReporterApproval && !$incident->coord_verified_at) {
@@ -89,9 +91,23 @@ class IncidentClosureService
             $incident->save();
             IncidentEvent::create(['incident_id' => $incident->id, 'action' => 'reporter_approved', 'from_status' => $incident->status,
                 'to_status' => $incident->status, 'note' => 'وافق المُبلِّغ على الإغلاق', 'actor_id' => $userId]);
+            $this->closeAfterReporterApproval($incident);
         });
         $this->auditLogService->log(null, 'approve_closure', 'Incident', $incident->id, "Reporter approved closure of incident {$incident->code}", $userId);
-        return $incident;
+        return $incident->fresh();
+    }
+
+    /**
+     * المرحلة ١٨-١ (ب، قرار ٤٦): موافقة المبلّغ = إغلاق. كان المناوب يعود بعدها ليضغط «أغلق» — زيارتان لعمل واحد.
+     * الإغلاق باسم النظام (system_bot) لأن المبلّغ لا يملك انتقال «عولج ← مغلق» في آلة الحالة.
+     */
+    private function closeAfterReporterApproval(Incident $incident): void
+    {
+        if ($incident->status !== 'resolved') return;
+        $incident = $this->incidentService->transition($incident, IncidentService::BOT_USER_ID, 'close', 'closed', 'أُغلق آلياً بموافقة المُبلِّغ');
+        $incident->handled_at = now();
+        $incident->save();
+        $this->bumpRiskCounters($incident);
     }
 
     public function rejectClosure(Incident $incident, int $userId, string $note): Incident
@@ -99,6 +115,18 @@ class IncidentClosureService
         $incident->pending_closure = false;
         $incident->save();
         return $this->incidentService->transition($incident, $userId, 'reject_closure', 'in_progress', $note);
+    }
+
+    /** المرحلة ١٨-١ (ج، قرار ٤٦): المبلّغ بحساب يرفض الإغلاق بنفسه؛ الانتقال باسم النظام لأن دوره (موظف مثلاً) ليس في آلة الحالة. */
+    public function rejectClosureByReporter(Incident $incident, int $userId, string $note): Incident
+    {
+        if ($incident->actor_id !== $userId) throw new InvalidArgumentException('فقط المُبلِّغ الأصلي يستطيع رد بلاغه.');
+        if (!$incident->pending_closure) throw new InvalidArgumentException('لا يوجد طلب إغلاق قيد الانتظار على هذا البلاغ.');
+        $incident->pending_closure = false;
+        $incident->save();
+        $incident = $this->incidentService->transition($incident, IncidentService::BOT_USER_ID, 'reject_closure', 'in_progress', 'رفض المُبلِّغ الإغلاق: '.$note);
+        $this->auditLogService->log(null, 'reject_closure', 'Incident', $incident->id, "Reporter rejected closure of incident {$incident->code}", $userId);
+        return $incident;
     }
 
     /** المبلّغ بلا حساب يوافق برمز التتبع (قرار المستخدم ٢٠٢٦-٠٩-١٣: «العادي لا يُغلق إلا بموافقتك»). */
@@ -112,6 +140,7 @@ class IncidentClosureService
             $incident->save();
             IncidentEvent::create(['incident_id' => $incident->id, 'action' => 'reporter_approved', 'from_status' => $incident->status,
                 'to_status' => $incident->status, 'note' => 'وافق المُبلِّغ على الإغلاق برمز التتبع', 'actor_id' => null]);
+            $this->closeAfterReporterApproval($incident);
         });
         return $incident->fresh();
     }
