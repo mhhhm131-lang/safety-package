@@ -64,6 +64,32 @@ class InstituteFilesTest extends TestCase
         $this->assertStringContainsString('يُحفظ في خادم المنظومة', $html);
     }
 
+    /** النماذج العشرة كما تُخدَم من المجلد الأعلى */
+    private function forms(): array
+    {
+        $root = dirname(base_path());
+        $files = glob($root.'/HZ-*/inspection-form.html');
+        $fire = $root.'/HZ-00-safety-center/fire-inspection.html';
+        if (is_file($fire)) $files[] = $fire;
+        if (count($files) !== 10) $this->markTestSkipped('النماذج العشرة غير مكتملة: '.count($files));
+        return $files;
+    }
+
+    /** الدفعة ٥: لا كود «زمن الملفات» في النماذج العشرة — ولا يُمسّ ما يحفظ على الخادم */
+    public function test_ten_forms_have_no_file_era_code(): void
+    {
+        foreach ($this->forms() as $file) {
+            $html = file_get_contents($file);
+            $name = basename(dirname($file)).'/'.basename($file);
+            foreach (['impFile', 'saveSelf', 'expFile', "id=\"fpick\""] as $dead) {
+                $this->assertStringNotContainsString($dead, $html, "كود «زمن الملفات» باقٍ في $name: $dead");
+            }
+            foreach (['function loadSelf', 'function snapshot', 'id="SAVED"'] as $live) {
+                $this->assertStringContainsString($live, $html, "حُذف ما هو حيّ في $name: $live");
+            }
+        }
+    }
+
     /** ما يجب ألا يُحذف: شاشة رسالة النظام ودوال الدخول بالجلسة */
     public function test_dashboard_keeps_system_gate_and_session_entry(): void
     {

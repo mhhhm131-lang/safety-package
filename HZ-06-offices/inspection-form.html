@@ -308,13 +308,11 @@ body.fromDash #dvInbox,body.fromDash .dv-sec.wait{display:none}
 
 <div id="dview" hidden>
   <div class="dv-h"><h2>شاشة القرارات — <span id="dvRole"></span></h2>
-    <button class="btn btn-gh" onclick="impFile()">استيراد ملف الجولة</button>
     <button class="btn btn-gh" onclick="window.print()">طباعة النموذج</button>
     <button class="btn btn-sm" onclick="toggleDview()">عرض النموذج</button></div>
   <div id="dvEmpty" class="dv-empty" hidden>
-    <div class="t">لم يصلك ملف جولة بعد</div>
-    <div class="d">يرسله الفني بزر «حفظ النموذج بالبيانات» — استورده هنا لتظهر البلاغات التي تنتظر قرارك</div>
-    <button class="btn btn-main" onclick="impFile()">استيراد ملف الجولة</button></div>
+    <div class="t">لا بلاغات تنتظر قرارك الآن</div>
+    <div class="d">بلاغات الفني تصل هنا تلقائياً من خادم المنظومة فور إرسالها</div></div>
   <div id="dvBody">
     <div class="dv-sec wait">بانتظار قرارك <span id="dvN"></span></div>
     <div id="dvInbox"></div>
@@ -332,9 +330,6 @@ body.fromDash #dvInbox,body.fromDash .dv-sec.wait{display:none}
   <button class="tab" role="tab" aria-selected="false" data-sys="o05">وضعية العمل</button>
   <button class="tab" role="tab" aria-selected="false" data-sys="o06">دورات المياه</button>
   <button class="tab" role="tab" aria-selected="false" data-sys="o07">الجاهزية للطوارئ</button>
-  <button class="print" style="margin-inline-start:auto;background:var(--gold);color:#2a2008" onclick="saveSelf()">حفظ النموذج بالبيانات</button>
-  <button class="print" style="background:#fff;color:var(--green)" onclick="impFile()">استيراد بيانات</button>
-  <input type="file" id="fpick" accept=".json,.html" hidden>
   <button class="print" onclick="window.print()">طباعة</button>
   <button class="print" style="background:#fff;color:var(--green)" onclick="newRound()">جولة جديدة</button>
 </nav>
@@ -1637,19 +1632,6 @@ function restoreFields(d){
     if(!el||(el.type==='checkbox')!==(typeof v==='number'))return;
     if(el.type==='checkbox')el.checked=!!v;else el.value=v;});
 }
-function saveSelf(){
-  const doc=document.documentElement.cloneNode(true);
-  const tag=doc.querySelector('#SAVED');
-  tag.textContent=JSON.stringify(snapshot()).replace(/</g,'\\u003c');
-  const html='<!DOCTYPE html>\n'+doc.outerHTML;
-  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  const nm=($('loc').value||SYS[CUR].name).replace(/[\\/:*?"<>|]/g,'-');
-  a.download='فحص-مكاتب-'+SYS[CUR].code+'-'+nm+'-'+new Date().toISOString().slice(0,10)+'.html';
-  a.click();URL.revokeObjectURL(a.href);
-  DIRTY=false;
-}
 function loadSelf(){
   let d=null;
   try{d=JSON.parse($('SAVED').textContent)}catch(e){}
@@ -1666,44 +1648,6 @@ function loadSelf(){
   renderLog();refreshRows();
   return true;
 }
-function expFile(){
-  const defs={};Object.keys(SYS).forEach(k=>defs[k]={items:SYS[k].items,reads:SYS[k].reads,name:SYS[k].name,code:SYS[k].code,sched:SYS[k].sched});
-  const data={v:41,sys:CUR,seq:SEQ,marks:MARKS,vals:VALS,rounds:ROUNDS,reports:REPORTS,defs,
-    fields:staticFields().map(el=>el.type==='checkbox'?(el.checked?1:0):el.value)};
-  const blob=new Blob([JSON.stringify(data,null,1)],{type:'application/json'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='جولة-مكاتب-'+SYS[CUR].code+'-'+new Date().toISOString().slice(0,10)+'.json';
-  a.click();URL.revokeObjectURL(a.href);
-}
-function impFile(){$('fpick').click()}
-$('fpick').addEventListener('change',e=>{
-  const f=e.target.files[0];if(!f)return;
-  const rd=new FileReader();
-  rd.onload=()=>{
-    try{
-      let raw=rd.result, d=null;
-      if(/^\s*[{[]/.test(raw)) d=JSON.parse(raw);
-      else{
-        const m=raw.match(/<script id="SAVED"[^>]*>([\s\S]*?)<\/script>/);
-        if(m) d=JSON.parse(m[1].replace(/\\u003c/g,'<'));
-      }
-      if(!d||!d.reports){alert('الملف لا يحتوي بيانات جولة');return;}
-      const myPre=Object.keys(SYS)[0].charAt(0),filePre=(Object.keys(d.defs||{})[0]||d.sys||(d.reports[0]||{}).row||'').charAt(0);
-      if(filePre&&filePre!==myPre){alert('هذا الملف يخص نموذج مكان آخر — افتحه من نموذجه');return;}
-      if(d.v&&d.v<41){alert('الملف من إصدار أقدم من النموذج ولا يمكن استيراده');return;}
-      if(REPORTS.length&&!confirm('يوجد على هذا الجهاز '+AR(REPORTS.length)+' بلاغ لهذا المكان. استبدالها ببيانات الملف ('+AR(d.reports.length)+' بلاغ)؟\nلا يمكن التراجع إلا بنسخة احتياطية.'))return;
-      REPORTS=d.reports;SEQ=d.seq||REPORTS.length;MARKS=d.marks||{};VALS=d.vals||{};ROUNDS=d.rounds||{};
-      if(d.defs)Object.keys(d.defs).forEach(k=>{if(SYS[k]){SYS[k].items=d.defs[k].items;SYS[k].reads=d.defs[k].reads;}});
-      const tab=document.querySelector(`.tab[data-sys="${d.sys||'o01'}"]`);
-      if(tab)tab.click(); else render('o01');
-      restoreFields(d);
-      renderLog();refreshRows();drawInbox();
-      alert('تم فتح الجولة — عدد البلاغات: '+AR(REPORTS.length));
-    }catch(err){alert('تعذّر قراءة الملف')}
-  };
-  rd.readAsText(f);e.target.value='';
-});
 
 function applyCns(){
   const on=document.body.classList.contains('cns');
@@ -1780,7 +1724,6 @@ DIRTY=false;
 #mobLast[hidden]{display:none!important}
 .mob-hide{display:none!important}
 /* أزرار زمن الملفات (تدقيق ١٣-٧ مشكلة ٥، بكلمة المستخدم ٢٠٢٦-٠٩-١٤): الحفظ على الخادم آلي، والاستيراد يستبدل بلاغات النموذج كلها فوق عمل الجميع — تُخفى على الحاسب والجوال، والدوال باقية */
-.bar .print[onclick="saveSelf()"],.bar .print[onclick="impFile()"]{display:none!important}
 #ipaToast{position:fixed;top:10px;inset-inline:10px;z-index:9998;background:#0f3d2e;color:#fff;border-radius:10px;padding:14px 18px;font:700 16px/1.6 Cairo,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.25);direction:rtl;white-space:pre-line}
 #ipaToast.bad{background:#9b1c1c}#ipaToast.warn{background:#a8620f}
 #ipaAsk{position:fixed;top:10px;inset-inline:10px;z-index:9998;background:#fff;border:2px solid var(--gold);border-radius:10px;padding:14px;font:14px/1.6 Cairo,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.25);direction:rtl}
@@ -1919,7 +1862,6 @@ DIRTY=false;
   var dt=document.querySelector('#dvEmpty .t'), dd=document.querySelector('#dvEmpty .d');
   if(dt)dt.textContent='لا بلاغات في هذا النموذج بعد';
   if(dd)dd.textContent='حين يرسل الفني بلاغاً من جولته يظهر هنا فوراً';
-  document.querySelectorAll('#dvEmpty button,.dv-h button[onclick*="impFile"]').forEach(function(b){b.style.display='none';});
   /* (٦) الأقسام ٥ و٦ و٧: الحكم للفني والمكتب، القيد لمسؤول السلامة، اعتماد مسؤول السلامة له وحده */
   function sections(){
     var main=document.querySelector('main.sheet'); if(!main)return null;
