@@ -44,6 +44,18 @@ class InstituteFilesTest extends TestCase
         $this->assertStringNotContainsString('استيراد جولات', $html);
     }
 
+    /** الدفعة ٣: لا كود ميت لبلاغات الشاغلين في اللوحة — والحيّ منه يبقى */
+    public function test_dashboard_has_no_dead_occupant_code(): void
+    {
+        $html = $this->dashboard();
+        foreach (['function occRow', 'function occAssign', 'function occClose', 'function occImg', 'const OST', 'function occSave'] as $dead) {
+            $this->assertStringNotContainsString($dead, $html, "كود ميت باقٍ: $dead");
+        }
+        foreach (['function occAll', 'function occState', 'function occLinked', 'occOpen', 'function drawOcc'] as $live) {
+            $this->assertStringContainsString($live, $html, "حُذف ما هو حيّ: $live");
+        }
+    }
+
     /** ما يجب ألا يُحذف: شاشة رسالة النظام ودوال الدخول بالجلسة */
     public function test_dashboard_keeps_system_gate_and_session_entry(): void
     {

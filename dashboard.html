@@ -1089,26 +1089,9 @@ $('pm').addEventListener('click',e=>{if(e.target.id==='pm')closePlaceEdit();});
 /* ================= بلاغات الشاغلين: سجل مركز السلامة ================= */
 const OKEY='ipa-occ';
 function occAll(){try{return JSON.parse(localStorage.getItem(OKEY))||{seq:0,reports:[]}}catch(e){return {seq:0,reports:[]}}}
-function occSave(o){try{localStorage.setItem(OKEY,JSON.stringify(o))}catch(e){}}
-const OST={new:['t-red','جديد — لم يُنظر فيه'],assigned:['t-amb','محال إلى الفني'],linked:['t-pur','مربوط ببلاغ فحص'],closed:['t-grn','مُغلق']};
 function occLinked(o){if(!o.link)return null;return ALL.find(r=>r._f.key===o.link.key&&r.row===o.link.row)||null;}
 function occState(o){if(o.status==='linked'){const r=occLinked(o);if(r&&isClosed(r))return 'closed';}return o.status||'new';}
 const occOpen=()=>occAll().reports.filter(o=>occState(o)!=='closed');
-function occRow(o){
-  const st=occState(o),S=OST[st],lr=occLinked(o),age=o.ts?Math.floor((Date.now()-o.ts)/36e5):null;
-  const me=USERS[USER]?USERS[USER].n:'';
-  const acts=ROLE==='safety'?[
-    st==='new'?`<button class="btn btn-main" style="padding:5px 12px;font-size:11px" onclick="occAssign('${o.id}')">إحالة إلى الفني</button>`:'',
-    st!=='closed'&&st!=='linked'?`<button class="btn btn-gh" style="padding:5px 12px;font-size:11px" onclick="occClose('${o.id}')">إغلاق بملاحظة</button>`:''
-  ].join(''):'';
-  return `<div class="rep ${st==='new'?'od':(st==='assigned'?'warn':(st==='closed'?'done':'back'))}"><div>
-      <div class="top1"><span class="loc">${esc(o.hz||'—')} · ${esc(o.place||'')}</span><span class="tag ${S[0]}">${S[1]}</span>${age!==null&&st!=='closed'?`<span class="tag t-dim">منذ ${age<1?'أقل من ساعة':AR(age)+' س'}</span>`:''}</div>
-      <div class="ttl"><b>${esc(o.id)}</b>${esc(o.desc)}</div>
-      <div class="meta">${esc(o.at)}${o.loc?' · '+esc(o.loc):''}${o.name?' · المبلّغ: '+esc(o.name):''}${o.phone?' · '+esc(o.phone):''}${o.img?' · <a href="#" onclick="occImg(\'${o.id}\');return false" style="color:var(--gold2)">صورة</a>':''}</div>
-      ${o.note?`<div class="meta">ملاحظة المركز: <b style="color:var(--ink)">${esc(o.note)}</b>${o.by?' — '+esc(o.by):''}${o.doneAt?' · '+esc(o.doneAt):''}</div>`:''}
-      ${lr?`<div class="meta">بلاغ الفحص: <b style="color:var(--ink)">${esc(lr.id)}</b> ${stateTag(lr)}${(()=>{const o2=overdue(lr);return o2!==null&&o2>=0?' <span class="tag t-red">متجاوز المهلة</span>':''})()}</div>`:''}
-    </div><div style="display:flex;flex-direction:column;gap:6px">${lr?`<a class="go" href="${link(lr)}">فتح بلاغ الفحص</a>`:''}${acts}</div></div>`;
-}
 function drawOcc(){
   const show=['safety','adm','exec','fm'].indexOf(ROLE)>=0;
   $('secO').style.display=show?'':'none';if(!show)return {n:0,open:0};
@@ -1120,18 +1103,6 @@ function drawOcc(){
   $('oBody').innerHTML=(open.length?`<div class="empty calm"><b>${AR(open.length)} بلاغ محال إلى الفنيين ينتظر فتح بلاغ فحص</b> — <a href="/app/incidents?status=open" style="color:var(--green)">سجل مركز السلامة كاملاً ←</a></div>`:'<div class="empty calm"><b>لا بلاغات محالة إلى الفنيين الآن</b> — <a href="/app/incidents" style="color:var(--green)">سجل مركز السلامة ←</a></div>');
   return {n:nw,open:open.length};
 }
-function occAssign(id){
-  const a=occAll(),o=a.reports.find(x=>x.id===id);if(!o)return;
-  const note=prompt('إحالة البلاغ إلى فني المكان. ملاحظة للفني (اختياري):','');if(note===null)return;
-  o.status='assigned';o.note=note.trim();o.by=USERS[USER]?USERS[USER].n:'';o.assignedAt=stamp();occSave(a);load();
-}
-function occClose(id){
-  const a=occAll(),o=a.reports.find(x=>x.id===id);if(!o)return;
-  const note=prompt('إغلاق البلاغ — ما الذي تم أو سبب الإغلاق (يُقيَّد في السجل):','');if(note===null)return;
-  if(!note.trim()){alert('اكتب سبب الإغلاق');return;}
-  o.status='closed';o.note=note.trim();o.by=USERS[USER]?USERS[USER].n:'';o.doneAt=stamp();occSave(a);load();
-}
-function occImg(id){const o=occAll().reports.find(x=>x.id===id);if(!o||!o.img)return;$('pmb').innerHTML=`<h2>${esc(o.id)} — صورة البلاغ</h2><img src="${o.img}" style="max-width:100%;border-radius:8px;margin-top:10px"><div class="pmf"><button class="btn btn-gh" onclick="closePlaceEdit()">إغلاق</button></div>`;$('pm').classList.add('on');}
 
 /* ================= مدير الإدارة: اختيار إدارته، وشاشة «إدارتي» ================= */
 function openDeptPick(){
