@@ -13,7 +13,6 @@ use App\Modules\Risk\Models\RiskCategory;
 use App\Modules\Risk\Models\RiskCause;
 use App\Modules\Risk\Models\RiskNote;
 use App\Modules\Risk\Models\RiskSubCategory;
-use App\Modules\Risk\Services\RiskCopyService;
 use App\Modules\Risk\Services\RiskService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,7 +27,7 @@ class RiskController extends Controller
 {
     use AppliesOrgUnitScope;
 
-    public function __construct(protected RiskService $riskService, protected RiskCopyService $riskCopyService) {}
+    public function __construct(protected RiskService $riskService) {}
 
     // ── السجل الفعلي (active) ──
 
@@ -143,10 +142,10 @@ class RiskController extends Controller
     public function destroy(Risk $risk)
     {
         if ($risk->status !== 'draft') {
-            return redirect()->route('risk.index')->with('error', 'لا يُحذف إلا خطر في حالة مسودة.');
+            return redirect()->route('risk.active.index')->with('error', 'لا يُحذف إلا خطر في حالة مسودة.');
         }
         $risk->delete();
-        return redirect()->route('risk.index')->with('success', 'حُذف الخطر.');
+        return redirect()->route('risk.active.index')->with('success', 'حُذف الخطر.');
     }
 
     // ── السجل العام (reference) ──
@@ -312,46 +311,6 @@ class RiskController extends Controller
             return redirect()->back()->with('success', 'حُدّثت حالة الخطر.');
         } catch (\Throwable $e) {
             return redirect()->back()->with('error', 'تعذّر تغيير الحالة: '.$e->getMessage());
-        }
-    }
-
-    // ── النسخ من الكتاب ──
-
-    public function copyFromMaster(int $risk, Request $request)
-    {
-        try {
-            $source = Risk::findOrFail($risk);
-            $this->riskCopyService->masterToReference($source, Auth::id());
-            if ($request->expectsJson()) {
-                return response()->json(['success' => true, 'message' => 'نُسخ إلى السجل العام'], 200, [], JSON_UNESCAPED_UNICODE);
-            }
-            return redirect()->route('risk.reference.index')->with('success', 'نُسخ الخطر إلى السجل العام.');
-        } catch (\Throwable $e) {
-            if ($request->expectsJson()) {
-                return response()->json(['success' => false, 'message' => $e->getMessage()], 422, [], JSON_UNESCAPED_UNICODE);
-            }
-            return redirect()->back()->with('error', 'تعذّر النسخ: '.$e->getMessage());
-        }
-    }
-
-    public function bulkCopyFromMaster(Request $request)
-    {
-        $validated = $request->validate(['risk_ids' => ['required', 'array', 'min:1'], 'risk_ids.*' => ['integer']]);
-        try {
-            $copied = 0;
-            foreach ($validated['risk_ids'] as $id) {
-                $this->riskCopyService->masterToReference(Risk::findOrFail($id), Auth::id());
-                $copied++;
-            }
-            if ($request->expectsJson()) {
-                return response()->json(['success' => true, 'copied' => $copied], 200, [], JSON_UNESCAPED_UNICODE);
-            }
-            return redirect()->route('risk.reference.index')->with('success', "نُسخ {$copied} خطراً إلى السجل العام.");
-        } catch (\Throwable $e) {
-            if ($request->expectsJson()) {
-                return response()->json(['success' => false, 'message' => $e->getMessage()], 422, [], JSON_UNESCAPED_UNICODE);
-            }
-            return redirect()->back()->with('error', 'تعذّر النسخ: '.$e->getMessage());
         }
     }
 

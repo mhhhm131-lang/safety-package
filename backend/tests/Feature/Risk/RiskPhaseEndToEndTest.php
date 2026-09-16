@@ -30,7 +30,8 @@ class RiskPhaseEndToEndTest extends TestCase
         $worker   = AffectedGroup::create(['name' => 'العامل']);
         $family   = AffectedGroup::create(['name' => 'أسرة العامل']);
 
-        $this->post(route('risk.master.store'), [
+        // الكتاب بلا شاشة (المرحلة ١٦ الدفعة ٨): يُنشأ خطر الكتاب بالخدمة نفسها التي كانت الشاشة تستدعيها.
+        $payload = [
             'title'       => 'سقوط من ارتفاع',
             'description' => 'خطر شامل مع 3 مراحل',
             'category_id' => $category->id,
@@ -57,15 +58,16 @@ class RiskPhaseEndToEndTest extends TestCase
                     'affected_impact'    => [$family->id => 'critical'],
                 ],
             ],
-        ])->assertRedirect(route('risk.master.index'));
+        ];
+        $service = app(\App\Modules\Risk\Services\RiskService::class);
+        $created = $service->createRisk($safety->id, collect($payload)->except(['phases'])->all(), 'master');
+        $service->persistAllPhases($created, $payload['phases']);
 
         $master = Risk::where('risk_type', 'master')->firstOrFail();
         $this->assertSame(3, $master->phases()->count());
 
         // ─── STAGE 2 — Bulk copy from the book into the reference register ───
-        $this->postJson(route('risk.bulkCopyFromMaster'), [
-            'risk_ids' => [$master->id],
-        ])->assertOk()->assertJsonPath('copied', 1);
+        app(\App\Modules\Risk\Services\RiskCopyService::class)->masterToReference($master, $safety->id);
 
         $reference = Risk::where('parent_reference_id', $master->id)->firstOrFail();
         $this->assertSame('reference', $reference->risk_type);

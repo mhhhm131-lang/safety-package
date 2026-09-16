@@ -1,9 +1,9 @@
 {{--
-    Risk table partial — used by master / reference / index (active) views.
+    Risk table partial — used by reference / projects / external parties views.
 
     Variables expected:
       $risks         — paginated/filtered Risk collection (with all phases loaded)
-      $registry_type — 'master' | 'reference' | 'active'
+      $registry_type — 'reference' | 'active'
       $can_edit      — bool, optional
 --}}
 @php
@@ -233,23 +233,12 @@
                                     <i class="bi bi-eye"></i>
                                 </a>
                                 @if($can_edit)
-                                <a href="{{ $registry_type === 'master'
-                                    ? route('risk.master.edit', $risk)
-                                    : ($registry_type === 'reference'
-                                        ? route('risk.reference.edit', $risk)
-                                        : route('risk.active.edit', $risk)) }}"
+                                <a href="{{ $registry_type === 'reference'
+                                    ? route('risk.reference.edit', $risk)
+                                    : route('risk.active.edit', $risk) }}"
                                    class="btn btn-sm btn-outline-secondary" title="تعديل">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                @endif
-                                @if($registry_type === 'master')
-                                <button type="button"
-                                        class="btn btn-sm btn-outline-info btn-copy-master"
-                                        data-risk-id="{{ $risk->id }}"
-                                        data-copy-url="{{ route('risk.copyFromMaster', $risk->id) }}"
-                                        title="نسخ للسجل المرجعي">
-                                    <i class="bi bi-arrow-down-circle"></i>
-                                </button>
                                 @endif
                                 @if($registry_type === 'reference')
                                 <a href="{{ route('risk.activate.form', $risk) }}" class="btn btn-sm btn-outline-success" title="تفعيل">
@@ -257,7 +246,7 @@
                                 </a>
                                 @endif
                                 {{-- المعهد: زر تقديم المسودة للاعتماد (المسار موجود في OHSMS بلا زر) --}}
-                                @if($can_edit && $registry_type !== 'master' && $risk->status === 'draft')
+                                @if($can_edit && $risk->status === 'draft')
                                 <form method="POST" action="{{ route('risk.submit', $risk) }}" onsubmit="return confirm('تقديم هذا الخطر للاعتماد؟')">
                                     @csrf
                                     <button type="submit" class="btn btn-sm btn-outline-warning w-100" title="تقديم للاعتماد"><i class="bi bi-send"></i></button>
@@ -327,7 +316,6 @@
         font-weight: 600;
         white-space: nowrap;
     }
-    .code-pill-master    { background: rgba(139,92,246,.18); color: #a78bfa; }
     .code-pill-reference { background: rgba(8,145,178,.18);  color: #06b6d4; }
     .code-pill-active    { background: rgba(16,185,129,.18); color: #34d399; }
 
@@ -383,49 +371,5 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    document.querySelectorAll('.btn-copy-master').forEach(btn => {
-        btn.addEventListener('click', async function () {
-            const url  = this.dataset.copyUrl;
-            const icon = this.querySelector('i');
-            this.disabled = true;
-            icon.className = 'bi bi-hourglass-split';
-
-            try {
-                const res = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                });
-                const data = await res.json().catch(() => ({}));
-                if (res.ok) {
-                    icon.className = 'bi bi-check-circle-fill';
-                    this.classList.replace('btn-outline-info', 'btn-outline-success');
-                    this.title = 'تم النسخ';
-                    showTableToast('تم نسخ الخطر للسجل المرجعي ✓', 'success');
-                } else {
-                    throw new Error(data.message || 'خطأ');
-                }
-            } catch (e) {
-                icon.className = 'bi bi-arrow-down-circle';
-                this.disabled = false;
-                showTableToast('فشل النسخ: ' + e.message, 'error');
-            }
-        });
-    });
-
-    function showTableToast(msg, type) {
-        const t = document.createElement('div');
-        t.style.cssText = `position:fixed;bottom:20px;left:20px;z-index:9999;
-            padding:10px 18px;border-radius:10px;font-size:.85rem;font-weight:600;
-            box-shadow:0 4px 16px rgba(0,0,0,.25);transition:opacity .4s;direction:rtl;`;
-        t.style.background = type === 'success' ? '#16a34a' : '#dc2626';
-        t.style.color = '#fff';
-        t.textContent = msg;
-        document.body.appendChild(t);
-        setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 400); }, 3000);
-    }
 });
 </script>

@@ -125,7 +125,7 @@ log('8 reference untouched', (now, all(now[k] == keeps[k] for k in keeps)))
 
 # ٩) الشاشات ما زالت تعمل بعد الحذف
 pages = ['/app', '/app/incidents', '/app/emergency', '/app/permits', '/app/forms',
-         '/app/risk', '/app/risk/master', '/app/projects', '/app/workers', '/app/reports',
+         '/app/risk', '/app/projects', '/app/workers', '/app/reports',
          '/app/reports/incidents', '/app/reports/risks', '/app/places', '/app/users']
 codes = [(p, sa.get(BASE + p, timeout=120).status_code) for p in pages]
 log('9 screens after purge', (len(codes), 'أخطاء خادم=' + str(len([c for _, c in codes if c >= 500])),

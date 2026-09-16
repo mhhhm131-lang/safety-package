@@ -11,23 +11,23 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Step 7 feature test — the riskDetail endpoint that powers the book's
- * right-hand detail panel must return phase data in order and drop the
+ * Step 7 feature test — the riskDetail endpoint that powers the reference register's
+ * right-hand detail panel (moved from the book in phase 16 batch 8; same pack()) must return phase data in order and drop the
  * legacy single-phase fields.
  */
-class RiskBookTreeDetailPhasesTest extends TestCase
+class RiskRegistryTreeDetailPhasesTest extends TestCase
 {
     use RefreshDatabase, RiskFixtures;
 
-    private function masterRisk(): Risk
+    private function referenceRisk(): Risk
     {
-        return $this->makeRisk(['risk_type' => 'master']);
+        return $this->makeRisk(['risk_type' => 'reference']);
     }
 
     public function test_risk_detail_returns_phases_in_fixed_order(): void
     {
         $this->actingAsRole('system_admin');
-        $risk = $this->masterRisk();
+        $risk = $this->referenceRisk();
 
         // Insert in an intentionally scrambled order to verify the endpoint
         // still returns proactive → operational → response.
@@ -35,7 +35,7 @@ class RiskBookTreeDetailPhasesTest extends TestCase
         RiskPhase::create(['risk_id' => $risk->id, 'phase' => RiskPhase::PHASE_PROACTIVE, 'corrective_action' => 'P']);
         RiskPhase::create(['risk_id' => $risk->id, 'phase' => RiskPhase::PHASE_OPERATIONAL, 'corrective_action' => 'O']);
 
-        $response = $this->getJson(route('risk.book.tree.riskDetail', $risk));
+        $response = $this->getJson(route('risk.registry.tree.riskDetail', ['type' => 'reference', 'riskId' => $risk->id]));
         $response->assertOk();
 
         $phases = $response->json('phases');
@@ -47,7 +47,7 @@ class RiskBookTreeDetailPhasesTest extends TestCase
     public function test_phase_body_includes_causes_and_affected_groups_with_impact(): void
     {
         $this->actingAsRole('system_admin');
-        $risk = $this->masterRisk();
+        $risk = $this->referenceRisk();
 
         $phase = RiskPhase::create([
             'risk_id' => $risk->id,
@@ -72,7 +72,7 @@ class RiskBookTreeDetailPhasesTest extends TestCase
             'rep_scope'         => 'local',
         ]);
 
-        $response = $this->getJson(route('risk.book.tree.riskDetail', $risk));
+        $response = $this->getJson(route('risk.registry.tree.riskDetail', ['type' => 'reference', 'riskId' => $risk->id]));
         $proactive = collect($response->json('phases'))->firstWhere('phase', 'proactive');
 
         $this->assertSame('تدريب', $proactive['preventive_action']);
@@ -88,10 +88,10 @@ class RiskBookTreeDetailPhasesTest extends TestCase
     public function test_legacy_risk_without_phases_returns_empty_phases_array(): void
     {
         $this->actingAsRole('system_admin');
-        $risk = $this->masterRisk();
+        $risk = $this->referenceRisk();
         // Do NOT create phase rows — legacy scenario.
 
-        $response = $this->getJson(route('risk.book.tree.riskDetail', $risk));
+        $response = $this->getJson(route('risk.registry.tree.riskDetail', ['type' => 'reference', 'riskId' => $risk->id]));
 
         $response->assertOk();
         $response->assertJsonPath('phases', []);
@@ -102,9 +102,9 @@ class RiskBookTreeDetailPhasesTest extends TestCase
         // The legacy columns never existed in the institute schema — the
         // endpoint must expose `phases` and NOT the old root-level fields.
         $this->actingAsRole('system_admin');
-        $risk = $this->masterRisk();
+        $risk = $this->referenceRisk();
 
-        $response = $this->getJson(route('risk.book.tree.riskDetail', $risk));
+        $response = $this->getJson(route('risk.registry.tree.riskDetail', ['type' => 'reference', 'riskId' => $risk->id]));
         $json = $response->json();
 
         $this->assertArrayNotHasKey('corrective_action', $json);

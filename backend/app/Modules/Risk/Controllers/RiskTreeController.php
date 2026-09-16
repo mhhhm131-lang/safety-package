@@ -11,37 +11,12 @@ use App\Modules\Risk\Models\RiskSubCategory;
 use Illuminate\Http\JsonResponse;
 
 /**
- * واجهات JSON لشجرة التصفح (فئة رئيسية ← فرعية ← مخاطر ← تفاصيل) في الكتاب والسجلين.
+ * واجهات JSON لشجرة التصفح (فئة رئيسية ← فرعية ← مخاطر ← تفاصيل) في السجلين (الكتاب حُذف: المرحلة ١٦ الدفعة ٨).
  * منقول من RiskBookTreeController في OHSMS بلا المهن والقطاعات والأنشطة الاقتصادية.
  */
 class RiskTreeController extends Controller
 {
     use AppliesOrgUnitScope;
-
-    // ── كتاب المخاطر (master) ──
-
-    public function bookCategories(): JsonResponse
-    {
-        return response()->json(RiskCategory::where('is_active', true)->orderBy('name')->get(['id', 'name', 'name_en']));
-    }
-
-    public function bookSubCategories(int $categoryId): JsonResponse
-    {
-        return response()->json(RiskSubCategory::where('category_id', $categoryId)->orderBy('name')->get(['id', 'name', 'is_universal']));
-    }
-
-    public function bookRisksBySubCategory(int $subCatId): JsonResponse
-    {
-        return response()->json(Risk::where('risk_type', 'master')->where('sub_category_id', $subCatId)
-            ->orderByDesc('risk_score')->get(['id', 'code', 'title', 'severity', 'likelihood', 'risk_score']));
-    }
-
-    public function bookRiskDetail(int $risk): JsonResponse
-    {
-        $risk = Risk::with(['category', 'subCategory', 'assignedCoordinator', 'assignedFieldTeam',
-            'phases.causes', 'phases.affectedGroups', 'phases.affectedGroupDetails.affectedGroup'])->findOrFail($risk);
-        return response()->json($this->pack($risk));
-    }
 
     // ── السجل العام (reference) وسجل الإدارة (active) ──
 

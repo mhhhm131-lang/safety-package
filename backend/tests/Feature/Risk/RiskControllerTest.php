@@ -193,11 +193,11 @@ class RiskControllerTest extends TestCase
         $approved = $this->makeActiveRisk($user->id, ['status' => 'approved']);
 
         // draft → deleted
-        $this->post(route('risk.destroy', $draft))->assertRedirect(route('risk.index'));
+        $this->post(route('risk.destroy', $draft))->assertRedirect(route('risk.active.index'));
         $this->assertDatabaseMissing('risks', ['id' => $draft->id]);
 
         // approved → not deleted
-        $this->post(route('risk.destroy', $approved))->assertRedirect(route('risk.index'));
+        $this->post(route('risk.destroy', $approved))->assertRedirect(route('risk.active.index'));
         $this->assertDatabaseHas('risks', ['id' => $approved->id]);
     }
 

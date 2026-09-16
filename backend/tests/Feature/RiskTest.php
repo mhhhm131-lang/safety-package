@@ -82,13 +82,13 @@ class RiskTest extends TestCase
         $exec = $this->user('idara', 'top_management');
         $this->masterRisk();
 
-        foreach (['/app/risk/master', '/app/risk/reference', '/app/risk/active', '/app/risk/approval/queue', '/app/risk/master/create', '/app/risk/reference/create', '/app/risk/active/create'] as $p) {
+        foreach (['/app/risk/reference', '/app/risk/active', '/app/risk/approval/queue', '/app/risk/reference/create', '/app/risk/active/create'] as $p) {
             $this->actingAs($safety)->get($p)->assertOk();
         }
         // مدير الإدارة: يرى ويفعّل، لا يعتمد ولا يعدّل الكتاب
         $this->actingAs($dept)->get('/app/risk/reference')->assertOk();
         $this->actingAs($dept)->get('/app/risk/active/create')->assertOk();
-        $this->actingAs($dept)->get('/app/risk/master/create')->assertForbidden();
+        $this->actingAs($dept)->get('/app/risk/reference/create')->assertForbidden();
         $this->actingAs($dept)->get('/app/risk/approval/queue')->assertForbidden();
         // الإدارة العليا: ترى وتعتمد، لا تنشئ
         $this->actingAs($exec)->get('/app/risk/reference')->assertOk();
@@ -183,15 +183,9 @@ class RiskTest extends TestCase
     {
         $safety = $this->user('salama', 'system_admin');
         $m = $this->masterRisk();
-        $this->actingAs($safety)->getJson('/app/risk/book/tree/categories')->assertOk()->assertJsonCount(1);
-        $this->actingAs($safety)->getJson("/app/risk/book/tree/sub-categories/{$this->cat->id}")->assertOk()->assertJsonCount(1);
-        $this->actingAs($safety)->getJson("/app/risk/book/tree/risks-by-sub-category/{$this->sub->id}")->assertOk()->assertJsonPath('0.id', $m->id);
-        $this->actingAs($safety)->getJson("/app/risk/book/tree/risk/{$m->id}")->assertOk()->assertJsonPath('phases.0.preventive_action', 'تصريح عمل ساخن قبل البدء');
         $this->actingAs($safety)->getJson("/app/risk/ajax/subcategories?category_id={$this->cat->id}")->assertOk()->assertJsonCount(1);
         $this->actingAs($safety)->postJson('/app/risk/taxonomy/cause', ['type_category_id' => $this->sub->id, 'name' => 'شرر اللحام'])->assertOk()->assertJsonPath('name', 'شرر اللحام');
         $this->actingAs($safety)->getJson("/app/risk/ajax/causes?sub_category_id={$this->sub->id}")->assertOk()->assertJsonCount(1);
-        $this->actingAs($safety)->postJson("/app/risk/copy-from-master/{$m->id}")->assertOk();
-        $this->assertSame(1, Risk::where('risk_type', 'reference')->count());
         $this->assertTrue(\App\Modules\Governance\Models\AuditLog::where('model_name', 'Risk')->exists());
     }
 }
