@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <script src="/ipa-store.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>لوحة البلاغات والتصعيد — حزمة السلامة</title>
+<title>العمل اليومي — حزمة السلامة</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -314,7 +314,7 @@ button{font-family:inherit}
 
 <!-- ============ اللوحة ============ -->
 <div class="top"><div class="in">
-  <div class="brand"><i>س</i>لوحة البلاغات والتصعيد <small>· مبنى الملز</small></div>
+  <div class="brand"><i>س</i>العمل اليومي <small>· مبنى الملز</small></div>
   <div class="who"><span id="uHint"></span><b id="uRole">—</b><button onclick="logout()">خروج ⎋</button><a href="/app">الإدارة ←</a><a href="index.html">المنظومة ←</a></div>
 </div></div>
 
@@ -344,7 +344,7 @@ button{font-family:inherit}
 
   <!-- بلاغات الشاغلين: سجل مركز السلامة -->
   <div id="secO" style="display:none">
-    <div class="h"><h2>بلاغات الشاغلين</h2><span class="cnt" id="oN">٠</span><em id="oHint">سجل مركز السلامة — ما يصل من الشاغلين بلا دخول</em><a href="/app/incidents" class="editl" style="text-decoration:none">سجل مركز السلامة ←</a><a href="/incident" class="editl" style="text-decoration:none">صفحة البلاغ ←</a></div>
+    <div class="h"><h2>سجل مركز السلامة</h2><span class="cnt" id="oN">٠</span><em id="oHint">ما يصل من الشاغلين بلا دخول</em><a href="/app/incidents" class="editl" style="text-decoration:none">سجل مركز السلامة ←</a><a href="/incident" class="editl" style="text-decoration:none">صفحة البلاغ ←</a></div>
     <div class="cards" id="oBody"></div>
   </div>
 
@@ -1097,7 +1097,7 @@ function drawOcc(){
   $('secO').style.display=show?'':'none';if(!show)return {n:0,open:0};
   const all=occAll().reports.slice().sort((a,b)=>(b.ts||0)-(a.ts||0)),open=all.filter(o=>occState(o)!=='closed'),nw=open.filter(o=>occState(o)==='new').length;
   $('oN').textContent=AR(open.length);$('oN').className='cnt'+(nw?' red':'');
-  $('oHint').textContent=nw?AR(nw)+' جديد لم يُنظر فيه':(open.length?'قيد المتابعة':'سجل مركز السلامة — ما يصل من الشاغلين بلا دخول');
+  $('oHint').textContent=nw?AR(nw)+' جديد لم يُنظر فيه':(open.length?'قيد المتابعة':'ما يصل من الشاغلين بلا دخول');
   const closed=all.length-open.length;
   /* المرحلة ٣: السجل في الخادم (/app/incidents)؛ ما يصل هنا هو ما يُحال إلى الفنيين فقط */
   $('oBody').innerHTML=(open.length?`<div class="empty calm"><b>${AR(open.length)} بلاغ محال إلى الفنيين ينتظر فتح بلاغ فحص</b> — <a href="/app/incidents?status=open" style="color:var(--green)">سجل مركز السلامة كاملاً ←</a></div>`:'<div class="empty calm"><b>لا بلاغات محالة إلى الفنيين الآن</b> — <a href="/app/incidents" style="color:var(--green)">سجل مركز السلامة ←</a></div>');

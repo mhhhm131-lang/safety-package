@@ -55,7 +55,7 @@ class TeamGapTasks implements TaskSource
                 $label = $units[$code]->name ?? ($uid === '_' ? 'الإدارة المشغّلة للمكان' : $uid);
                 $out->push(new Task(
                     key: 'team-gap:'.$hz.':'.$uid,
-                    module: 'الفرق الأولية',
+                    module: 'الفريق الأولي',
                     question: $label.' في '.$places[$hz]->name.': '.$this->ar($staff).' موظفاً تحتاج '.$this->word($need)
                         .' — المعتمد: '.($ready ? $this->word($ready) : 'لا فريق'),
                     primary: ['label' => 'افتح ملف المكان', 'url' => '/dashboard.html#place='.$hz],

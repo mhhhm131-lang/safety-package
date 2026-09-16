@@ -20,7 +20,7 @@ class SettingsController extends Controller
             ['title' => 'الناس والهيكل', 'items' => array_values(array_filter([
                 $can('system.users') ? ['المستخدمون', 'الحسابات والأدوار وكلمات المرور', route('app.users.index')] : null,
                 $can('system.org') ? ['الهيكل التنظيمي', 'الإدارات والأقسام وأماكنها', route('app.org.index')] : null,
-                $can('emergency.teams') ? ['الفرق', 'الفريق الأولي من ملف المكان والفرق اليدوية', route('emergency.teams.index')] : null,
+                $can('emergency.teams') ? ['الفريق الأولي', 'الفريق الأولي من ملف المكان والفرق اليدوية', route('emergency.teams.index')] : null,
             ]))],
             ['title' => 'الأماكن والمبنى', 'items' => array_values(array_filter([
                 ['الأماكن التسعة', 'الأسماء والرموز ورموز QR للبلاغ', route('app.places.index')],

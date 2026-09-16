@@ -1,10 +1,10 @@
 @extends('layouts.app')
-@section('page_title', 'بلاغات الشاغلين')
+@section('page_title', 'سجل مركز السلامة')
 @section('content')
 @php($I = \App\Modules\Incident\Models\Incident::class)
 <div class="d-flex align-items-center gap-2 flex-wrap mb-3">
-  <h1 class="h4 m-0">بلاغات الشاغلين</h1>
-  <span class="small text-muted">سجل مركز السلامة — ما يصل من الشاغلين بلا دخول. ليست بلاغات الفحص الفني.</span>
+  <h1 class="h4 m-0">سجل مركز السلامة</h1>
+  <span class="small text-muted">ما يصل من الشاغلين بلا دخول. ليست بلاغات الفحص الفني.</span>
   <a class="btn btn-sm btn-outline-success ms-auto" href="{{ route('incident.landing') }}" target="_blank"><i class="bi bi-megaphone"></i> صفحة البلاغ العامة</a>
   @if(\App\Core\Permissions\PermissionRegistry::hasPermission(auth()->user()->role(), 'system.settings'))
     <a class="btn btn-sm btn-outline-secondary" href="{{ route('incidents.settings') }}"><i class="bi bi-clock"></i> المهل</a>

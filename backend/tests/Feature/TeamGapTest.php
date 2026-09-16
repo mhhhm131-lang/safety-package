@@ -52,7 +52,7 @@ class TeamGapTest extends TestCase
 
     private function questions(User $u): array
     {
-        return app(InboxService::class)->forUser($u)->where('module', 'الفرق الأولية')->pluck('question')->all();
+        return app(InboxService::class)->forUser($u)->where('module', 'الفريق الأولي')->pluck('question')->all();
     }
 
     public function test_gap_shows_for_unit_manager_and_safety_and_hides_when_complete(): void
@@ -77,7 +77,7 @@ class TeamGapTest extends TestCase
         }
         $this->assertSame([], $this->questions($otherMudir), 'مدير إدارة أخرى يرى نقص غيره');
         $this->assertSame([], $this->questions($employee));
-        $this->actingAs($mudir)->get('/app')->assertOk()->assertSee('الفرق الأولية');
+        $this->actingAs($mudir)->get('/app')->assertOk()->assertSee('data-module="الفريق الأولي"', false);
 
         // الأول معتمد والثاني مرشَّح ← المعتمد فريق واحد
         $this->doc(['staff' => 30, 'team' => $this->team('أول'), 'nom' => $nom, 'appr' => $appr, 'hr' => [],

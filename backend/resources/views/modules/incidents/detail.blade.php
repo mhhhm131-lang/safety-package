@@ -4,7 +4,7 @@
 @php($I = \App\Modules\Incident\Models\Incident::class)
 @php($terminal = in_array($incident->status, $I::TERMINAL, true))
 <div class="d-flex align-items-center gap-2 flex-wrap mb-3">
-  <a href="{{ route('incidents.index') }}" class="small text-muted">بلاغات الشاغلين</a><span class="text-muted">›</span>
+  <a href="{{ route('incidents.index') }}" class="small text-muted">سجل مركز السلامة</a><span class="text-muted">›</span>
   <h1 class="h4 m-0">{{ $incident->code }}</h1>
   <span class="badge text-bg-{{ $I::STATUS_COLORS[$incident->status] ?? 'secondary' }} fs-6">{{ $incident->status_label }}</span>
   <span class="badge text-bg-{{ $incident->incident_type === 'urgent' ? 'danger' : ($incident->incident_type === 'secret' ? 'secondary' : 'info') }}">{{ $incident->type_label }}</span>

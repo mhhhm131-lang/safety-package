@@ -54,18 +54,18 @@ class IntentRegistry
         // البلاغ
         // قرار المستخدم ٢٠٢٦-٠٩-١٣: زر واحد للجميع يفتح اختيار النوع (عادي/سري/عاجل) بميزة كل نوع له
         $add(true, 'report', 'أبلّغ عن خطر', route('incident.landing'), 'bi-megaphone-fill', 'البلاغ', true, 'عادي لا يُغلق إلا بموافقتك · سري يخفي هويتك · عاجل اتصل بالمركز');
-        $add($can('incident.list'), 'incidents', 'سجل البلاغات', route('incidents.index'), 'bi-journal-text', 'البلاغ');
+        $add($can('incident.list'), 'incidents', 'سجل مركز السلامة', route('incidents.index'), 'bi-journal-text', 'البلاغ');
         // الفني: مكانه
         $add($ui === 'tech' && $folder, 'inspect', 'أفحص مكاني', $folder ? '/'.$folder.'/inspection-form.html' : null, 'bi-clipboard-check', 'الفحص', true, $placeCode ? 'نموذج فحص '.$placeCode : null);
         $add((bool) $ui, 'forms', 'نماذج الفحص', route('app.inspections'), 'bi-clipboard-check', 'الفحص', $ui !== 'tech', 'النماذج العشرة: آخر جولة وبلاغاتها المفتوحة، وكل نموذج بضغطة');
-        $add((bool) $ui, 'inspections', 'صورة المبنى واللوحة', '/dashboard.html', 'bi-speedometer2', 'الفحص');
+        $add((bool) $ui, 'inspections', 'العمل اليومي', '/dashboard.html', 'bi-speedometer2', 'الفحص');
         // الطوارئ
         $add($can('emergency.trigger') && $main, 'trigger', 'فعّل حالة طارئة', $main ? route('emergency.buildings.control', $main).($placeCode ? '?place='.$placeCode : '') : null, 'bi-bell-fill', 'الطوارئ', true, 'الفريق الأولي والقيادة يُنبَّهون فوراً');
         $add($can('emergency.trigger') && $main, 'lockdown', 'إخلاء أو إغلاق', $main ? route('emergency.buildings.control', $main).'#lockdown' : null, 'bi-door-closed', 'الطوارئ');
         $add(($can('emergency.respond') || $isTeamMember) && !$can('emergency.trigger'), 'sos', 'أستغيث الآن', route('emergency.dashboard'), 'bi-exclamation-octagon-fill', 'الطوارئ', true, 'زر الذعر يصل المركز فوراً');
         $add($can('emergency.respond'), 'arrived', 'وصلتُ / أسجّل وصول عضو', route('emergency.dashboard'), 'bi-check2-circle', 'الطوارئ');
         $add($can('emergency.drill'), 'drill', 'أجدول تمريناً', route('emergency.drills.create'), 'bi-calendar-event', 'الطوارئ');
-        $add($can('emergency.teams'), 'teams', 'الفرق الأولية', route('emergency.teams.index'), 'bi-people-fill', 'الطوارئ');
+        $add($can('emergency.teams'), 'teams', 'الفريق الأولي', route('emergency.teams.index'), 'bi-people-fill', 'الطوارئ');
         $add($can('emergency.view'), 'emergency', 'مركز الطوارئ', route('emergency.dashboard'), 'bi-broadcast', 'الطوارئ');
         $add($can('emergency.view') && in_array($role, ['facilities_manager', 'system_admin', 'system_staff'], true), 'systems', 'أنظمة المبنى', route('emergency.iot.dashboard'), 'bi-cpu', 'الطوارئ');
         // الإدارة: الفريق والمخاطر

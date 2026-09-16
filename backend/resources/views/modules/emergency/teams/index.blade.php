@@ -1,10 +1,10 @@
 @extends('layouts.app')
-@section('page_title', 'فرق الطوارئ')
+@section('page_title', 'الفريق الأولي')
 @section('content')
 @php($role = auth()->user()->role())
 @php($P = \App\Core\Permissions\PermissionRegistry::class)
 <div class="d-flex align-items-center gap-2 flex-wrap mb-3">
-  <h1 class="h4 m-0"><i class="bi bi-people-fill"></i> فرق الطوارئ</h1>
+  <h1 class="h4 m-0"><i class="bi bi-people-fill"></i> الفريق الأولي</h1>
   <span class="small text-muted">الفريق الأولي (منسق، مسعف، منقذ، إطفائي) مشتق من ملف المكان في اللوحة — لا يُحرَّر هنا</span>
   <span class="ms-auto d-flex gap-1">
     @if($P::hasPermission($role, 'emergency.manage'))<form method="post" action="{{ route('emergency.teams.sync') }}">@csrf<button class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-repeat"></i> مزامنة من اللوحة</button></form>@endif
