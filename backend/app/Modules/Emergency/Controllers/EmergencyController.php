@@ -624,8 +624,8 @@ class EmergencyController extends Controller
 
     public function teamsIndex(Request $request)
     {
-        // الفرق المشتقة من ملف المكان تُحدَّث عند كل فتح (المصدر اللوحة)
-        app(TeamSync::class)->sync();
+        // المرحلة ١٦ الدفعة ٦: طلب قراءة لا يكتب. الاشتقاق من ملف المكان يقع عند حفظ الوثيقة
+        // (StoreController::put → TeamSync) وبزر «مزامنة من اللوحة» (POST teams.sync).
         $q = EmergencyTeam::with(['building', 'place', 'members'])->orderByDesc('source')->orderBy('place_id')->orderBy('name');
         if ($request->filled('place')) $q->whereHas('place', fn ($w) => $w->where('code', $request->place));
         $teams = $q->paginate(30)->withQueryString();
