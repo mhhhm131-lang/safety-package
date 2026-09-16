@@ -818,7 +818,7 @@ function openDeptEdit(id){
   const A=deptsAll(),d=A.find(x=>x.id===id)||{id:'',name:'',parent:'',place:HUB,mgr:''};
   const desc=new Set();if(id)(function walk(p){A.filter(x=>x.parent===p).forEach(x=>{desc.add(x.id);walk(x.id)})})(id);
   const parents=A.filter(x=>x.id!==id&&!desc.has(x.id));
-  $('pmb').innerHTML=`<h2>${id?'تعديل':'إضافة'} إدارة أو قسم</h2><div class="sub">يُحفظ في الهيكل على هذا الجهاز إلى حين الربط بحسابات المعهد</div>
+  $('pmb').innerHTML=`<h2>${id?'تعديل':'إضافة'} إدارة أو قسم</h2><div class="sub">يُحفظ في خادم المنظومة ويصل كل الأجهزة — والهيكل نفسه يظهر في «الهيكل التنظيمي» بالإدارة</div>
     <div class="fg">
       <div style="grid-column:1/-1"><label>الاسم</label><input id="d_name" value="${esc(d.name)}" placeholder="مثال: قسم الصيانة الكهربائية"></div>
       <div><label>تتبع</label><select id="d_parent"><option value="">— المدير العام مباشرة</option>${parents.map(p=>`<option value="${p.id}"${p.id===d.parent?' selected':''}>${esc(p.name)}</option>`).join('')}</select></div>

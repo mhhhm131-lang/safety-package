@@ -56,6 +56,14 @@ class InstituteFilesTest extends TestCase
         }
     }
 
+    /** الدفعة ٤: نافذة الإدارات لا تقول إن الهيكل يُحفظ على الجهاز — الجدول في الخادم هو الأصل (StoreController:119-126) */
+    public function test_dashboard_org_window_says_server_is_the_source(): void
+    {
+        $html = $this->dashboard();
+        $this->assertStringNotContainsString('يُحفظ في الهيكل على هذا الجهاز', $html, 'النص القديم يخالف أن الخادم هو الأصل');
+        $this->assertStringContainsString('يُحفظ في خادم المنظومة', $html);
+    }
+
     /** ما يجب ألا يُحذف: شاشة رسالة النظام ودوال الدخول بالجلسة */
     public function test_dashboard_keeps_system_gate_and_session_entry(): void
     {
