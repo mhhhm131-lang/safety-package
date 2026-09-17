@@ -66,17 +66,29 @@ class ActiveCreateThirdLevelTest extends TestCase
         $this->actingAs($this->mudir)->getJson("/app/risk/registry/tree/reference/risks-by-sub-category/{$this->sub->id}")->assertOk()->assertJsonCount(3);
     }
 
-    /** اختيار خطر مرجعي: يُربط به ويُشتق اسمه منه إن تُرك فارغاً. */
+    /** اختيار خطر مرجعي: يُربط به ويُشتق اسمه منه إن تُرك فارغاً، وتُنسخ مراحله بأسبابها وإجراءاتها ومتأثريها (ما كشفه المستخدم على المنشور). */
     public function test_store_with_reference_links_parent_and_derives_title(): void
     {
         $ref = $this->reference('اشتعال مركبة في مواقف القبو');
+        $gid = \App\Modules\Risk\Models\AffectedGroup::first()->id;
+        app(RiskService::class)->persistAllPhases($ref, ['proactive' => ['preventive_action' => 'منع الوقوف فوق المصارف وفحص التمديدات',
+            'cause_names' => ['تسرب وقود', 'ماس كهربائي في مركبة'], 'affected_group_ids' => [$gid], 'affected_impact' => [$gid => 4]]]);
+        // الحقول الفارغة كما يرسلها النموذج لا تمحو المنسوخ؛ والمكتوب يغلب
         $this->actingAs($this->mudir)->post('/app/risk/active/create', ['category_id' => $this->cat->id, 'sub_category_id' => $this->sub->id,
             'parent_reference_id' => $ref->id, 'title' => '', 'severity' => 4, 'likelihood' => 2, 'scope_type' => 'org_unit',
-            'organization_unit_id' => OrganizationUnit::first()->id, 'place_id' => Place::idByCode('HZ-01')])->assertRedirect();
+            'organization_unit_id' => OrganizationUnit::first()->id, 'place_id' => Place::idByCode('HZ-01'),
+            'phases' => ['proactive' => ['preventive_action' => '', 'corrective_action' => 'إخلاء المواقف وإطفاء بالرغوة', 'cause_names' => ['']],
+                         'reactive' => ['preventive_action' => '', 'cause_names' => ['']]]])->assertRedirect();
         $a = Risk::where('risk_type', 'active')->first();
         $this->assertNotNull($a);
         $this->assertSame($ref->id, $a->parent_reference_id);
         $this->assertSame('اشتعال مركبة في مواقف القبو', $a->title);
+        $pro = $a->phases()->where('phase', 'proactive')->with(['causes', 'affectedGroups'])->first();
+        $this->assertSame('منع الوقوف فوق المصارف وفحص التمديدات', $pro->preventive_action);
+        $this->assertSame('إخلاء المواقف وإطفاء بالرغوة', $pro->corrective_action);
+        $this->assertEqualsCanonicalizing(['تسرب وقود', 'ماس كهربائي في مركبة'], $pro->causes->pluck('name')->all());
+        $this->assertSame([$gid], $pro->affectedGroups->pluck('id')->all());
+        $this->assertSame(3, $a->phases()->count());
         // خطر مرجعي من فئة أخرى لا يُقبل
         $other = RiskSubCategory::create(['category_id' => $this->cat->id, 'name' => 'أخرى', 'abbreviation' => 'OTH']);
         $this->actingAs($this->mudir)->post('/app/risk/active/create', ['category_id' => $this->cat->id, 'sub_category_id' => $other->id,

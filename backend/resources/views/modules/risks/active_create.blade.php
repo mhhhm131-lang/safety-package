@@ -429,6 +429,23 @@ document.getElementById('riskTypeSelect').addEventListener('change', function() 
             if (d.severity) document.getElementById('sevSelect').value = d.severity;
             if (d.likelihood) document.getElementById('likSelect').value = d.likelihood;
             updateScore();
+            /* المراحل الثلاث: الأسباب والإجراءات والمتأثرون كما في السجل العام — تُملأ الفارغة فقط، وتبقى قابلة للتعديل */
+            (d.phases || []).forEach(ph => {
+                const k = ph.phase, q = n => document.querySelector(`[name="phases[${k}][${n}]"]`);
+                [['preventive_action', ph.preventive_action], ['corrective_action', ph.corrective_action], ['residual_assessment', ph.residual_assessment]].forEach(([n, v]) => { const el = q(n); if (el && v && !el.value.trim()) el.value = v; });
+                const box = document.getElementById('causes-' + k);
+                if (box && (ph.causes || []).length) {
+                    const empty = [...box.querySelectorAll('input')].every(i => !i.value.trim());
+                    if (empty) { box.innerHTML = ''; ph.causes.forEach(c => { addCauseRow(k); const ins = box.querySelectorAll('input'); ins[ins.length - 1].value = c.name; }); }
+                }
+                (ph.affected_groups || []).forEach(g => {
+                    const cb = document.getElementById(`rag_${k}_${g.id}`); if (!cb) return;
+                    cb.checked = true;
+                    const imp = document.querySelector(`[name="phases[${k}][affected_impact][${g.id}]"]`); if (imp && g.impact) imp.value = g.impact;
+                    const sc = document.querySelector(`[name="phases[${k}][affected_rep_scope][${g.id}]"]`); if (sc && g.rep_scope) sc.value = g.rep_scope;
+                    const det = document.querySelector(`[name="phases[${k}][affected_detail][${g.id}]"]`); if (det && g.detail && !det.value.trim()) det.value = g.detail;
+                });
+            });
         }).catch(() => {});
 });
 

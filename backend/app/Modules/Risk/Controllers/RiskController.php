@@ -93,8 +93,15 @@ class RiskController extends Controller
             $validated['title'] = trim((string) ($validated['title'] ?? '')) ?: ($reference?->title ?: $this->deriveTitle($validated['risk_type_category_id'] ?? null, $validated['sub_category_id'] ?? null));
             $validated['description'] = trim((string) ($validated['description'] ?? '')) ?: ($reference?->description ?: $validated['title']);
             $validated['parent_reference_id'] = $reference?->id;
-            $risk = $this->riskService->createRisk(Auth::id(), collect($validated)->except(['phases'])->all(), 'active');
-            $this->riskService->persistAllPhases($risk, $validated['phases'] ?? []);
+            if ($reference) {
+                // ١٨-٢: خطر من السجل العام ← نسخة كاملة بمراحلها وأسبابها وإجراءاتها (كالتفعيل)، وما كتبه المستخدم في النموذج يغلب
+                $risk = app(\App\Modules\Risk\Services\RiskCopyService::class)->referenceToActive($reference, Auth::id(),
+                    collect($validated)->except(['phases', 'parent_reference_id'])->all() + ['status' => 'draft']);
+                $this->riskService->persistAllPhases($risk, $this->typedPhasesOnly($validated['phases'] ?? []));
+            } else {
+                $risk = $this->riskService->createRisk(Auth::id(), collect($validated)->except(['phases'])->all(), 'active');
+                $this->riskService->persistAllPhases($risk, $validated['phases'] ?? []);
+            }
             return redirect()->route('risk.active.index')->with('success', 'أُنشئ الخطر في السجل الفعلي بمراحله الثلاث.');
         } catch (\Throwable $e) {
             return redirect()->back()->withInput()->with('error', 'حدث خطأ: '.$e->getMessage());
@@ -483,6 +490,22 @@ class RiskController extends Controller
         if ($sub && (int) $ref->sub_category_id !== (int) $sub) return false;
         if (!$sub && (int) $ref->category_id !== (int) ($validated['category_id'] ?? 0)) return false;
         return $ref;
+    }
+
+    /** ١٨-٢: من مدخلات المراحل ما كتبه المستخدم فقط — الحقول الفارغة لا تمحو ما نُسخ من المرجعي. */
+    private function typedPhasesOnly(array $phases): array
+    {
+        $out = [];
+        foreach ($phases as $key => $p) {
+            if (!is_array($p)) continue;
+            $t = [];
+            foreach ($p as $k => $v) {
+                if (is_array($v)) { $v = array_values(array_filter($v, fn ($x) => trim((string) $x) !== '')); if ($v) $t[$k] = $v; }
+                elseif (trim((string) $v) !== '') $t[$k] = $v;
+            }
+            if ($t) $out[$key] = $t;
+        }
+        return $out;
     }
 
     /** المرحلة ١٨-٢: مسؤول السلامة يضيف خطراً فعلياً جديداً (بلا مرجع) إلى السجل العام — قراره هو. */
