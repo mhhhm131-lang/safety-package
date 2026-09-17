@@ -360,7 +360,7 @@ body.fromDash #dvInbox,body.fromDash .dv-sec.wait{display:none}
       <td class="lbl">النظام المفحوص</td><td colspan="3"><input type="text" id="sysName" readonly></td>
     </tr>
     <tr>
-      <td class="lbl">الموقع / المنطقة</td><td><input type="text" id="loc"></td>
+      <td class="lbl">الموقع / المنطقة</td><td><input type="text" id="loc" list="unitList" placeholder="اختر الوحدة أو اكتب الموقع"><datalist id="unitList"></datalist></td>
       <td class="lbl">دورية هذا الفحص</td>
       <td><select id="freq" style="border:0;border-bottom:1px dotted var(--line);font-family:inherit;font-size:12px;background:transparent"></select></td>
       <td class="lbl">التاريخ</td><td><input type="date" id="dtRound" readonly></td>
@@ -1572,7 +1572,7 @@ function saveM(keepOpen){
   const closed=STATE.closedAt;
   const backFrom=STATE.backFrom&&!STATE.levels[1]?STATE.backFrom:0;
   const rec={row,id:EDIT?EDIT.id:'ب — '+AR(String(++SEQ).padStart(2,'0')),
-    sys:inf.sys,item:inf.txt,ref:inf.ref,
+    sys:inf.sys,unit:($('loc').value||'').trim(),item:inf.txt,ref:inf.ref,
     finder,finderName:($('insN').value||'—')+($('offN').value?' — '+$('offN').value:''),desc:$('mDesc').value||'—',
     imp:imp?imp.dataset.imp:'',sev:imp?imp.dataset.sev:'—',due:imp?imp.dataset.due:'—',
     when:$('mWhen').value,sent:SENT,cycleAt:STATE.cycleAt||'',occ:STATE.occ||'',
@@ -1950,7 +1950,7 @@ DIRTY=false;
     /* المحطة ١: بطاقة بيانات الجولة مربوطة بحقول القسم ١ نفسها */
     var s1=document.createElement('div'); s1.id='mobS1'; s1.dataset.st='1';
     s1.innerHTML='<div class="mh1">١ · بداية الجولة</div><div class="msub" id="mobS1sub"></div>'
-      +'<div class="mcard"><div><div class="lb">الموقع / المنطقة</div><input type="text" id="mobLoc" placeholder="مثال: القبو الأول — الجهة الشرقية"></div>'
+      +'<div class="mcard"><div><div class="lb">الموقع / المنطقة</div><input type="text" id="mobLoc" list="unitList" placeholder="اختر الوحدة (قاعة، غرفة…) أو اكتب الموقع"></div>'
       +'<div><div class="lb">اسم الفاحص</div><input type="text" id="mobInsN"></div>'
       +'<div><div class="lb">دورية هذا الفحص</div><select id="mobFreq"></select></div>'
       +'<div class="msw" id="mobAck"><span>أُبلغ المناوب قبل البدء وبعد الانتهاء</span><i></i></div></div>'
@@ -2024,6 +2024,11 @@ DIRTY=false;
   function roundEmpty(){return !((typeof MARKS!=='undefined')&&Object.keys(MARKS).some(function(k){return MARKS[k];}));}
   function bindS1(){
     bindText(g('loc'),g('mobLoc'));
+    /* ١٨-٣ (د): وحدات المكان من الخادم — اقتراحات في الحقل نفسه، ويبقى النص حراً */
+    try{fetch('/api/place-units?place='+MYHZ,{credentials:'same-origin'}).then(function(r){return r.ok?r.json():[];}).then(function(us){
+      var dl=document.getElementById('unitList');if(!dl||!us||!us.length)return;dl.innerHTML='';
+      us.forEach(function(u){var o=document.createElement('option');o.value=u.label;dl.appendChild(o);});
+      window.PLACE_UNITS=us;}).catch(function(){});}catch(e){}
     var n=g('insN'), nn=g('mobInsN');
     if(n&&nn){ if(isMarker()&&(!n.value||roundEmpty())){var nm=sessionName();if(nm)n.value=nm;} bindText(n,nn); }
     var f=g('freq'), ff=g('mobFreq');

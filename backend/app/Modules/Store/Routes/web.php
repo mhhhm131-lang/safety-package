@@ -20,6 +20,9 @@ Route::middleware(['web', 'auth'])->prefix('api/store')->name('store.')->group(f
 // المرحلة ١٥-٤: اقتراح الحسابات في ترشيح الفريق الأولي باللوحة — لمن يرشّح أو يعتمد
 Route::middleware(['web', 'auth'])->get('/api/team-accounts', [\App\Modules\Store\Controllers\TeamAccountsController::class, 'index'])->name('team-accounts');
 
+// المرحلة ١٨-٣ (د): وحدات المكان لنماذج الفحص (اختيار القاعة/الغرفة في المحطة الأولى)
+Route::middleware(['web', 'auth'])->get('/api/place-units', [\App\Modules\Store\Controllers\PlaceUnitsApiController::class, 'index'])->name('place-units');
+
 // المرحلة ١٤: «الجولات السابقة» في النموذج — سجل السلامة للقراءة فقط
 Route::middleware(['web', 'auth'])->prefix('api/inspection-rounds')->name('inspection-rounds.')->group(function () {
     Route::get('/', [\App\Modules\Store\Controllers\InspectionRoundsController::class, 'index'])->name('index');
