@@ -65,7 +65,7 @@ class CloseoutService
     /** المرجعي: يبقى كما هو. */
     public const REFERENCE = [
         // الحوكمة والحسابات
-        'users', 'user_profiles', 'organization_units', 'places', 'settings', 'institute_documents',
+        'users', 'user_profiles', 'organization_units', 'places', 'place_units' /* ١٨-٣: وحدات الأماكن تُدخل مرة وتبقى */, 'settings', 'institute_documents',
         // المخاطر: الكتاب والسجل العام وتصنيفاتهما (الفعّالة تُحذف على حدة)
         'risks', 'risk_categories', 'risk_sub_categories', 'risk_causes', 'risk_controls',
         'risk_phases', 'risk_events', 'risk_notes',

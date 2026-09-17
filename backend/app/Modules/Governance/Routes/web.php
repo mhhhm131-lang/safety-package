@@ -39,6 +39,15 @@ Route::middleware(['web', 'auth'])->prefix('app')->name('app.')->group(function 
         Route::delete('/{unit}', [OrgUnitsController::class, 'destroy'])->name('destroy');
     });
 
+    // المرحلة ١٨-٣ (قرار ٤٧): وحدات الأماكن — القراءة لكل حساب، والتعديل بحسب صاحب المكان (PlaceUnit::canManage)
+    Route::prefix('places')->name('places.units.')->group(function () {
+        Route::get('/units', [\App\Modules\Governance\Controllers\PlaceUnitsController::class, 'hub'])->name('hub');
+        Route::get('/{place}/units', [\App\Modules\Governance\Controllers\PlaceUnitsController::class, 'index'])->name('index');
+        Route::post('/{place}/units', [\App\Modules\Governance\Controllers\PlaceUnitsController::class, 'store'])->name('store');
+        Route::post('/{place}/units/paste', [\App\Modules\Governance\Controllers\PlaceUnitsController::class, 'paste'])->name('paste');
+        Route::put('/{place}/units/{unit}', [\App\Modules\Governance\Controllers\PlaceUnitsController::class, 'update'])->name('update');
+        Route::delete('/{place}/units/{unit}', [\App\Modules\Governance\Controllers\PlaceUnitsController::class, 'destroy'])->name('destroy');
+    });
     Route::middleware('permission:system.settings')->prefix('places')->name('places.')->group(function () {
         Route::get('/', [PlacesController::class, 'index'])->name('index');
         Route::get('/qr', [PlacesController::class, 'qr'])->name('qr');

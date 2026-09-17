@@ -70,6 +70,12 @@ class IntentRegistry
         $add($can('emergency.view') && in_array($role, ['facilities_manager', 'system_admin', 'system_staff'], true), 'systems', 'أنظمة المبنى', route('emergency.iot.dashboard'), 'bi-cpu', 'الطوارئ');
         // الإدارة: الفريق والمخاطر
         $add($ui === 'dept' && $profile?->organization_unit_id, 'nominate', 'أرشّح الفريق الأولي لإدارتي', '/dashboard.html', 'bi-person-plus', 'إدارتي', true, 'منسق ومسعف ومنقذ وإطفائي من موظفيك');
+        // المرحلة ١٨-٣ (قرار ٤٧): وحدات الأماكن — مدير المرافق كل الأماكن، ومدير الإدارة إدارته في مكانها، ومسؤول السلامة الكل
+        $unitsUrl = ($ui === 'dept' && $profile?->organization_unit_id && ($ouPlace = \App\Modules\Governance\Models\OrganizationUnit::find($profile->organization_unit_id)?->place_id))
+            ? route('app.places.units.index', $ouPlace) : route('app.places.units.hub');
+        $add($role === 'facilities_manager' || in_array($role, ['system_admin', 'system_staff'], true) || ($ui === 'dept' && $profile?->organization_unit_id),
+            'units', $ui === 'dept' && !in_array($role, ['system_admin', 'system_staff'], true) ? 'موقع إدارتي في مكانها' : 'وحدات الأماكن', $unitsUrl, 'bi-grid-3x3-gap', 'إدارتي', false,
+            $role === 'facilities_manager' ? 'القاعات والغرف والمستودعات بأرقامها ومواقعها' : 'الدور والموقع');
         $add($can('risk.activate'), 'activate', 'أفعّل خطراً لإدارتي', route('risk.reference.index'), 'bi-lightning-charge', 'إدارتي', false, 'من كتاب المعهد');
         $add($can('risk.list'), 'book', 'السجل العام للمعهد', route('risk.reference.index'), 'bi-bookmark', 'إدارتي');
         $add($can('form.send'), 'sendform', 'أرسل نموذجاً لموظفين', route('forms.index'), 'bi-send', 'إدارتي');
