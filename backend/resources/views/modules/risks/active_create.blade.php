@@ -65,16 +65,13 @@
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label" style="color:var(--text-main);">نوع الخطر <small class="text-muted">(المستوى الثالث)</small></label>
-                        <div class="input-group">
-                            <select name="risk_type_category_id" id="riskTypeSelect" class="form-select">
-                                <option value="">اختر الفئة الفرعية أولاً...</option>
-                            </select>
-                            <button type="button" class="btn btn-outline-secondary" title="إضافة نوع جديد" data-bs-toggle="modal" data-bs-target="#modalAddCause">
-                                <i class="bi bi-plus"></i>
-                            </button>
-                        </div>
-                        <small style="color:var(--text-muted);">يُستخدم اسماً للخطر إن تُرك «اسم الخطر» فارغاً</small>
+                        {{-- المرحلة ١٨-٢: المستوى الثالث = الأخطار المرجعية تحت الفئة الفرعية (كما في السجل العام) أو «خطر جديد» --}}
+                        <label class="form-label" style="color:var(--text-main);">الخطر <small class="text-muted">(من السجل العام أو جديد)</small></label>
+                        <select name="parent_reference_id" id="riskTypeSelect" class="form-select @error('parent_reference_id') is-invalid @enderror">
+                            <option value="">اختر الفئة الفرعية أولاً...</option>
+                        </select>
+                        @error('parent_reference_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <small style="color:var(--text-muted);">اختيار خطر من السجل يملأ الاسم والوصف والتقييم؛ و«خطر جديد» تكتب اسمه بيدك</small>
                     </div>
                 </div>
             </div>
@@ -402,22 +399,38 @@ function loadSubCats(catId, selSubId = null) {
         }).catch(() => sub.innerHTML = '<option value="">غير متاح</option>');
 }
 
+/* المرحلة ١٨-٢: المستوى الثالث من الأخطار المرجعية (المسار نفسه الذي يستعمله السجل العام)، وأول خيار «خطر جديد» */
 function loadRiskTypes(subCatId, selTypeId = null) {
     const sel = document.getElementById('riskTypeSelect');
     if (!subCatId) { sel.innerHTML = '<option value="">اختر الفئة الفرعية أولاً...</option>'; return; }
     sel.innerHTML = '<option>جاري التحميل...</option>';
-    fetch('/app/risk/ajax/causes?sub_category_id=' + subCatId)
+    fetch('/app/risk/registry/tree/reference/risks-by-sub-category/' + subCatId)
         .then(r => r.json())
         .then(data => {
-            sel.innerHTML = '<option value="">— اختر نوع الخطر —</option>';
+            sel.innerHTML = '<option value="">خطر جديد غير موجود في السجل — أكتب اسمه</option>';
             data.forEach(t => {
                 const o = document.createElement('option');
-                o.value = t.id; o.textContent = t.name;
+                o.value = t.id; o.textContent = (t.code ? t.code + ' — ' : '') + t.title;
                 if (selTypeId && String(t.id) === String(selTypeId)) o.selected = true;
                 sel.appendChild(o);
             });
         }).catch(() => sel.innerHTML = '<option value="">غير متاح</option>');
 }
+
+/* اختيار خطر من السجل يملأ الاسم والوصف والتقييم (يبقى قابلاً للتعديل) */
+document.getElementById('riskTypeSelect').addEventListener('change', function() {
+    if (!this.value) return;
+    fetch('/app/risk/registry/tree/reference/risk/' + this.value)
+        .then(r => r.json())
+        .then(d => {
+            const t = document.querySelector('input[name=title]'), ds = document.querySelector('textarea[name=description]');
+            if (t && !t.value.trim()) t.value = d.title || '';
+            if (ds && !ds.value.trim()) ds.value = d.description || '';
+            if (d.severity) document.getElementById('sevSelect').value = d.severity;
+            if (d.likelihood) document.getElementById('likSelect').value = d.likelihood;
+            updateScore();
+        }).catch(() => {});
+});
 
 document.getElementById('subCatSelect').addEventListener('change', function() {
     loadRiskTypes(this.value);
@@ -434,7 +447,7 @@ function addCauseRow(phaseKey) {
 // Restore after validation error
 const oldCatId = @json(old('category_id'));
 const oldSubId  = @json(old('sub_category_id'));
-const oldTypeId = @json(old('risk_type_category_id'));
+const oldTypeId = @json(old('parent_reference_id'));
 if (oldCatId) loadSubCats(oldCatId, oldSubId);
 if (oldSubId && oldTypeId) setTimeout(() => loadRiskTypes(oldSubId, oldTypeId), 600);
 

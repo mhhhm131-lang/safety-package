@@ -87,9 +87,12 @@ class RiskController extends Controller
     public function activeStore(Request $request)
     {
         $validated = $request->validate(array_merge($this->referenceValidationRules(), $this->activeExtraRules()));
+        $reference = $this->referenceFor($validated);
+        if ($reference === false) return redirect()->back()->withInput()->withErrors(['parent_reference_id' => 'الخطر المرجعي المختار ليس تحت هذه الفئة الفرعية.']);
         try {
-            $validated['title'] = trim((string) ($validated['title'] ?? '')) ?: $this->deriveTitle($validated['risk_type_category_id'] ?? null, $validated['sub_category_id'] ?? null);
-            $validated['description'] = trim((string) ($validated['description'] ?? '')) ?: $validated['title'];
+            $validated['title'] = trim((string) ($validated['title'] ?? '')) ?: ($reference?->title ?: $this->deriveTitle($validated['risk_type_category_id'] ?? null, $validated['sub_category_id'] ?? null));
+            $validated['description'] = trim((string) ($validated['description'] ?? '')) ?: ($reference?->description ?: $validated['title']);
+            $validated['parent_reference_id'] = $reference?->id;
             $risk = $this->riskService->createRisk(Auth::id(), collect($validated)->except(['phases'])->all(), 'active');
             $this->riskService->persistAllPhases($risk, $validated['phases'] ?? []);
             return redirect()->route('risk.active.index')->with('success', 'أُنشئ الخطر في السجل الفعلي بمراحله الثلاث.');
@@ -112,14 +115,19 @@ class RiskController extends Controller
         $risk = Risk::findOrFail($risk);
         $this->authorizeScope($risk);
         $validated = $request->validate(array_merge($this->referenceValidationRules(), $this->activeExtraRules()));
+        $reference = $this->referenceFor($validated);
+        if ($reference === false) return redirect()->back()->withInput()->withErrors(['parent_reference_id' => 'الخطر المرجعي المختار ليس تحت هذه الفئة الفرعية.']);
         try {
             $typed = trim((string) ($validated['title'] ?? ''));
             if ($typed !== '') {
                 $validated['title'] = $typed;
+            } elseif ($reference) {
+                $validated['title'] = $reference->title;
             } else {
                 $derived = $this->deriveTitle($validated['risk_type_category_id'] ?? null, $validated['sub_category_id'] ?? null);
                 $validated['title'] = $derived !== 'خطر غير محدد' ? $derived : ($risk->title ?: 'خطر غير محدد');
             }
+            $validated['parent_reference_id'] = $reference?->id;
             $validated['description'] = trim((string) ($validated['description'] ?? '')) ?: $validated['title'];
             $this->riskService->updateRisk($risk, Auth::id(), collect($validated)->except(['phases'])->all());
             $this->riskService->persistAllPhases($risk, $validated['phases'] ?? []);
@@ -415,6 +423,8 @@ class RiskController extends Controller
             'description' => ['nullable', 'string', 'max:10000'],
             'contact_channel' => ['nullable', 'string', 'max:200'],
             'risk_type_category_id' => ['nullable', 'integer', 'exists:risk_causes,id'],
+            // المرحلة ١٨-٢: المستوى الثالث = خطر مرجعي من السجل العام (أو فارغ = خطر جديد غير موجود)
+            'parent_reference_id' => ['nullable', 'integer', 'exists:risks,id'],
             'category_id' => ['required', 'integer', 'exists:risk_categories,id'],
             'sub_category_id' => ['nullable', 'integer', 'exists:risk_sub_categories,id'],
             'severity' => ['required', 'integer', 'min:1', 'max:5'],
@@ -457,6 +467,32 @@ class RiskController extends Controller
             'phases.*.affected_detail' => ['nullable', 'array'],
             'phases.*.affected_detail.*' => ['nullable', 'string', 'max:1000'],
         ];
+    }
+
+    /**
+     * المرحلة ١٨-٢: الخطر المرجعي المختار في المستوى الثالث. null = خطر جديد غير موجود؛ false = مختار لكنه ليس تحت الفئة الفرعية.
+     * @return Risk|null|false
+     */
+    private function referenceFor(array $validated): Risk|null|false
+    {
+        $id = $validated['parent_reference_id'] ?? null;
+        if (!$id) return null;
+        $ref = Risk::where('risk_type', 'reference')->find((int) $id);
+        if (!$ref) return false;
+        $sub = $validated['sub_category_id'] ?? null;
+        if ($sub && (int) $ref->sub_category_id !== (int) $sub) return false;
+        if (!$sub && (int) $ref->category_id !== (int) ($validated['category_id'] ?? 0)) return false;
+        return $ref;
+    }
+
+    /** المرحلة ١٨-٢: مسؤول السلامة يضيف خطراً فعلياً جديداً (بلا مرجع) إلى السجل العام — قراره هو. */
+    public function toReference(int $risk, \App\Modules\Risk\Services\RiskCopyService $copy)
+    {
+        $risk = Risk::findOrFail($risk);
+        if ($risk->risk_type !== 'active') return redirect()->route('risk.show', $risk->id)->with('error', 'هذا ليس خطراً فعلياً.');
+        if ($risk->parent_reference_id) return redirect()->route('risk.show', $risk->id)->with('success', 'هذا الخطر موجود في السجل العام أصلاً.');
+        $ref = $copy->activeToReference($risk, Auth::id());
+        return redirect()->route('risk.show', $risk->id)->with('success', 'أُضيف إلى السجل العام برمز '.$ref->code.' — يستفيد منه باقي الأماكن.');
     }
 
     private function deriveTitle(?int $riskTypeCategoryId, ?int $subCategoryId): string

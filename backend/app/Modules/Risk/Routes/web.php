@@ -71,6 +71,8 @@ Route::middleware(['web', 'auth'])->prefix('app/risk')->name('risk.')->group(fun
     Route::middleware('permission:risk.approve')->group(function () {
         Route::get('/approval/queue', [RiskController::class, 'approvalQueue'])->name('approval.queue');
         Route::post('/{risk}/approve', [RiskController::class, 'approve'])->name('approve');
+        // المرحلة ١٨-٢: خطر فعلي جديد ← السجل العام بقرار مسؤول السلامة
+        Route::post('/{risk}/to-reference', [RiskController::class, 'toReference'])->name('toReference')->whereNumber('risk');
         Route::post('/{risk}/reject', [RiskController::class, 'reject'])->name('reject');
         Route::post('/{risk}/request-modification', [RiskController::class, 'requestModification'])->name('requestModification');
     });

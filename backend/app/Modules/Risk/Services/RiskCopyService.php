@@ -27,6 +27,25 @@ class RiskCopyService
         ]);
     }
 
+    /**
+     * المرحلة ١٨-٢: خطر فعلي أُضيف جديداً في مكان (بلا مرجع) ← نسخة في السجل العام معتمدة، ويُربط الفعلي بها.
+     * إن كان له مرجع أصلاً يُعاد المرجع ولا يُكرَّر.
+     */
+    public function activeToReference(Risk $active, ?int $userId): Risk
+    {
+        if ($active->parent_reference_id && ($existing = Risk::where('risk_type', 'reference')->find($active->parent_reference_id))) {
+            return $existing;
+        }
+        $ref = $this->copyRisk($active, [
+            'risk_type' => 'reference', 'parent_reference_id' => null, 'scope_type' => 'general',
+            'organization_unit_id' => null, 'place_id' => null, 'created_by_id' => $userId,
+            'status' => 'approved', 'approved_by_id' => $userId, 'approved_at' => now(),
+        ]);
+        $active->parent_reference_id = $ref->id;
+        $active->save();
+        return $ref;
+    }
+
     /** من الكتاب مباشرة إلى سجل وحدة تنظيمية. */
     public function toOrgUnitActive(Risk $risk, int $orgUnitId, ?int $userId): Risk
     {

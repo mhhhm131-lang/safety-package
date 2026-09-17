@@ -10,9 +10,17 @@
             <div class="card mb-4" style="background: var(--bg-card); border: 1px solid var(--border-color);">
                 <div class="card-header d-flex justify-content-between align-items-center" style="background: transparent; border-bottom: 1px solid var(--border-color);">
                     <h5 class="mb-0 fw-bold" style="color: var(--text-main);">{{ $risk->title }}</h5>
+                    <div class="d-flex align-items-center gap-2">
+                    {{-- المرحلة ١٨-٢: خطر فعلي أُضيف جديداً في مكان ← مسؤول السلامة يقرر إضافته إلى السجل العام --}}
+                    @if($risk->risk_type === 'active' && !$risk->parent_reference_id && \App\Core\Permissions\PermissionRegistry::hasPermission(auth()->user()->role(), 'risk.approve'))
+                        <form method="post" action="{{ route('risk.toReference', $risk->id) }}" class="m-0">@csrf
+                            <button class="btn btn-sm btn-outline-primary" title="ينسخه إلى السجل العام ليستفيد منه باقي الأماكن"><i class="bi bi-bookmark-plus me-1"></i> أضفه إلى السجل العام</button>
+                        </form>
+                    @endif
                     <span class="badge bg-{{ $risk->status === 'approved' ? 'primary' : ($risk->status === 'mitigated' ? 'success' : 'warning') }} fs-6">
                         {{ $risk->status_label ?? $risk->status }}
                     </span>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="row mb-3">
