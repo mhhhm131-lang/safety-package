@@ -21,7 +21,7 @@
     @if($incident->isOverdue())<span class="badge text-bg-danger">متجاوز المهلة</span>@endif
     <span class="small text-muted ms-auto">{{ $incident->created_at->format('Y/m/d H:i') }}</span>
   </div>
-  <div class="mt-2"><b>{{ $incident->title }}</b><div class="small text-muted">{{ $incident->place?->name ?? '' }}{{ $incident->location_text ? ' — '.$incident->location_text : '' }}</div></div>
+  <div class="mt-2"><b>{{ $incident->title }}</b><div class="small text-muted">{{ $incident->place?->name ?? '' }}{{ $incident->placeUnit ? ' · '.$incident->placeUnit->type_label.' '.$incident->placeUnit->name : '' }}{{ $incident->location_text ? ' — '.$incident->location_text : '' }}</div></div>
   @if($incident->resolution_summary)<div class="mt-2 p-2 rounded small" style="background:#eef5f1"><b>ما تم:</b> {{ $incident->resolution_summary }}</div>@endif
   @if($incident->pending_closure && !$incident->reporter_approved_closure && $incident->actor_id === null)
     {{-- قرار المستخدم ٢٠٢٦-٠٩-١٣: العادي لا يُغلق إلا بموافقة المبلّغ — وهنا يوافق برمزه --}}

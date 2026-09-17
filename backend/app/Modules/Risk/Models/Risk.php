@@ -23,7 +23,7 @@ class Risk extends Model
         'risk_type', 'parent_reference_id', 'code', 'title', 'description',
         'category_id', 'sub_category_id', 'risk_type_category_id',
         'severity', 'likelihood', 'risk_score', 'benefit', 'contact_channel', 'target_closure_date',
-        'scope_type', 'organization_unit_id', 'place_id', 'status',
+        'scope_type', 'organization_unit_id', 'place_id', 'place_unit_id', 'status',
         'approved_by_id', 'approved_at', 'approval_notes', 'notes', 'legal_reference',
         'created_by_id', 'assigned_coordinator_id', 'assigned_field_team_id',
         'incident_count', 'last_incident_at',
@@ -73,6 +73,7 @@ class Risk extends Model
     public function assignedFieldTeam(): BelongsTo { return $this->belongsTo(User::class, 'assigned_field_team_id'); }
     public function organizationUnit(): BelongsTo { return $this->belongsTo(OrganizationUnit::class, 'organization_unit_id'); }
     public function place(): BelongsTo { return $this->belongsTo(Place::class); }
+    public function placeUnit(): BelongsTo { return $this->belongsTo(\App\Modules\Governance\Models\PlaceUnit::class); } // ١٨-٣ (ج)
     public function approvedBy(): BelongsTo { return $this->belongsTo(User::class, 'approved_by_id'); }
     public function createdBy(): BelongsTo { return $this->belongsTo(User::class, 'created_by_id'); }
     public function notes(): HasMany { return $this->hasMany(RiskNote::class); }

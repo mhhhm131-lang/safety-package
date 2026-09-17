@@ -409,6 +409,7 @@ class RiskController extends Controller
             'categories' => RiskCategory::where('is_active', true)->with('subCategories')->orderBy('name')->get(),
             'orgUnits' => OrganizationUnit::where('is_active', true)->orderBy('order')->get(),
             'places' => Place::orderBy('sort')->get(),
+            'units' => \App\Modules\Governance\Models\PlaceUnit::where('is_active', true)->orderBy('type')->orderBy('sort')->orderBy('name')->get(), // ١٨-٣ (ج)
             'tenantUsers' => User::whereHas('profile', fn ($q) => $q->where('is_active', true))->orderBy('name')->get(),
             'masterAndTenantGroups' => AffectedGroup::orderBy('id')->get(),
         ];
@@ -441,6 +442,8 @@ class RiskController extends Controller
             'scope_type' => ['nullable', 'string', 'in:general,org_unit'],
             'organization_unit_id' => ['nullable', 'integer', 'exists:organization_units,id'],
             'place_id' => ['nullable', 'integer', 'exists:places,id'],
+            // ١٨-٣ (ج): الوحدة اختيارية ومن المكان نفسه
+            'place_unit_id' => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('place_units', 'id')->where('place_id', (int) request()->input('place_id'))->where('is_active', true)],
         ], $this->phaseRules());
     }
 

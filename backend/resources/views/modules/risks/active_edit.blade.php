@@ -174,6 +174,11 @@
                             @endforeach
                         </select>
                     </div>
+                    {{-- ١٨-٣ (ج): الوحدة داخل المكان --}}
+                    <div class="col-md-4" data-unit-wrap hidden>
+                        <label class="form-label" style="color:var(--text-main);">الوحدة داخل المكان <small class="text-muted">(اختياري)</small></label>
+                        @include('governance.places._unit_select', ['units' => $units, 'placeSelect' => 'place_id', 'selected' => old('place_unit_id', $risk->place_unit_id)])
+                    </div>
                 </div>
             </div>
         </div>

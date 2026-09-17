@@ -51,6 +51,7 @@ class IncidentController extends Controller
         return view('modules.incidents.form', [
             'type' => $type,
             'places' => Place::orderBy('sort')->get(),
+            'units' => \App\Modules\Governance\Models\PlaceUnit::where('is_active', true)->orderBy('type')->orderBy('sort')->orderBy('name')->get(), // ١٨-٣ (ج)
             'preset' => $request->query('place'),
             'presetRisk' => $presetRisk,
             'riskCategories' => RiskCategory::where('is_active', true)->orderBy('name')->get(),
@@ -66,6 +67,8 @@ class IncidentController extends Controller
             // المرحلة ١١-١ (أ، قرار ٣٤): التصنيف عمل المركز لا الشاغل — الخطر اختياري في الأنواع الثلاثة، والتوجيه بالمكان
             'risk_id' => ['nullable', 'integer', 'exists:risks,id'],
             'place_id' => ['required', 'integer', 'exists:places,id'], // المكان إلزامي: عليه يقوم التوجيه إلى فني المكان
+            // ١٨-٣ (ج): الوحدة اختيارية ويجب أن تكون من المكان نفسه
+            'place_unit_id' => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('place_units', 'id')->where('place_id', (int) $request->input('place_id'))->where('is_active', true)],
             'location_text' => ['nullable', 'string', 'max:200'],
             'reporter_name' => ['nullable', 'string', 'max:120'],
             'reporter_phone' => ['nullable', 'string', 'max:30'],

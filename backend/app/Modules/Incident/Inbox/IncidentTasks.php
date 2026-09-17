@@ -24,7 +24,7 @@ class IncidentTasks implements TaskSource
         $isCommittee = in_array($role, ['safety_committee', 'system_admin'], true);
 
         return $this->visibility->getVisibleIncidents($user->id)
-            ->whereNotIn('status', Incident::TERMINAL)->with('place')->orderBy('created_at')->get()
+            ->whereNotIn('status', Incident::TERMINAL)->with(['place', 'placeUnit'])->orderBy('created_at')->get()
             ->map(fn (Incident $i) => $this->taskFor($i, $user, $isCenter, $isCommittee))
             ->filter()->values();
     }
@@ -33,7 +33,8 @@ class IncidentTasks implements TaskSource
     {
         $show = route('incidents.show', $i);
         $place = $i->place ? $i->place->code.' '.$i->place->name : null;
-        $where = $place ? ' في '.$place : '';
+        // ١٨-٣ (ج): الوحدة داخل المكان في نص البطاقة — «في القاعات · قاعة ٣١٢» فيذهب الفني إلى النقطة
+        $where = $place ? ' في '.$place.($i->placeUnit ? ' · '.$i->placeUnit->type_label.' '.$i->placeUnit->name : '') : '';
         $mk = fn (string $who, string $q, array $primary, ?array $secondary = null) => new Task(
             key: "incident:{$i->id}:{$who}", module: 'بلاغات الشاغلين', question: $q, primary: $primary, secondary: $secondary,
             dueAt: $i->deadline_at, isOverdue: $i->isOverdue(), place: $place, detailsUrl: $show, createdAt: $i->created_at);

@@ -75,6 +75,8 @@ class TeamSync
                             'shift' => 'all',
                             'is_active' => count($named) > 0,
                             'organization_unit_id' => $orgUnit?->id,
+                            // ١٨-٣ (ج): فريق الإدارة يُربط بوحدتها في المكان (صف department في place_units) إن وُجد
+                            'place_unit_id' => $orgUnit ? \App\Modules\Governance\Models\PlaceUnit::where('place_id', $place->id)->where('type', 'department')->where('organization_unit_id', $orgUnit->id)->value('id') : null,
                             'readiness' => $this->readiness($u),
                             'synced_at' => now(),
                         ]);

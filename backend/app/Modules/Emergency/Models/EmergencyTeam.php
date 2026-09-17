@@ -24,7 +24,7 @@ class EmergencyTeam extends Model
 
     protected $fillable = [
         'building_id', 'place_id', 'name', 'team_type', 'description', 'shift', 'is_active',
-        'source', 'unit_key', 'organization_unit_id', 'readiness', 'synced_at',
+        'source', 'unit_key', 'organization_unit_id', 'place_unit_id', 'readiness', 'synced_at',
     ];
 
     protected $casts = ['is_active' => 'boolean', 'created_at' => 'datetime', 'synced_at' => 'datetime'];
@@ -61,6 +61,7 @@ class EmergencyTeam extends Model
 
     public function building(): BelongsTo { return $this->belongsTo(EmergencyBuilding::class, 'building_id'); }
     public function place(): BelongsTo { return $this->belongsTo(Place::class); }
+    public function placeUnit(): BelongsTo { return $this->belongsTo(\App\Modules\Governance\Models\PlaceUnit::class); } // ١٨-٣ (ج)
     public function organizationUnit(): BelongsTo { return $this->belongsTo(OrganizationUnit::class); }
     public function members(): HasMany { return $this->hasMany(EmergencyTeamMember::class, 'team_id')->orderBy('id'); }
 

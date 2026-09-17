@@ -57,7 +57,7 @@ class InspectionReportTasks implements TaskSource
                 $out->push(new Task(
                     key: 'inspection:'.$f['key'].':'.$row,
                     module: 'بلاغات الفحص',
-                    question: 'بلاغ فحص '.($r['id'] ?? $row).' في '.$f['name'].': '.mb_substr((string) ($r['item'] ?? ''), 0, 60)
+                    question: 'بلاغ فحص '.($r['id'] ?? $row).' في '.$f['name'].(!empty($r['unit']) ? ' · '.mb_substr((string) $r['unit'], 0, 40) : '').': '.mb_substr((string) ($r['item'] ?? ''), 0, 60) // ١٨-٣ (ج): الوحدة إن حملتها الصف
                         .' — '.($ui === 'tech' ? 'قرارك: عولج أم تعذّر' : 'ينتظر قرارك (المستوى '.(self::LNAME[$holder] ?? $holder).')'),
                     primary: ['label' => 'افتحه', 'url' => '/'.$f['file'].'#open='.rawurlencode($row)],
                     dueAt: ($started && $h) ? Carbon::instance($started)->addHours($h) : null,

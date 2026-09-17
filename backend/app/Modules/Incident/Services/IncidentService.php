@@ -76,6 +76,7 @@ class IncidentService
                 'status' => 'new',
                 'organization_unit_id' => $data['organization_unit_id'] ?? null,
                 'place_id' => $data['place_id'] ?? null,
+                'place_unit_id' => $data['place_unit_id'] ?? null, // ١٨-٣ (ج)
                 'location_text' => $data['location_text'] ?? null,
                 'actor_id' => $userId,
                 'reporter_name' => $userId ? null : ($data['reporter_name'] ?? null),
@@ -117,6 +118,7 @@ class IncidentService
                 'incident_type' => 'secret',
                 'status' => 'new',
                 'place_id' => $data['place_id'] ?? null,
+                'place_unit_id' => $data['place_unit_id'] ?? null, // ١٨-٣ (ج)
                 'location_text' => $data['location_text'] ?? null,
                 'secret_key' => $secretKey,
                 'secret_tracking_code' => $trackingCode,

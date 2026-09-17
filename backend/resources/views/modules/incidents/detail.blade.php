@@ -18,7 +18,7 @@
   <div class="card mb-3"><div class="card-body">
     <h5 class="fw-bold">{{ $incident->title }}</h5>
     <div class="row small text-muted g-2 mb-2">
-      <div class="col-md-4"><b>المكان:</b> {{ $incident->place?->code }} {{ $incident->place?->name ?? '—' }}{{ $incident->location_text ? ' — '.$incident->location_text : '' }}</div>
+      <div class="col-md-4"><b>المكان:</b> {{ $incident->place?->code }} {{ $incident->place?->name ?? '—' }}{{ $incident->placeUnit ? ' · '.$incident->placeUnit->type_label.' '.$incident->placeUnit->name.($incident->placeUnit->floor ? ' الدور '.$incident->placeUnit->floor : '') : '' }}{{ $incident->location_text ? ' — '.$incident->location_text : '' }}</div>
       <div class="col-md-4"><b>المبلّغ:</b> {{ $incident->reporterDisplay() }}@if(!$incident->isSecret() && $incident->reporter_phone) · <span dir="ltr">{{ $incident->reporter_phone }}</span>@endif</div>
       <div class="col-md-4"><b>أُرسل:</b> {{ $incident->created_at->format('Y/m/d H:i') }}@if($incident->deadline_at) · <b>المهلة:</b> {{ $incident->deadline_at->format('m/d H:i') }}@endif</div>
       <div class="col-md-4"><b>الوحدة:</b> {{ $incident->organizationUnit?->name ?? '—' }}</div>

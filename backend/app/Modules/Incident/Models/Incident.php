@@ -54,7 +54,7 @@ class Incident extends Model
     public const TERMINAL = ['closed', 'out_of_scope'];
 
     protected $fillable = [
-        'code', 'title', 'description', 'incident_type', 'status', 'organization_unit_id', 'place_id', 'location_text',
+        'code', 'title', 'description', 'incident_type', 'status', 'organization_unit_id', 'place_id', 'place_unit_id', 'location_text',
         'actor_id', 'reporter_name', 'reporter_phone',
         'assigned_to_id', 'assigned_by_id', 'assigned_at', 'received_by_id', 'received_at', 'referred_at', 'ref_received_at',
         'forwarded_at', 'field_received_at', 'field_opened_at', 'in_progress_at', 'resolved_at', 'escalated_at', 'closed_at',
@@ -94,6 +94,7 @@ class Incident extends Model
     // ── العلاقات ──
     public function organizationUnit(): BelongsTo { return $this->belongsTo(OrganizationUnit::class); }
     public function place(): BelongsTo { return $this->belongsTo(Place::class); }
+    public function placeUnit(): BelongsTo { return $this->belongsTo(\App\Modules\Governance\Models\PlaceUnit::class); } // ١٨-٣ (ج)
     public function actor(): BelongsTo { return $this->belongsTo(User::class, 'actor_id'); }
     public function assignedTo(): BelongsTo { return $this->belongsTo(User::class, 'assigned_to_id'); }
     public function assignedBy(): BelongsTo { return $this->belongsTo(User::class, 'assigned_by_id'); }

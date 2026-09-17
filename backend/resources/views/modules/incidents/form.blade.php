@@ -27,6 +27,11 @@
           @endforeach
         </select>
       </div>
+      {{-- المرحلة ١٨-٣ (ج): الوحدة داخل المكان (قاعة ٣١٢ الدور ٣…) — تظهر حين يكون للمكان وحدات مُدخلة --}}
+      <div class="col-md-6" data-unit-wrap hidden>
+        <label class="form-label fw-bold">أين بالضبط؟ <span class="text-muted small">(اختياري)</span></label>
+        @include('governance.places._unit_select', ['units' => $units, 'placeSelect' => 'place_id'])
+      </div>
       <div class="col-md-6">
         <label class="form-label fw-bold">الموضع بدقة</label>
         <input name="location_text" class="form-control" value="{{ old('location_text') }}" placeholder="مثال: الدور الثاني، قرب المصعد، غرفة ٢٠٤" maxlength="200">
