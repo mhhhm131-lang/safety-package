@@ -1,0 +1,145 @@
+<title>مكاني</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap">
+<style>
+:root{--bg:#f6f5f0;--ink:#1a2a24;--mut:#66756e;--line:#d6ded9;--card:#fff;--g:#0f4c3a;--g2:#e5efe9;--gold:#c99a2e;--gold2:#fbf3dd;--red:#b43c2f;--red2:#fbe9e6;--scr:#f1f3f1}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101a16;--ink:#e6ede9;--mut:#9aaaa3;--line:#2a3a33;--card:#17241f;--g:#5cc19a;--g2:#1b2f27;--gold:#e0b65a;--gold2:#2e2716;--red:#e57a6c;--red2:#3a201c;--scr:#0d1512}}
+:root[data-theme="dark"]{--bg:#101a16;--ink:#e6ede9;--mut:#9aaaa3;--line:#2a3a33;--card:#17241f;--g:#5cc19a;--g2:#1b2f27;--gold:#e0b65a;--gold2:#2e2716;--red:#e57a6c;--red2:#3a201c;--scr:#0d1512}
+body{background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;direction:rtl;padding-inline:16px;padding-block:24px 48px;line-height:1.55;font-variant-numeric:tabular-nums}
+.wrap{max-width:1040px;margin:0 auto;display:grid;gap:34px}
+h1{font-size:2rem;margin:0;line-height:1.2;text-wrap:balance}
+.lead{color:var(--mut);margin:6px 0 0;max-width:62ch}
+.eyebrow{font-size:.78rem;letter-spacing:.06em;color:var(--gold);font-weight:700}
+h2{font-size:1.2rem;margin:0 0 10px;color:var(--g)}
+.note{font-size:.85rem;color:var(--mut)}
+.phones{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;align-items:start}
+@media(max-width:760px){.phones{grid-template-columns:1fr}}
+.who{font-weight:700;margin:0 0 8px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.who small{color:var(--mut);font-weight:400;font-size:.85rem}
+.phone{background:var(--scr);border:1px solid var(--line);border-radius:26px;padding:14px 12px;display:grid;gap:10px;max-width:420px;margin:0 auto;width:100%}
+.bar{background:var(--g);color:#fff;border-radius:14px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;font-size:.92rem}
+.bar b{font-size:1.02rem}
+.blk{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:grid;gap:7px}
+.blk h4{margin:0;font-size:.82rem;color:var(--mut);font-weight:700;letter-spacing:.02em;display:flex;justify-content:space-between}
+.blk h4 i{font-style:normal;color:var(--gold)}
+.task{border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:grid;gap:6px;font-size:.9rem}
+.task.late{border-color:var(--red)}
+.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.b{border-radius:9px;padding:7px 12px;font-size:.88rem;font-weight:700;border:1px solid var(--g);color:var(--g);background:transparent}
+.b.p{background:var(--g);color:#fff}
+.b.r{background:var(--red);border-color:var(--red);color:#fff}
+.b.t{border-color:var(--gold);color:var(--gold);background:var(--gold2)}
+.big{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.big .b{text-align:center;padding:12px 8px;font-size:.95rem}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:.88rem;margin:0}
+.kv dt{color:var(--mut);white-space:nowrap}.kv dd{margin:0}
+.pill{display:inline-block;background:var(--red2);color:var(--red);border-radius:999px;padding:0 8px;font-size:.75rem;font-weight:700}
+.pill.ok{background:var(--g2);color:var(--g)}
+.tel{color:var(--g);font-weight:700;text-decoration:none;border-bottom:1px dashed var(--g)}
+.steps{margin:0;padding-inline-start:18px;font-size:.88rem;display:grid;gap:2px}
+.blocks{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+@media(max-width:860px){.blocks{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.blocks{grid-template-columns:1fr}}
+.bl{background:var(--card);border:1px solid var(--line);border-top:4px solid var(--g);border-radius:12px;padding:10px 12px;font-size:.9rem}
+.bl b{display:block;margin-bottom:4px}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:600px;font-size:.9rem}
+th,td{padding:9px 12px;text-align:right;vertical-align:top;border-bottom:1px solid var(--line)}
+th{background:var(--g2);color:var(--g);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.rule{background:var(--card);border:1px solid var(--line);border-inline-start:4px solid var(--gold);border-radius:12px;padding:12px 16px;font-size:.95rem}
+</style>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">فكرة للنقاش · ليست قراراً · الأسماء والأرقام أمثلة</div>
+  <h1>مكاني</h1>
+  <p class="lead">صفحة واحدة بعد الدخول. النظام يبنيها من مكانك ودورك، وهما في حسابك. لا تختار باباً ولا قائمة. ما لا يخصك لا يظهر.</p>
+</header>
+
+<section>
+  <h2>كيف تبدو على الجوال</h2>
+  <div class="phones">
+
+    <div>
+      <p class="who">الفني <small>سعد · غرف الكهرباء HZ-02</small></p>
+      <div class="phone">
+        <div class="bar"><b>مكاني: غرف الكهرباء</b><span>سعد · الفني</span></div>
+
+        <div class="blk"><h4>ينتظرك <i>٢</i></h4>
+          <div class="task late"><span>بلاغ ش-٠٠٣١: انفجار قاطع في اللوحة ٤ <span class="pill">متأخر</span></span><div class="row"><span class="b p">عولج</span><span class="b">تعذّر — صعّد</span><span class="b t">☎ اتصل بالمركز</span></div></div>
+          <div class="task"><span>جولة المولد الاحتياطي مستحقة اليوم</span><div class="row"><span class="b p">ابدأ الجولة</span></div></div>
+        </div>
+
+        <div class="blk"><h4>أفعل الآن</h4>
+          <div class="big"><span class="b p">أفحص مكاني</span><span class="b">أبلغ عن خطر</span><span class="b t">☎ المركز</span><span class="b r">أستغيث</span></div>
+        </div>
+
+        <div class="blk"><h4>الآن في مكاني</h4>
+          <dl class="kv"><dt>بلاغات فحصي</dt><dd>ب — ٠٢ عند مدير المرافق <span class="pill">يومان</span></dd><dt>حالة طارئة</dt><dd><span class="pill ok">لا شيء</span></dd></dl>
+        </div>
+
+        <div class="blk"><h4>مكاني</h4>
+          <dl class="kv"><dt>يحتوي على</dt><dd>٦ غرف · ٤٨ لوحة وقاطعاً · مولد · بطاريات</dd><dt>أخطاره</dt><dd>صعق · حريق كهربائي · قوس كهربائي</dd><dt>إن وقع حريق</dt><dd>اقطع التيار من اللوحة الرئيسية ← CO₂ لا ماء ← أبلغ المركز</dd><dt>فريقي</dt><dd>منسق: خالد <a class="tel" href="#">٠٥٠٠</a> · مسعف: ناصر <a class="tel" href="#">٠٥٥٠</a></dd><dt>المركز</dt><dd><a class="tel" href="#">٠٥٠٥٤٩٨٩٦٦</a></dd></dl>
+        </div>
+
+        <div class="blk"><h4>أعرف</h4><div class="row"><span class="b">بطاقة دوري</span><span class="b">نموذج أعبّئه (١)</span><span class="b">بلاغاتي السابقة</span></div></div>
+      </div>
+    </div>
+
+    <div>
+      <p class="who">الموظف <small>نورة · المكاتب الإدارية HZ-06 · الإدارة المالية</small></p>
+      <div class="phone">
+        <div class="bar"><b>مكاني: المكاتب الإدارية</b><span>نورة · موظفة</span></div>
+
+        <div class="blk"><h4>ينتظرك <i>١</i></h4>
+          <div class="task"><span>بلاغك ش-٠٠٢٨: عولج — هل عولج فعلاً؟</span><div class="row"><span class="b p">نعم، عولج</span><span class="b">لا، أعِده</span></div></div>
+        </div>
+
+        <div class="blk"><h4>أفعل الآن</h4>
+          <div class="big"><span class="b p">أبلغ عن خطر</span><span class="b t">☎ المركز</span><span class="b r" style="grid-column:1/-1">أستغيث</span></div>
+        </div>
+
+        <div class="blk"><h4>الآن في مكاني</h4>
+          <dl class="kv"><dt>حالة طارئة</dt><dd><span class="pill ok">لا شيء</span> · إن أُعلنت: ابقَ في مكتبك أو أخلِ إلى نقطة التجمع ب</dd></dl>
+        </div>
+
+        <div class="blk"><h4>مكاني</h4>
+          <dl class="kv"><dt>إدارتي</dt><dd>الإدارة المالية · الدور ٣ · ٢٢ موظفاً</dd><dt>أخطاره</dt><dd>حريق مكتبي · انزلاق · انقطاع كهرباء</dd><dt>إن وقع حريق</dt><dd>لا تستعمل المصعد ← الدرج الشرقي ← نقطة التجمع ب</dd><dt>فريقي</dt><dd>منسق: هند <a class="tel" href="#">٠٥٠١</a> · مسعف: فهد <a class="tel" href="#">٠٥٦٦</a></dd><dt>المركز</dt><dd><a class="tel" href="#">٠٥٠٥٤٩٨٩٦٦</a></dd></dl>
+        </div>
+
+        <div class="blk"><h4>أعرف</h4><div class="row"><span class="b">بطاقة دوري</span><span class="b">إقرار بمخاطر المكاتب</span><span class="b">بلاغاتي</span></div></div>
+      </div>
+    </div>
+
+  </div>
+  <p class="note" style="margin-top:8px">الصفحة نفسها لكل شخص. تختلف الأزرار والمحتوى بحسب المكان والدور.</p>
+</section>
+
+<section>
+  <h2>الكتل الخمس، بترتيب ثابت</h2>
+  <div class="blocks">
+    <div class="bl"><b>١ ينتظرك</b>مهامك. زر واحد لكل مهمة. ورقم الهاتف داخل البطاقة حين يلزم.</div>
+    <div class="bl"><b>٢ أفعل الآن</b>ثلاثة إلى خمسة أزرار كبيرة بحسب دورك. لا قائمة.</div>
+    <div class="bl"><b>٣ الآن في مكاني</b>طارئ جارٍ وخطوتك فيه. بلاغات مكانك المفتوحة. جولة مستحقة.</div>
+    <div class="bl"><b>٤ مكاني</b>ما يحتوي عليه. أخطاره وماذا تفعل. الخطة ببساطة. فريقك بأرقامهم. رقم المركز.</div>
+    <div class="bl"><b>٥ أعرف</b>بطاقة دورك. نماذج تعبّئها. بلاغاتك السابقة.</div>
+  </div>
+</section>
+
+<section>
+  <h2>أزرار «أفعل الآن» لكل دور</h2>
+  <div class="tbl"><table>
+    <tr><th>الدور</th><th>الأزرار</th><th>ماذا يظهر في «الآن في مكاني»</th></tr>
+    <tr><td>الموظف</td><td>أبلغ · المركز · أستغيث</td><td>الطارئ الجاري وتعليماته</td></tr>
+    <tr><td>الفني</td><td>أفحص مكاني · أبلغ · المركز · أستغيث</td><td>جولته المستحقة · بلاغاته المحالة · بلاغات فحصه وأين تقف</td></tr>
+    <tr><td>مناوب المركز</td><td>فعّل حالة طارئة · أحِل بلاغاً · اتصل بالفني</td><td>طابور البلاغات بمهلها · وصول الفريق · «نادِ فلاناً»</td></tr>
+    <tr><td>مدير المرافق</td><td>قرّر في بلاغ · افتح مكاناً</td><td>بلاغات تنتظر قراره، والقرار في البطاقة</td></tr>
+    <tr><td>مدير الإدارة</td><td>رشّح فريق إدارتي · فعّل خطراً · أبلغ</td><td>«ينقصك فريق» · نموذج مطلوب</td></tr>
+    <tr><td>مسؤول السلامة</td><td>فعّل · أحِل · اعتمد · الإعدادات · كل الشاشات</td><td>الأرقام · الأماكن التسعة بصحتها</td></tr>
+    <tr><td>رئيس الأمن</td><td>اعتمد فريق الفعالية</td><td>الفعاليات القادمة</td></tr>
+  </table></div>
+</section>
+
+<div class="rule"><b>ماذا يحدث لما هو موجود؟</b> «ما ينتظرك» تبقى وتكبر إلى «مكاني». «العمل اليومي» تدخل فيها: ملف المكان يصير الكتلة ٤، وبلاغات الفحص والجولات الكتلة ٣. «أريد أن…» تصير أزرار الدور. ولا تُحذف شاشة، بل تُصل من مكانها الطبيعي.</div>
+
+</div>
