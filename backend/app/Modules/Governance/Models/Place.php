@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /** أحد الأماكن التسعة (٨+١) — SOURCE.md §٢. */
 class Place extends Model
 {
+    /** ١٩-٦ (قرار ٤٩): هاتف مركز السلامة كما في صفحة البلاغ — يُعرض مع «مكاني» وفي ملف المكان */
+    public const CENTER_PHONE = '0505498966';
+
     // max_workers/max_equipment: سعة المكان كمنطقة عمل (المرحلة ٦-ب) — null يعني بلا حد.
     protected $fillable = ['code', 'name', 'sort', 'max_workers', 'max_equipment'];
 

@@ -33,9 +33,14 @@ class InboxService
             $source = app($class);
             $tasks = $tasks->merge($source->tasksFor($user));
         }
+        // ١٩-٦ (قرار ٤٩): بين المتساويين في التأخر مهام مكان الشخص أولاً (وعد ١٩-٣ الذي كانت المهلة تغلبه)
+        $profile = $user->profile;
+        $myHz = $profile && $profile->is_active ? $profile->myPlace()?->code : null;
+        $mine = fn (Task $t) => $myHz !== null && str_starts_with((string) $t->place, $myHz);
         return $tasks->unique(fn (Task $t) => $t->key)
-            ->sort(function (Task $a, Task $b) {
+            ->sort(function (Task $a, Task $b) use ($mine) {
                 if ($a->isOverdue !== $b->isOverdue) return $a->isOverdue ? -1 : 1;
+                if ($mine($a) !== $mine($b)) return $mine($a) ? -1 : 1;
                 if ($a->dueAt && $b->dueAt && !$a->dueAt->eq($b->dueAt)) return $a->dueAt->lt($b->dueAt) ? -1 : 1;
                 if ((bool) $a->dueAt !== (bool) $b->dueAt) return $a->dueAt ? -1 : 1;
                 $ca = $a->createdAt?->getTimestamp() ?? 0; $cb = $b->createdAt?->getTimestamp() ?? 0;

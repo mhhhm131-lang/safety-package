@@ -35,6 +35,12 @@ class UserProfile extends Model
         return $this->belongsTo(Place::class);
     }
 
+    /** ١٩-٦ (قرار ٤٩): مكان الشخص = مكان حسابه، وإلا مكان إدارته؛ null لمن لا مكان له (مسؤول السلامة، المناوب، القيادات). */
+    public function myPlace(): ?Place
+    {
+        return $this->place ?? $this->organizationUnit?->place;
+    }
+
     public function roleName(): string
     {
         return PermissionRegistry::getRoleDisplayName($this->role);

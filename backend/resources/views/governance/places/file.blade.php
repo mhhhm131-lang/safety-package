@@ -139,6 +139,12 @@
 @php($UST = \App\Modules\Emergency\Services\PlaceProfile::UST)
 @php($ROLES = \App\Modules\Emergency\Services\PlaceProfile::TEAM)
 @php($TAG = ['ok' => 'st-ok', 'warn' => 'st-wait', 'bad' => 'text-bg-secondary'])
+{{-- ١٩-٦ (قرار ٤٩): رقم مركز السلامة مع الفريق — اتصال بضغطة --}}
+@php($centerPhone = \App\Modules\Governance\Models\Place::CENTER_PHONE)
+<div class="card mb-2" id="pfCenter"><div class="card-body py-2 d-flex flex-wrap align-items-center gap-2 small">
+  <span><i class="bi bi-broadcast text-g"></i> <b>مركز السلامة</b> — لأي حالة عاجلة</span>
+  <a class="btn btn-g btn-sm ms-auto" href="tel:{{ $centerPhone }}"><i class="bi bi-telephone-fill"></i> <span dir="ltr">{{ $centerPhone }}</span></a>
+</div></div>
 @if($events)
   {{-- ١٩-٥: القاعات — قاعدة ثابتة، وفريق يُكلَّف قبل كل فعالية (إدارة القاعات ترشّح ورئيس الأمن والسلامة يعتمد) --}}
   <div class="card mb-2"><div class="card-body py-2 small"><b>قاعدة القاعات</b>

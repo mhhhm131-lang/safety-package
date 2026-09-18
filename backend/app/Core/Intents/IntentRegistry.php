@@ -51,6 +51,9 @@ class IntentRegistry
         if ($user->isContractor()) {
             $add(true, 'portal', 'بوابتي', route('contractor.home'), 'bi-building', 'المقاولون', true, 'طرفي ومشاريعي وعمالي ووثائقي');
         }
+        // ١٩-٦ (قرار ٤٩): «مكاني» لكل حساب له مكان (ومنهم الموظف) — ملف مكانه بضغطة: فريقه بهواتفهم ورقم المركز وخطتاه
+        $my = $profile?->is_active ? $profile->myPlace() : null;
+        $add((bool) $my, 'makani', 'مكاني', $my ? route('app.places.units.file', $my, false) : null, 'bi-geo-alt-fill', 'مكاني', true, $my ? $my->name.' — فريقك بهواتفهم ورقم المركز والخطتان' : null);
         // البلاغ
         // قرار المستخدم ٢٠٢٦-٠٩-١٣: زر واحد للجميع يفتح اختيار النوع (عادي/سري/عاجل) بميزة كل نوع له
         $add(true, 'report', 'أبلّغ عن خطر', route('incident.landing'), 'bi-megaphone-fill', 'البلاغ', true, 'عادي لا يُغلق إلا بموافقتك · سري يخفي هويتك · عاجل اتصل بالمركز');
@@ -95,7 +98,10 @@ class IntentRegistry
         $add($can('report.view'), 'reports', 'التقارير', route('reports.dashboard'), 'bi-clipboard-data', 'التقارير');
         $add(true, 'hazards', 'أعرف أخطار مكاني', route('hazards.index'), 'bi-book', 'التوعية');
         $add(true, 'plans', 'خطة مكاني', $folder ? '/'.$folder.'/index.html' : '/index.html', 'bi-map', 'التوعية');
-        $add(true, 'roles', 'أعرف دوري', '/role-cards/index.html', 'bi-person-badge', 'التوعية');
+        // ١٩-٦ (قرار ٤٩): بطاقة الشخص مباشرة حين تكون له بطاقة واحدة، وإلا الفهرس
+        $card = \App\Modules\Emergency\Support\RoleCards::forUser($user);
+        $add(true, 'roles', $card ? 'بطاقة دوري' : 'أعرف دوري', $card ? \App\Modules\Emergency\Support\RoleCards::url($card) : '/role-cards/index.html', 'bi-person-badge', 'التوعية', false,
+            $card ? \App\Modules\Emergency\Support\RoleCards::CARDS[$card]['name'] : null);
         $add($can('system.settings'), 'settings', 'الإعدادات', route('app.settings'), 'bi-sliders', 'الإعدادات');
         return $out;
     }

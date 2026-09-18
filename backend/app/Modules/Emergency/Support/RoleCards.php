@@ -89,6 +89,24 @@ class RoleCards
         return '/role-cards/'.self::CARDS[$no]['category'].'/role-'.str_pad((string) $no, 2, '0', STR_PAD_LEFT).'.html';
     }
 
+    /**
+     * ١٩-٦ (قرار ٤٩): بطاقة الشخص — القيادة ببطاقة دورها؛ وعضو الفريق الأولي ببطاقة دوره في الفريق؛
+     * ثم الدور الذي له بطاقة واحدة (الموظف ١٢)؛ ومن له أكثر من بطاقة (الفنيون والإسناد) أو لا بطاقة = null فيبقى الفهرس.
+     */
+    public static function forUser(\App\Models\User $user): ?int
+    {
+        $role = $user->role();
+        $mine = array_keys(array_filter(self::CARDS, fn ($c) => ($c['role'] ?? null) === $role));
+        if (count($mine) === 1 && self::CARDS[$mine[0]]['category'] === 'leadership') return $mine[0];
+        $teamKey = ['safety_coordinator' => 'coordinator', 'medic' => 'medic', 'rescuer' => 'rescuer', 'firefighter' => 'firefighter'][$role]
+            ?? \App\Modules\Emergency\Models\EmergencyTeamMember::where('user_id', $user->id)->whereNotNull('role_key')
+                ->whereHas('team', fn ($q) => $q->where('is_active', true))->value('role_key');
+        if ($teamKey) {
+            foreach (self::INITIAL_TEAM as $no) if ((self::CARDS[$no]['team'] ?? []) === [$teamKey]) return $no;
+        }
+        return count($mine) === 1 ? $mine[0] : null;
+    }
+
     public static function byCategory(): array
     {
         $out = [];

@@ -104,6 +104,9 @@ class PlaceFileController extends Controller
             }
             $rows[] = ['un' => $un, 'staff' => (int) ($u['staff'] ?? 0), 'need' => $need, 'state' => P::unitStateAll($u), 'can' => $canUnit, 'teams' => $teams];
         }
+        // ١٩-٦ (قرار ٤٩): إدارة الشخص أولاً — هاتف فريقه بلا بحث بين الإدارات
+        $myCode = (string) ($user->profile?->organizationUnit?->code ?? '');
+        if ($myCode !== '') usort($rows, fn ($x, $y) => ($y['un']['dept'] === $myCode) <=> ($x['un']['dept'] === $myCode));
         $need = count($states); $byDept = $need === count($rows);
         $okN = count(array_filter($states, fn ($s) => in_array($s, ['appr', 'hr'], true)));
         $nomN = count(array_filter($states, fn ($s) => $s === 'nom'));

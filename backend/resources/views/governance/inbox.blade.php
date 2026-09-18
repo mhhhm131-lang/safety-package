@@ -11,6 +11,14 @@
   </h1>
   <span class="small text-muted">{{ auth()->user()->name }} · {{ auth()->user()->roleName() }}@if($overview) · الشهر الجاري@endif</span>
 </div>
+{{-- ١٩-٦ (قرار ٤٩): «مكاني» سطر لا صفحة — ملف المكان بضغطة، والمركز بضغطة --}}
+@if($makani)
+  <div class="card mb-2" id="makaniLine"><div class="card-body py-2 d-flex flex-wrap align-items-center gap-2">
+    <span><i class="bi bi-geo-alt-fill text-g"></i> مكاني: <b>{{ $makani->name }}</b></span>
+    <a class="btn btn-g btn-sm ms-auto" href="{{ route('app.places.units.file', $makani, false) }}">افتح</a>
+    <a class="btn btn-o btn-sm" href="tel:{{ \App\Modules\Governance\Models\Place::CENTER_PHONE }}"><i class="bi bi-telephone-fill"></i> المركز <span dir="ltr">{{ \App\Modules\Governance\Models\Place::CENTER_PHONE }}</span></a>
+  </div></div>
+@endif
 <p class="small text-muted mb-3" id="inboxHint">كل ما يحتاجك يظهر هنا. لا تبحث عنه. <a href="#" id="inboxHintHide" class="text-muted">فهمت</a></p>
 {{-- المرحلة ١٨-١ (ز، قرار ٤٦): بلا رقم للمهلة لا «متأخر» ولا تصعيد آلي — الرقم يُدخله مسؤول السلامة بيده --}}
 @if(!empty($deadlinesUnset))

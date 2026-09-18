@@ -85,6 +85,7 @@ class HomeController extends Controller
         // المرحلة ١٢ (قرار ٣٥): «ما ينتظرك» + «أريد أن…»
         return view('governance.inbox', [
             'follow' => $follow,
+            'makani' => ($p = $user->profile) && $p->is_active ? $p->myPlace() : null, // ١٩-٦ (قرار ٤٩)
             'tasks' => $tasks,
             'intents' => IntentRegistry::forUser($user),
             'overview' => $overview,
