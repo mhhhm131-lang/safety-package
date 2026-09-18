@@ -52,6 +52,20 @@ Route::middleware(['web', 'auth'])->prefix('app')->name('app.')->group(function 
         Route::put('/{place}/units/{unit}', [\App\Modules\Governance\Controllers\PlaceUnitsController::class, 'update'])->name('update');
         Route::delete('/{place}/units/{unit}', [\App\Modules\Governance\Controllers\PlaceUnitsController::class, 'destroy'])->name('destroy');
     });
+    // المرحلة ١٩-٥ (قرار ٤٨): الفريق الأولي والخطتان وفرق الفعاليات من ملف المكان — الصلاحية في PlaceProfile (كما كانت في اللوحة)
+    Route::prefix('places/{place}')->name('places.team.')->whereNumber('place')->group(function () {
+        $c = \App\Modules\Governance\Controllers\PlaceTeamController::class;
+        Route::post('/plans', [$c, 'plans'])->name('plans');
+        Route::post('/team/{uid}/staff', [$c, 'staff'])->name('staff');
+        Route::get('/team/{uid}/{k}', [$c, 'edit'])->name('edit')->whereNumber('k');
+        Route::post('/team/{uid}/{k}', [$c, 'save'])->name('save')->whereNumber('k');
+        Route::post('/team/{uid}/{k}/approve', [$c, 'approve'])->name('approve')->whereNumber('k');
+        Route::post('/team/{uid}/{k}/refer', [$c, 'refer'])->name('refer')->whereNumber('k');
+        Route::get('/events/{i}', [$c, 'eventEdit'])->name('event.edit');
+        Route::post('/events/{i}', [$c, 'eventSave'])->name('event.save');
+        Route::post('/events/{i}/approve', [$c, 'eventApprove'])->name('event.approve');
+        Route::delete('/events/{i}', [$c, 'eventDelete'])->name('event.delete');
+    });
     Route::middleware('permission:system.settings')->prefix('places')->name('places.')->group(function () {
         Route::get('/', [PlacesController::class, 'index'])->name('index');
         Route::get('/qr', [PlacesController::class, 'qr'])->name('qr');

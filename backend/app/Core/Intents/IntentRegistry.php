@@ -69,7 +69,10 @@ class IntentRegistry
         $add($can('emergency.view'), 'emergency', 'مركز الطوارئ', route('emergency.dashboard'), 'bi-broadcast', 'الطوارئ');
         $add($can('emergency.view') && in_array($role, ['facilities_manager', 'system_admin', 'system_staff'], true), 'systems', 'أنظمة المبنى', route('emergency.iot.dashboard'), 'bi-cpu', 'الطوارئ');
         // الإدارة: الفريق والمخاطر
-        $add($ui === 'dept' && $profile?->organization_unit_id, 'nominate', 'أرشّح الفريق الأولي لإدارتي', '/dashboard.html', 'bi-person-plus', 'إدارتي', true, 'منسق ومسعف ومنقذ وإطفائي من موظفيك');
+        // ١٩-٥ (قرار ٤٨): الترشيح في ملف مكان الإدارة داخل الخلفية (كان يفتح اللوحة)
+        $nomPlace = ($ui === 'dept' && $profile?->organization_unit_id)
+            ? (\App\Modules\Governance\Models\OrganizationUnit::find($profile->organization_unit_id)?->place_id ?? Place::idByCode('HZ-06')) : null;
+        $add((bool) $nomPlace, 'nominate', 'أرشّح الفريق الأولي لإدارتي', $nomPlace ? route('app.places.units.file', $nomPlace, false).'#pfTeams' : null, 'bi-person-plus', 'إدارتي', true, 'منسق ومسعف ومنقذ وإطفائي من موظفيك');
         // المرحلة ١٨-٣ (قرار ٤٧): وحدات الأماكن — مدير المرافق كل الأماكن، ومدير الإدارة إدارته في مكانها، ومسؤول السلامة الكل
         $unitsUrl = ($ui === 'dept' && $profile?->organization_unit_id && ($ouPlace = \App\Modules\Governance\Models\OrganizationUnit::find($profile->organization_unit_id)?->place_id))
             ? route('app.places.units.index', $ouPlace) : route('app.places.units.hub');

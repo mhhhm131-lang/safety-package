@@ -58,9 +58,10 @@ class TeamGapTasks implements TaskSource
                     module: 'الفريق الأولي',
                     question: $label.' في '.$places[$hz]->name.': '.$this->ar($staff).' موظفاً تحتاج '.$this->word($need)
                         .' — المعتمد: '.($ready ? $this->word($ready) : 'لا فريق'),
-                    primary: ['label' => 'افتح ملف المكان', 'url' => '/dashboard.html#place='.$hz],
+                    // ١٩-٥ (قرار ٤٨): ملف المكان في الخلفية — الترشيح والاعتماد منه
+                    primary: ['label' => 'افتح ملف المكان', 'url' => route('app.places.units.file', $places[$hz]->id, false).'#pfTeams'],
                     place: $hz.' '.$places[$hz]->name,
-                    detailsUrl: '/dashboard.html#place='.$hz,
+                    detailsUrl: route('app.places.units.file', $places[$hz]->id, false).'#pfTeams',
                 ));
             }
         }

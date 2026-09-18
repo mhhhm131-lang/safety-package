@@ -4,11 +4,10 @@ namespace App\Modules\Governance\Controllers;
 
 use App\Core\Permissions\PermissionRegistry;
 use App\Http\Controllers\Controller;
-use App\Modules\Emergency\Models\EmergencyTeam;
+use App\Modules\Emergency\Services\PlaceProfile as P;
 use App\Modules\Governance\Models\Place;
 use App\Modules\Governance\Models\PlaceUnit;
 use App\Modules\Incident\Models\Incident;
-use App\Modules\Store\Models\InstituteDocument;
 use App\Modules\Store\Services\InspectionDocReader as R;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -50,9 +49,9 @@ class PlaceFileController extends Controller
             'fault' => count(array_filter($systems, fn ($s) => $s['st'] === 'fault')),
         ];
 
-        // الجاهزية: تواريخ الخطتين من ملف المكان في اللوحة (ipa-place) — تبقى هناك حتى ١٩-٥
-        $raw = InstituteDocument::where('key', 'ipa-place')->value('data');
-        $pl = (array) ((json_decode((string) $raw, true)[$hz] ?? [])['plans'] ?? []);
+        // الجاهزية: الخطتان والفريق من ملف المكان (ipa-place) — ١٩-٥: تُحرَّر من هنا عبر PlaceTeamController
+        $profile = P::get($hz);
+        $pl = $profile['plans'];
         $drillDays = !empty($pl['drill']) && ($t = \DateTimeImmutable::createFromFormat('!Y-m-d', substr((string) $pl['drill'], 0, 10))) ? (int) $t->diff(now())->days : null;
         $folder = '/'.(Place::FOLDERS[$hz] ?? $hz);
         $plans = [
@@ -66,16 +65,73 @@ class PlaceFileController extends Controller
                 'd' => (!empty($pl['ra']) ? 'اعتُمدت '.$pl['ra'] : '').(!empty($pl['drill']) ? ' · آخر تمرين '.$pl['drill'] : ' · لم يُنفَّذ تمرين')];
         }
 
+        foreach ($plans as $i => $c) $plans[$i]['key'] = $i ? 'ra' : 'sa';
+        $inspOk = count(array_filter($systems, fn ($s) => $s['st'] === 'ok'));
+        $plans[] = ['key' => 'insp', 'label' => 'نماذج الفحص', 'url' => null, 'cls' => !count($systems) ? 'bad' : ($inspOk === count($systems) ? 'ok' : 'warn'),
+            'v' => !count($systems) ? 'لم تُفعَّل' : $inspOk.' من '.count($systems).' في موعده', 'd' => count($systems) ? 'تُحسب تلقائياً من سجل الجولات' : 'افتح النموذج وسجّل أول جولة'];
+        [$units, $teamCard] = $this->teams($user, $hz, $profile);
+        $events = $hz === P::HALLS ? $this->events($profile) : null;
+        $plans[] = ['key' => 'team', 'url' => null] + ($events ? $events['card'] : $teamCard);
+
         $ui = PermissionRegistry::uiRole($user->role());
         return view('governance.places.file', [
             'place' => $place, 'forms' => R::formsOf($hz), 'systems' => $systems, 'open' => $open, 'kpi' => $kpi, 'sum' => $sum, 'plans' => $plans,
             'units' => PlaceUnit::where('place_id', $place->id)->where('is_active', true)->orderBy('type')->orderBy('sort')->orderBy('name')->get(),
             'canUnits' => PlaceUnit::canManageAny($user, $place),
-            'teams' => EmergencyTeam::where('place_id', $place->id)->where('is_active', true)->with('members')->orderBy('id')->get(),
+            'teamUnits' => $units, 'events' => $events, 'pl' => $pl,
+            'can' => ['plans' => P::canPlans($user), 'events' => P::canEvents($user), 'eventApprove' => P::canApproveEvent($user)],
             'incidents' => Incident::where('place_id', $place->id)->whereNotIn('status', Incident::TERMINAL)->with('placeUnit')->orderByDesc('id')->limit(20)->get(),
             'canIncidents' => PermissionRegistry::hasPermission($user->role(), 'incident.list'),
             'canRisks' => PermissionRegistry::hasPermission($user->role(), 'risk.list'),
             'ui' => $ui,
         ]);
+    }
+
+    /** ١٩-٥: وحدات الفريق بفرقها وحالاتها وأزرارها، وبطاقة الجاهزية الرابعة (dashboard.html:925-945 readiness) */
+    private function teams($user, string $hz, array $profile): array
+    {
+        $rows = []; $states = [];
+        foreach (P::unitList($hz, $profile) as $un) {
+            $u = P::unit($profile, $un['uid']);
+            $need = P::teamsNeeded($u); $n = P::teamCount($u); $canUnit = P::canUnit($user, $un);
+            $teams = [];
+            for ($k = 0; $k < $n; $k++) {
+                $t = P::teamPeek($u, $k); $st = P::teamState($t);
+                if ($k < $need) $states[] = $st;
+                $teams[] = ['k' => $k, 'st' => $st, 't' => $t, 'extra' => $k >= $need, 'named' => P::named($t['team']),
+                    'edit' => $canUnit ? ($st === 'none' ? 'تسجيل الترشيح' : 'تعديل') : null,
+                    'approve' => $st === 'nom' && P::canApprove($user), 'refer' => $st === 'appr' && P::canPlans($user)];
+            }
+            $rows[] = ['un' => $un, 'staff' => (int) ($u['staff'] ?? 0), 'need' => $need, 'state' => P::unitStateAll($u), 'can' => $canUnit, 'teams' => $teams];
+        }
+        $need = count($states); $byDept = $need === count($rows);
+        $okN = count(array_filter($states, fn ($s) => in_array($s, ['appr', 'hr'], true)));
+        $nomN = count(array_filter($states, fn ($s) => $s === 'nom'));
+        if ($hz === P::HUB || count($rows) > 1 || $need > 1) {
+            $card = ['label' => 'الفرق الأولية', 'cls' => !$rows ? 'bad' : ($okN === $need ? 'ok' : ($okN || $nomN ? 'warn' : 'bad')),
+                'v' => $byDept ? $okN.' من '.count($rows).' إدارة لها فريق معتمد' : $okN.' من '.$need.' فريق معتمد',
+                'd' => ($nomN ? $nomN.' مرشَّح بانتظار الاعتماد · ' : '').($byDept ? 'فريق لكل إدارة تشغل المكان' : 'فريق لكل '.P::PER_TEAM.' موظفاً')];
+        } else {
+            $t = $rows[0]['teams'][0];
+            $card = ['label' => 'الفريق الأولي', 'cls' => P::UST[$t['st']][0], 'v' => P::UST[$t['st']][1],
+                'd' => $t['named'].' من ٤ أدوار بأسماء'.(!empty($t['t']['nom']['by']) ? ' · ترشيح: '.$t['t']['nom']['by'] : '')];
+        }
+        return [$rows, $card];
+    }
+
+    /** ١٩-٥: فرق فعاليات القاعات — القادمة ثم المنتهية، والبطاقة (dashboard.html:1007-1027) */
+    private function events(array $profile): array
+    {
+        $today = now()->toDateString();
+        $up = []; $past = [];
+        foreach (P::events($profile) as $i => $e) {
+            $isPast = !empty($e['date']) && $e['date'] < $today;
+            $st = !empty($e['appr']['date']) ? ['ok', 'معتمد'] : (!empty($e['nom']['date']) ? ['warn', 'مرشَّح — بانتظار اعتماد رئيس الأمن والسلامة'] : ['bad', 'لم يُرشَّح']);
+            $row = ['i' => $i, 'e' => $e, 'past' => $isPast, 'st' => $st, 'named' => P::named($e['team'])];
+            if ($isPast) $past[] = $row; else $up[] = $row;
+        }
+        $ok = count(array_filter($up, fn ($r) => !empty($r['e']['appr']['date'])));
+        return ['up' => $up, 'past' => $past, 'card' => ['label' => 'فرق الفعاليات', 'cls' => !$up ? 'warn' : ($ok === count($up) ? 'ok' : 'warn'),
+            'v' => !$up ? 'لا فعالية قادمة مسجّلة' : $ok.' من '.count($up).' فعالية قادمة بفريق معتمد', 'd' => 'المحاضر منسق ومسعف لقاعته · الأمن المكلّف منقذ وإطفائي']];
     }
 }
