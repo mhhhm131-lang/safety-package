@@ -124,6 +124,57 @@ class InspectionDocReader
         return $out;
     }
 
+    /**
+     * المرحلة ١٩-٢: نظام واحد بتفاصيله (dashboard.html:715-740 renderSystem) — البنود بعلاماتها، القراءات بمرجعيتها والمقاسة،
+     * الجدول الدوري، والبلاغات المفتوح أولاً ثم الأشد تأخراً. null إن لم يوجد النظام في نموذج هذا المكان.
+     */
+    public static function systemOf(string $hz, string $formKey, string $k): ?array
+    {
+        $sys = null;
+        foreach (self::systemsOf($hz) as $s) if ($s['form']['key'] === $formKey && $s['k'] === $k) { $sys = $s; break; }
+        if (!$sys) return null;
+        $d = self::docsOf($hz)[$formKey]['data'] ?? [];
+        $def = (array) (($d['defs'] ?? [])[$k] ?? []);
+        $marks = (array) ($d['marks'] ?? []); $vals = (array) ($d['vals'] ?? []);
+        $items = [];
+        foreach (array_values((array) ($def['items'] ?? [])) as $i => $it) {
+            $items[] = ['i' => $i, 'text' => (string) (is_array($it) ? ($it[0] ?? '') : $it), 'ref' => (string) (is_array($it) ? ($it[1] ?? '') : ''), 'mark' => (string) ($marks["$k-i-$i"] ?? '')];
+        }
+        $reads = [];
+        foreach (array_values((array) ($def['reads'] ?? [])) as $i => $t) {
+            $b = "$k-r-$i";
+            $reads[] = ['i' => $i, 'text' => (string) $t, 'ref' => (string) ($vals["$b|ref"] ?? ''), 'act' => (string) ($vals["$b|act"] ?? ''), 'mark' => (string) ($marks[$b] ?? '')];
+        }
+        $reps = $sys['reports'];
+        usort($reps, fn ($a, $b) => (self::isClosed($a) <=> self::isClosed($b)) ?: ((self::overdueHours($b) ?? -INF) <=> (self::overdueHours($a) ?? -INF)));
+        return $sys + ['items' => $items, 'reads' => $reads, 'sched' => array_values(array_filter((array) ($def['sched'] ?? []), 'is_array')), 'reports_sorted' => $reps];
+    }
+
+    /** أيام العطل: من الاكتشاف إلى الإغلاق (أو إلى الآن إن كان مفتوحاً) — dashboard.html:709-714 */
+    public static function faultDays(array $r): ?int
+    {
+        $a = self::parseStamp($r['when'] ?? '') ?? self::parseStamp($r['sent'] ?? '');
+        if (!$a) return null;
+        $b = new \DateTimeImmutable('now', $a->getTimezone());
+        foreach ((array) ($r['levels'] ?? []) as $l) {
+            if (is_array($l) && empty($l['up']) && empty($l['back'])) { $b = self::parseStamp($l['date'] ?? '') ?? $b; break; }
+        }
+        return max(0, (int) round(($b->getTimestamp() - $a->getTimestamp()) / 86400));
+    }
+
+    /** آخر جولة في نموذج (أحدث تاريخ عبر أنظمته) وعدد جولاته — لشاشة «نماذج الفحص» */
+    public static function roundsSummary(array $data): array
+    {
+        $n = 0; $last = null;
+        foreach ((array) ($data['rounds'] ?? []) as $list) {
+            foreach ((array) $list as $r) {
+                if (!is_array($r) || empty($r['d'])) continue;
+                $n++; if ($last === null || (string) $r['d'] > $last) $last = (string) $r['d'];
+            }
+        }
+        return ['count' => $n, 'last' => $last];
+    }
+
     /** كل بلاغات فحص المكان مع نموذجها */
     public static function reportsOf(string $hz): array
     {

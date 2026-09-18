@@ -20,6 +20,15 @@ use Illuminate\View\View;
  */
 class PlaceFileController extends Controller
 {
+    /** المرحلة ١٩-٢: ملف النظام — ما كان يعرضه `renderSystem` في dashboard.html:715-740. */
+    public function system(Place $place, string $form, string $sys): View
+    {
+        $s = R::systemOf($place->code, $form, $sys);
+        abort_unless($s, 404, 'لا نظام بهذا الرمز في نماذج هذا المكان.');
+        return view('governance.places.system', ['place' => $place, 's' => $s,
+            'ui' => PermissionRegistry::uiRole(Auth::user()->role())]);
+    }
+
     public function show(Place $place): View
     {
         $user = Auth::user();

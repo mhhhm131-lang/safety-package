@@ -69,13 +69,14 @@
 @else
   <div class="d-grid gap-2 mb-3" id="pfSystems">
     @foreach($systems as $s)
-      <div class="pf-sys" data-sys="{{ $s['k'] }}" data-st="{{ $s['st'] }}">
+      {{-- ١٩-٢: الصف يفتح ملف النظام (جولاته وبنوده وبلاغاته) --}}
+      <a class="pf-sys text-decoration-none text-reset" data-sys="{{ $s['k'] }}" data-st="{{ $s['st'] }}" href="{{ route('app.places.units.system', [$place, $s['form']['key'], $s['k']]) }}">
         <div class="nm"><b>{{ $s['name'] }}</b><small>{{ $s['code'] ? 'النظام '.$s['code'] : '' }}</small></div>
         <div><small>آخر فحص</small>{{ $s['last']['d'] ?? 'لم يُفحص' }}@if($s['last']) <small>{{ $s['last']['ok'] ?? 0 }}✓ {{ !empty($s['last']['no']) ? $s['last']['no'].'✗' : '' }}</small>@endif</div>
         <div><small>المستحق القادم{{ $s['freq'] ? ' ('.$s['freq'].')' : '' }}</small>{{ $s['next'] ?? ($s['days'] ? 'الآن' : '—') }}</div>
         <span class="badge {{ $s['open'] ? 'text-bg-danger' : 'text-bg-light border' }}" title="بلاغات مفتوحة">{{ $s['open'] }}</span>
         <span class="badge {{ $ST[$s['st']] }}">{{ $R::STATE_LABELS[$s['st']] }}</span>
-      </div>
+      </a>
     @endforeach
   </div>
 @endif

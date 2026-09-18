@@ -44,6 +44,8 @@ Route::middleware(['web', 'auth'])->prefix('app')->name('app.')->group(function 
         Route::get('/units', [\App\Modules\Governance\Controllers\PlaceUnitsController::class, 'hub'])->name('hub');
         // المرحلة ١٩-١ (قرار ٤٨): ملف المكان في الخلفية (ما كان في dashboard.html#place=)
         Route::get('/{place}/file', [\App\Modules\Governance\Controllers\PlaceFileController::class, 'show'])->name('file')->whereNumber('place');
+        // المرحلة ١٩-٢: ملف النظام (ما كان في dashboard.html#place=…&sys=…)
+        Route::get('/{place}/systems/{form}/{sys}', [\App\Modules\Governance\Controllers\PlaceFileController::class, 'system'])->name('system')->whereNumber('place');
         Route::get('/{place}/units', [\App\Modules\Governance\Controllers\PlaceUnitsController::class, 'index'])->name('index');
         Route::post('/{place}/units', [\App\Modules\Governance\Controllers\PlaceUnitsController::class, 'store'])->name('store');
         Route::post('/{place}/units/paste', [\App\Modules\Governance\Controllers\PlaceUnitsController::class, 'paste'])->name('paste');

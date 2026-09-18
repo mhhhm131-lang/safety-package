@@ -23,11 +23,10 @@ class InspectionsController extends Controller
             $doc = $docs->get($f['key']);
             $data = $doc ? json_decode($doc->data, true) : null;
             $reports = is_array($data) ? (array) ($data['reports'] ?? []) : [];
-            $rounds = is_array($data) ? (array) ($data['rounds'] ?? []) : [];
             $open = count(array_filter($reports, fn ($r) => is_array($r) && !$this->closed($r)));
-            $last = null;
-            foreach ($rounds as $r) { if (is_array($r) && !empty($r['date'])) $last = $r['date']; }
-            $rows[] = $f + ['exists' => (bool) $doc, 'reports' => count($reports), 'open' => $open, 'rounds' => count($rounds), 'last' => $last, 'label' => str_contains($f['key'], 'fire') ? 'الحريق (١٢ نظاماً)' : (str_contains($f['key'], 'center') ? 'الجاهزية (٧ أنظمة)' : 'نموذج الفحص')];
+            // ١٩-٢: `rounds` مفاتيح أنظمة ولكل نظام قائمة جولاته بحقل `d` — كان يُقرأ قائمةً بحقل `date` فيبقى «آخر جولة» فارغاً دائماً
+            $rs = \App\Modules\Store\Services\InspectionDocReader::roundsSummary(is_array($data) ? $data : []);
+            $rows[] = $f + ['exists' => (bool) $doc, 'reports' => count($reports), 'open' => $open, 'rounds' => $rs['count'], 'last' => $rs['last'], 'label' => str_contains($f['key'], 'fire') ? 'الحريق (١٢ نظاماً)' : (str_contains($f['key'], 'center') ? 'الجاهزية (٧ أنظمة)' : 'نموذج الفحص')];
         }
         return view('modules.store.inspections', ['rows' => $rows]);
     }

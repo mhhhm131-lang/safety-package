@@ -102,10 +102,12 @@ class IntentsTest extends TestCase
         // قرار ٢٠٢٦-٠٩-١٣: «نماذج الفحص» لمن يملك اللوحة — العشرة بمكانها وبلاغاتها المفتوحة، وكل نموذج بضغطة
         $this->assertStringContainsString('data-intent="forms"', $h);
         \App\Modules\Store\Models\InstituteDocument::create(['key' => 'ipa-office-form-v10', 'version' => 1, 'data' => json_encode(['reports' => [
-            ['row' => 'o09', 'item' => 'إضاءة طوارئ معطلة', 'due' => '٢٤ ساعة', 'levels' => []]], 'rounds' => [['date' => '٢٠٢٦/٠٩/١٢']]], JSON_UNESCAPED_UNICODE)]);
+            ['row' => 'o09', 'item' => 'إضاءة طوارئ معطلة', 'due' => '٢٤ ساعة', 'levels' => []]],
+            // ١٩-٢: الشكل الحقيقي الذي يكتبه النموذج (`logRounds`: ROUNDS[k] = [{d,s,t,q,n,f,ok,no,na,tot}]) — كان هنا قائمة بحقل `date` لا ينتجها النموذج أبداً
+            'rounds' => ['o01' => [['d' => '2026-09-10', 's' => '09:00', 'ok' => 5, 'no' => 0, 'na' => 0, 'tot' => 5]], 'o02' => [['d' => '2026-09-12', 's' => '10:00', 'ok' => 3, 'no' => 1, 'na' => 0, 'tot' => 4]]]], JSON_UNESCAPED_UNICODE)]);
         $p = $this->actingAs($salama)->get('/app/inspections')->assertOk();
         $p->assertSee('data-form="ipa-office-form-v10"', false)->assertSee('href="/HZ-06-offices/inspection-form.html"', false)->assertSee('href="/HZ-00-safety-center/fire-inspection.html"', false)
-          ->assertSee('آخر جولة: <b>٢٠٢٦/٠٩/١٢</b>', false)->assertSee('لم يُفتح بعد');
+          ->assertSee('آخر جولة: <b>2026-09-12</b>', false)->assertSee('الجولات 2')->assertSee('لم يُفتح بعد'); // أحدث تاريخ عبر الأنظمة، وعدد الجولات كلها
         $this->assertSame(10, substr_count($p->getContent(), 'data-form="'));
         $this->actingAs($this->user('emp2', 'employee'))->get('/app/inspections')->assertForbidden();
         foreach (['trigger', 'lockdown', 'drill', 'teams', 'systems', 'permit', 'sendform', 'worker', 'project', 'party', 'reports', 'settings'] as $k) {
