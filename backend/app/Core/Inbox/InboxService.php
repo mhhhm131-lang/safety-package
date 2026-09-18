@@ -21,6 +21,7 @@ class InboxService
         \App\Modules\Emergency\Inbox\TeamGapTasks::class,
         \App\Modules\Project\Inbox\ContractorTasks::class,
         \App\Modules\Store\Inbox\InspectionReportTasks::class,
+        \App\Modules\Store\Inbox\InspectionRoundTasks::class, // ١٩-٣: «مهامي» من العمل اليومي — الجولات المستحقة على دوري
     ];
 
     /** @return Collection<int, Task> */

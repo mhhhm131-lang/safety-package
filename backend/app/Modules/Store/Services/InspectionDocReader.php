@@ -117,7 +117,7 @@ class InspectionDocReader
                 $st = !$last ? 'none' : (((int) ($last['no'] ?? 0)) > 0 ? 'fault' : (($next && $next < $today->toDateString()) ? 'late' : 'ok'));
                 $reps = array_values(array_filter((array) ($d['reports'] ?? []), fn ($r) => is_array($r) && explode('-', (string) ($r['row'] ?? ''))[0] === (string) $k));
                 $out[] = ['k' => (string) $k, 'form' => $doc['form'], 'name' => (string) ($def['name'] ?? $k), 'code' => (string) ($def['code'] ?? ''), 'named' => !empty($def['name']),
-                    'last' => $last, 'rounds' => $rounds, 'days' => $days, 'freq' => $freq, 'next' => $next, 'st' => $st,
+                    'last' => $last, 'rounds' => $rounds, 'days' => $days, 'freq' => $freq, 'next' => $next, 'st' => $st, 'sched_rows' => array_values(array_filter((array) ($def['sched'] ?? []), 'is_array')),
                     'open' => count(array_filter($reps, fn ($r) => !self::isClosed($r))), 'reports' => $reps];
             }
         }
@@ -173,6 +173,111 @@ class InspectionDocReader
             }
         }
         return ['count' => $n, 'last' => $last];
+    }
+
+    // ── المرحلة ١٩-٣: مهامي، أين تقف البلاغات، بلاغاتي (dashboard.html:459-474, 588-600, 741-781) ──
+
+    /** من يخصه سطر الجدول الدوري: كلمات عمود «مَن» لكل دور واجهة (dashboard.html:742 WHO_ROLE) */
+    public const WHO_ROLE = ['tech' => ['الفني'], 'fm' => ['المرافق والصيانة'], 'safety' => ['مسؤول السلامة', 'المناوب', 'المشرف'], 'cons' => ['المكتب']];
+
+    /** مستوى القرار لكل دور واجهة (dashboard.html:468 RLVL) */
+    public const ROLE_LEVEL = ['tech' => 1, 'fm' => 2, 'adm' => 3, 'exec' => 4];
+
+    public const LEVEL_NAMES = [1 => 'الفني', 2 => 'مدير المرافق', 3 => 'مدير الشؤون الإدارية', 4 => 'الإدارة العليا'];
+
+    public static function allPlaces(): array
+    {
+        return array_values(array_unique(array_column(InspectionReportTasks::FORMS, 'hz')));
+    }
+
+    /**
+     * الجولات المستحقة على دور الواجهة (myTasks): لكل مكان × نظام × سطر جدول دوري دوريته معروفة ويخص الدور.
+     * left = الأيام الباقية (سالب = متأخرة، null = لم تُنفَّذ). المستحق: null أو ≤ ٧.
+     * @return array<int, array{hz:string,form:array,k:string,system:string,freq:string,task:string,who:string,last:?array,next:?string,left:?int}>
+     */
+    public static function dueRounds(string $ui, bool $onlyDue = true): array
+    {
+        $mine = self::WHO_ROLE[$ui] ?? null;
+        if (!$mine) return [];
+        $today = new \DateTimeImmutable(now()->toDateString());
+        $out = [];
+        foreach (self::allPlaces() as $hz) {
+            foreach (self::systemsOf($hz) as $s) {
+                foreach ($s['sched_rows'] as $sc) { // من systemsOf — بلا قراءة ثانية للوثيقة
+                    $freq = trim((string) ($sc[0] ?? '')); $days = self::FREQ_DAYS[$freq] ?? null;
+                    if (!$days) continue;
+                    $who = (string) ($sc[2] ?? '');
+                    $owns = false; foreach ($mine as $w) if ($w !== '' && mb_strpos($who, $w) !== false) { $owns = true; break; }
+                    if (!$owns) continue;
+                    $withF = array_values(array_filter($s['rounds'], fn ($r) => ($r['f'] ?? '') === $freq));
+                    $last = $withF[0] ?? (array_values(array_filter($s['rounds'], fn ($r) => empty($r['f'])))[0] ?? null);
+                    $next = null; $left = null;
+                    if ($last && !empty($last['d']) && ($t = \DateTimeImmutable::createFromFormat('!Y-m-d', substr((string) $last['d'], 0, 10)))) {
+                        $n = $t->modify("+{$days} days"); $next = $n->format('Y-m-d');
+                        $left = (int) round(($n->getTimestamp() - $today->getTimestamp()) / 86400);
+                    }
+                    if ($onlyDue && $left !== null && $left > 7) continue;
+                    $out[] = ['hz' => $hz, 'form' => $s['form'], 'k' => $s['k'], 'system' => $s['name'], 'freq' => $freq, 'task' => (string) ($sc[1] ?? ''), 'who' => $who, 'last' => $last, 'next' => $next, 'left' => $left];
+                }
+            }
+        }
+        return $out;
+    }
+
+    /** كل بلاغات الفحص في الأماكن كلها مع نموذجها */
+    public static function allReports(): array
+    {
+        $out = [];
+        foreach (self::allPlaces() as $hz) foreach (self::reportsOf($hz) as $r) $out[] = $r;
+        return $out;
+    }
+
+    /** سكة «أين تقف البلاغات»: لكل مستوى عدد المفتوح والمتأخر (dashboard.html:588-593) */
+    public static function rail(): array
+    {
+        $cnt = [1 => 0, 2 => 0, 3 => 0, 4 => 0]; $od = [1 => 0, 2 => 0, 3 => 0, 4 => 0]; $open = 0;
+        foreach (self::allReports() as $r) {
+            if (self::isClosed($r)) continue;
+            $open++; $h = self::holder($r);
+            if ($h) { $cnt[$h]++; if ((self::overdueHours($r) ?? -1) >= 0) $od[$h]++; }
+        }
+        return ['open' => $open, 'cnt' => $cnt, 'od' => $od];
+    }
+
+    /** هل ينتظر قرار هذا الدور الآن (mine — كما في InspectionReportTasks) */
+    public static function waitsFor(array $r, string $ui): bool
+    {
+        $last = self::lastLvl($r); $closed = self::isClosed($r); $L = (array) ($r['levels'] ?? []);
+        $up = fn (int $n) => !empty($L[$n]['up']);
+        return match ($ui) {
+            'tech' => !$closed && ($last === 0 || !empty($r['backFrom'])),
+            'fm' => !$closed && $last === 1 && $up(1),
+            'adm' => !$closed && $last === 2 && $up(2),
+            'exec' => !$closed && (($last === 3 && $up(3)) || (!empty($r['path']) && $r['path'] !== 'إداري' && $last > 0 && $last < 4 && $up($last))),
+            'safety' => !$closed,
+            default => false,
+        };
+    }
+
+    /** «بلاغاتي»: قررتُ فيها ولم تُغلق ولا تنتظرني الآن (mineDone:469-474) */
+    public static function decidedByRole(string $ui): array
+    {
+        $lv = self::ROLE_LEVEL[$ui] ?? null;
+        if (!$lv) return [];
+        $reached = function ($L) use ($lv): bool {
+            $L = (array) $L;
+            return !empty($L[$lv]) || (!empty($L[$lv - 1]) && !empty($L[$lv - 1]['up']));
+        };
+        $out = [];
+        foreach (self::allReports() as $r) {
+            if (self::isClosed($r) || self::waitsFor($r, $ui)) continue;
+            if ($ui === 'tech') { if (!empty($r['sent'])) $out[] = $r; continue; }
+            $hit = $reached($r['levels'] ?? []) || ($lv === 4 && !empty($r['path']) && $r['path'] !== 'إداري');
+            if (!$hit) foreach ((array) ($r['hist'] ?? []) as $H) { if ($reached(is_array($H) ? ($H['levels'] ?? $H) : [])) { $hit = true; break; } }
+            if ($hit) $out[] = $r;
+        }
+        usort($out, fn ($a, $b) => (self::overdueHours($b) ?? -INF) <=> (self::overdueHours($a) ?? -INF));
+        return $out;
     }
 
     /** كل بلاغات فحص المكان مع نموذجها */

@@ -72,8 +72,19 @@ class HomeController extends Controller
             }
         }
 
+        // المرحلة ١٩-٣ (قرار ٤٨): من العمل اليومي — «أين تقف البلاغات» (سكة المستويات) و«بلاغاتي» (قررتُ فيها ولم تُغلق) لأدوار الواجهة
+        $follow = null;
+        $ui = PermissionRegistry::uiRole($role);
+        if (in_array($ui, ['tech', 'fm', 'adm', 'exec', 'safety'], true)) {
+            $R = \App\Modules\Store\Services\InspectionDocReader::class;
+            $rail = $R::rail();
+            $follow = ['rail' => $rail, 'me' => $R::ROLE_LEVEL[$ui] ?? 0, 'mine' => array_slice($R::decidedByRole($ui), 0, 12), 'hasLevel' => isset($R::ROLE_LEVEL[$ui])];
+            if (!$rail['open'] && !$follow['mine']) $follow = null; // لا بلاغات فحص: لا يُعرض القسم
+        }
+
         // المرحلة ١٢ (قرار ٣٥): «ما ينتظرك» + «أريد أن…»
         return view('governance.inbox', [
+            'follow' => $follow,
             'tasks' => $tasks,
             'intents' => IntentRegistry::forUser($user),
             'overview' => $overview,
