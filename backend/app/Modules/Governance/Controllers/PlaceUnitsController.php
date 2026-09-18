@@ -19,11 +19,25 @@ use Illuminate\View\View;
 class PlaceUnitsController extends Controller
 {
     /** فهرس الأماكن التسعة بعدد وحداتها — مدخل «أريد أن… وحدات مكاني». */
-    public function hub(): View
+    public function hub(Request $request): View
     {
-        $places = Place::orderBy('sort')->get();
+        // المرحلة ١٩-٤ (قرار ٤٨): صفحة «الأماكن» = فسيفساء اللوحة + «صورة المبنى» لأدوار القرار (dashboard.html:602-632)
+        $R = \App\Modules\Store\Services\InspectionDocReader::class;
+        $user = Auth::user(); $role = $user->role();
+        $ui = \App\Core\Permissions\PermissionRegistry::uiRole($role);
+        $tiles = $R::placeTiles();
+        $byCode = Place::all()->keyBy('code');
+        // مدير الإدارة يرى مكان إدارته وحده (كما في اللوحة: myHz)
+        if ($ui === 'dept' && !in_array($role, ['system_admin', 'system_staff'], true)
+            && ($ou = UserProfile::where('user_id', $user->id)->value('organization_unit_id'))
+            && ($code = $byCode->firstWhere('id', OrganizationUnit::find($ou)?->place_id)?->code)) {
+            $tiles = array_intersect_key($tiles, [$code => true]);
+        }
+        $decision = in_array($ui, ['fm', 'adm', 'exec', 'safety'], true);
+        $k = $decision && array_key_exists((string) $request->query('k'), $R::KPI) ? (string) $request->query('k') : null;
         $counts = PlaceUnit::where('is_active', true)->selectRaw('place_id, count(*) as c')->groupBy('place_id')->pluck('c', 'place_id');
-        return view('governance.places.units_hub', ['places' => $places, 'counts' => $counts]);
+        return view('governance.places.units_hub', ['tiles' => $tiles, 'byCode' => $byCode, 'counts' => $counts, 'ui' => $ui,
+            'kpis' => $decision ? $R::buildingKpis() : null, 'k' => $k, 'kList' => $k ? $R::reportsByKpi($k) : []]);
     }
 
     public function index(Place $place): View

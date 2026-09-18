@@ -280,6 +280,58 @@ class InspectionDocReader
         return $out;
     }
 
+    // ── المرحلة ١٩-٤: صورة المبنى والأماكن التسعة (dashboard.html:602-632) ──
+
+    /** ترتيب الأماكن في اللوحة (dashboard.html:407 HZ_ORDER) — مركز السلامة في الوسط */
+    public const HZ_ORDER = ['HZ-01', 'HZ-02', 'HZ-03', 'HZ-04', 'HZ-00', 'HZ-05', 'HZ-06', 'HZ-07', 'HZ-08'];
+
+    public const KPI = ['open' => ['بلاغ مفتوح', 'لم يُغلق بعد في أي مستوى'], 'od' => ['متجاوز المهلة', 'انقضت مهلة الفئة ولم يُحسم'],
+        'a' => ['فئة أ — حماية معطّلة', 'لا بديل — يستوجب إجراءات تعويضية'], 'reg' => ['تصعيد رقابي', 'رفعه مسؤول السلامة لتوقّف المسار']];
+
+    /** بلاغات المبنى المفتوحة بتصنيف الرقم المنقور، الأشد تأخراً أولاً */
+    public static function reportsByKpi(string $k): array
+    {
+        $open = array_values(array_filter(self::allReports(), fn ($r) => !self::isClosed($r)));
+        $list = match ($k) {
+            'open' => $open,
+            'od' => array_filter($open, fn ($r) => (self::overdueHours($r) ?? -1) >= 0),
+            'a' => array_filter($open, fn ($r) => ($r['imp'] ?? '') === 'none'),
+            'reg' => array_filter($open, fn ($r) => !empty($r['path']) && $r['path'] !== 'إداري'),
+            default => [],
+        };
+        $list = array_values($list);
+        usort($list, fn ($a, $b) => (self::overdueHours($b) ?? -INF) <=> (self::overdueHours($a) ?? -INF));
+        return $list;
+    }
+
+    /** الأرقام الأربعة لصورة المبنى */
+    public static function buildingKpis(): array
+    {
+        $out = [];
+        foreach (array_keys(self::KPI) as $k) $out[$k] = count(self::reportsByKpi($k));
+        return $out;
+    }
+
+    /**
+     * بلاطة كل مكان: هل فُتحت له جولة (وثيقة نموذج موجودة)، وعدد المفتوح والمتجاوز وفئة أ، والحالة none/late/busy/calm.
+     * @return array<string, array{hz:string,forms:array,has:bool,open:int,od:int,a:int,cls:string}>
+     */
+    public static function placeTiles(): array
+    {
+        $existing = InstituteDocument::whereIn('key', array_column(InspectionReportTasks::FORMS, 'key'))->pluck('key')->all();
+        $out = [];
+        foreach (self::HZ_ORDER as $hz) {
+            $forms = self::formsOf($hz);
+            $open = array_values(array_filter(self::reportsOf($hz), fn ($r) => !self::isClosed($r)));
+            $o = count($open);
+            $d = count(array_filter($open, fn ($r) => (self::overdueHours($r) ?? -1) >= 0));
+            $a = count(array_filter($open, fn ($r) => ($r['imp'] ?? '') === 'none'));
+            $has = (bool) array_intersect(array_column($forms, 'key'), $existing);
+            $out[$hz] = ['hz' => $hz, 'forms' => $forms, 'has' => $has, 'open' => $o, 'od' => $d, 'a' => $a, 'cls' => !$has ? 'none' : ($d ? 'late' : ($o ? 'busy' : 'calm'))];
+        }
+        return $out;
+    }
+
     /** كل بلاغات فحص المكان مع نموذجها */
     public static function reportsOf(string $hz): array
     {

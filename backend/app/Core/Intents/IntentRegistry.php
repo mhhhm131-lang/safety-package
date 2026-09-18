@@ -73,9 +73,11 @@ class IntentRegistry
         // المرحلة ١٨-٣ (قرار ٤٧): وحدات الأماكن — مدير المرافق كل الأماكن، ومدير الإدارة إدارته في مكانها، ومسؤول السلامة الكل
         $unitsUrl = ($ui === 'dept' && $profile?->organization_unit_id && ($ouPlace = \App\Modules\Governance\Models\OrganizationUnit::find($profile->organization_unit_id)?->place_id))
             ? route('app.places.units.index', $ouPlace) : route('app.places.units.hub');
-        $add($role === 'facilities_manager' || in_array($role, ['system_admin', 'system_staff'], true) || ($ui === 'dept' && $profile?->organization_unit_id),
-            'units', $ui === 'dept' && !in_array($role, ['system_admin', 'system_staff'], true) ? 'موقع إدارتي في مكانها' : 'وحدات الأماكن', $unitsUrl, 'bi-grid-3x3-gap', 'إدارتي', false,
-            $role === 'facilities_manager' ? 'القاعات والغرف والمستودعات بأرقامها ومواقعها' : 'الدور والموقع');
+        // ١٩-٤ (قرار ٤٨): «الأماكن» لكل أدوار الواجهة — الفسيفساء وملف كل مكان (ومنه وحداته)؛ ومدير الإدارة يبقى له «موقع إدارتي في مكانها»
+        $isCenter = in_array($role, ['system_admin', 'system_staff'], true);
+        $add((bool) $ui, 'places', 'الأماكن', route('app.places.units.hub'), 'bi-geo-alt', 'الفحص', false,
+            $role === 'facilities_manager' || $isCenter ? 'حالة كل مكان وملفه، ووحداته: القاعات والغرف والمستودعات' : 'حالة كل مكان وملفه: أنظمته وبلاغاته وفريقه وخطتاه');
+        $add($ui === 'dept' && !$isCenter && $profile?->organization_unit_id, 'units', 'موقع إدارتي في مكانها', $unitsUrl, 'bi-grid-3x3-gap', 'إدارتي', false, 'الدور والموقع');
         $add($can('risk.activate'), 'activate', 'أفعّل خطراً لإدارتي', route('risk.reference.index'), 'bi-lightning-charge', 'إدارتي', false, 'من كتاب المعهد');
         $add($can('risk.list'), 'book', 'السجل العام للمعهد', route('risk.reference.index'), 'bi-bookmark', 'إدارتي');
         $add($can('form.send'), 'sendform', 'أرسل نموذجاً لموظفين', route('forms.index'), 'bi-send', 'إدارتي');
