@@ -71,30 +71,13 @@ class InspectionReportTasks implements TaskSource
         return $out;
     }
 
-    // ── منطق اللوحة حرفياً (dashboard.html:462-488) ──
+    // ── منطق اللوحة حرفياً (dashboard.html:462-488) — المرحلة ١٩-١: المصدر الواحد InspectionDocReader ──
 
-    private function isClosed(array $r): bool
-    {
-        foreach ((array) ($r['levels'] ?? []) as $l) {
-            if (is_array($l) && empty($l['up']) && empty($l['back'])) return true;
-        }
-        return false;
-    }
+    private function isClosed(array $r): bool { return \App\Modules\Store\Services\InspectionDocReader::isClosed($r); }
 
-    private function lastLvl(array $r): int
-    {
-        $lv = array_map('intval', array_keys((array) ($r['levels'] ?? [])));
-        return $lv ? max($lv) : 0;
-    }
+    private function lastLvl(array $r): int { return \App\Modules\Store\Services\InspectionDocReader::lastLvl($r); }
 
-    private function holder(array $r): int
-    {
-        if ($this->isClosed($r)) return 0;
-        $last = $this->lastLvl($r);
-        $backFrom = (!empty($r['backFrom']) && empty($r['levels'][1])) ? (int) $r['backFrom'] : 0;
-        if (!empty($r['reopen']) || $backFrom || !$last) return 1;
-        return min($last + 1, 4);
-    }
+    private function holder(array $r): int { return \App\Modules\Store\Services\InspectionDocReader::holder($r); }
 
     private function mine(array $r, string $ui): bool
     {
@@ -111,22 +94,7 @@ class InspectionReportTasks implements TaskSource
     }
 
     /** الساعات فوق المهلة (موجب = متأخر)؛ null بلا مهلة أو بلا طابع زمني */
-    private function overdueHours(array $r): ?float
-    {
-        if ($this->isClosed($r)) return null;
-        $h = self::DUE_H[$r['due'] ?? ''] ?? null;
-        if (!$h) return null;
-        $d = $this->parseStamp($r['cycleAt'] ?? '') ?? $this->parseStamp($r['when'] ?? '') ?? $this->parseStamp($r['sent'] ?? '');
-        if (!$d) return null;
-        return (now()->getTimestamp() - $d->getTimestamp()) / 3600 - $h;
-    }
+    private function overdueHours(array $r): ?float { return \App\Modules\Store\Services\InspectionDocReader::overdueHours($r); }
 
-    /** «٢٠٢٦/٠٩/١٢ — ١٤:٠٥» بأرقام عربية أو لاتينية → وقت */
-    private function parseStamp(?string $s): ?\DateTimeImmutable
-    {
-        if (!$s) return null;
-        $en = strtr($s, ['٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4', '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9']);
-        if (!preg_match('/(\d{4})\/(\d{2})\/(\d{2})\D+(\d{2}):(\d{2})/', $en, $m)) return null;
-        return new \DateTimeImmutable("{$m[1]}-{$m[2]}-{$m[3]} {$m[4]}:{$m[5]}:00", new \DateTimeZone(config('app.timezone', 'UTC')));
-    }
+    private function parseStamp(?string $s): ?\DateTimeImmutable { return \App\Modules\Store\Services\InspectionDocReader::parseStamp($s); }
 }

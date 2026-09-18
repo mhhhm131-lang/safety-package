@@ -8,7 +8,7 @@
 <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
   <h1 class="page-h m-0">وحدات {{ $place->name }}</h1>
   <span class="small text-muted" dir="ltr">{{ $place->code }}</span>
-  <a class="small ms-auto" href="{{ route('app.places.units.hub') }}">كل الأماكن ←</a>
+  <a class="small ms-auto" href="{{ route('app.places.units.file', $place) }}">ملف المكان ←</a>
 </div>
 <p class="small text-muted mb-3">
   @if($canAny) تُدخل مرة واحدة. ما يُضاف هنا يظهر بعدها في البلاغ والفحص والخطر والفريق.
