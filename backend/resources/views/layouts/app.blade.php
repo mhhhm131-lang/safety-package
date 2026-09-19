@@ -114,8 +114,9 @@
         <hr>
       @endif
       <div class="small text-muted px-2 mb-1">السجلات</div>
+      {{-- ١٩-٧ (قرار ٤٨): بند «العمل اليومي» صار «الأماكن» — الفسيفساء وملف كل مكان في الخلفية --}}
       @if(\App\Core\Permissions\PermissionRegistry::uiRole($role))
-        <a href="/dashboard.html"><i class="bi bi-speedometer2"></i>العمل اليومي</a>
+        <a href="{{ route('app.places.units.hub') }}" class="{{ request()->routeIs('app.places.units.*') || request()->routeIs('app.places.team.*') ? 'active' : '' }}"><i class="bi bi-geo-alt-fill"></i>الأماكن وملفاتها</a>
       @endif
       @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'system.users'))
         <a href="{{ route('app.users.index') }}" class="{{ request()->routeIs('app.users.*') ? 'active' : '' }}"><i class="bi bi-people"></i>المستخدمون</a>

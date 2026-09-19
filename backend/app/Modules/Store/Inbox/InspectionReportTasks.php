@@ -63,7 +63,7 @@ class InspectionReportTasks implements TaskSource
                     dueAt: ($started && $h) ? Carbon::instance($started)->addHours($h) : null,
                     isOverdue: $over !== null && $over > 0,
                     place: $f['hz'].' '.$f['name'],
-                    detailsUrl: '/dashboard.html',
+                    detailsUrl: ($pid = \App\Modules\Governance\Models\Place::idByCode($f['hz'])) ? '/app/places/'.$pid.'/file' : null, // ١٩-٧
                     createdAt: $started ? Carbon::instance($started) : null,
                 ));
             }

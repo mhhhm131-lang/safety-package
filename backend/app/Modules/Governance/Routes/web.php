@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Route;
 /*
  * شاشات الوحدات تحت /app/… (BACKEND.md ٤-١). صفحات المعهد في الجذر كما هي.
  */
+// ١٩-٧ (قرار ٤٨): «العمل اليومي» مخفية — الرابط القديم يُحوَّل إلى مقابله في الخلفية (الوسم #place= لا يصل الخادم فتحوّله الصفحة)
+Route::middleware(['web', 'auth'])->get('/dashboard.html', \App\Modules\Governance\Controllers\DashboardMovedController::class)->name('dashboard.moved');
 Route::middleware(['web', 'auth'])->prefix('app')->name('app.')->group(function () {
     Route::get('/', [HomeController::class, 'index'])->name('home');
     Route::get('/inbox/count', [\App\Modules\Governance\Controllers\InboxController::class, 'count'])->name('inbox.count'); // ١١-٢: شارة «ما ينتظرك»

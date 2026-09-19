@@ -1726,7 +1726,7 @@ document.querySelectorAll('main.sheet table').forEach(t=>{if(t.closest('.tw')||t
   /* حساب حقيقي من الخادم (المرحلة ١): دوره من الجلسة لا من القائمة التجريبية */
   if(!USERS[s.u])USERS[s.u]={p:'',r:s.r,n:s.n||'',h:''};
   $('uu').value=s.u;$('pp').value=USERS[s.u].p;doLogin();document.body.classList.add('fromDash');
-  const a=document.createElement('a');a.href='../dashboard.html';a.textContent='← اللوحة';
+  const a=document.createElement('a');a.href='/app';a.textContent='← ما ينتظرك';
   a.style.cssText='color:#fff;font-weight:700;text-decoration:none;border:1px solid rgba(255,255,255,.4);padding:2px 10px;border-radius:2px';
   $('userbar').insertBefore(a,$('dvBack'));
   const h=location.hash.match(/open=([^&]+)/);

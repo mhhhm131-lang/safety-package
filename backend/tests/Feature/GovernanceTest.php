@@ -153,13 +153,11 @@ class GovernanceTest extends TestCase
         $rows[] = ['id' => 'newq', 'name' => 'قسم جديد من اللوحة', 'parent' => 'hr', 'place' => 'HZ-07', 'mgr' => 'فلان'];
         foreach ($rows as &$r) { if ($r['id'] === 'it') $r['name'] = 'تقنية المعلومات'; }
         unset($r);
-        $this->actingAs($safety)->putJson('/api/store/ipa-depts', ['data' => json_encode($rows, JSON_UNESCAPED_UNICODE), 'version' => $v])->assertOk();
-        $this->assertSame('تقنية المعلومات', $it->fresh()->name);
-        $this->assertDatabaseMissing('organization_units', ['code' => 'chg']);
-        $new = OrganizationUnit::where('code', 'newq')->first();
-        $this->assertSame('hr', $new->parent->code);
-        $this->assertSame('HZ-07', $new->place->code);
-        $this->assertSame('فلان', $new->manager_name);
+        // ١٩-٧ (قرار ٤٨): اللوحة مخفية — الهيكل لا يُكتب من المتصفح، والجدول لا يتغير؛ الكاتب شاشة الهيكل وحدها
+        $this->actingAs($safety)->putJson('/api/store/ipa-depts', ['data' => json_encode($rows, JSON_UNESCAPED_UNICODE), 'version' => $v])->assertStatus(422);
+        $this->assertNotSame('تقنية المعلومات', $it->fresh()->name);
+        $this->assertDatabaseHas('organization_units', ['code' => 'chg']);
+        $this->assertDatabaseMissing('organization_units', ['code' => 'newq']);
 
         // ٣) الحذف الممنوع: وحدة لها أقسام تُعطَّل لا تُحذف
         $this->actingAs($safety)->delete('/app/org/'.$it->id)->assertSessionHas('err');
@@ -175,7 +173,8 @@ class GovernanceTest extends TestCase
           ->assertSee('/HZ-01-basement/inspection-form.html', false)
           ->assertSee('/HZ-00-safety-center/fire-inspection.html', false)
           ->assertDontSee('/HZ-00-safety-center/response-plan.html', false)
-          ->assertSee('/dashboard.html#place=HZ-05', false);
+          ->assertSee('/app/places/'.Place::where('code', 'HZ-05')->value('id').'/file', false) // ١٩-٧: ملف المكان في الخلفية
+          ->assertDontSee('/dashboard.html', false);
     }
 
     public function test_notifications_inbox(): void

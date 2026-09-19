@@ -7,7 +7,7 @@
   <h1 class="h4 m-0"><span class="badge text-bg-{{ $team->getTypeColor() }}"><i class="bi bi-{{ $team->getTypeIcon() }}"></i></span> {{ $team->name }}</h1>
   <span class="ms-auto d-flex gap-1">
     @if($canTeams)<a class="btn btn-sm btn-outline-primary" href="{{ route('emergency.teams.edit', $team) }}"><i class="bi bi-pencil"></i> تعديل</a>@endif
-    @if($team->isDerived())<a class="btn btn-sm btn-outline-primary" href="/dashboard.html#place={{ $team->place?->code }}"><i class="bi bi-folder2-open"></i> ملف المكان في اللوحة</a>@endif
+    @if($team->isDerived())<a class="btn btn-sm btn-outline-primary" href="{{ $team->place ? route('app.places.units.file', $team->place).'#pfTeams' : route('app.places.units.hub') }}"><i class="bi bi-folder2-open"></i> ملف المكان في اللوحة</a>@endif
     <a class="btn btn-sm btn-outline-secondary" href="{{ route('emergency.teams.index') }}">الفريق الأولي</a>
   </span>
 </div>

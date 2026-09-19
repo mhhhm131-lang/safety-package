@@ -26,30 +26,31 @@ class StoreApiTest extends TestCase
         $this->putJson('/api/store/ipa-place', ['data' => '{}'])->assertStatus(401);
     }
 
+    // ١٩-٧ (قرار ٤٨): ipa-place لم يعد يُكتب من المتصفح — الاختباران العامان يستعملان مفتاحاً عادياً
     public function test_index_returns_session_and_docs_verbatim(): void
     {
         $u = $this->safety();
         $raw = '{"HZ-01":{"plans":{},"units":{}},"levels":{"1":{"up":true}}}';
-        $this->actingAs($u)->putJson('/api/store/ipa-place', ['data' => $raw, 'version' => 0])
-            ->assertOk()->assertJson(['key' => 'ipa-place', 'version' => 1]);
+        $this->actingAs($u)->putJson('/api/store/ipa-seen', ['data' => $raw, 'version' => 0])
+            ->assertOk()->assertJson(['key' => 'ipa-seen', 'version' => 1]);
 
         $r = $this->actingAs($u)->getJson('/api/store?all=1')->assertOk()
             ->assertJsonPath('session.u', 'salama')
             ->assertJsonPath('session.r', 'safety')
-            ->assertJsonPath('docs.ipa-place.version', 1);
+            ->assertJsonPath('docs.ipa-seen.version', 1);
         // الكائن الفارغ {} يعود {} لا [] — حرفياً
-        $this->assertSame($raw, $r->json('docs.ipa-place.data'));
+        $this->assertSame($raw, $r->json('docs.ipa-seen.data'));
         $this->assertNotEmpty($r->json('csrf'));
     }
 
     public function test_version_conflict_returns_409_with_server_copy(): void
     {
         $u = $this->safety();
-        $this->actingAs($u)->putJson('/api/store/ipa-place', ['data' => '["a"]', 'version' => 0])->assertOk();
-        $this->actingAs($u)->putJson('/api/store/ipa-place', ['data' => '["a","b"]', 'version' => 1])->assertOk()->assertJson(['version' => 2]);
+        $this->actingAs($u)->putJson('/api/store/ipa-seen', ['data' => '["a"]', 'version' => 0])->assertOk();
+        $this->actingAs($u)->putJson('/api/store/ipa-seen', ['data' => '["a","b"]', 'version' => 1])->assertOk()->assertJson(['version' => 2]);
 
         // جهاز آخر ما زال على النسخة ١
-        $this->actingAs($u)->putJson('/api/store/ipa-place', ['data' => '["stale"]', 'version' => 1])
+        $this->actingAs($u)->putJson('/api/store/ipa-seen', ['data' => '["stale"]', 'version' => 1])
             ->assertStatus(409)
             ->assertJsonPath('version', 2)
             ->assertJsonPath('data', '["a","b"]');

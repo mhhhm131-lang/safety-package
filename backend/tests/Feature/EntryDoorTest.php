@@ -33,6 +33,7 @@ class EntryDoorTest extends TestCase
         $i = $this->file('index.html');
         $this->assertStringContainsString('id="enterBtn" href="/login"', $i, 'زر الغلاف ما زال يفتح اللوحة مباشرة');
         $this->assertStringNotContainsString('id="enterBtn" href="dashboard.html"', $i);
-        $this->assertStringContainsString("enterBtn').href='dashboard.html'", $i, 'الجلسة القائمة لا تعيد الزر إلى اللوحة');
+        // ١٩-٧ (قرار ٤٨): اللوحة مخفية — الجلسة القائمة تفتح المنظومة
+        $this->assertStringContainsString("enterBtn').href='/app'", $i, 'الجلسة القائمة لا تفتح المنظومة');
     }
 }

@@ -19,6 +19,9 @@ class IpaSyncSite extends Command
     public const DIRS = ['HZ-00-safety-center', 'HZ-01-basement', 'HZ-02-electrical', 'HZ-03-hvac', 'HZ-04-datacenter',
         'HZ-05-restaurants', 'HZ-06-offices', 'HZ-07-halls', 'HZ-08-storage', 'role-cards', 'story', 'archive'];
 
+    /** ١٩-٧ (قرار ٤٨): «العمل اليومي» مخفية — الملف باقٍ في المستودع كما هو ولا يُنسخ إلى public/ (المسار /dashboard.html صفحة تحويل). للرجوع: أفرغ القائمة. */
+    public const HIDDEN = ['dashboard.html'];
+
     public function handle(Filesystem $fs): int
     {
         $from = rtrim($this->option('from') ?: dirname(base_path()), '/\\');
@@ -37,7 +40,9 @@ class IpaSyncSite extends Command
             $count += count($fs->allFiles($dst));
         }
 
+        foreach (self::HIDDEN as $hidden) $fs->delete($to.DIRECTORY_SEPARATOR.$hidden);
         foreach ($fs->glob($from.DIRECTORY_SEPARATOR.'*.html') as $file) {
+            if (in_array(basename($file), self::HIDDEN, true)) continue;
             $fs->copy($file, $to.DIRECTORY_SEPARATOR.basename($file));
             $count++;
         }

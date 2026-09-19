@@ -61,7 +61,7 @@ class IntentRegistry
         // الفني: مكانه
         $add($ui === 'tech' && $folder, 'inspect', 'أفحص مكاني', $folder ? '/'.$folder.'/inspection-form.html' : null, 'bi-clipboard-check', 'الفحص', true, $placeCode ? 'نموذج فحص '.$placeCode : null);
         $add((bool) $ui, 'forms', 'نماذج الفحص', route('app.inspections'), 'bi-clipboard-check', 'الفحص', $ui !== 'tech', 'النماذج العشرة: آخر جولة وبلاغاتها المفتوحة، وكل نموذج بضغطة');
-        $add((bool) $ui, 'inspections', 'العمل اليومي', '/dashboard.html', 'bi-speedometer2', 'الفحص');
+        // ١٩-٧ (قرار ٤٨): نية «العمل اليومي» حُذفت — كل ما كان في اللوحة صار في «ما ينتظرك» و«الأماكن» وملف المكان
         // الطوارئ
         $add($can('emergency.trigger') && $main, 'trigger', 'فعّل حالة طارئة', $main ? route('emergency.buildings.control', $main).($placeCode ? '?place='.$placeCode : '') : null, 'bi-bell-fill', 'الطوارئ', true, 'الفريق الأولي والقيادة يُنبَّهون فوراً');
         $add($can('emergency.trigger') && $main, 'lockdown', 'إخلاء أو إغلاق', $main ? route('emergency.buildings.control', $main).'#lockdown' : null, 'bi-door-closed', 'الطوارئ');

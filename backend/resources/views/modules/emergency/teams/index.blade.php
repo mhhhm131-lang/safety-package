@@ -23,7 +23,7 @@
       <td>{{ $team->members->count() }}@if($team->isDerived()) / 4 @endif
         @if($team->members->isNotEmpty())<br><small class="text-muted">@foreach($team->members as $m){{ $m->getRoleKeyLabel() ? $m->getRoleKeyLabel().': ' : '' }}{{ $m->displayName() }}{{ $loop->last ? '' : '، ' }}@endforeach</small>@endif</td>
       <td>@if($team->isDerived())<span class="badge text-bg-{{ in_array($team->readiness, ['approved', 'referred']) ? 'success' : ($team->readiness === 'nominated' ? 'warning' : 'danger') }}">{{ $team->getReadinessLabel() }}</span>@else<span class="badge text-bg-{{ $team->is_active ? 'success' : 'secondary' }}">{{ $team->is_active ? 'نشط' : 'غير نشط' }}</span>@endif</td>
-      <td>@if($team->isDerived())<a class="small" href="/dashboard.html#place={{ $team->place?->code }}">ملف المكان</a>@else يدوي @endif</td>
+      <td>@if($team->isDerived())@if($team->place)<a class="small" href="{{ route('app.places.units.file', $team->place) }}#pfTeams">ملف المكان</a>@endif@else يدوي @endif</td>
     </tr>
   @empty
     <tr><td colspan="6" class="text-center text-muted py-4">لا فرق. رشّح الفريق الأولي من ملف المكان في اللوحة ثم اضغط «مزامنة».</td></tr>

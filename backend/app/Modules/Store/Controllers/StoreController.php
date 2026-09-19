@@ -30,6 +30,12 @@ class StoreController extends Controller
 {
     public const DEPTS_KEY = 'ipa-depts';
 
+    /**
+     * ١٩-٧ (قرار ٤٨): وثيقتان لا تُكتبان من المتصفح بعد إخفاء اللوحة — ملف الفرق والخطتين يكتبه PlaceProfile بصلاحياته في الخادم،
+     * والهيكل تكتبه شاشة الهيكل التنظيمي. القراءة باقية. 422 كالمفتاح غير المسموح، فيُسقطه طابور ipa-store.js ولا يعلق.
+     */
+    public const SERVER_ONLY = ['ipa-place', self::DEPTS_KEY];
+
     public function __construct(private DeptSync $depts) {}
 
     public function index(Request $request): JsonResponse
@@ -78,6 +84,7 @@ class StoreController extends Controller
     {
         $this->assertKey($key);
         if (!$this->session($request)) return $this->noDailyWork();
+        if (in_array($key, self::SERVER_ONLY, true)) return $this->serverOnly();
         $payload = $request->validate([
             'data' => 'required|string|max:16000000',
             'version' => 'nullable|integer|min:0',
@@ -168,6 +175,7 @@ class StoreController extends Controller
     {
         $this->assertKey($key);
         if (!$this->session($request)) return $this->noDailyWork();
+        if (in_array($key, self::SERVER_ONLY, true)) return $this->serverOnly();
         if ($key === self::DEPTS_KEY || $key === OccSync::KEY) {
             return response()->json(['message' => 'هذه الوثيقة مشتقة من الخادم ولا تُحذف من اللوحة'], 422);
         }
@@ -201,6 +209,11 @@ class StoreController extends Controller
             'd' => $profile->organizationUnit?->code,
             'p' => $profile->place?->code,
         ];
+    }
+
+    private function serverOnly(): JsonResponse
+    {
+        return response()->json(['message' => 'هذه الوثيقة تُحرَّر من شاشات المنظومة (ملف المكان، الهيكل التنظيمي) لا من المتصفح مباشرة'], 422);
     }
 
     private function noDailyWork(): JsonResponse

@@ -42,7 +42,7 @@ class SearchController extends Controller
             return redirect()->route('emergency.incidents.live', $e);
         }
         if (preg_match('/^HZ-0\d$/i', $n) && Place::where('code', strtoupper($n))->exists() && PermissionRegistry::uiRole($role)) {
-            return redirect('/dashboard.html#place='.strtoupper($n));
+            return redirect()->route('app.places.units.file', Place::where('code', strtoupper($n))->first()); // ١٩-٧: ملف المكان في الخلفية
         }
 
         $like = '%'.$q.'%';
@@ -90,7 +90,7 @@ class SearchController extends Controller
         }
         if (PermissionRegistry::uiRole($role)) {
             $add('الأماكن', Place::where(fn ($w) => $w->where('code', 'like', $like)->orWhere('name', 'like', $like))->orderBy('sort')->get(),
-                fn (Place $p) => ['label' => $p->code.' '.$p->name, 'meta' => 'ملف المكان في اللوحة', 'url' => '/dashboard.html#place='.$p->code]);
+                fn (Place $p) => ['label' => $p->code.' '.$p->name, 'meta' => 'ملف المكان', 'url' => route('app.places.units.file', $p, false)]);
         }
         return view('governance.search', ['q' => $q, 'groups' => $groups]);
     }

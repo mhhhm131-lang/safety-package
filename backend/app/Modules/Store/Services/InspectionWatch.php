@@ -205,7 +205,7 @@ class InspectionWatch
         if ($never > 0 && $this->claim('never:'.$today->toDateString(), 'inspection_never', null)) {
             $this->notify->notifyRoles(self::RECIPIENTS, 'inspection_never',
                 'مهام فحص دورية لم تُنفَّذ بعد: '.$never,
-                'لا جولة مسجّلة لها في سجل الجولات — التفصيل في «مهامي» باللوحة', '/dashboard.html');
+                'لا جولة مسجّلة لها في سجل الجولات — التفصيل في «ما ينتظرك»', '/app');
         }
         return [$sent, $never];
     }

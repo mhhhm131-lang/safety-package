@@ -76,7 +76,7 @@
               @if($mainBuilding && $P::hasPermission($role, 'emergency.trigger'))
                 <a class="btn btn-sm btn-outline-danger" href="{{ route('emergency.buildings.control', ['building' => $mainBuilding, 'place' => $place->code]) }}" title="تفعيل في هذا المكان"><i class="bi bi-bell"></i></a>
               @endif
-              <a class="btn btn-sm btn-outline-secondary" href="/dashboard.html#place={{ $place->code }}" title="ملف المكان في اللوحة"><i class="bi bi-folder2-open"></i></a>
+              <a class="btn btn-sm btn-outline-secondary" href="{{ route('app.places.units.file', $place) }}" title="ملف المكان"><i class="bi bi-folder2-open"></i></a>
             </td>
           </tr>
         @endforeach

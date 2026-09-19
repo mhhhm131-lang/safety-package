@@ -130,15 +130,22 @@ class EmergencyTest extends TestCase
         $this->assertSame(2, EmergencyTeam::where('source', 'place_profile')->count());
     }
 
-    public function test_store_put_of_place_profile_syncs_teams(): void
+    /**
+     * ١٩-٧ (قرار ٤٨): كان هذا الاختبار يكتب ملف الفرق من المتصفح (PUT /api/store/ipa-place) فتُشتق الفرق.
+     * اللوحة مخفية الآن: المتصفح لا يكتب الوثيقة، والاشتقاق نفسه يحدث حين تكتب شاشة ملف المكان (PlaceProfile).
+     */
+    public function test_place_profile_written_from_the_place_file_syncs_teams_and_browser_put_is_refused(): void
     {
+        $code = OrganizationUnit::first()->code;
         $doc = json_decode(InstituteDocument::where('key', 'ipa-place')->value('data'), true);
-        $doc['HZ-06']['units'][OrganizationUnit::first()->code]['team'][1]['name'] = 'سعد الجديد';
-        $doc['HZ-06']['units'][OrganizationUnit::first()->code]['hr'] = ['date' => '2026-03-10'];
-        $this->actingAs($this->salama)->putJson('/api/store/ipa-place', ['data' => json_encode($doc, JSON_UNESCAPED_UNICODE), 'version' => 1])->assertOk();
+        $doc['HZ-06']['units'][$code]['hr'] = ['date' => '2026-03-10'];
+        $this->actingAs($this->salama)->putJson('/api/store/ipa-place', ['data' => json_encode($doc, JSON_UNESCAPED_UNICODE), 'version' => 1])->assertStatus(422);
         $team = EmergencyTeam::where('source', 'place_profile')->where('place_id', $this->placeId('HZ-06'))->first();
-        $this->assertSame('referred', $team->readiness);
-        $this->assertSame('سعد الجديد', $team->members->firstWhere('role_key', 'medic')->name);
+        $this->assertSame('approved', $team->readiness, 'الكتابة المرفوضة غيّرت الفريق');
+
+        $this->actingAs($this->salama)->post('/app/places/'.$this->placeId('HZ-06').'/team/'.$code.'/0/refer')->assertRedirect();
+        $this->assertSame('referred', $team->fresh()->readiness);
+        $this->assertSame('سعد المسعف', $team->fresh()->members->firstWhere('role_key', 'medic')->name);
     }
 
     // ── البوابة ──
