@@ -42,6 +42,8 @@ COPY role-cards         public/role-cards
 COPY story              public/story
 COPY archive            public/archive
 COPY *.html support.js  public/
+# ١٩-٧ (قرار ٤٨): اللوحة مخفية — الملف باقٍ في المستودع بلا تعديل ولا يُعرض؛ المسار /dashboard.html صفحة تحويل في Laravel
+RUN rm -f public/dashboard.html
 
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh \
