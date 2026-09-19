@@ -127,6 +127,8 @@ class PermissionRegistry
         'system.admin'    => ['system_admin'],
         'system.settings' => ['system_admin'],
         'system.users'    => ['system_admin', 'system_staff'],
+        'system.users.own'     => ['facilities_manager'], // ٢٠-٤ (قرار ٥١): مدير المرافق يسجل فنييه ويوزعهم (شاشة «فنيّي»)
+        'system.users.approve' => ['system_admin'],      // ٢٠-٤-ب (قرار ٥٢): لا يعمل حساب إلا بعد اعتماد مسؤول السلامة
         'system.audit'    => ['system_admin'],
         'system.org'      => ['system_admin', 'system_staff'],
 

@@ -19,6 +19,7 @@ class InboxService
         \App\Modules\Permit\Inbox\PermitTasks::class,
         \App\Modules\Emergency\Inbox\EmergencyTasks::class,
         \App\Modules\Emergency\Inbox\TeamGapTasks::class,
+        \App\Modules\Governance\Inbox\AccountApprovalTasks::class, // ٢٠-٤-ب (قرار ٥٢): حساب ينتظر اعتماد مسؤول السلامة
         \App\Modules\Project\Inbox\ContractorTasks::class,
         \App\Modules\Store\Inbox\InspectionReportTasks::class,
         \App\Modules\Store\Inbox\InspectionRoundTasks::class, // ١٩-٣: «مهامي» من العمل اليومي — الجولات المستحقة على دوري

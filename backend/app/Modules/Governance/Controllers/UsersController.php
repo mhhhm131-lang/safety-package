@@ -18,9 +18,51 @@ use Illuminate\View\View;
 /** إدارة الحسابات — لمسؤول السلامة والمناوب (permission:system.users). */
 class UsersController extends Controller
 {
+    /**
+     * ٢٠-٤ (قرار ٥١): نطاق الشاشة — «all» لمن يملك system.users (مسؤول السلامة والمناوب)، و«own» لمن يملك system.users.own
+     * (مدير المرافق: فنيوه في مبناه فقط، والأدوار التخصصات الستة). غيرهما ٤٠٣.
+     */
+    private function scope(): string
+    {
+        $role = auth()->user()->role();
+        if (PermissionRegistry::hasPermission($role, 'system.users')) return 'all';
+        if (PermissionRegistry::hasPermission($role, 'system.users.own')) return 'own';
+        abort(403, 'شاشة الحسابات لمسؤول السلامة والمناوب، و«فنيّي» لمدير المرافق والصيانة.');
+    }
+
+    /** في نطاق «own» لا يُمس إلا حساب فني في مبنى المدير */
+    private function guardTarget(User $user): void
+    {
+        if ($this->scope() === 'own') {
+            $p = $user->profile;
+            abort_unless($p && PermissionRegistry::isTech($p->role) && $p->building_id === auth()->user()->profile?->myBuilding()?->id, 403, 'ليس من فنيّيك.');
+        }
+    }
+
+    /** ٢٠-٤-ب (قرار ٥٢): من ليس مسؤول السلامة يسجّل ويبقى ما سجّله بانتظار الاعتماد؛ ومسؤول السلامة نافذ فوراً باسمه */
+    private function afterWrite(UserProfile $profile, string $note): string
+    {
+        $actor = auth()->user();
+        if (PermissionRegistry::hasPermission($actor->role(), 'system.users.approve')) {
+            if ($profile->isPending() || !$profile->approved_at) $profile->approve($actor);
+            return '';
+        }
+        $profile->markPending($actor, $note);
+        $name = $profile->user?->name ?? '';
+        app(\App\Core\Services\NotificationService::class)->notifyRoles(PermissionRegistry::PERMISSIONS['system.users.approve'], 'account_pending',
+            "حساب ينتظر اعتمادك: $name", $note.' — سجّله '.$actor->name, route('app.users.index', ['pending' => 1], false));
+        return ' — بانتظار اعتماد مسؤول السلامة، ولا يعمل الحساب حتى يعتمده.';
+    }
+
     public function index(Request $request): View
     {
-        $q = User::with(['profile.organizationUnit', 'profile.place', 'profile.coverage'])->orderBy('name');
+        $own = $this->scope() === 'own';
+        $q = User::with(['profile.organizationUnit', 'profile.place', 'profile.coverage', 'profile.pendingBy'])->orderBy('name');
+        if ($own) { // ٢٠-٤: «فنيّي» — الفنيون في مبنى المدير
+            $b = $request->user()->profile?->myBuilding()?->id;
+            $q->whereHas('profile', fn ($w) => $w->whereIn('role', PermissionRegistry::techRoles())->where('building_id', $b));
+        }
+        if ($request->boolean('pending')) $q->whereHas('profile', fn ($w) => $w->whereNotNull('pending_since'));
         if ($s = trim((string) $request->query('q'))) {
             $q->where(fn ($w) => $w->where('name', 'like', "%$s%")->orWhere('username', 'like', "%$s%"));
         }
@@ -28,11 +70,13 @@ class UsersController extends Controller
             $q->whereHas('profile', fn ($w) => $w->where('role', $r));
         }
         $users = $q->paginate(30)->withQueryString();
-        return view('governance.users.index', ['users' => $users, 'roles' => PermissionRegistry::ROLES]);
+        return view('governance.users.index', ['users' => $users, 'roles' => $own ? array_intersect_key(PermissionRegistry::ROLES, array_flip(PermissionRegistry::TECH_ROLES)) : PermissionRegistry::ROLES,
+            'own' => $own, 'canApprove' => PermissionRegistry::hasPermission($request->user()->role(), 'system.users.approve')]);
     }
 
     public function create(): View
     {
+        $this->scope();
         return view('governance.users.form', $this->formData(null));
     }
 
@@ -48,19 +92,29 @@ class UsersController extends Controller
                 'is_active' => true,
             ]);
             $profile->coverage()->sync($data['coverage'] ?? []);
+            $this->tail = $this->afterWrite($profile, 'حساب جديد: '.PermissionRegistry::getRoleDisplayName($data['role']));
         });
-        return redirect()->route('app.users.index')->with('ok', "أُنشئ الحساب {$data['username']}");
+        return redirect()->route('app.users.index')->with('ok', "أُنشئ الحساب {$data['username']}".$this->tail);
     }
 
     public function edit(User $user): View
     {
+        $this->guardTarget($user);
         return view('governance.users.form', $this->formData($user));
     }
 
     public function update(Request $request, User $user): RedirectResponse
     {
+        $this->guardTarget($user);
         $data = $this->validated($request, $user);
-        DB::transaction(function () use ($data, $user) {
+        // ٢٠-٤-ب: ما يمنح صلاحية (الدور، التغطية، المبنى) يحتاج اعتماداً إن غيّره غير مسؤول السلامة؛ الاسم والمسمى لا
+        $old = $user->profile;
+        $changed = [];
+        if ($old && $old->role !== $data['role']) $changed[] = 'الدور: '.PermissionRegistry::getRoleDisplayName($old->role).' ← '.PermissionRegistry::getRoleDisplayName($data['role']);
+        if ($old && array_key_exists('building_id', $data) && $data['building_id'] !== null && (int) $data['building_id'] !== (int) $old->building_id) $changed[] = 'المبنى';
+        $newCov = collect($data['coverage'] ?? [])->map(fn ($v) => (int) $v)->sort()->values()->all();
+        if ($old && $newCov !== $old->coverage->pluck('id')->sort()->values()->all()) $changed[] = 'التغطية';
+        DB::transaction(function () use ($data, $user, $changed) {
             $user->fill(['username' => $data['username'], 'name' => $data['name'], 'email' => $data['email'] ?? null, 'external_party_id' => $data['external_party_id'] ?? null]);
             if (!empty($data['password'])) {
                 $user->password = $data['password'];
@@ -71,12 +125,14 @@ class UsersController extends Controller
                 'building_id' => $data['building_id'] ?? $profile->building_id, 'job_title' => $data['job_title'] ?? null]); // ٢٠-١/٢٠-٢
             $profile->save();
             $profile->coverage()->sync($data['coverage'] ?? []);
+            $this->tail = $changed ? $this->afterWrite($profile, 'تغيير '.implode('، ', $changed)) : '';
         });
-        return redirect()->route('app.users.index')->with('ok', "حُدّث الحساب {$user->username}");
+        return redirect()->route('app.users.index')->with('ok', "حُدّث الحساب {$user->username}".$this->tail);
     }
 
     public function toggle(Request $request, User $user): RedirectResponse
     {
+        $this->guardTarget($user);
         if ($user->id === $request->user()->id) {
             return back()->with('err', 'لا تعطّل حسابك أنت');
         }
@@ -86,8 +142,33 @@ class UsersController extends Controller
         return back()->with('ok', $profile->is_active ? "فُعّل {$user->username}" : "عُطّل {$user->username}");
     }
 
+    /** ٢٠-٤-ب: «اعتمد» — يعمل الحساب وتُسجَّل الموافقة باسم مسؤول السلامة وتاريخها */
+    public function approve(User $user): RedirectResponse
+    {
+        $p = $user->profile;
+        abort_unless($p && $p->isPending(), 422, 'هذا الحساب لا ينتظر اعتماداً.');
+        $p->approve(auth()->user());
+        if ($p->pending_by_id) app(\App\Core\Services\NotificationService::class)->create($p->pending_by_id, 'account_approved', "اعتُمد الحساب {$user->name}", 'اعتمده '.auth()->user()->name, route('app.users.index', [], false));
+        app('audit.logger')->log(request(), 'approve_account', 'User', $user->id, "اعتماد حساب {$user->username}");
+        return back()->with('ok', "اعتُمد الحساب {$user->username} وصار يعمل.");
+    }
+
+    /** ٢٠-٤-ب: «أعِده» — يبقى معطَّلاً ويُبلَّغ من سجّله بالسبب */
+    public function returnBack(Request $request, User $user): RedirectResponse
+    {
+        $p = $user->profile;
+        abort_unless($p && $p->isPending(), 422, 'هذا الحساب لا ينتظر اعتماداً.');
+        $note = $request->validate(['note' => 'nullable|string|max:200'])['note'] ?? null;
+        $by = $p->pending_by_id;
+        $p->returnBack($note);
+        if ($by) app(\App\Core\Services\NotificationService::class)->create($by, 'account_returned', "أُعيد الحساب {$user->name}", $p->return_note, route('app.users.edit', $user, false));
+        app('audit.logger')->log(request(), 'return_account', 'User', $user->id, "إعادة حساب {$user->username}: ".$p->return_note);
+        return back()->with('ok', "أُعيد الحساب {$user->username} إلى من سجّله.");
+    }
+
     public function resetPassword(User $user): RedirectResponse
     {
+        $this->guardTarget($user);
         $password = Str::password(10, symbols: false);
         $user->password = $password;
         $user->save();
@@ -95,12 +176,16 @@ class UsersController extends Controller
         return back()->with('ok', "كلمة المرور الجديدة لـ {$user->username}: {$password} — تظهر مرة واحدة");
     }
 
+    private string $tail = '';
+
     private function formData(?User $user): array
     {
         return [
             'user' => $user,
+            'own' => $this->scope() === 'own',
             // ٢٠-٣: القابلة للإسناد فقط؛ الدور القديم لحساب قائم يُعرض ليُبدَّل
-            'roles' => PermissionRegistry::assignableRoles() + (($r = $user?->profile?->role) && in_array($r, PermissionRegistry::LEGACY_ROLES, true) ? [$r => PermissionRegistry::ROLES[$r].' — دور قديم، اختر تخصصاً'] : []),
+            'roles' => ($this->scope() === 'own' ? array_intersect_key(PermissionRegistry::ROLES, array_flip(PermissionRegistry::TECH_ROLES)) : PermissionRegistry::assignableRoles())
+                + (($r = $user?->profile?->role) && in_array($r, PermissionRegistry::LEGACY_ROLES, true) ? [$r => PermissionRegistry::ROLES[$r].' — دور قديم، اختر تخصصاً'] : []),
             'units' => OrganizationUnit::where('is_active', true)->orderBy('order')->get(),
             'places' => Place::orderBy('sort')->get(),
             'buildings' => \App\Modules\Emergency\Models\EmergencyBuilding::orderBy('id')->get(['id', 'name', 'branch']), // ٢٠-١
@@ -117,7 +202,7 @@ class UsersController extends Controller
             'name' => 'required|string|max:120',
             'email' => ['nullable', 'email', 'max:190', Rule::unique('users', 'email')->ignore($user?->id)],
             'password' => [$user ? 'nullable' : 'required', 'string', 'min:6', 'max:100'],
-            'role' => ['required', Rule::in(array_keys(PermissionRegistry::assignableRoles()))], // ٢٠-٣: لا يُحفظ دور قديم
+            'role' => ['required', Rule::in($this->scope() === 'own' ? PermissionRegistry::TECH_ROLES : array_keys(PermissionRegistry::assignableRoles()))], // ٢٠-٣: لا يُحفظ دور قديم؛ ٢٠-٤: «فنيّي» تخصصات فقط
             'organization_unit_id' => 'nullable|exists:organization_units,id',
             'place_id' => 'nullable|exists:places,id',
             'external_party_id' => 'nullable|exists:external_parties,id', // المرحلة ٦: حساب مقاول/مشرف مقاول/مكتب استشاري → طرفه

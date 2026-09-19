@@ -22,7 +22,8 @@ Route::middleware(['web', 'auth'])->prefix('app')->name('app.')->group(function 
     Route::get('/search', [\App\Modules\Governance\Controllers\SearchController::class, 'index'])->name('search'); // ١١-٤: الباب الثاني
     Route::middleware('permission:system.settings')->get('/settings', [\App\Modules\Governance\Controllers\SettingsController::class, 'index'])->name('settings'); // ١١-٤: الباب الثالث
 
-    Route::middleware('permission:system.users')->prefix('users')->name('users.')->group(function () {
+    // ٢٠-٤ (قرار ٥١): الشاشة نفسها لمن يملك «الحسابات» (الكل) أو «حسابات من تحتي» (مدير المرافق: فنيوه) — النطاق يُحسم في المتحكم
+    Route::prefix('users')->name('users.')->group(function () {
         Route::get('/', [UsersController::class, 'index'])->name('index');
         Route::get('/create', [UsersController::class, 'create'])->name('create');
         Route::post('/', [UsersController::class, 'store'])->name('store');
@@ -30,6 +31,9 @@ Route::middleware(['web', 'auth'])->prefix('app')->name('app.')->group(function 
         Route::put('/{user}', [UsersController::class, 'update'])->name('update');
         Route::post('/{user}/toggle', [UsersController::class, 'toggle'])->name('toggle');
         Route::post('/{user}/reset-password', [UsersController::class, 'resetPassword'])->name('reset');
+        // ٢٠-٤-ب (قرار ٥٢): الاعتماد لمسؤول السلامة وحده
+        Route::middleware('permission:system.users.approve')->post('/{user}/approve', [UsersController::class, 'approve'])->name('approve');
+        Route::middleware('permission:system.users.approve')->post('/{user}/return', [UsersController::class, 'returnBack'])->name('return');
     });
 
     Route::middleware('permission:system.org')->prefix('org')->name('org.')->group(function () {

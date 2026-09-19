@@ -49,10 +49,11 @@ class LoginController extends Controller
 
         // الحساب المعطّل لا يدخل (في OHSMS is_active لا يمنع الدخول — عندنا يمنع)
         if (!Auth::user()->isActive()) {
+            $pending = (bool) Auth::user()->profile?->isPending(); // ٢٠-٤-ب: قبل الخروج
             Auth::logout();
             RateLimiter::hit($throttleKey, 60);
             return back()->withInput(['username' => $username])
-                ->withErrors(['username' => 'هذا الحساب معطّل — راجع مسؤول السلامة']);
+                ->withErrors(['username' => $pending ? 'حسابك بانتظار اعتماد مسؤول السلامة' : 'هذا الحساب معطّل — راجع مسؤول السلامة']); // ٢٠-٤-ب
         }
 
         RateLimiter::clear($throttleKey);

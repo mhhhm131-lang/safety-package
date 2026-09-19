@@ -16,9 +16,38 @@ class UserProfile extends Model
 {
     use HasAuditLog;
 
-    protected $fillable = ['user_id', 'role', 'organization_unit_id', 'place_id', 'is_active', 'building_id', 'job_title'];
+    protected $fillable = ['user_id', 'role', 'organization_unit_id', 'place_id', 'is_active', 'building_id', 'job_title',
+        'pending_since', 'pending_by_id', 'pending_note', 'approved_by_id', 'approved_at', 'return_note'];
 
-    protected $casts = ['is_active' => 'boolean'];
+    protected $casts = ['is_active' => 'boolean', 'pending_since' => 'datetime', 'approved_at' => 'datetime'];
+
+    // ── ٢٠-٤-ب (قرار ٥٢): قاعدة الاعتماد — ما يسجله غير مسؤول السلامة لا يعمل حتى يعتمده ──
+
+    public function isPending(): bool
+    {
+        return $this->pending_since !== null;
+    }
+
+    public function pendingBy(): BelongsTo { return $this->belongsTo(User::class, 'pending_by_id'); }
+    public function approvedBy(): BelongsTo { return $this->belongsTo(User::class, 'approved_by_id'); }
+
+    /** بانتظار الاعتماد: الحساب معطَّل حتى «اعتمد» */
+    public function markPending(User $by, string $note): void
+    {
+        $this->forceFill(['is_active' => false, 'pending_since' => now(), 'pending_by_id' => $by->id, 'pending_note' => mb_substr($note, 0, 200), 'return_note' => null])->save();
+    }
+
+    /** «اعتمد»: يعمل الحساب، وتُسجَّل الموافقة باسمه وتاريخها */
+    public function approve(User $by): void
+    {
+        $this->forceFill(['is_active' => true, 'pending_since' => null, 'pending_note' => null, 'return_note' => null, 'approved_by_id' => $by->id, 'approved_at' => now()])->save();
+    }
+
+    /** «أعِده»: يبقى معطَّلاً، ويُحفظ السبب لمن سجّله */
+    public function returnBack(?string $note): void
+    {
+        $this->forceFill(['is_active' => false, 'pending_since' => null, 'return_note' => $note !== null && $note !== '' ? mb_substr($note, 0, 200) : 'أُعيد بلا سبب مكتوب'])->save();
+    }
 
     /** ٢٠-١ (قرار ٥١): كل حساب يتبع مبنى؛ بلا تحديد = الرئيسي (الملز) */
     protected static function booted(): void

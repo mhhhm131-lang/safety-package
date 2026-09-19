@@ -102,6 +102,7 @@ class IntentRegistry
         $card = \App\Modules\Emergency\Support\RoleCards::forUser($user);
         $add(true, 'roles', $card ? 'بطاقة دوري' : 'أعرف دوري', $card ? \App\Modules\Emergency\Support\RoleCards::url($card) : '/role-cards/index.html', 'bi-person-badge', 'التوعية', false,
             $card ? \App\Modules\Emergency\Support\RoleCards::CARDS[$card]['name'] : null);
+        $add($can('system.users.own') && !$can('system.users'), 'my_techs', 'فنيّي', route('app.users.index'), 'bi-person-gear', 'إدارتي', true, 'أسجل فنياً بتخصصه وتغطيته — يعمل بعد اعتماد مسؤول السلامة'); // ٢٠-٤
         $add($can('system.settings'), 'settings', 'الإعدادات', route('app.settings'), 'bi-sliders', 'الإعدادات');
         return $out;
     }
