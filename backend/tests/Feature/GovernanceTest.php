@@ -110,13 +110,13 @@ class GovernanceTest extends TestCase
     {
         $safety = $this->user('salama', 'system_admin');
         $this->actingAs($safety)->post('/app/users', [
-            'username' => 'Ahmad', 'name' => 'أحمد', 'password' => 'secret1', 'role' => 'field_worker',
+            'username' => 'Ahmad', 'name' => 'أحمد', 'password' => 'secret1', 'role' => 'tech_electrical', // ٢٠-٣: الحساب الجديد بتخصص
             'organization_unit_id' => OrganizationUnit::where('code', 'adm-eng')->value('id'),
             'place_id' => Place::where('code', 'HZ-01')->value('id'),
         ])->assertRedirect('/app/users');
         $ahmad = User::where('username', 'ahmad')->first();
         $this->assertNotNull($ahmad);
-        $this->assertSame('field_worker', $ahmad->role());
+        $this->assertSame('tech_electrical', $ahmad->role());
         $this->assertTrue(AuditLog::where('model_name', 'UserProfile')->where('action', 'created')->where('user_id', $safety->id)->exists());
 
         $this->actingAs($safety)->post("/app/users/{$ahmad->id}/toggle")->assertRedirect();

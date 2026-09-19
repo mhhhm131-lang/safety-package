@@ -202,7 +202,7 @@ class IncidentController extends Controller
             $incident = $this->incidentService->fieldOpened($incident, $user->id);
             $incident = $this->incidentService->getDetail($incident->id) ?? $incident;
         }
-        $fieldWorkers = User::whereHas('profile', fn ($q) => $q->where('is_active', true)->where('role', 'field_worker'))
+        $fieldWorkers = User::whereHas('profile', fn ($q) => $q->where('is_active', true)->whereIn('role', \App\Core\Permissions\PermissionRegistry::techRoles())) // ٢٠-٣
             ->with('profile.place')->orderBy('name')->get()
             ->sortByDesc(fn ($u) => (int) ($u->profile?->place_id && $u->profile->place_id === $incident->place_id));
         $coordinators = User::whereHas('profile', fn ($q) => $q->where('is_active', true)->where('role', 'safety_coordinator'))->orderBy('name')->get();

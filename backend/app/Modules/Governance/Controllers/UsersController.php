@@ -99,7 +99,8 @@ class UsersController extends Controller
     {
         return [
             'user' => $user,
-            'roles' => PermissionRegistry::ROLES,
+            // ٢٠-٣: القابلة للإسناد فقط؛ الدور القديم لحساب قائم يُعرض ليُبدَّل
+            'roles' => PermissionRegistry::assignableRoles() + (($r = $user?->profile?->role) && in_array($r, PermissionRegistry::LEGACY_ROLES, true) ? [$r => PermissionRegistry::ROLES[$r].' — دور قديم، اختر تخصصاً'] : []),
             'units' => OrganizationUnit::where('is_active', true)->orderBy('order')->get(),
             'places' => Place::orderBy('sort')->get(),
             'buildings' => \App\Modules\Emergency\Models\EmergencyBuilding::orderBy('id')->get(['id', 'name', 'branch']), // ٢٠-١
@@ -116,7 +117,7 @@ class UsersController extends Controller
             'name' => 'required|string|max:120',
             'email' => ['nullable', 'email', 'max:190', Rule::unique('users', 'email')->ignore($user?->id)],
             'password' => [$user ? 'nullable' : 'required', 'string', 'min:6', 'max:100'],
-            'role' => ['required', Rule::in(array_keys(PermissionRegistry::ROLES))],
+            'role' => ['required', Rule::in(array_keys(PermissionRegistry::assignableRoles()))], // ٢٠-٣: لا يُحفظ دور قديم
             'organization_unit_id' => 'nullable|exists:organization_units,id',
             'place_id' => 'nullable|exists:places,id',
             'external_party_id' => 'nullable|exists:external_parties,id', // المرحلة ٦: حساب مقاول/مشرف مقاول/مكتب استشاري → طرفه

@@ -15,6 +15,7 @@ use App\Core\StateMachine\StateMachine;
  */
 class IncidentStateMachine extends StateMachine
 {
+    /** ٢٠-٣ (قرار ٥١): الفني بأي تخصص (والدور القديم) في كل انتقال كان للفني المنفّذ */
     public function __construct()
     {
         parent::__construct([
@@ -32,16 +33,16 @@ class IncidentStateMachine extends StateMachine
                 'forwarded' => ['safety_coordinator', 'system_bot'],
             ],
             'forwarded' => [
-                'field_received' => ['field_worker', 'system_bot'],
+                'field_received' => [...\App\Core\Permissions\PermissionRegistry::techRoles(), 'system_bot'],
             ],
             'field_received' => [
-                'in_progress' => ['field_worker'],
-                'escalated_to_coord' => ['field_worker'],
+                'in_progress' => [...\App\Core\Permissions\PermissionRegistry::techRoles()],
+                'escalated_to_coord' => [...\App\Core\Permissions\PermissionRegistry::techRoles()],
             ],
             'in_progress' => [
                 // المعهد: من تولّى المعالجة بعد التصعيد (منسق/لجنة/مسؤول السلامة) يعلّم «عولج» — الطبقة الثالثة تضمن أنه المعيَّن
-                'resolved' => ['field_worker', 'safety_coordinator', 'safety_committee', 'system_admin'],
-                'escalated_to_coord' => ['field_worker'],
+                'resolved' => [...\App\Core\Permissions\PermissionRegistry::techRoles(), 'safety_coordinator', 'safety_committee', 'system_admin'],
+                'escalated_to_coord' => [...\App\Core\Permissions\PermissionRegistry::techRoles()],
             ],
             'resolved' => [
                 'closed' => ['system_admin', 'system_staff'],

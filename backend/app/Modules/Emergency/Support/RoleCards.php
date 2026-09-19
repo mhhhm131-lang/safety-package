@@ -40,12 +40,12 @@ class RoleCards
         11 => ['name' => 'الإطفائي', 'desc' => 'لكل إدارة أو قسم أو فريق', 'category' => 'response-team', 'team' => ['firefighter']],
         12 => ['name' => 'الموظف', 'desc' => 'عضو في خلية الـ20', 'category' => 'occupants', 'role' => 'employee'],
         13 => ['name' => 'مراقب الحريق', 'desc' => 'مراقبة عدم تجدد الحريق', 'category' => 'support', 'role' => 'support_team'],
-        14 => ['name' => 'فني مضخة الحريق', 'desc' => 'غرفة المضخة', 'category' => 'support', 'role' => 'support_team'],
-        15 => ['name' => 'فني المولد الاحتياطي', 'desc' => 'غرفة المولد', 'category' => 'support', 'role' => 'support_team'],
-        16 => ['name' => 'فني لوحة الإنذار والحريق', 'desc' => 'غرفة لوحة الإنذار', 'category' => 'support', 'role' => 'support_team'],
-        17 => ['name' => 'فني التكييف ونظام الدخان', 'desc' => 'غرفة التحكم بالتكييف', 'category' => 'support', 'role' => 'support_team'],
-        18 => ['name' => 'فني المصاعد', 'desc' => 'غرفة ماكينة المصاعد', 'category' => 'support', 'role' => 'support_team'],
-        19 => ['name' => 'فني الكهرباء', 'desc' => 'اللوحات والتمديدات', 'category' => 'support', 'role' => 'support_team'],
+        14 => ['name' => 'فني مضخة الحريق', 'desc' => 'غرفة المضخة', 'category' => 'support', 'role' => 'tech_fire_pump'], // ٢٠-٣
+        15 => ['name' => 'فني المولد الاحتياطي', 'desc' => 'غرفة المولد', 'category' => 'support', 'role' => 'tech_generator'],
+        16 => ['name' => 'فني لوحة الإنذار والحريق', 'desc' => 'غرفة لوحة الإنذار', 'category' => 'support', 'role' => 'tech_fire_alarm'],
+        17 => ['name' => 'فني التكييف ونظام الدخان', 'desc' => 'غرفة التحكم بالتكييف', 'category' => 'support', 'role' => 'tech_hvac'],
+        18 => ['name' => 'فني المصاعد', 'desc' => 'غرفة ماكينة المصاعد', 'category' => 'support', 'role' => 'tech_elevator'],
+        19 => ['name' => 'فني الكهرباء', 'desc' => 'اللوحات والتمديدات', 'category' => 'support', 'role' => 'tech_electrical'],
         20 => ['name' => 'مسؤول السلامة بالمعهد', 'desc' => 'أخصائي السلامة', 'category' => 'leadership', 'role' => 'system_admin'],
         21 => ['name' => 'مناوب مركز السلامة', 'desc' => 'المحرك التشغيلي للمركز', 'category' => 'leadership', 'role' => 'system_staff'],
     ];

@@ -17,7 +17,7 @@
 <tr class="{{ optional($u->profile)->is_active ? '' : 'table-secondary' }}">
   <td>{{ $u->name }}@if($u->profile?->job_title)<div class="small text-muted">{{ $u->profile->job_title }}</div>@endif</td>
   <td dir="ltr" class="text-end">{{ $u->username }}</td>
-  <td><span class="badge badge-role">{{ $u->roleName() }}</span></td>
+  <td><span class="badge badge-role">{{ $u->roleName() }}</span>@if(in_array($u->profile?->role, \App\Core\Permissions\PermissionRegistry::LEGACY_ROLES, true))<div class="small text-danger">دور قديم — انقله إلى تخصص</div>@endif</td>
   <td class="small">{{ optional(optional($u->profile)->organizationUnit)->name ?? '—' }}</td>
   <td class="small">{{ optional(optional($u->profile)->place)->name ?? '—' }}@if($u->profile && $u->profile->coverage->isNotEmpty())<div class="text-muted">يغطي {{ strtr((string) $u->profile->coverage->count(), ['0'=>'٠','1'=>'١','2'=>'٢','3'=>'٣','4'=>'٤','5'=>'٥','6'=>'٦','7'=>'٧','8'=>'٨','9'=>'٩']) }}: {{ $u->profile->coverage->pluck('code')->implode('، ') }}</div>@endif</td>
   <td>{{ optional($u->profile)->is_active ? 'مفعّل' : 'معطّل' }}</td>

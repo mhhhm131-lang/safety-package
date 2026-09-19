@@ -217,7 +217,7 @@ class IncidentService
             throw new InvalidArgumentException('لا تُحال بلاغات مغلقة أو خارج النطاق.');
         }
         $fw = UserProfile::where('user_id', $fieldWorkerId)->where('is_active', true)->first();
-        if (!$fw || $fw->role !== 'field_worker') {
+        if (!$fw || !\App\Core\Permissions\PermissionRegistry::isTech($fw->role)) { // ٢٠-٣: فني بأي تخصص
             throw new InvalidArgumentException('المُحال إليه يجب أن يكون فنياً منفّذاً مفعَّلاً.');
         }
         return DB::transaction(function () use ($incident, $userId, $fieldWorkerId, $coordinatorId, $note) {
@@ -519,7 +519,7 @@ class IncidentService
         $notes = array_filter([$note]);
         if ($placeId) {
             if (!$fieldTeamId) {
-                $fieldTeamId = UserProfile::where('role', 'field_worker')->where('is_active', true)->where('place_id', $placeId)->orderBy('id')->value('user_id');
+                $fieldTeamId = UserProfile::whereIn('role', \App\Core\Permissions\PermissionRegistry::techRoles())->where('is_active', true)->where('place_id', $placeId)->orderBy('id')->value('user_id');
                 if ($fieldTeamId) $notes[] = 'فني المكان من ملفات المستخدمين';
             }
             if (!$coordinatorId) {

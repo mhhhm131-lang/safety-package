@@ -41,7 +41,7 @@ class AccountOwnerTest extends TestCase
         $this->assertStringContainsString('name="coverage[]"', $h);
         $this->assertStringContainsString('مؤقت حتى', $h); // المسمى يأتي من بوابة المعهد لاحقاً
 
-        $this->actingAs($this->salama)->post('/app/users', ['username' => 'kahraba', 'name' => 'فني', 'password' => '123456', 'role' => 'field_worker',
+        $this->actingAs($this->salama)->post('/app/users', ['username' => 'kahraba', 'name' => 'فني', 'password' => '123456', 'role' => 'tech_electrical', // ٢٠-٣: الفني بالتخصص
             'place_id' => $elec, 'job_title' => 'فني كهرباء أول', 'building_id' => $main->id, 'coverage' => [$park, $elec, $store]])->assertRedirect('/app/users');
         $p = User::where('username', 'kahraba')->first()->profile;
         $this->assertSame('فني كهرباء أول', $p->job_title);
@@ -55,7 +55,7 @@ class AccountOwnerTest extends TestCase
         $e = $this->actingAs($this->salama)->get("/app/users/{$u->id}/edit")->assertOk()->getContent();
         $this->assertStringContainsString('value="فني كهرباء أول"', $e);
         $this->assertStringContainsString('value="'.$store.'" checked', $e);
-        $this->actingAs($this->salama)->put("/app/users/{$u->id}", ['username' => 'kahraba', 'name' => 'فني', 'role' => 'field_worker',
+        $this->actingAs($this->salama)->put("/app/users/{$u->id}", ['username' => 'kahraba', 'name' => 'فني', 'role' => 'tech_electrical', // ٢٠-٣: الفني بالتخصص
             'place_id' => $elec, 'job_title' => 'فني كهرباء', 'building_id' => $main->id, 'coverage' => [$elec]])->assertRedirect();
         $this->assertSame(['HZ-02'], $p->fresh()->coverage->pluck('code')->all());
 
@@ -74,7 +74,7 @@ class AccountOwnerTest extends TestCase
         $other = EmergencyBuilding::create(['code' => 'DMM-1', 'name' => 'مبنى الدمام', 'branch' => 'الدمام']);
         $far = Place::create(['code' => 'HZ-09', 'name' => 'قبو الدمام', 'sort' => 90, 'building_id' => $other->id]);
 
-        $this->actingAs($this->salama)->post('/app/users', ['username' => 'x1', 'name' => 'فني', 'password' => '123456', 'role' => 'field_worker',
+        $this->actingAs($this->salama)->post('/app/users', ['username' => 'x1', 'name' => 'فني', 'password' => '123456', 'role' => 'tech_electrical', // ٢٠-٣: الفني بالتخصص
             'building_id' => $main->id, 'coverage' => [$far->id]])->assertSessionHasErrors('coverage.0');
         $this->assertNull(User::where('username', 'x1')->first());
 

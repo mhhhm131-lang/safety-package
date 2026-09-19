@@ -36,7 +36,47 @@ class PermissionRegistry
         'medic'                 => 'مسعف',
         'rescuer'               => 'منقذ',
         'firefighter'           => 'إطفائي',
+        // ٢٠-٣ (قرار ٥١): الفنيون بالتخصص — بطاقات السلامة ١٤–١٩؛ صلاحية الفني نفسها (field_worker) ودور واجهته
+        'tech_fire_pump'        => 'فني مضخة الحريق',
+        'tech_generator'        => 'فني المولد الاحتياطي',
+        'tech_fire_alarm'       => 'فني لوحة الإنذار والحريق',
+        'tech_hvac'             => 'فني التكييف ونظام الدخان',
+        'tech_elevator'         => 'فني المصاعد',
+        'tech_electrical'       => 'فني الكهرباء',
     ];
+
+    /** ٢٠-٣: الفنيون الستة بالترتيب (بطاقات ١٤–١٩) */
+    public const TECH_ROLES = ['tech_fire_pump', 'tech_generator', 'tech_fire_alarm', 'tech_hvac', 'tech_elevator', 'tech_electrical'];
+
+    /**
+     * ٢٠-٣ (قرار ٥١): «الفني المنفّذ» ليس دوراً بعد اليوم — عند المستخدم هو «من يعالج البلاغ ميدانياً» أي صفة إحالة (المرحلة ج).
+     * المفتاح يبقى للحسابات القائمة حتى ينقلها مسؤول السلامة إلى تخصص؛ لا يُسند لحساب جديد ولا يُحفظ به تعديل.
+     */
+    public const LEGACY_ROLES = ['field_worker'];
+
+    /** الفني بأي تخصص، أو الدور القديم */
+    public static function isTech(string $role): bool
+    {
+        return $role === 'field_worker' || in_array($role, self::TECH_ROLES, true);
+    }
+
+    /** كل مفاتيح الفنيين (الستة + القديم) — للاستعلامات وآلات الحالة */
+    public static function techRoles(): array
+    {
+        return array_merge(self::TECH_ROLES, self::LEGACY_ROLES);
+    }
+
+    /** الأدوار التي يجوز إسنادها لحساب: الكل بلا القديمة */
+    public static function assignableRoles(): array
+    {
+        return array_diff_key(self::ROLES, array_flip(self::LEGACY_ROLES));
+    }
+
+    /** الفني بالتخصص يُحسم في جدول الصلاحيات كالفني */
+    private static function effective(string $role): string
+    {
+        return in_array($role, self::TECH_ROLES, true) ? 'field_worker' : $role;
+    }
 
     /**
      * دور الواجهة لصفحات المعهد (اللوحة والنماذج العشرة) — مفاتيحها كما في الواجهة الحالية.
@@ -64,13 +104,20 @@ class PermissionRegistry
         'medic'                 => null,
         'rescuer'               => null,
         'firefighter'           => null,
+        'tech_fire_pump'        => 'tech',
+        'tech_generator'        => 'tech',
+        'tech_fire_alarm'       => 'tech',
+        'tech_hvac'             => 'tech',
+        'tech_elevator'         => 'tech',
+        'tech_electrical'       => 'tech',
     ];
 
     /** الأدوار التي تصل إلى شاشات الوحدات (كل دور له حساب). */
     public const ALL = ['system_admin', 'system_staff', 'top_management', 'safety_committee', 'branch_manager',
         'department_manager', 'section_manager', 'safety_coordinator', 'field_worker', 'contractor_supervisor',
         'contractor', 'employee', 'external', 'admin_eng_manager', 'facilities_manager', 'security_safety_head',
-        'support_team', 'consultant_office', 'medic', 'rescuer', 'firefighter'];
+        'support_team', 'consultant_office', 'medic', 'rescuer', 'firefighter',
+        'tech_fire_pump', 'tech_generator', 'tech_fire_alarm', 'tech_hvac', 'tech_elevator', 'tech_electrical'];
 
     private const MGMT = ['branch_manager', 'department_manager', 'section_manager'];
     private const INSTITUTE_VIEW = ['admin_eng_manager', 'facilities_manager', 'security_safety_head', 'support_team'];
@@ -164,14 +211,14 @@ class PermissionRegistry
         if (!isset(self::PERMISSIONS[$permissionCode])) {
             return false;
         }
-        return in_array($role, self::PERMISSIONS[$permissionCode], true);
+        return in_array(self::effective($role), self::PERMISSIONS[$permissionCode], true);
     }
 
     public static function getRolePermissions(string $role): array
     {
         $permissions = [];
         foreach (self::PERMISSIONS as $code => $roles) {
-            if (in_array($role, $roles, true)) {
+            if (in_array(self::effective($role), $roles, true)) {
                 $permissions[] = $code;
             }
         }

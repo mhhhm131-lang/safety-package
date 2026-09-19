@@ -30,7 +30,7 @@ class IncidentVisibilityService
 
         if ($this->involved($incident, $userId)) return true;
 
-        if ($profile->place_id && in_array($profile->role, ['safety_coordinator', 'field_worker'], true)
+        if ($profile->place_id && ($profile->role === 'safety_coordinator' || \App\Core\Permissions\PermissionRegistry::isTech($profile->role))
             && $incident->place_id === $profile->place_id) {
             return true;
         }
@@ -53,7 +53,7 @@ class IncidentVisibilityService
 
         $unitIds = ($profile->organization_unit_id && (in_array($profile->role, self::MANAGEMENT_ROLES, true) || $profile->role === 'safety_coordinator'))
             ? OrganizationUnit::descendantIdsOf($profile->organization_unit_id) : [];
-        $placeId = ($profile->place_id && in_array($profile->role, ['safety_coordinator', 'field_worker'], true)) ? $profile->place_id : null;
+        $placeId = ($profile->place_id && ($profile->role === 'safety_coordinator' || \App\Core\Permissions\PermissionRegistry::isTech($profile->role))) ? $profile->place_id : null;
 
         return $query->where(function (Builder $q) use ($userId, $unitIds, $placeId) {
             $q->where('actor_id', $userId)
