@@ -16,7 +16,7 @@ class UserProfile extends Model
 {
     use HasAuditLog;
 
-    protected $fillable = ['user_id', 'role', 'organization_unit_id', 'place_id', 'is_active', 'building_id'];
+    protected $fillable = ['user_id', 'role', 'organization_unit_id', 'place_id', 'is_active', 'building_id', 'job_title'];
 
     protected $casts = ['is_active' => 'boolean'];
 
@@ -29,6 +29,17 @@ class UserProfile extends Model
     public function building(): BelongsTo
     {
         return $this->belongsTo(\App\Modules\Emergency\Models\EmergencyBuilding::class, 'building_id');
+    }
+
+    /** ٢٠-٢ (قرار ٥١): التغطية — الأماكن التي يخدمها صاحب الحساب (فني، أمن، طبيب)؛ للتوجيه لا لـ«مكاني» */
+    public function coverage(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Place::class, 'place_coverages')->withTimestamps()->orderBy('sort');
+    }
+
+    public function covers(Place $place): bool
+    {
+        return $this->coverage()->where('places.id', $place->id)->exists();
     }
 
     /** ٢٠-١: مبنى الشخص = مبنى حسابه، وإلا مبنى مكانه */

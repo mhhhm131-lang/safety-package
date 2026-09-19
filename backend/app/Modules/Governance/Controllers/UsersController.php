@@ -20,7 +20,7 @@ class UsersController extends Controller
 {
     public function index(Request $request): View
     {
-        $q = User::with(['profile.organizationUnit', 'profile.place'])->orderBy('name');
+        $q = User::with(['profile.organizationUnit', 'profile.place', 'profile.coverage'])->orderBy('name');
         if ($s = trim((string) $request->query('q'))) {
             $q->where(fn ($w) => $w->where('name', 'like', "%$s%")->orWhere('username', 'like', "%$s%"));
         }
@@ -41,11 +41,13 @@ class UsersController extends Controller
         $data = $this->validated($request, null);
         DB::transaction(function () use ($data) {
             $user = User::create(['username' => $data['username'], 'name' => $data['name'], 'email' => $data['email'] ?? null, 'password' => $data['password'], 'external_party_id' => $data['external_party_id'] ?? null]);
-            UserProfile::create([
+            $profile = UserProfile::create([
                 'user_id' => $user->id, 'role' => $data['role'],
                 'organization_unit_id' => $data['organization_unit_id'] ?? null, 'place_id' => $data['place_id'] ?? null,
+                'building_id' => $data['building_id'] ?? null, 'job_title' => $data['job_title'] ?? null, // ٢٠-١/٢٠-٢
                 'is_active' => true,
             ]);
+            $profile->coverage()->sync($data['coverage'] ?? []);
         });
         return redirect()->route('app.users.index')->with('ok', "أُنشئ الحساب {$data['username']}");
     }
@@ -65,8 +67,10 @@ class UsersController extends Controller
             }
             $user->save();
             $profile = $user->profile ?: new UserProfile(['user_id' => $user->id]);
-            $profile->fill(['role' => $data['role'], 'organization_unit_id' => $data['organization_unit_id'] ?? null, 'place_id' => $data['place_id'] ?? null]);
+            $profile->fill(['role' => $data['role'], 'organization_unit_id' => $data['organization_unit_id'] ?? null, 'place_id' => $data['place_id'] ?? null,
+                'building_id' => $data['building_id'] ?? $profile->building_id, 'job_title' => $data['job_title'] ?? null]); // ٢٠-١/٢٠-٢
             $profile->save();
+            $profile->coverage()->sync($data['coverage'] ?? []);
         });
         return redirect()->route('app.users.index')->with('ok', "حُدّث الحساب {$user->username}");
     }
@@ -98,6 +102,8 @@ class UsersController extends Controller
             'roles' => PermissionRegistry::ROLES,
             'units' => OrganizationUnit::where('is_active', true)->orderBy('order')->get(),
             'places' => Place::orderBy('sort')->get(),
+            'buildings' => \App\Modules\Emergency\Models\EmergencyBuilding::orderBy('id')->get(['id', 'name', 'branch']), // ٢٠-١
+            'coverage' => $user?->profile?->coverage->pluck('id')->all() ?? [], // ٢٠-٢
             'parties' => \App\Modules\Project\Models\ExternalParty::orderBy('name')->get(['id', 'name', 'party_type']),
             'contractorRoles' => \App\Models\User::CONTRACTOR_ROLES,
         ];
@@ -114,7 +120,12 @@ class UsersController extends Controller
             'organization_unit_id' => 'nullable|exists:organization_units,id',
             'place_id' => 'nullable|exists:places,id',
             'external_party_id' => 'nullable|exists:external_parties,id', // المرحلة ٦: حساب مقاول/مشرف مقاول/مكتب استشاري → طرفه
-        ]);
+            // ٢٠-١/٢٠-٢ (قرار ٥١): المبنى (بلا تحديد = الرئيسي)، المسمى (مؤقت حتى البوابة)، والتغطية من أماكن مبنى الحساب
+            'building_id' => 'nullable|exists:emergency_buildings,id',
+            'job_title' => 'nullable|string|max:120',
+            'coverage' => 'nullable|array|max:20',
+            'coverage.*' => ['integer', Rule::exists('places', 'id')->where(fn ($q) => $q->where('building_id', $request->input('building_id') ?: \App\Modules\Emergency\Models\EmergencyBuilding::main()?->id))],
+        ], ['coverage.*.exists' => 'التغطية من أماكن مبنى الحساب فقط.']);
         if (!in_array($data['role'], \App\Models\User::CONTRACTOR_ROLES, true)) {
             $data['external_party_id'] = null;
         }

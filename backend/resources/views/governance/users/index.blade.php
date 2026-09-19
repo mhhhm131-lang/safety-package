@@ -11,15 +11,15 @@
   <div class="col-md-2"><button class="btn btn-outline-secondary w-100">تصفية</button></div>
 </form>
 <div class="card"><div class="table-responsive"><table class="table table-hover m-0">
-<thead><tr><th>الاسم</th><th>اسم الدخول</th><th>الدور</th><th>الوحدة</th><th>المكان</th><th>الحالة</th><th></th></tr></thead>
+<thead><tr><th>الاسم</th><th>اسم الدخول</th><th>الدور</th><th>الوحدة</th><th>المكان</th><th>الحالة</th><th></th></tr></thead>{{-- ٢٠-٢: المسمى تحت الاسم، والتغطية تحت المكان --}}
 <tbody>
 @forelse($users as $u)
 <tr class="{{ optional($u->profile)->is_active ? '' : 'table-secondary' }}">
-  <td>{{ $u->name }}</td>
+  <td>{{ $u->name }}@if($u->profile?->job_title)<div class="small text-muted">{{ $u->profile->job_title }}</div>@endif</td>
   <td dir="ltr" class="text-end">{{ $u->username }}</td>
   <td><span class="badge badge-role">{{ $u->roleName() }}</span></td>
   <td class="small">{{ optional(optional($u->profile)->organizationUnit)->name ?? '—' }}</td>
-  <td class="small">{{ optional(optional($u->profile)->place)->name ?? '—' }}</td>
+  <td class="small">{{ optional(optional($u->profile)->place)->name ?? '—' }}@if($u->profile && $u->profile->coverage->isNotEmpty())<div class="text-muted">يغطي {{ strtr((string) $u->profile->coverage->count(), ['0'=>'٠','1'=>'١','2'=>'٢','3'=>'٣','4'=>'٤','5'=>'٥','6'=>'٦','7'=>'٧','8'=>'٨','9'=>'٩']) }}: {{ $u->profile->coverage->pluck('code')->implode('، ') }}</div>@endif</td>
   <td>{{ optional($u->profile)->is_active ? 'مفعّل' : 'معطّل' }}</td>
   <td class="text-nowrap">
     <a class="btn btn-sm btn-outline-secondary" href="{{ route('app.users.edit', $u) }}">تعديل</a>

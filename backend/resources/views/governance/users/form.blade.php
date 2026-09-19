@@ -21,6 +21,20 @@
       <select class="form-select" name="place_id"><option value="">—</option>
         @foreach($places as $p)<option value="{{ $p->id }}" @selected((int)old('place_id', $user?->profile?->place_id)===$p->id)>{{ $p->code }} · {{ $p->name }}</option>@endforeach
       </select></div>
+    {{-- ٢٠-١/٢٠-٢ (قرار ٥١): الحساب يحمل صاحبه — المبنى، المسمى (مؤقت حتى بوابة المعهد)، والتغطية للتوجيه --}}
+    <div class="col-md-6"><label class="form-label">المبنى</label>
+      <select class="form-select" name="building_id">
+        @foreach($buildings as $b)<option value="{{ $b->id }}" @selected((int)old('building_id', $user?->profile?->building_id ?? $buildings->first()?->id)===$b->id)>{{ $b->name }}{{ $b->branch ? ' · '.$b->branch : '' }}</option>@endforeach
+      </select></div>
+    <div class="col-md-6"><label class="form-label">المسمى الوظيفي</label><input class="form-control" name="job_title" maxlength="120" value="{{ old('job_title', $user?->profile?->job_title) }}" placeholder="مثل: فني كهرباء أول · نائب المدير العام">
+      <div class="form-text">مؤقت حتى الربط ببوابة المعهد؛ عندها يأتي منها.</div></div>
+    <div class="col-12"><label class="form-label">التغطية — الأماكن التي يخدمها (للفني والأمن والطبيب)</label>
+      <div class="d-flex flex-wrap gap-2" id="coverage">
+        @foreach($places as $p)
+          <label class="border rounded px-2 py-1 small bg-white"><input type="checkbox" name="coverage[]" value="{{ $p->id }}" @checked(in_array($p->id, old('coverage', $coverage)))> {{ $p->code }} · {{ $p->name }}</label>
+        @endforeach
+      </div>
+      <div class="form-text">«مكاني» يبقى المكان أعلاه؛ التغطية تحدد من يصله بلاغ أو جولة في هذه الأماكن.</div></div>
     <div class="col-md-6" id="party-field"><label class="form-label">الطرف الخارجي (لحساب المقاول / مشرف المقاول / المكتب الاستشاري)</label>
       <select class="form-select" name="external_party_id"><option value="">—</option>
         @foreach($parties as $pt)<option value="{{ $pt->id }}" @selected((int)old('external_party_id', $user?->external_party_id)===$pt->id)>{{ $pt->name }}</option>@endforeach
