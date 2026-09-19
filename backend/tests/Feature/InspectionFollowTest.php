@@ -24,6 +24,7 @@ class InspectionFollowTest extends TestCase
         parent::setUp();
         $this->seed(PlacesSeeder::class);
         $this->fani = $this->user('fani', 'field_worker');
+        $this->fani->profile->update(['place_id' => \App\Modules\Governance\Models\Place::idByCode('HZ-01')]); // ٢٠-٥: الفني يرى ما يغطيه (مكانه) فقط
         $this->marafiq = $this->user('marafiq', 'facilities_manager');
         $this->emp = $this->user('emp', 'employee');
 

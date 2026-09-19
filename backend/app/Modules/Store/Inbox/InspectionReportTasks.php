@@ -42,13 +42,18 @@ class InspectionReportTasks implements TaskSource
         if (!in_array($ui, ['tech', 'fm', 'adm', 'exec', 'safety'], true)) return collect();
 
         $docs = InstituteDocument::whereIn('key', array_column(self::FORMS, 'key'))->get()->keyBy('key');
+        // ٢٠-٥ (قرار ٥١): الفني يرى بلاغات الأماكن التي يغطيها وبتخصصه (صف البلاغ يبدأ بمفتاح النظام)
+        $role = $user->role();
+        $scope = $ui === 'tech' ? \App\Modules\Governance\Services\ScopeService::forUser($user) : null;
         $out = collect();
         foreach (self::FORMS as $f) {
             $doc = $docs->get($f['key']);
             if (!$doc) continue;
+            if ($scope && !$scope->contains($f['hz'])) continue;
             $data = json_decode($doc->data, true);
             foreach ((array) ($data['reports'] ?? []) as $r) {
                 if (!is_array($r) || !$this->mine($r, $ui)) continue;
+                if ($scope && !\App\Modules\Store\Services\SystemSpecialty::fits($role, (string) ($r['row'] ?? ''))) continue;
                 $holder = $this->holder($r);
                 $over = $this->overdueHours($r);
                 $started = $this->parseStamp($r['cycleAt'] ?? '') ?? $this->parseStamp($r['when'] ?? '') ?? $this->parseStamp($r['sent'] ?? '');

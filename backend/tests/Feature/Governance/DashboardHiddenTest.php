@@ -74,6 +74,7 @@ class DashboardHiddenTest extends TestCase
         // بلاغ الفحص في «ما ينتظرك»: التفاصيل ملف المكان لا اللوحة
         InstituteDocument::create(['key' => 'ipa-park-form-v10', 'version' => 1, 'data' => json_encode(['defs' => [], 'rounds' => new \stdClass, 'reports' => [
             ['row' => 'p01-i-0', 'id' => 'ب — ٠١', 'sys' => 'التهوية', 'item' => 'عطل', 'due' => '٢٤ ساعة', 'when' => now()->format('Y/m/d').' — '.now()->format('H:i'), 'sent' => '', 'path' => 'إداري', 'levels' => []]]], JSON_UNESCAPED_UNICODE)]);
+        $this->fani->profile->update(['place_id' => Place::idByCode('HZ-01')]); // ٢٠-٥: الفني يرى ما يغطيه (مكانه)
         $t = app(InboxService::class)->forUser($this->fani)->first(fn ($t) => str_starts_with($t->key, 'inspection:') || $t->module === 'بلاغات الفحص');
         $this->assertNotNull($t);
         $this->assertStringNotContainsString('dashboard', (string) $t->detailsUrl);

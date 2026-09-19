@@ -24,9 +24,20 @@ class InspectionRoundTasks implements TaskSource
         $ui = PermissionRegistry::uiRole($user->role());
         if (!$ui || !isset(R::WHO_ROLE[$ui])) return collect();
 
-        $byForm = [];
-        foreach (R::dueRounds($ui) as $t) $byForm[$t['form']['key']][] = $t;
-        if (!$byForm) return collect();
+        // ٢٠-٥ (قرار ٥١): الفني يرى جولات الأماكن التي يغطيها وبتخصصه (الجدول المعتمد؛ النظام بلا تخصص لأي فني يغطي المكان)
+        $role = $user->role();
+        $scope = \App\Modules\Governance\Services\ScopeService::forUser($user);
+        $due = R::dueRounds($ui);
+        if ($ui === 'tech') $due = array_values(array_filter($due, fn ($t) => $scope->contains($t['hz']) && \App\Modules\Store\Services\SystemSpecialty::fits($role, $t['k'])));
+        $byForm = []; $orphan = [];
+        foreach ($due as $t) $byForm[$t['form']['key']][] = $t;
+        // مدير المرافق: جولات الفني التي لا يغطيها فني بتخصصها تصله ليوزعها
+        if ($ui === 'fm') {
+            foreach (R::dueRounds('tech') as $t) {
+                if (\App\Modules\Governance\Services\ScopeService::techniciansFor($t['hz'], $t['k'])->isEmpty()) $orphan[$t['form']['key']][] = $t;
+            }
+        }
+        if (!$byForm && !$orphan) return collect();
 
         $myPlace = ($pid = UserProfile::where('user_id', $user->id)->value('place_id')) ? Place::find($pid)?->code : null;
         $out = collect();
@@ -42,6 +53,19 @@ class InspectionRoundTasks implements TaskSource
                 secondary: ($p = Place::where('code', $f['hz'])->first()) ? ['label' => 'ملف المكان', 'url' => route('app.places.units.file', $p)] : null,
                 dueAt: $nexts ? Carbon::parse(min($nexts)) : null,
                 isOverdue: $late > 0,
+                place: $f['hz'].' '.$f['name'],
+                detailsUrl: $p ? route('app.places.units.file', $p) : null,
+            ));
+        }
+        foreach ($orphan as $key => $list) {
+            $f = $list[0]['form']; $n = count($list); $p = Place::where('code', $f['hz'])->first();
+            $out->push(new Task(
+                key: 'rounds-orphan:'.$key,
+                module: 'جولات الفحص',
+                question: 'لا فني يغطي '.$f['name'].': '.self::countText($n).' بلا من يستلمها — '.implode('، ', array_slice(array_unique(array_column($list, 'system')), 0, 3)).($n > 3 ? '…' : '').' — سجّل فنياً أو وسّع تغطية أحدهم',
+                primary: ['label' => 'فنيّي', 'url' => route('app.users.index', [], false)],
+                secondary: $p ? ['label' => 'ملف المكان', 'url' => route('app.places.units.file', $p)] : null,
+                isOverdue: count(array_filter($list, fn ($t) => $t['left'] === null || $t['left'] < 0)) > 0,
                 place: $f['hz'].' '.$f['name'],
                 detailsUrl: $p ? route('app.places.units.file', $p) : null,
             ));

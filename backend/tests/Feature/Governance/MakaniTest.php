@@ -105,10 +105,11 @@ class MakaniTest extends TestCase
         }
         $places = fn (User $u) => app(InboxService::class)->forUser($u)->where('module', 'جولات الفحص')->map(fn ($t) => substr((string) $t->place, 0, 5))->values()->all();
 
-        $inHvac = $this->user('takyif', 'field_worker', null, Place::where('code', 'HZ-03')->value('id'));
+        $cover3 = fn (User $u) => $u->profile->coverage()->sync([Place::idByCode('HZ-01'), Place::idByCode('HZ-02'), Place::idByCode('HZ-03')]); // ٢٠-٥: الفني يرى ما يغطيه
+        $inHvac = $this->user('takyif', 'field_worker', null, Place::where('code', 'HZ-03')->value('id')); $cover3($inHvac);
         $this->assertSame(['HZ-03', 'HZ-02', 'HZ-01'], $places($inHvac), 'بين المتأخرات: مكان الفني أولاً');
         // المتأخر يغلب المكان: فني القبو يرى المتأخرتين قبل مستحقة مكانه
-        $inPark = $this->user('qabu', 'field_worker', null, $this->park->id);
+        $inPark = $this->user('qabu', 'field_worker', null, $this->park->id); $cover3($inPark);
         $this->assertSame(['HZ-02', 'HZ-03', 'HZ-01'], $places($inPark));
     }
 }

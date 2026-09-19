@@ -4,6 +4,7 @@ namespace Tests\Feature\Governance;
 
 use App\Models\User;
 use App\Modules\Governance\Models\OrganizationUnit;
+use App\Modules\Governance\Models\Place;
 use App\Modules\Governance\Models\UserProfile;
 use App\Modules\Store\Models\InstituteDocument;
 use Database\Seeders\OrganizationUnitsSeeder;
@@ -82,10 +83,13 @@ class BuildingPictureTest extends TestCase
         $so = substr($o, strpos($o, 'id="kList"'), 4000);
         $this->assertTrue(strpos($so, 'مراوح لا تعمل') < strpos($so, 'توقف المسار عند المدير'));
         $this->assertStringNotContainsString('أُصلح', $so);
-        // الفني ليس من أدوار القرار: يرى الفسيفساء بلا الأرقام
+        // الفني ليس من أدوار القرار: يرى الفسيفساء بلا الأرقام — و(٢٠-٥) ما يغطيه فقط: بلا تغطية لا مكان، وبتغطية القبو بلاطة القبو
+        $this->assertSame(0, substr_count($this->actingAs($this->fani)->get('/app/places/units')->assertOk()->getContent(), 'data-place="'));
+        $this->fani->profile->coverage()->sync([Place::idByCode('HZ-01')]);
         $hf = $this->actingAs($this->fani)->get('/app/places/units')->assertOk()->getContent();
         $this->assertStringNotContainsString('data-k="open"', $hf);
-        $this->assertSame(9, substr_count($hf, 'data-place="'));
+        $this->assertSame(1, substr_count($hf, 'data-place="'));
+        $this->assertStringContainsString('data-place="HZ-01"', $hf);
         // النية «الأماكن» لأدوار الواجهة
         $this->actingAs($this->fani)->get('/app')->assertOk()->assertSee('data-intent="places"', false);
     }

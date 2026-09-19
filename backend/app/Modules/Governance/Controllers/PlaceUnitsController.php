@@ -27,12 +27,9 @@ class PlaceUnitsController extends Controller
         $ui = \App\Core\Permissions\PermissionRegistry::uiRole($role);
         $tiles = $R::placeTiles();
         $byCode = Place::all()->keyBy('code');
-        // مدير الإدارة يرى مكان إدارته وحده (كما في اللوحة: myHz)
-        if ($ui === 'dept' && !in_array($role, ['system_admin', 'system_staff'], true)
-            && ($ou = UserProfile::where('user_id', $user->id)->value('organization_unit_id'))
-            && ($code = $byCode->firstWhere('id', OrganizationUnit::find($ou)?->place_id)?->code)) {
-            $tiles = array_intersect_key($tiles, [$code => true]);
-        }
+        // ٢٠-٥ (قرار ٥١): النطاق من الحساب — المعهد كله، أو الفرع، أو الوحدة، أو ما يغطيه، أو مكانه (كان: مدير الإدارة مكان إدارته وحده)
+        $scope = \App\Modules\Governance\Services\ScopeService::forUser($user);
+        if (!$scope->isAll()) $tiles = array_intersect_key($tiles, array_flip($scope->codes()));
         $decision = in_array($ui, ['fm', 'adm', 'exec', 'safety'], true);
         $k = $decision && array_key_exists((string) $request->query('k'), $R::KPI) ? (string) $request->query('k') : null;
         $counts = PlaceUnit::where('is_active', true)->selectRaw('place_id, count(*) as c')->groupBy('place_id')->pluck('c', 'place_id');
