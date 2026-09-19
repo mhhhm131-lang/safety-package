@@ -2,7 +2,9 @@
 
 namespace App\Modules\Governance\Models;
 
+use App\Modules\Emergency\Models\EmergencyBuilding;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /** أحد الأماكن التسعة (٨+١) — SOURCE.md §٢. */
@@ -12,9 +14,20 @@ class Place extends Model
     public const CENTER_PHONE = '0505498966';
 
     // max_workers/max_equipment: سعة المكان كمنطقة عمل (المرحلة ٦-ب) — null يعني بلا حد.
-    protected $fillable = ['code', 'name', 'sort', 'max_workers', 'max_equipment'];
+    protected $fillable = ['code', 'name', 'sort', 'max_workers', 'max_equipment', 'building_id'];
 
     protected $casts = ['max_workers' => 'integer', 'max_equipment' => 'integer'];
+
+    /** ٢٠-١ (قرار ٥١): الفرع ← المبنى ← المكان — مكان بلا مبنى يتبع الرئيسي (الملز) */
+    protected static function booted(): void
+    {
+        static::creating(function (Place $p) { $p->building_id ??= EmergencyBuilding::mainOrCreate()->id; });
+    }
+
+    public function building(): BelongsTo
+    {
+        return $this->belongsTo(EmergencyBuilding::class, 'building_id');
+    }
 
     public function units(): HasMany
     {

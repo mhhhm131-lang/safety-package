@@ -20,7 +20,7 @@ class EmergencySeeder extends Seeder
 {
     public function run(): void
     {
-        $building = EmergencyBuilding::firstOrCreate(['code' => 'IPA-MAIN'], [
+        $building = EmergencyBuilding::firstOrCreate(['code' => EmergencyBuilding::MAIN_CODE], ['branch' => EmergencyBuilding::MAIN_BRANCH] + [
             'name' => 'مبنى معهد الإدارة العامة — الملز',
             'name_en' => 'IPA Main Building — Malaz',
             'building_type' => 'government',

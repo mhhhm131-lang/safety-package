@@ -16,9 +16,26 @@ class UserProfile extends Model
 {
     use HasAuditLog;
 
-    protected $fillable = ['user_id', 'role', 'organization_unit_id', 'place_id', 'is_active'];
+    protected $fillable = ['user_id', 'role', 'organization_unit_id', 'place_id', 'is_active', 'building_id'];
 
     protected $casts = ['is_active' => 'boolean'];
+
+    /** ٢٠-١ (قرار ٥١): كل حساب يتبع مبنى؛ بلا تحديد = الرئيسي (الملز) */
+    protected static function booted(): void
+    {
+        static::creating(function (UserProfile $p) { $p->building_id ??= \App\Modules\Emergency\Models\EmergencyBuilding::mainOrCreate()->id; });
+    }
+
+    public function building(): BelongsTo
+    {
+        return $this->belongsTo(\App\Modules\Emergency\Models\EmergencyBuilding::class, 'building_id');
+    }
+
+    /** ٢٠-١: مبنى الشخص = مبنى حسابه، وإلا مبنى مكانه */
+    public function myBuilding(): ?\App\Modules\Emergency\Models\EmergencyBuilding
+    {
+        return $this->building ?? $this->myPlace()?->building;
+    }
 
     public function user(): BelongsTo
     {

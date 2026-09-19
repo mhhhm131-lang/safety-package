@@ -18,7 +18,7 @@ class EmergencyBuilding extends Model
     protected $fillable = [
         'code', 'name', 'name_en', 'address', 'building_type', 'floors_count', 'basement_floors', 'total_capacity',
         'current_occupants', 'latitude', 'longitude', 'floor_plan_file', 'status', 'risk_level', 'last_audit_date',
-        'next_audit_date', 'emergency_status', 'created_by_id', 'fire_zones',
+        'next_audit_date', 'emergency_status', 'created_by_id', 'fire_zones', 'branch',
     ];
 
     protected $casts = [
@@ -45,10 +45,27 @@ class EmergencyBuilding extends Model
     ];
 
     /** المبنى الأول (المعهد مبنى واحد). */
+    /** ٢٠-١ (قرار ٥١): المبنى الرئيسي = الملز، فرعه الرياض. القيم كما في EmergencySeeder. */
+    public const MAIN_CODE = 'IPA-MAIN';
+    public const MAIN_BRANCH = 'الرياض';
+
     public static function main(): ?self
     {
         return static::orderBy('id')->first();
     }
+
+    /** ٢٠-١: المبنى الرئيسي، ويُنشأ إن لم يوجد — يستعمله الترحيل والبذور وافتراضُ المكان والحساب. */
+    public static function mainOrCreate(): self
+    {
+        return static::main() ?? static::create([
+            'code' => self::MAIN_CODE, 'name' => 'مبنى معهد الإدارة العامة — الملز', 'name_en' => 'IPA Main Building — Malaz', 'branch' => self::MAIN_BRANCH,
+            'building_type' => 'government', 'floors_count' => 1, 'basement_floors' => 0, 'status' => 'active', 'risk_level' => 'medium', 'emergency_status' => 'normal', 'address' => 'الرياض — الملز',
+        ]);
+    }
+
+    /** ٢٠-١: أماكن المبنى (الأصناف الثمانية + مركز) وحسابات من مبناهم هذا */
+    public function places(): HasMany { return $this->hasMany(\App\Modules\Governance\Models\Place::class, 'building_id')->orderBy('sort'); }
+    public function profiles(): HasMany { return $this->hasMany(\App\Modules\Governance\Models\UserProfile::class, 'building_id'); }
 
     public function createdBy(): BelongsTo { return $this->belongsTo(User::class, 'created_by_id'); }
     public function floors(): HasMany { return $this->hasMany(BuildingFloor::class, 'building_id')->orderBy('floor_number'); }
