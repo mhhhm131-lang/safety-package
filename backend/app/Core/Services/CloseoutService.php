@@ -87,6 +87,7 @@ class CloseoutService
         // بنية الإطار
         'migrations', 'cache', 'cache_locks', 'sessions', 'jobs', 'job_batches', 'failed_jobs',
         'password_reset_tokens', 'personal_access_tokens', 'sqlite_sequence',
+        'trial_state', // ٢١-٢ (قرار ٥٤): خط أساس وضع التجربة ونسختاه
     ];
 
     /** أسماء الدخول التجريبية (بذرة التطوير + ما أنشأته البوابات). */

@@ -44,6 +44,7 @@
 </head>
 @php($showReportBar = !request()->routeIs('incident.landing') && !request()->routeIs('incident.form') && !request()->routeIs('incident.store'))
 <body class="{{ $showReportBar ? 'has-sos' : '' }}">
+@include('layouts._trial_banner')
 <div class="top d-flex align-items-center gap-2">
   <i class="bi bi-shield-check fs-5"></i>
   <div><div class="fw-bold">منظومة السلامة والصحة المهنية</div><div class="small text-white-50">معهد الإدارة العامة — مركز السلامة</div></div>

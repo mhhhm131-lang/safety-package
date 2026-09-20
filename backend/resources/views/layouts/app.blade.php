@@ -89,6 +89,7 @@
       ->first(fn ($i) => in_array($i->key, ['trigger', 'sos'], true));
 @endphp
 <body class="{{ $sosIntent ? 'has-sos' : '' }}">
+@include('layouts._trial_banner')
 {{-- المرحلة ١١-٤ (قرار ٣٤): ثلاثة أبواب في الشريط — ما ينتظرك · بحث · المزيد. القائمة كلها خلف «المزيد» ولا تتكدس فوق المحتوى --}}
 <nav class="topbar px-3 py-2 d-flex align-items-center gap-2 flex-wrap">
   <a class="brand" href="{{ route('app.home') }}"><i class="bi bi-shield-check"></i> <span class="d-none d-sm-inline">منظومة السلامة</span></a>
