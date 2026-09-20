@@ -39,6 +39,22 @@ class IncidentPolicy
             || $user->id === $incident->incident_coordinator_id;
     }
 
+    /**
+     * ٢١-٥ (قرار ٥١: «من يعالج البلاغ» صفة إحالة لا دور): المعالج المسمّى يستلم بلاغه ويعالجه ويصعّده أياً كان دوره —
+     * بلا صلاحية `incident.manage` وبلا أي شيء آخر. ومن يملك المعالجة على هذا البلاغ يملكها هنا أيضاً.
+     */
+    public function handle(User $user, Incident $incident): bool
+    {
+        return $user->id === $incident->incident_field_team_id || $this->manage($user, $incident);
+    }
+
+    /** ٢١-٥: الإحالة (وإعادتها) بيد المركز ومنسق هذا البلاغ وحدهما — كان أي حامل لصلاحية المعالجة يحيل أي بلاغ. */
+    public function refer(User $user, Incident $incident): bool
+    {
+        return in_array($user->role(), ['system_admin', 'system_staff'], true)
+            || ($this->has($user, 'incident.manage') && $user->id === $incident->incident_coordinator_id);
+    }
+
     public function approveClosure(User $user, Incident $incident): bool
     {
         return $incident->actor_id !== null && $incident->actor_id === $user->id && $incident->pending_closure;

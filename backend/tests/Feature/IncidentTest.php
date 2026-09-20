@@ -119,8 +119,9 @@ class IncidentTest extends TestCase
         $this->assertNotNull($incident->fresh()->field_opened_at);
 
         // ٤) الفني: يبدأ، يرفع دليلاً، يعلّم «عولج». فني آخر لا يستطيع
-        $this->actingAs($this->fani2)->post("/app/incidents/{$incident->id}/begin-work")->assertSessionHas('error');
-        $this->actingAs($this->fani2)->post("/app/incidents/{$incident->id}/field-receive")->assertSessionHas('error');
+        // ٢١-٥: غير المعالج يُمنع بالسياسة قبل آلة الحالة (كان يُرَدّ بخطأ منها)
+        $this->actingAs($this->fani2)->post("/app/incidents/{$incident->id}/begin-work")->assertForbidden();
+        $this->actingAs($this->fani2)->post("/app/incidents/{$incident->id}/field-receive")->assertForbidden();
         $this->assertSame('field_received', $incident->fresh()->status);
         $this->assertNotNull($incident->fresh()->field_received_at);
         $this->get('/incident/track?code='.$incident->secret_tracking_code)->assertOk()->assertSee('استلمه الفني')->assertDontSee('اسم fani');
@@ -285,7 +286,7 @@ class IncidentTest extends TestCase
         $this->actingAs($lajna)->post("/app/incidents/{$i->id}/resolve-escalation")->assertSessionHas('success');
         $this->assertSame('in_progress', $i->fresh()->status);
         $this->assertSame($lajna->id, $i->fresh()->incident_field_team_id); // من تولّى صار المنفّذ
-        $this->actingAs($this->fani)->post("/app/incidents/{$i->id}/resolve", ['resolution_summary' => 'محاولة من الفني السابق بعد التولّي يجب أن تُرفض'])->assertSessionHas('error');
+        $this->actingAs($this->fani)->post("/app/incidents/{$i->id}/resolve", ['resolution_summary' => 'محاولة من الفني السابق بعد التولّي يجب أن تُرفض'])->assertForbidden(); // ٢١-٥: لم يعد معالجه
         $this->actingAs($lajna)->post("/app/incidents/{$i->id}/upload", ['file' => UploadedFile::fake()->createWithContent('p.png', base64_decode(self::PNG))]);
         $this->actingAs($lajna)->post("/app/incidents/{$i->id}/resolve", ['resolution_summary' => 'أُوقف العمل في الطابق وفُصل التيار وعولج مصدر الدخان'])->assertSessionHas('success');
         $this->assertSame('resolved', $i->fresh()->status);

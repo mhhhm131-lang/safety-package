@@ -35,16 +35,18 @@ Route::middleware(['auth'])->prefix('app/incidents')->name('incidents.')->group(
     // المرحلة ١٨-١ (ج، قرار ٤٦): المبلّغ بحساب يرفض الإغلاق بنفسه — كان زرّه يفتح نافذة إرسالها ممنوع (incident.manage)
     Route::post('/{incident}/reject-closure-as-reporter', [IncidentController::class, 'rejectClosureAsReporter'])->name('rejectClosureAsReporter');
 
+    // ٢١-٥ (قرار ٥١): إجراءات المعالج — لمن سُمّي معالجاً لهذا البلاغ أياً كان دوره (سياسة handle في المتحكم)، لا لصلاحية عامة
+    Route::post('/{incident}/field-receive', [IncidentController::class, 'fieldReceive'])->name('fieldReceive');
+    Route::post('/{incident}/begin-work', [IncidentController::class, 'beginWork'])->name('beginWork');
+    Route::post('/{incident}/upload', [IncidentController::class, 'upload'])->name('upload');
+    Route::post('/{incident}/resolve', [IncidentController::class, 'resolve'])->name('resolve');
+    Route::post('/{incident}/escalate-to-coord', [IncidentController::class, 'escalateToCoordinator'])->name('escalateToCoordinator');
+
     Route::middleware('permission:incident.manage')->group(function () {
         Route::post('/{incident}/refer', [IncidentController::class, 'refer'])->name('refer');
         Route::post('/{incident}/close-with-note', [IncidentController::class, 'closeWithNote'])->name('closeWithNote');
-        Route::post('/{incident}/field-receive', [IncidentController::class, 'fieldReceive'])->name('fieldReceive');
-        Route::post('/{incident}/begin-work', [IncidentController::class, 'beginWork'])->name('beginWork');
-        Route::post('/{incident}/upload', [IncidentController::class, 'upload'])->name('upload');
-        Route::post('/{incident}/resolve', [IncidentController::class, 'resolve'])->name('resolve');
         Route::post('/{incident}/close', [IncidentController::class, 'close'])->name('close');
         Route::post('/{incident}/reject-closure', [IncidentController::class, 'rejectClosure'])->name('rejectClosure');
-        Route::post('/{incident}/escalate-to-coord', [IncidentController::class, 'escalateToCoordinator'])->name('escalateToCoordinator');
         Route::post('/{incident}/escalate-to-manager', [IncidentController::class, 'escalateToManager'])->name('escalateToManager');
         Route::post('/{incident}/resolve-escalation', [IncidentController::class, 'resolveEscalation'])->name('resolveEscalation');
         Route::post('/{incident}/verify', [IncidentController::class, 'verifyByCoordinator'])->name('verify');

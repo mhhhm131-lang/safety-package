@@ -94,14 +94,14 @@
       @if($canTrigger && !$linkedEmergency)
         <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#emergencyModal"><i class="bi bi-broadcast me-1"></i> تفعيل حالة طارئة</button>
       @endif
-      @if($isCenter && in_array($incident->status, ['new', 'received', 'referred', 'ref_received'], true))
-        <button class="btn btn-g" data-bs-toggle="modal" data-bs-target="#referModal"><i class="bi bi-person-check me-1"></i> إحالة إلى فني المكان</button>
+      @if($canRefer && in_array($incident->status, ['new', 'received', 'referred', 'ref_received'], true))
+        <button class="btn btn-g" data-bs-toggle="modal" data-bs-target="#referModal"><i class="bi bi-person-check me-1"></i> إحالة إلى معالج</button>
         @if($incident->status === 'received' || $incident->status === 'new')
           <button class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#closeNoteModal"><i class="bi bi-x-circle me-1"></i> إغلاق بملاحظة (لا يحتاج فنياً)</button>
         @endif
       @endif
-      @if($isCenter && in_array($incident->status, ['forwarded', 'field_received', 'in_progress', 'escalated_to_coord'], true))
-        <button class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#referModal"><i class="bi bi-arrow-repeat me-1"></i> إعادة الإحالة لفني آخر</button>
+      @if($canRefer && in_array($incident->status, ['forwarded', 'field_received', 'in_progress', 'escalated_to_coord'], true))
+        <button class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#referModal"><i class="bi bi-arrow-repeat me-1"></i> إعادة الإحالة لمعالج آخر</button>
       @endif
       @if($isField && $incident->status === 'forwarded')
         <form method="post" action="{{ route('incidents.fieldReceive', $incident) }}">@csrf<button class="btn btn-g"><i class="bi bi-hand-thumbs-up me-1"></i> استلمتُ البلاغ</button></form>
@@ -180,7 +180,7 @@
         <span class="text-muted small">لا مرفقات</span>
       @endforelse
     </div>
-    @if($canManage && !$terminal)
+    @if($canHandle && !$terminal)
       <form method="post" action="{{ route('incidents.upload', $incident) }}" enctype="multipart/form-data" class="d-flex gap-2 mt-2">@csrf
         <input type="file" name="file" class="form-control form-control-sm" accept="image/*,application/pdf" required>
         <button class="btn btn-sm btn-outline-primary text-nowrap"><i class="bi bi-upload"></i> رفع دليل</button></form>
@@ -221,14 +221,14 @@
 
 {{-- النوافذ --}}
 <div class="modal fade" id="referModal"><div class="modal-dialog"><form method="post" action="{{ route('incidents.refer', $incident) }}" class="modal-content">@csrf
-  <div class="modal-header"><h5 class="modal-title">إحالة إلى فني المكان</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-header"><h5 class="modal-title">إحالة إلى معالج</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
   <div class="modal-body">
-    <label class="form-label">الفني <span class="text-danger">*</span></label>
+    <label class="form-label">المعالج المختص (فني أو إداري) <span class="text-danger">*</span></label>
     <select name="field_worker_id" class="form-select" required><option value="">اختر…</option>
-      @foreach($fieldWorkers as $u)<option value="{{ $u->id }}" @selected($u->id === $incident->incident_field_team_id)>{{ $u->name }}{{ $u->profile?->place ? ' — '.$u->profile->place->code.' '.$u->profile->place->name : '' }}</option>@endforeach</select>
+      @foreach($fieldWorkers as $u)<option value="{{ $u->id }}" @selected($u->id === $incident->incident_field_team_id)>{{ $u->name }} — {{ $u->profile?->roleName() }}{{ $u->profile?->organizationUnit ? ' · '.$u->profile->organizationUnit->name : ($u->profile?->place ? ' · '.$u->profile->place->code : '') }}</option>@endforeach</select>
     <label class="form-label mt-2">منسق السلامة (اختياري)</label>
     <select name="coordinator_id" class="form-select"><option value="">—</option>@foreach($coordinators as $u)<option value="{{ $u->id }}" @selected($u->id === $incident->incident_coordinator_id)>{{ $u->name }}</option>@endforeach</select>
-    <label class="form-label mt-2">ملاحظة للفني</label><textarea name="note" class="form-control" rows="2" maxlength="2000"></textarea>
+    <label class="form-label mt-2">ملاحظة للمعالج</label><textarea name="note" class="form-control" rows="2" maxlength="2000"></textarea>
     <div class="small text-muted mt-2">تُعاد المهلة من وقت الإحالة، ويظهر البلاغ في شريط «بلاغات شاغلين لهذا المكان» في نموذج الفحص.</div>
   </div>
   <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button><button class="btn btn-g">إحالة</button></div></form></div></div>

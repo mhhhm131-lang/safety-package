@@ -212,7 +212,9 @@ class IncidentControllerTest extends TestCase
         $this->actingAsRole('field_worker');
         $incident = $this->makeIncident();
 
-        // النقطة متاحة للفني (وإن رفضتها آلة الحالة)
+        // ٢١-٥: النقطة لمعالج هذا البلاغ (وإن رفضتها آلة الحالة)، ولغيره ٤٠٣
+        $this->post(route('incidents.beginWork', $incident))->assertForbidden();
+        $incident->update(['incident_field_team_id' => auth()->id()]);
         $this->post(route('incidents.beginWork', $incident))->assertStatus(302);
     }
 

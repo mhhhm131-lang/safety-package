@@ -42,6 +42,9 @@ class IncidentService
         'closed' => 'closed_at',
     ];
 
+    /** انتقالات المعالجة التي يملكها المعالج المسمّى بصفته لا بدوره */
+    private const HANDLER_TRANSITIONS = ['field_received', 'in_progress', 'resolved', 'escalated_to_coord'];
+
     private const ASSIGNED_USER_TRANSITIONS = [
         'ref_received' => 'incident_coordinator_id', 'forwarded' => 'incident_coordinator_id',
         'field_received' => 'incident_field_team_id', 'in_progress' => 'incident_field_team_id', 'resolved' => 'incident_field_team_id',
@@ -160,7 +163,9 @@ class IncidentService
         if (!$isBot) {
             $role = $this->resolveUserRole($userId);
             $allowedRoles = $this->stateMachine->getAllowedRoles($fromStatus, $toStatus);
-            if (!in_array($role, $allowedRoles, true)) {
+            // ٢١-٥ (قرار ٥١): «من يعالج البلاغ» صفة إحالة لا دور — المعالج المسمّى يسير في انتقالات المعالجة أياً كان دوره
+            $asHandler = $incident->incident_field_team_id === $userId && in_array($toStatus, self::HANDLER_TRANSITIONS, true);
+            if (!in_array($role, $allowedRoles, true) && !$asHandler) {
                 throw new TransitionException("الدور «".\App\Core\Permissions\PermissionRegistry::getRoleDisplayName($role)."» لا يملك الانتقال من «".(Incident::STATUS_LABELS[$fromStatus] ?? $fromStatus)."» إلى «".(Incident::STATUS_LABELS[$toStatus] ?? $toStatus)."».");
             }
             // تولّي المعالجة بعد التصعيد أو إعادتها بعد رفض الإغلاق ليس انتقال الفني المعيَّن (كان يسقط في OHSMS)
@@ -220,8 +225,8 @@ class IncidentService
             throw new InvalidArgumentException('لا تُحال بلاغات مغلقة أو خارج النطاق.');
         }
         $fw = UserProfile::where('user_id', $fieldWorkerId)->where('is_active', true)->first();
-        if (!$fw || !\App\Core\Permissions\PermissionRegistry::isTech($fw->role)) { // ٢٠-٣: فني بأي تخصص
-            throw new InvalidArgumentException('المُحال إليه يجب أن يكون فنياً منفّذاً مفعَّلاً.');
+        if (!$fw) { // ٢١-٥ (قرار ٥١): أي حساب مفعَّل — فني لعطل، ومحقق أو مدير إدارة لشكوى
+            throw new InvalidArgumentException('المُحال إليه يجب أن يكون حساباً مفعَّلاً.');
         }
         return DB::transaction(function () use ($incident, $userId, $fieldWorkerId, $coordinatorId, $note) {
             $incident->incident_field_team_id = $fieldWorkerId;
@@ -235,7 +240,7 @@ class IncidentService
             }
             $incident->save();
             IncidentEvent::create(['incident_id' => $incident->id, 'action' => 'assign', 'from_status' => $incident->status,
-                'to_status' => $incident->status, 'note' => 'أُحيل إلى الفني '.($fw = \App\Models\User::find($fieldWorkerId)?->name).($note ? ' — '.$note : ''), 'actor_id' => $userId]);
+                'to_status' => $incident->status, 'note' => 'أُحيل إلى '.($fw = \App\Models\User::find($fieldWorkerId)?->name).($note ? ' — '.$note : ''), 'actor_id' => $userId]);
 
             if ($incident->status === 'new') {
                 $this->transition($incident, self::BOT_USER_ID, 'receive', 'received', 'مسار تلقائي');

@@ -202,9 +202,14 @@ class IncidentController extends Controller
             $incident = $this->incidentService->fieldOpened($incident, $user->id);
             $incident = $this->incidentService->getDetail($incident->id) ?? $incident;
         }
-        $fieldWorkers = User::whereHas('profile', fn ($q) => $q->where('is_active', true)->whereIn('role', \App\Core\Permissions\PermissionRegistry::techRoles())) // ٢٠-٣
-            ->with('profile.place')->orderBy('name')->get()
-            ->sortByDesc(fn ($u) => (int) ($u->profile?->place_id && $u->profile->place_id === $incident->place_id));
+        // ٢١-٥ (قرار ٥١): الإحالة لأي حساب مفعَّل — أهل الإدارة المعنية أولاً ثم الفنيون ثم البقية
+        $canRefer = $user->can('refer', $incident);
+        $fieldWorkers = !$canRefer ? collect() : User::whereHas('profile', fn ($q) => $q->where('is_active', true))->with('profile.place', 'profile.organizationUnit')->orderBy('name')->get()
+            ->sortBy(fn ($u) => match (true) {
+                $incident->organization_unit_id && $u->profile?->organization_unit_id === $incident->organization_unit_id => 0,
+                \App\Core\Permissions\PermissionRegistry::isTech((string) $u->profile?->role) => 1,
+                default => 2,
+            })->values();
         $coordinators = User::whereHas('profile', fn ($q) => $q->where('is_active', true)->where('role', 'safety_coordinator'))->orderBy('name')->get();
         $role = $user->role();
         $bridge = app(IncidentEmergencyBridge::class);
@@ -220,6 +225,7 @@ class IncidentController extends Controller
             'isCoord' => $incident->incident_coordinator_id === $user->id || ($role === 'safety_coordinator' && !$incident->incident_coordinator_id),
             'isCommittee' => $role === 'safety_committee' || $role === 'system_admin',
             'canManage' => $user->can('manage', $incident),
+            'canHandle' => $user->can('handle', $incident), 'canRefer' => $canRefer, // ٢١-٥
             'referenceRisks' => $incident->risk_id ? collect() : Risk::where('risk_type', 'reference')->whereIn('status', ['approved', 'active'])->orderBy('code')->get(['id', 'code', 'title']),
             // المرحلة ١٨-١ (ج، قرار ٤٦): زر «ما ينتظرك» يفتح الصفحة والنافذة معاً — ?do=resolve|escalate|escalate-manager|reject
             'openModal' => self::OPEN_MODALS[request()->query('do')] ?? null,
@@ -240,7 +246,8 @@ class IncidentController extends Controller
     {
         $v = $request->validate(['field_worker_id' => ['required', 'integer', 'exists:users,id'],
             'coordinator_id' => ['nullable', 'integer', 'exists:users,id'], 'note' => ['nullable', 'string', 'max:2000']]);
-        return $this->act(fn () => $this->incidentService->referToField($incident, Auth::id(), (int) $v['field_worker_id'], $v['coordinator_id'] ?? null, $v['note'] ?? null), 'أُحيل البلاغ إلى الفني.');
+        abort_unless(Auth::user()->can('refer', $incident), 403, 'الإحالة لمركز السلامة ومنسق هذا البلاغ.');
+        return $this->act(fn () => $this->incidentService->referToField($incident, Auth::id(), (int) $v['field_worker_id'], $v['coordinator_id'] ?? null, $v['note'] ?? null), 'أُحيل البلاغ.');
     }
 
     public function closeWithNote(Request $request, Incident $incident)
@@ -269,11 +276,13 @@ class IncidentController extends Controller
 
     public function fieldReceive(Incident $incident)
     {
+        $this->guardHandler($incident); // ٢١-٥
         return $this->act(fn () => $this->incidentService->fieldReceive($incident, Auth::id()), 'سُجّل استلامك للبلاغ.');
     }
 
     public function beginWork(Incident $incident)
     {
+        $this->guardHandler($incident); // ٢١-٥
         return $this->act(fn () => $this->incidentService->beginWork($incident, Auth::id()), 'بدأت المعالجة.');
     }
 
@@ -285,6 +294,7 @@ class IncidentController extends Controller
 
     public function upload(Request $request, Incident $incident)
     {
+        $this->guardHandler($incident); // ٢١-٥
         $request->validate(['file' => ['required', 'file', 'max:3072', 'mimes:jpg,jpeg,png,webp,pdf']]);
         $f = $request->file('file');
         return $this->act(fn () => $this->incidentService->addAttachment($incident, Auth::id(), 'evidence', $f->getMimeType(), file_get_contents($f->getRealPath()), $f->getClientOriginalName()), 'رُفع المرفق.');
@@ -303,6 +313,7 @@ class IncidentController extends Controller
     /** المرحلة ١١-١ (ج، قرار ٣٤): الصورة في طلب «عولج» نفسه — تُرفق دليلاً، وأول دليل من «استلمه الفني» = بدء المعالجة. */
     public function resolve(Request $request, Incident $incident)
     {
+        $this->guardHandler($incident); // ٢١-٥
         $v = $request->validate([
             'resolution_summary' => ['required', 'string', 'min:30', 'max:5000'],
             'evidence' => ['nullable', 'file', 'max:3072', 'mimes:jpg,jpeg,png,webp,pdf'],
@@ -341,6 +352,7 @@ class IncidentController extends Controller
 
     public function escalateToCoordinator(Request $request, Incident $incident)
     {
+        $this->guardHandler($incident); // ٢١-٥
         $v = $request->validate(['reason' => ['required', 'string', 'min:10', 'max:5000']]);
         return $this->act(fn () => $this->incidentService->escalateToCoordinator($incident, Auth::id(), $v['reason']), 'صُعّد البلاغ إلى منسق السلامة.');
     }
@@ -388,6 +400,12 @@ class IncidentController extends Controller
             }
             fclose($h);
         }, 200, ['Content-Type' => 'text/csv; charset=UTF-8', 'Content-Disposition' => "attachment; filename=\"$filename\""]);
+    }
+
+    /** ٢١-٥ (قرار ٥١): إجراءات المعالجة لمن سُمّي معالجاً لهذا البلاغ أياً كان دوره، ولمن يملك المعالجة عليه (المركز ومنسقه) */
+    private function guardHandler(Incident $incident): void
+    {
+        abort_unless(Auth::user()->can('handle', $incident), 403, 'معالجة هذا البلاغ لمن أُحيل إليه.');
     }
 
     private function act(callable $fn, string $ok)
