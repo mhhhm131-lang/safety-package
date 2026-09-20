@@ -23,7 +23,7 @@ final class ScopeService
 {
     private const ALL = ['system_admin', 'system_staff', 'top_management', 'safety_committee', 'admin_eng_manager', 'facilities_manager', 'security_safety_head'];
     private const UNIT = ['department_manager', 'section_manager', 'safety_coordinator', 'consultant_office'];
-    private const COVERAGE = ['support_team', 'medic', 'rescuer', 'firefighter'];
+    private const COVERAGE = ['support_team', 'evac_coordinator', 'medic', 'rescuer', 'firefighter'];
 
     public function __construct(public readonly string $kind, private readonly Collection $places) {}
 

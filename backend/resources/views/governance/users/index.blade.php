@@ -2,7 +2,7 @@
 @section('title', 'المستخدمون')
 @section('content')
 <div class="d-flex align-items-center mb-3">
-  <h1 class="h4 m-0">{{ $own ? 'فنيّي' : 'المستخدمون' }} <span class="text-muted fs-6">{{ $users->total() }}</span></h1>{{-- ٢٠-٤: مدير المرافق يرى فنييه --}}
+  <h1 class="h4 m-0">{{ $own ? $ownTitle : 'المستخدمون' }} <span class="text-muted fs-6">{{ $users->total() }}</span></h1>{{-- ٢٠-٤: مدير المرافق يرى فنييه --}}
   <a class="btn btn-g btn-sm ms-auto" href="{{ route('app.users.create') }}"><i class="bi bi-person-plus"></i> حساب جديد</a>
 </div>
 <form class="row g-2 mb-3">

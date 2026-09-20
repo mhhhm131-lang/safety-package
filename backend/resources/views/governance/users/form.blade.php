@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', $user ? 'تعديل حساب' : 'حساب جديد')
 @section('content')
-<h1 class="h4 mb-3">{{ $user ? 'تعديل حساب '.$user->username : ($own ? 'فني جديد' : 'حساب جديد') }}</h1>
+<h1 class="h4 mb-3">{{ $user ? 'تعديل حساب '.$user->username : ($own ? $ownNew : 'حساب جديد') }}</h1>
 @if($own)<p class="small text-muted">ما تسجله هنا يصل مسؤول السلامة لاعتماده، ولا يعمل الحساب حتى يعتمده.</p>@endif
 <form method="post" action="{{ $user ? route('app.users.update', $user) : route('app.users.store') }}" class="card p-3" style="max-width:720px">
   @csrf @if($user) @method('PUT') @endif

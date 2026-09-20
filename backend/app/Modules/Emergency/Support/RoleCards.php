@@ -101,7 +101,7 @@ class RoleCards
         if ($named && in_array((int) $named, self::cardsOfRole($role), true)) return (int) $named;
         $mine = array_keys(array_filter(self::CARDS, fn ($c) => ($c['role'] ?? null) === $role));
         if (count($mine) === 1 && self::CARDS[$mine[0]]['category'] === 'leadership') return $mine[0];
-        $teamKey = ['safety_coordinator' => 'coordinator', 'medic' => 'medic', 'rescuer' => 'rescuer', 'firefighter' => 'firefighter'][$role]
+        $teamKey = ['evac_coordinator' => 'coordinator', 'medic' => 'medic', 'rescuer' => 'rescuer', 'firefighter' => 'firefighter'][$role]
             ?? \App\Modules\Emergency\Models\EmergencyTeamMember::where('user_id', $user->id)->whereNotNull('role_key')
                 ->whereHas('team', fn ($q) => $q->where('is_active', true))->value('role_key');
         if ($teamKey) {
@@ -113,7 +113,7 @@ class RoleCards
     /** ٢٠-٦: أرقام البطاقات التي يحملها دور (بالاسم أو بالعضوية) */
     public static function cardsOfRole(string $role): array
     {
-        $teamKey = ['safety_coordinator' => 'coordinator', 'medic' => 'medic', 'rescuer' => 'rescuer', 'firefighter' => 'firefighter'][$role] ?? null;
+        $teamKey = ['evac_coordinator' => 'coordinator', 'medic' => 'medic', 'rescuer' => 'rescuer', 'firefighter' => 'firefighter'][$role] ?? null;
         $out = [];
         foreach (self::CARDS as $no => $c) {
             if (($c['role'] ?? null) === $role) $out[] = $no;
@@ -157,7 +157,7 @@ class RoleCards
             'branch_manager' => 'لا بطاقة: يدير فرعه ويرشّح فرقه',
             'department_manager' => 'لا بطاقة: ترشيح الفريق الأولي لإدارته وتفعيل أخطارها',
             'section_manager' => 'لا بطاقة: كمدير الإدارة لقسمه',
-            'safety_coordinator' => 'يبقى فارغاً حتى يُعيَّن مسؤول سلامة لفرع',
+            'safety_coordinator' => 'لا بطاقة: عمل يومي — السجل الفعلي لوحدته وبلاغات الشاغلين (قرار ٥٣)؛ بطاقة ٨ لمنسق الإخلاء والطوارئ',
             'contractor_supervisor' => 'لا بطاقة: بوابة المقاول',
             'contractor' => 'لا بطاقة: بوابة المقاول',
             'employee' => '',

@@ -27,15 +27,38 @@ class UsersController extends Controller
         $role = auth()->user()->role();
         if (PermissionRegistry::hasPermission($role, 'system.users')) return 'all';
         if (PermissionRegistry::hasPermission($role, 'system.users.own')) return 'own';
-        abort(403, 'شاشة الحسابات لمسؤول السلامة والمناوب، و«فنيّي» لمدير المرافق والصيانة.');
+        abort(403, 'شاشة الحسابات لمسؤول السلامة والمناوب، و«فنيّي» لمدير المرافق والصيانة، و«منسق سلامة إدارتي» لمدير الوحدة.');
     }
 
-    /** في نطاق «own» لا يُمس إلا حساب فني في مبنى المدير */
+    /** ٢١-١ (قرار ٥٣): نطاق «own» نوعان — مدير المرافق يسجل فنييه في مبناه (٢٠-٤)، ومدير الفرع/الإدارة/القسم يرشّح منسق سلامة وحدته */
+    private function ownsTechs(): bool
+    {
+        return auth()->user()->role() === 'facilities_manager';
+    }
+
+    /** الأدوار التي يسجلها صاحب نطاق «own» */
+    private function ownRoles(): array
+    {
+        return $this->ownsTechs() ? PermissionRegistry::TECH_ROLES : ['safety_coordinator'];
+    }
+
+    /** وحدة المدير وما تحتها — منسق السلامة يُرشَّح فيها فقط */
+    private function ownUnitIds(): array
+    {
+        $unit = auth()->user()->profile?->organization_unit_id;
+        return $unit ? array_values(array_unique(array_map('intval', array_merge([$unit], OrganizationUnit::descendantIdsOf($unit))))) : [];
+    }
+
+    /** في نطاق «own» لا يُمس إلا حساب فني في مبنى المدير، أو منسق سلامة في وحدته */
     private function guardTarget(User $user): void
     {
         if ($this->scope() === 'own') {
             $p = $user->profile;
-            abort_unless($p && PermissionRegistry::isTech($p->role) && $p->building_id === auth()->user()->profile?->myBuilding()?->id, 403, 'ليس من فنيّيك.');
+            if ($this->ownsTechs()) {
+                abort_unless($p && PermissionRegistry::isTech($p->role) && $p->building_id === auth()->user()->profile?->myBuilding()?->id, 403, 'ليس من فنيّيك.');
+            } else {
+                abort_unless($p && $p->role === 'safety_coordinator' && in_array((int) $p->organization_unit_id, $this->ownUnitIds(), true), 403, 'ليس منسق سلامة وحدتك.');
+            }
         }
     }
 
@@ -58,9 +81,11 @@ class UsersController extends Controller
     {
         $own = $this->scope() === 'own';
         $q = User::with(['profile.organizationUnit', 'profile.place', 'profile.coverage', 'profile.pendingBy'])->orderBy('name');
-        if ($own) { // ٢٠-٤: «فنيّي» — الفنيون في مبنى المدير
+        if ($own && $this->ownsTechs()) { // ٢٠-٤: «فنيّي» — الفنيون في مبنى المدير
             $b = $request->user()->profile?->myBuilding()?->id;
             $q->whereHas('profile', fn ($w) => $w->whereIn('role', PermissionRegistry::techRoles())->where('building_id', $b));
+        } elseif ($own) { // ٢١-١: منسقو سلامة وحدة المدير
+            $q->whereHas('profile', fn ($w) => $w->where('role', 'safety_coordinator')->whereIn('organization_unit_id', $this->ownUnitIds()));
         }
         if ($request->boolean('pending')) $q->whereHas('profile', fn ($w) => $w->whereNotNull('pending_since'));
         if ($s = trim((string) $request->query('q'))) {
@@ -70,8 +95,8 @@ class UsersController extends Controller
             $q->whereHas('profile', fn ($w) => $w->where('role', $r));
         }
         $users = $q->paginate(30)->withQueryString();
-        return view('governance.users.index', ['users' => $users, 'roles' => $own ? array_intersect_key(PermissionRegistry::ROLES, array_flip(PermissionRegistry::TECH_ROLES)) : PermissionRegistry::ROLES,
-            'own' => $own, 'canApprove' => PermissionRegistry::hasPermission($request->user()->role(), 'system.users.approve')]);
+        return view('governance.users.index', ['users' => $users, 'roles' => $own ? array_intersect_key(PermissionRegistry::ROLES, array_flip($this->ownRoles())) : PermissionRegistry::ROLES,
+            'own' => $own, 'ownTitle' => $own ? ($this->ownsTechs() ? 'فنيّي' : 'منسق سلامة إدارتي') : null, 'canApprove' => PermissionRegistry::hasPermission($request->user()->role(), 'system.users.approve')]);
     }
 
     public function create(): View
@@ -183,10 +208,11 @@ class UsersController extends Controller
         return [
             'user' => $user,
             'own' => $this->scope() === 'own',
+            'ownNew' => $this->scope() === 'own' ? ($this->ownsTechs() ? 'فني جديد' : 'منسق سلامة جديد') : null,
             // ٢٠-٣: القابلة للإسناد فقط؛ الدور القديم لحساب قائم يُعرض ليُبدَّل
-            'roles' => ($this->scope() === 'own' ? array_intersect_key(PermissionRegistry::ROLES, array_flip(PermissionRegistry::TECH_ROLES)) : PermissionRegistry::assignableRoles())
+            'roles' => ($this->scope() === 'own' ? array_intersect_key(PermissionRegistry::ROLES, array_flip($this->ownRoles())) : PermissionRegistry::assignableRoles())
                 + (($r = $user?->profile?->role) && in_array($r, PermissionRegistry::LEGACY_ROLES, true) ? [$r => PermissionRegistry::ROLES[$r].' — دور قديم، اختر تخصصاً'] : []),
-            'units' => OrganizationUnit::where('is_active', true)->orderBy('order')->get(),
+            'units' => OrganizationUnit::where('is_active', true)->when($this->scope() === 'own' && !$this->ownsTechs(), fn ($q) => $q->whereIn('id', $this->ownUnitIds()))->orderBy('order')->get(),
             'places' => Place::orderBy('sort')->get(),
             'buildings' => \App\Modules\Emergency\Models\EmergencyBuilding::orderBy('id')->get(['id', 'name', 'branch']), // ٢٠-١
             'coverage' => $user?->profile?->coverage->pluck('id')->all() ?? [], // ٢٠-٢
@@ -203,8 +229,10 @@ class UsersController extends Controller
             'name' => 'required|string|max:120',
             'email' => ['nullable', 'email', 'max:190', Rule::unique('users', 'email')->ignore($user?->id)],
             'password' => [$user ? 'nullable' : 'required', 'string', 'min:6', 'max:100'],
-            'role' => ['required', Rule::in($this->scope() === 'own' ? PermissionRegistry::TECH_ROLES : array_keys(PermissionRegistry::assignableRoles()))], // ٢٠-٣: لا يُحفظ دور قديم؛ ٢٠-٤: «فنيّي» تخصصات فقط
-            'organization_unit_id' => 'nullable|exists:organization_units,id',
+            'role' => ['required', Rule::in($this->scope() === 'own' ? $this->ownRoles() : array_keys(PermissionRegistry::assignableRoles()))], // ٢٠-٣: لا يُحفظ دور قديم؛ ٢٠-٤: «فنيّي» تخصصات فقط؛ ٢١-١: مدير الوحدة منسق سلامة فقط
+            'organization_unit_id' => $this->scope() === 'own' && !$this->ownsTechs()
+                ? ['required', Rule::in($this->ownUnitIds())] // ٢١-١ (قرار ٥٣): منسق السلامة يُرشَّح لوحدة المدير وما تحتها
+                : 'nullable|exists:organization_units,id',
             'place_id' => 'nullable|exists:places,id',
             'external_party_id' => 'nullable|exists:external_parties,id', // المرحلة ٦: حساب مقاول/مشرف مقاول/مكتب استشاري → طرفه
             // ٢٠-١/٢٠-٢ (قرار ٥١): المبنى (بلا تحديد = الرئيسي)، المسمى (مؤقت حتى البوابة)، والتغطية من أماكن مبنى الحساب
@@ -214,7 +242,7 @@ class UsersController extends Controller
             'role_card_no' => ['nullable', 'integer', Rule::in(\App\Modules\Emergency\Support\RoleCards::cardsOfRole((string) $request->input('role')))],
             'coverage' => 'nullable|array|max:20',
             'coverage.*' => ['integer', Rule::exists('places', 'id')->where(fn ($q) => $q->where('building_id', $request->input('building_id') ?: \App\Modules\Emergency\Models\EmergencyBuilding::main()?->id))],
-        ], ['coverage.*.exists' => 'التغطية من أماكن مبنى الحساب فقط.']);
+        ], ['coverage.*.exists' => 'التغطية من أماكن مبنى الحساب فقط.', 'organization_unit_id.in' => 'منسق السلامة يُرشَّح لوحدتك وما تحتها فقط.', 'organization_unit_id.required' => 'اختر الوحدة التي ينسّق سلامتها.']);
         if (!in_array($data['role'], \App\Models\User::CONTRACTOR_ROLES, true)) {
             $data['external_party_id'] = null;
         }

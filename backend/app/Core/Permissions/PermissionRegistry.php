@@ -32,7 +32,8 @@ class PermissionRegistry
         'security_safety_head'  => 'رئيس الأمن والسلامة',
         'support_team'          => 'فريق الإسناد',
         'consultant_office'     => 'المكتب الاستشاري',
-        // الفريق الأولي (قرار ٤٣، المرحلة ١٥): صلاحيات الموظف + الاستجابة؛ المنسق = safety_coordinator
+        // الفريق الأولي (قرار ٤٣، المرحلة ١٥): صلاحيات الموظف + الاستجابة؛ ٢١-١ (قرار ٥٣): منسق الفريق = evac_coordinator لا منسق السلامة
+        'evac_coordinator'      => 'منسق الإخلاء والطوارئ',
         'medic'                 => 'مسعف',
         'rescuer'               => 'منقذ',
         'firefighter'           => 'إطفائي',
@@ -101,6 +102,7 @@ class PermissionRegistry
         'contractor'            => null,
         'employee'              => null,
         'external'              => null,
+        'evac_coordinator'      => null,
         'medic'                 => null,
         'rescuer'               => null,
         'firefighter'           => null,
@@ -116,7 +118,7 @@ class PermissionRegistry
     public const ALL = ['system_admin', 'system_staff', 'top_management', 'safety_committee', 'branch_manager',
         'department_manager', 'section_manager', 'safety_coordinator', 'field_worker', 'contractor_supervisor',
         'contractor', 'employee', 'external', 'admin_eng_manager', 'facilities_manager', 'security_safety_head',
-        'support_team', 'consultant_office', 'medic', 'rescuer', 'firefighter',
+        'support_team', 'consultant_office', 'evac_coordinator', 'medic', 'rescuer', 'firefighter',
         'tech_fire_pump', 'tech_generator', 'tech_fire_alarm', 'tech_hvac', 'tech_elevator', 'tech_electrical'];
 
     private const MGMT = ['branch_manager', 'department_manager', 'section_manager'];
@@ -127,7 +129,7 @@ class PermissionRegistry
         'system.admin'    => ['system_admin'],
         'system.settings' => ['system_admin'],
         'system.users'    => ['system_admin', 'system_staff'],
-        'system.users.own'     => ['facilities_manager'], // ٢٠-٤ (قرار ٥١): مدير المرافق يسجل فنييه ويوزعهم (شاشة «فنيّي»)
+        'system.users.own'     => ['facilities_manager', 'branch_manager', 'department_manager', 'section_manager'], // ٢٠-٤ (قرار ٥١): مدير المرافق يسجل فنييه («فنيّي»)؛ ٢١-١ (قرار ٥٣): مدير الوحدة يرشّح منسق سلامتها
         'system.users.approve' => ['system_admin'],      // ٢٠-٤-ب (قرار ٥٢): لا يعمل حساب إلا بعد اعتماد مسؤول السلامة
         'system.audit'    => ['system_admin'],
         'system.org'      => ['system_admin', 'system_staff'],
@@ -136,7 +138,7 @@ class PermissionRegistry
         'incident.list'   => ['system_admin', 'system_staff', 'top_management', 'safety_committee', 'branch_manager',
             'department_manager', 'section_manager', 'safety_coordinator', 'contractor_supervisor', 'field_worker',
             'admin_eng_manager', 'facilities_manager', 'security_safety_head', 'support_team', 'consultant_office'],
-        'incident.create' => ['system_admin', 'system_staff', 'safety_coordinator', 'employee', 'contractor_supervisor', 'consultant_office', 'medic', 'rescuer', 'firefighter'],
+        'incident.create' => ['system_admin', 'system_staff', 'safety_coordinator', 'employee', 'contractor_supervisor', 'consultant_office', 'evac_coordinator', 'medic', 'rescuer', 'firefighter'],
         'incident.manage' => ['system_admin', 'system_staff', 'safety_coordinator', 'field_worker', 'safety_committee'],
 
         // المخاطر
@@ -152,7 +154,7 @@ class PermissionRegistry
         'permit.list'           => ['system_admin', 'system_staff', 'safety_committee', 'safety_coordinator',
             'branch_manager', 'department_manager', 'section_manager', 'contractor_supervisor',
             'admin_eng_manager', 'facilities_manager', 'security_safety_head', 'consultant_office'],
-        'permit.create'         => ['system_admin', 'system_staff', 'safety_coordinator', 'contractor_supervisor', 'employee', 'consultant_office', 'medic', 'rescuer', 'firefighter'],
+        'permit.create'         => ['system_admin', 'system_staff', 'safety_coordinator', 'contractor_supervisor', 'employee', 'consultant_office', 'evac_coordinator', 'medic', 'rescuer', 'firefighter'],
         'permit.review'         => ['system_admin', 'system_staff', 'safety_coordinator'],
         'permit.safety_approve' => ['system_admin', 'system_staff', 'safety_coordinator'],
         'permit.final_approve'  => ['system_admin', 'system_staff'],
@@ -194,7 +196,7 @@ class PermissionRegistry
             'admin_eng_manager', 'facilities_manager', 'security_safety_head', 'support_team'],
         'emergency.manage'    => ['system_admin', 'system_staff', 'safety_coordinator'],
         'emergency.trigger'   => ['system_admin', 'system_staff', 'safety_coordinator', 'branch_manager', 'department_manager', 'security_safety_head', 'admin_eng_manager', 'facilities_manager'],
-        'emergency.respond'   => ['system_admin', 'system_staff', 'safety_coordinator', 'branch_manager', 'department_manager', 'section_manager', 'field_worker', 'security_safety_head', 'admin_eng_manager', 'facilities_manager', 'medic', 'rescuer', 'firefighter'],
+        'emergency.respond'   => ['system_admin', 'system_staff', 'safety_coordinator', 'branch_manager', 'department_manager', 'section_manager', 'field_worker', 'security_safety_head', 'admin_eng_manager', 'facilities_manager', 'evac_coordinator', 'medic', 'rescuer', 'firefighter'],
         'emergency.drill'     => ['system_admin', 'system_staff', 'safety_coordinator'],
         'emergency.equipment' => ['system_admin', 'system_staff', 'safety_coordinator'],
         'emergency.teams'     => ['system_admin', 'system_staff', 'safety_coordinator'],
@@ -203,7 +205,7 @@ class PermissionRegistry
 
         // التقارير والتوعية والدعم
         'report.view'      => ['system_admin', 'top_management', 'safety_committee', 'branch_manager', 'department_manager', 'section_manager', 'safety_coordinator', 'security_safety_head', 'admin_eng_manager', 'facilities_manager'],
-        'awareness.view'   => ['system_admin', 'system_staff', 'top_management', 'safety_committee', 'safety_coordinator', 'branch_manager', 'department_manager', 'section_manager', 'contractor_supervisor', 'field_worker', 'employee', 'security_safety_head', 'admin_eng_manager', 'facilities_manager', 'consultant_office', 'medic', 'rescuer', 'firefighter'],
+        'awareness.view'   => ['system_admin', 'system_staff', 'top_management', 'safety_committee', 'safety_coordinator', 'branch_manager', 'department_manager', 'section_manager', 'contractor_supervisor', 'field_worker', 'employee', 'security_safety_head', 'admin_eng_manager', 'facilities_manager', 'consultant_office', 'evac_coordinator', 'medic', 'rescuer', 'firefighter'],
         'awareness.manage' => ['system_admin', 'system_staff', 'safety_coordinator'],
         'support.list'     => self::ALL,
     ];
