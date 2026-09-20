@@ -264,7 +264,14 @@
 @php($rejectAsReporter = !$isCenter && !$isCoord && auth()->id() === $incident->actor_id)
 <div class="modal fade" id="rejectModal"><div class="modal-dialog"><form method="post" action="{{ $rejectAsReporter ? route('incidents.rejectClosureAsReporter', $incident) : route('incidents.rejectClosure', $incident) }}" class="modal-content">@csrf
   <div class="modal-header"><h5 class="modal-title">{{ $rejectAsReporter ? 'لم يُعالج — أعِده للمعالجة' : 'رفض الإغلاق — إعادة للمعالجة' }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-  <div class="modal-body"><label class="form-label">لماذا؟ <span class="text-danger">*</span></label><textarea name="note" class="form-control" rows="3" required minlength="5"></textarea></div>
+  <div class="modal-body">
+    @if($rejectAsReporter){{-- ٢١-٧: المبلّغ يختار سبباً جاهزاً بضغطة، أو يكتب --}}
+      <div class="d-flex flex-wrap gap-2 mb-2">@foreach(\App\Modules\Incident\Models\Incident::REJECT_REASONS as $reason)<button class="btn btn-outline-danger btn-sm" name="reason" value="{{ $reason }}">{{ $reason }}</button>@endforeach</div>
+      <label class="form-label small text-muted">غير ذلك</label><textarea name="note" class="form-control" rows="2" minlength="5"></textarea>
+    @else
+      <label class="form-label">لماذا؟ <span class="text-danger">*</span></label><textarea name="note" class="form-control" rows="3" required minlength="5"></textarea>
+    @endif
+  </div>
   <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button><button class="btn btn-outline-danger">إعادة</button></div></form></div></div>
 
 <div class="modal fade" id="oosModal"><div class="modal-dialog"><form method="post" action="{{ route('incidents.outOfScope', $incident) }}" class="modal-content">@csrf

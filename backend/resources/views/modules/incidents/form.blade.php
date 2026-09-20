@@ -116,6 +116,13 @@
     }).catch(()=>reset(rk,'تعذّر التحميل'));
   });
   if(rk)rk.addEventListener('change',function(){const o=this.options[this.selectedIndex];const c=o?o.dataset.c:'';hint.hidden=!c;hint.textContent=c?'الإجراء المتوقع من سجل المخاطر: '+c:'';});
+  /* ٢١-٧: لا رمز ولا مكان حساب ← آخر مكان بلّغ منه هذا الجهاز (ipa-last-place) */
+  (function(){
+    var sel=document.querySelector('select[name=place_id]'); if(!sel||sel.value) return;
+    var last=''; try{ last=localStorage.getItem('ipa-last-place')||''; }catch(e){}
+    if(!last) return;
+    for(var i=0;i<sel.options.length;i++){ if((sel.options[i].textContent||'').trim().indexOf(last+' ')===0){ sel.value=sel.options[i].value; sel.dispatchEvent(new Event('change',{bubbles:true})); break; } }
+  })();
   /* صورة مضغوطة في المتصفح (كما في report.html): ≤١٠٢٤ بكسل، JPEG ٧٠٪ */
   document.getElementById('img').addEventListener('change',e=>{
     const f=e.target.files[0],ph=document.getElementById('photo'),pv=document.getElementById('prev');

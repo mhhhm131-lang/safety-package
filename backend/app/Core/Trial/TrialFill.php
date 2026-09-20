@@ -8,7 +8,6 @@ use App\Modules\Emergency\Services\PlaceProfile;
 use App\Modules\Governance\Models\OrganizationUnit;
 use App\Modules\Governance\Models\Place;
 use App\Modules\Governance\Models\PlaceUnit;
-use App\Modules\Governance\Models\Setting;
 use App\Modules\Governance\Models\UserProfile;
 use App\Modules\Risk\Models\Risk;
 use App\Modules\Risk\Services\RiskService;
@@ -20,7 +19,7 @@ use Illuminate\Support\Facades\Hash;
  * لكل مكان فريقه الأولي الأربعة بحساباتهم وخطتاه؛ ولكل وحدة سجل فعلي مفعَّل من الكتاب سُمّي فيه منسقها ومعالجها
  * (فني مختص للخطر الفني، وإداري مختص للإداري). يُستدعى و«وضع التجربة» مشغَّل فيُحذف كله عند الإنهاء.
  *
- * كل اسم دخول يبدأ بـ`tj.`، وكل اسم ظاهر ينتهي بـ«(تجريبي)». الأرقام هنا (عدد الموظفين، المهل) تجريبية لا معتمدة.
+ * كل اسم دخول يبدأ بـ`tj.`، وكل اسم ظاهر ينتهي بـ«(تجريبي)». الأرقام هنا (عدد الموظفين) تجريبية لا معتمدة.
  */
 class TrialFill
 {
@@ -54,7 +53,7 @@ class TrialFill
         $this->places();
         $this->teams();
         $this->registers($people, $techs);
-        foreach (array_keys(Setting::DEADLINE_KEYS) as $i => $key) Setting::set($key, [4, 24, 48][$i] ?? 24, $this->by); // مهل تجريبية تُعاد عند الإنهاء
+        // قرار ٥٦: لا مهل الآن — المتابعة بالتوقيتات (متى وصل، متى استُلم، ماذا عُمل)؛ فالتعبئة لا تضع مهلاً من عندها
         return $this->made;
     }
 

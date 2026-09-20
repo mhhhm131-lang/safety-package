@@ -11,6 +11,7 @@
   </form>
   @error('tracking_code')<div class="text-danger small mt-2">{{ $message }}</div>@enderror
 </div>
+@unless($incident)@include('modules.incidents._my_reports')@endunless
 
 @if($incident)
 <div class="card p-4 mt-3">
@@ -30,7 +31,12 @@
       <div class="d-flex gap-2 flex-wrap align-items-start">
         <form method="post" action="{{ route('incident.track.approve') }}">@csrf<input type="hidden" name="tracking_code" value="{{ $incident->secret_tracking_code }}"><button class="btn btn-g"><i class="bi bi-hand-thumbs-up"></i> نعم، عولج</button></form>
         <form method="post" action="{{ route('incident.track.reject') }}" class="d-flex gap-2 flex-wrap">@csrf<input type="hidden" name="tracking_code" value="{{ $incident->secret_tracking_code }}">
-          <input name="note" class="form-control form-control-sm" placeholder="لم يُعالج لأن…" minlength="5" required style="max-width:260px"><button class="btn btn-outline-danger btn-sm">لا، أعِده</button></form>
+          {{-- ٢١-٧: سبب جاهز بضغطة؛ «غير ذلك» يفتح الكتابة --}}
+          @foreach(\App\Modules\Incident\Models\Incident::REJECT_REASONS as $reason)
+            <button class="btn btn-outline-danger btn-sm" name="reason" value="{{ $reason }}">لا — {{ $reason }}</button>
+          @endforeach
+          <details class="w-100"><summary class="small text-muted">غير ذلك</summary>
+            <div class="d-flex gap-2 mt-1"><input name="note" class="form-control form-control-sm" placeholder="لم يُعالج لأن…" minlength="5" style="max-width:260px"><button class="btn btn-outline-danger btn-sm">لا، أعِده</button></div></details></form>
       </div>
     </div>
   @endif

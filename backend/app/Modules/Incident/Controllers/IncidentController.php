@@ -52,7 +52,8 @@ class IncidentController extends Controller
             'type' => $type,
             'places' => Place::orderBy('sort')->get(),
             'units' => \App\Modules\Governance\Models\PlaceUnit::where('is_active', true)->orderBy('type')->orderBy('sort')->orderBy('name')->get(), // ١٨-٣ (ج)
-            'preset' => $request->query('place'),
+            // ٢١-٧: المكان من الرمز (QR) ثم من حساب المبلّغ؛ وآخر مكان على الجهاز تملؤه الصفحة إن بقي فارغاً
+            'preset' => $request->query('place') ?: Auth::user()?->profile?->myPlace()?->code,
             'presetRisk' => $presetRisk,
             'riskCategories' => RiskCategory::where('is_active', true)->orderBy('name')->get(),
         ]);
@@ -76,7 +77,7 @@ class IncidentController extends Controller
             'photo' => ['nullable', 'string', 'max:4500000'],
         ], [
             'description.required' => 'اكتب ما رأيته قبل الإرسال.',
-            'place_id.required' => 'اختر المكان — عليه تُحال البلاغات إلى فني المكان.',
+            'place_id.required' => 'اختر المكان — منه يُعرف من يعالج البلاغ.',
         ]);
 
         try {
@@ -132,11 +133,13 @@ class IncidentController extends Controller
 
     public function trackReject(Request $request)
     {
-        $v = $request->validate(['tracking_code' => ['required', 'string', 'max:20'], 'note' => ['required', 'string', 'min:5', 'max:2000']], ['note.required' => 'اكتب لماذا لم يُعالج.']);
+        // ٢١-٧: سبب جاهز يكفي بلا كتابة؛ «غير ذلك» يطلب النص
+        $v = $request->validate(['tracking_code' => ['required', 'string', 'max:20'], 'reason' => ['nullable', 'string', \Illuminate\Validation\Rule::in(Incident::REJECT_REASONS)],
+            'note' => ['required_without:reason', 'nullable', 'string', 'min:5', 'max:2000']], ['note.required_without' => 'اختر سبباً أو اكتب لماذا لم يُعالج.']);
         $incident = Incident::where('secret_tracking_code', strtoupper(trim($v['tracking_code'])))->first();
         if (!$incident) return redirect()->route('incident.track')->withErrors(['tracking_code' => 'لا يوجد بلاغ بهذا الرمز.']);
         try {
-            $this->closureService->rejectClosureByCode($incident, $v['note']);
+            $this->closureService->rejectClosureByCode($incident, trim(($v['reason'] ?? '').(!empty($v['reason']) && !empty($v['note']) ? ' — ' : '').($v['note'] ?? '')));
             return redirect()->route('incident.track', ['code' => $incident->secret_tracking_code])->with('success', 'أُعيد البلاغ إلى المعالجة.');
         } catch (\Throwable $e) {
             return redirect()->route('incident.track', ['code' => $incident->secret_tracking_code])->with('error', $e->getMessage());
@@ -346,8 +349,10 @@ class IncidentController extends Controller
     /** المرحلة ١٨-١ (ج، قرار ٤٦): المبلّغ بحساب يرفض الإغلاق من زرّه — كالمبلّغ برمز التتبع. */
     public function rejectClosureAsReporter(Request $request, Incident $incident)
     {
-        $v = $request->validate(['note' => ['required', 'string', 'min:5', 'max:5000']], ['note.required' => 'اكتب لماذا لم يُعالج.']);
-        return $this->act(fn () => $this->closureService->rejectClosureByReporter($incident, Auth::id(), $v['note']), 'أُعيد البلاغ إلى المعالجة.');
+        $v = $request->validate(['reason' => ['nullable', 'string', \Illuminate\Validation\Rule::in(Incident::REJECT_REASONS)],
+            'note' => ['required_without:reason', 'nullable', 'string', 'min:5', 'max:5000']], ['note.required_without' => 'اختر سبباً أو اكتب لماذا لم يُعالج.']);
+        $text = trim(($v['reason'] ?? '').(!empty($v['reason']) && !empty($v['note']) ? ' — ' : '').($v['note'] ?? ''));
+        return $this->act(fn () => $this->closureService->rejectClosureByReporter($incident, Auth::id(), $text), 'أُعيد البلاغ إلى المعالجة.');
     }
 
     public function escalateToCoordinator(Request $request, Incident $incident)

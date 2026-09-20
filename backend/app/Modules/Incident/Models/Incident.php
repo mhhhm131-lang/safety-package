@@ -53,6 +53,9 @@ class Incident extends Model
 
     public const TERMINAL = ['closed', 'out_of_scope'];
 
+    /** ٢١-٧: أسباب رفض المبلّغ للإغلاق الجاهزة — ضغطة بدل كتابة؛ «غير ذلك» يفتح النص */
+    public const REJECT_REASONS = ['لم يُعالج أصلاً', 'عولج جزئياً', 'عاد الخلل بعد المعالجة'];
+
     protected $fillable = [
         'code', 'title', 'description', 'incident_type', 'status', 'organization_unit_id', 'place_id', 'place_unit_id', 'location_text',
         'actor_id', 'reporter_name', 'reporter_phone',

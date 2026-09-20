@@ -31,6 +31,7 @@
   <div class="flex-grow-1"><b>أرسلت بلاغاً من قبل؟</b> <span class="text-muted small">تابع حالته وخطه الزمني برمز التتبع الذي أُعطيته.</span></div>
   <a class="btn btn-outline-success btn-sm" href="{{ route('incident.track') }}">تتبع بلاغ</a>
 </div>
+@include('modules.incidents._my_reports')
 {{-- المرحلة ١٢ (قرار ٣٥): «أريد أن…» للشاغل والزائر بلا دخول --}}
 @if(!empty($intents))
 <div class="card p-3 mt-3" id="intents">
