@@ -20,6 +20,7 @@ Route::middleware(['web', 'auth'])->prefix('app')->name('app.')->group(function 
     Route::get('/inbox/count', [\App\Modules\Governance\Controllers\InboxController::class, 'count'])->name('inbox.count'); // ١١-٢: شارة «ما ينتظرك»
     Route::get('/inbox/open', [\App\Modules\Governance\Controllers\InboxController::class, 'open'])->name('inbox.open'); // ١١-٥: فتح مهمة يعلّم إشعارها مقروءاً
     Route::get('/search', [\App\Modules\Governance\Controllers\SearchController::class, 'index'])->name('search'); // ١١-٤: الباب الثاني
+    Route::get('/roles', [\App\Modules\Governance\Controllers\RolesController::class, 'index'])->name('roles'); // ٢٠-٦ (قرار ٥١): الأدوار والبطاقات — قراءة لأي حساب
     Route::middleware('permission:system.settings')->get('/settings', [\App\Modules\Governance\Controllers\SettingsController::class, 'index'])->name('settings'); // ١١-٤: الباب الثالث
 
     // ٢٠-٤ (قرار ٥١): الشاشة نفسها لمن يملك «الحسابات» (الكل) أو «حسابات من تحتي» (مدير المرافق: فنيوه) — النطاق يُحسم في المتحكم

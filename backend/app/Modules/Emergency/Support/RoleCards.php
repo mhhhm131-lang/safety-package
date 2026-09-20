@@ -96,6 +96,9 @@ class RoleCards
     public static function forUser(\App\Models\User $user): ?int
     {
         $role = $user->role();
+        // ٢٠-٦ (قرار ٥١): الدور ذو البطاقات المتعددة (فريق الإسناد) يحمل حسابُه بطاقته بالاسم
+        $named = $user->profile?->role_card_no;
+        if ($named && in_array((int) $named, self::cardsOfRole($role), true)) return (int) $named;
         $mine = array_keys(array_filter(self::CARDS, fn ($c) => ($c['role'] ?? null) === $role));
         if (count($mine) === 1 && self::CARDS[$mine[0]]['category'] === 'leadership') return $mine[0];
         $teamKey = ['safety_coordinator' => 'coordinator', 'medic' => 'medic', 'rescuer' => 'rescuer', 'firefighter' => 'firefighter'][$role]
@@ -105,6 +108,69 @@ class RoleCards
             foreach (self::INITIAL_TEAM as $no) if ((self::CARDS[$no]['team'] ?? []) === [$teamKey]) return $no;
         }
         return count($mine) === 1 ? $mine[0] : null;
+    }
+
+    /** ٢٠-٦: أرقام البطاقات التي يحملها دور (بالاسم أو بالعضوية) */
+    public static function cardsOfRole(string $role): array
+    {
+        $teamKey = ['safety_coordinator' => 'coordinator', 'medic' => 'medic', 'rescuer' => 'rescuer', 'firefighter' => 'firefighter'][$role] ?? null;
+        $out = [];
+        foreach (self::CARDS as $no => $c) {
+            if (($c['role'] ?? null) === $role) $out[] = $no;
+            elseif ($teamKey && ($c['team'] ?? []) === [$teamKey]) $out[] = $no;
+        }
+        return $out;
+    }
+
+    /**
+     * ٢٠-٦ (قرار ٥١): لكل بطاقة حامل معروف — kind: role (دور واحد) · named (دور بأكثر من بطاقة: يُحدَّد الحساب بالاسم) ·
+     * team (عضو الفريق الأولي بالمكان) · none (شاغل بلا حساب).
+     */
+    public static function holders(): array
+    {
+        $out = [];
+        foreach (self::CARDS as $no => $c) {
+            $row = $c + ['no' => $no, 'url' => self::url($no), 'role' => $c['role'] ?? null];
+            if (!empty($c['none'])) {
+                $row += ['kind' => 'none', 'holder' => $no === 7 ? 'كل متدرب — بلا حساب؛ يبلغ من الصفحة العامة ويقرأ البطاقة' : 'بلا حساب'];
+            } elseif (!empty($c['team'])) {
+                $keys = array_map(fn ($k) => \App\Modules\Emergency\Models\EmergencyTeamMember::ROLE_KEYS[$k] ?? $k, $c['team']);
+                $row += ['kind' => $no === 6 ? 'none' : 'team', 'holder' => $no === 6
+                    ? 'المحاضر في قاعته — كل محاضر، بلا حساب؛ يقوم بمهمة '.implode(' و', $keys).' (قاعدة القاعات)'
+                    : 'عضو الفريق الأولي في مكانه: '.implode(' + ', $keys).' — بالاسم في ملف المكان، وبحسابه إن رُبط'];
+            } else {
+                $role = $c['role']; $label = \App\Core\Permissions\PermissionRegistry::ROLES[$role] ?? $role;
+                $multi = count(array_filter(self::CARDS, fn ($x) => ($x['role'] ?? null) === $role)) > 1;
+                $row += ['kind' => $multi ? 'named' : 'role', 'holder' => $multi ? 'دور «'.$label.'» — من حُدِّدت له هذه البطاقة' : 'دور «'.$label.'»'];
+            }
+            $out[$no] = $row;
+        }
+        return $out;
+    }
+
+    /** ٢٠-٦: موضع كل دور قابل للإسناد — بطاقاته، أو سبب غياب البطاقة (لا مهمة سلامة ميدانية له) */
+    public static function rolesPlacement(): array
+    {
+        $why = [
+            'top_management' => 'لا بطاقة: قرار واعتماد وصورة المبنى؛ المستوى ٤ في تصعيد بلاغ الفحص',
+            'safety_committee' => 'لا بطاقة: تُشكَّل لاحقاً؛ اعتماد المخاطر',
+            'branch_manager' => 'لا بطاقة: يدير فرعه ويرشّح فرقه',
+            'department_manager' => 'لا بطاقة: ترشيح الفريق الأولي لإدارته وتفعيل أخطارها',
+            'section_manager' => 'لا بطاقة: كمدير الإدارة لقسمه',
+            'safety_coordinator' => 'يبقى فارغاً حتى يُعيَّن مسؤول سلامة لفرع',
+            'contractor_supervisor' => 'لا بطاقة: بوابة المقاول',
+            'contractor' => 'لا بطاقة: بوابة المقاول',
+            'employee' => '',
+            'external' => 'لا بطاقة: اطلاع',
+            'consultant_office' => 'لا بطاقة: يعتمد بنود الفحص وقيمها',
+        ];
+        $out = [];
+        foreach (\App\Core\Permissions\PermissionRegistry::assignableRoles() as $key => $name) {
+            $cards = self::cardsOfRole($key);
+            $text = $cards ? (count($cards) > 1 ? 'أكثر من بطاقة: تُحدَّد للحساب بالاسم' : '') : ($why[$key] ?? 'لا بطاقة');
+            $out[$key] = ['cards' => $cards, 'text' => $text !== '' ? $text : 'بطاقة واحدة'];
+        }
+        return $out;
     }
 
     public static function byCategory(): array

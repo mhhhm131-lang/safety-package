@@ -29,6 +29,11 @@
       </select></div>
     <div class="col-md-6"><label class="form-label">المسمى الوظيفي</label><input class="form-control" name="job_title" maxlength="120" value="{{ old('job_title', $user?->profile?->job_title) }}" placeholder="مثل: فني كهرباء أول · نائب المدير العام">
       <div class="form-text">مؤقت حتى الربط ببوابة المعهد؛ عندها يأتي منها.</div></div>
+    {{-- ٢٠-٦ (قرار ٥١): الدور ذو البطاقات المتعددة (فريق الإسناد) — أي بطاقة يحمل هذا الشخص --}}
+    <div class="col-md-6" id="card-field" hidden><label class="form-label">بطاقته في السلامة</label>
+      <select class="form-select" name="role_card_no" id="role_card_no"><option value="">—</option>
+        @foreach($multiCards as $rk => $nos)@foreach($nos as $no)<option value="{{ $no }}" data-role="{{ $rk }}" @selected((int)old('role_card_no', $user?->profile?->role_card_no)===$no)>{{ $no }} · {{ \App\Modules\Emergency\Support\RoleCards::CARDS[$no]['name'] }}</option>@endforeach @endforeach
+      </select><div class="form-text">للدور الذي له أكثر من بطاقة سلامة: الطبيب، الأمن، مراقب الحريق.</div></div>
     <div class="col-12"><label class="form-label">التغطية — الأماكن التي يخدمها (للفني والأمن والطبيب)</label>
       <div class="d-flex flex-wrap gap-2" id="coverage">
         @foreach($places as $p)
@@ -45,3 +50,12 @@
   <div class="mt-3 d-flex gap-2"><button class="btn btn-g">حفظ</button><a class="btn btn-outline-secondary" href="{{ route('app.users.index') }}">إلغاء</a></div>
 </form>
 @endsection
+@push('scripts')
+<script>
+(function(){
+  var role=document.querySelector('select[name=role]'), f=document.getElementById('card-field'), sel=document.getElementById('role_card_no'); if(!role||!f||!sel) return;
+  function show(){ var any=false; sel.querySelectorAll('option[data-role]').forEach(function(o){ var ok=o.dataset.role===role.value; o.hidden=!ok; if(ok) any=true; if(!ok&&o.selected) sel.value=''; }); f.hidden=!any; }
+  role.addEventListener('change', show); show();
+})();
+</script>
+@endpush

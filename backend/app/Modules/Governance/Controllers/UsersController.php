@@ -88,7 +88,7 @@ class UsersController extends Controller
             $profile = UserProfile::create([
                 'user_id' => $user->id, 'role' => $data['role'],
                 'organization_unit_id' => $data['organization_unit_id'] ?? null, 'place_id' => $data['place_id'] ?? null,
-                'building_id' => $data['building_id'] ?? null, 'job_title' => $data['job_title'] ?? null, // ٢٠-١/٢٠-٢
+                'building_id' => $data['building_id'] ?? null, 'job_title' => $data['job_title'] ?? null, 'role_card_no' => $data['role_card_no'] ?? null, // ٢٠-١/٢٠-٢/٢٠-٦
                 'is_active' => true,
             ]);
             $profile->coverage()->sync($data['coverage'] ?? []);
@@ -122,7 +122,7 @@ class UsersController extends Controller
             $user->save();
             $profile = $user->profile ?: new UserProfile(['user_id' => $user->id]);
             $profile->fill(['role' => $data['role'], 'organization_unit_id' => $data['organization_unit_id'] ?? null, 'place_id' => $data['place_id'] ?? null,
-                'building_id' => $data['building_id'] ?? $profile->building_id, 'job_title' => $data['job_title'] ?? null]); // ٢٠-١/٢٠-٢
+                'building_id' => $data['building_id'] ?? $profile->building_id, 'job_title' => $data['job_title'] ?? null, 'role_card_no' => $data['role_card_no'] ?? null]); // ٢٠-١/٢٠-٢/٢٠-٦
             $profile->save();
             $profile->coverage()->sync($data['coverage'] ?? []);
             $this->tail = $changed ? $this->afterWrite($profile, 'تغيير '.implode('، ', $changed)) : '';
@@ -190,6 +190,7 @@ class UsersController extends Controller
             'places' => Place::orderBy('sort')->get(),
             'buildings' => \App\Modules\Emergency\Models\EmergencyBuilding::orderBy('id')->get(['id', 'name', 'branch']), // ٢٠-١
             'coverage' => $user?->profile?->coverage->pluck('id')->all() ?? [], // ٢٠-٢
+            'multiCards' => array_filter(array_map(fn ($k) => \App\Modules\Emergency\Support\RoleCards::cardsOfRole($k), array_combine(array_keys(PermissionRegistry::ROLES), array_keys(PermissionRegistry::ROLES))), fn ($c) => count($c) > 1), // ٢٠-٦
             'parties' => \App\Modules\Project\Models\ExternalParty::orderBy('name')->get(['id', 'name', 'party_type']),
             'contractorRoles' => \App\Models\User::CONTRACTOR_ROLES,
         ];
@@ -209,6 +210,8 @@ class UsersController extends Controller
             // ٢٠-١/٢٠-٢ (قرار ٥١): المبنى (بلا تحديد = الرئيسي)، المسمى (مؤقت حتى البوابة)، والتغطية من أماكن مبنى الحساب
             'building_id' => 'nullable|exists:emergency_buildings,id',
             'job_title' => 'nullable|string|max:120',
+            // ٢٠-٦ (قرار ٥١): الدور ذو البطاقات المتعددة (فريق الإسناد) يحمل حسابُه بطاقته بالاسم
+            'role_card_no' => ['nullable', 'integer', Rule::in(\App\Modules\Emergency\Support\RoleCards::cardsOfRole((string) $request->input('role')))],
             'coverage' => 'nullable|array|max:20',
             'coverage.*' => ['integer', Rule::exists('places', 'id')->where(fn ($q) => $q->where('building_id', $request->input('building_id') ?: \App\Modules\Emergency\Models\EmergencyBuilding::main()?->id))],
         ], ['coverage.*.exists' => 'التغطية من أماكن مبنى الحساب فقط.']);
@@ -216,6 +219,7 @@ class UsersController extends Controller
             $data['external_party_id'] = null;
         }
         $data['username'] = Str::lower($data['username']);
+        if (count(\App\Modules\Emergency\Support\RoleCards::cardsOfRole($data['role'])) <= 1) $data['role_card_no'] = null; // بطاقة واحدة أو لا شيء: لا حاجة
         return $data;
     }
 }
