@@ -22,7 +22,7 @@ def csrf(s, url):
 
 # ١) مسؤول السلامة: يثبت وحدة مدير الإدارة (الموارد البشرية) إن لم تكن
 sa = session('salama', '1234')
-users_html = sa.get(BASE + '/app/users', timeout=60).text
+users_html = sa.get(BASE + '/app/users?q=mudir', timeout=60).text  # ٢١-٣: القائمة صفحات بعد التعبئة — نبحث بالاسم
 uid = re.search(r'/app/users/(\d+)/edit[^>]*>[^<]*</a>', users_html)  # fallback below
 m = None
 for mm in re.finditer(r'<tr[^>]*>(.*?)</tr>', users_html, re.S):
