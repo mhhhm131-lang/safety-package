@@ -136,4 +136,19 @@ class HandlerAnyRoleTest extends TestCase
         $this->actingAs($this->salama)->post("/app/incidents/{$i->id}/refer", ['field_worker_id' => $this->hrMgr->id])->assertSessionHas('success');
         $this->assertSame($this->hrMgr->id, $i->fresh()->incident_field_team_id);
     }
+
+    /** قرار ٥٥ (كلمة المستخدم): الطبيب والأمن ومراقب الحريق لا دخل لهم في بلاغات الشاغلين — دورهم في الطوارئ. */
+    public function test_support_team_has_no_business_with_occupant_reports(): void
+    {
+        $i = $this->report();
+        $tabib = $this->user('tabib', 'support_team');
+        $this->assertFalse(\App\Core\Permissions\PermissionRegistry::hasPermission('support_team', 'incident.list'));
+        $this->actingAs($tabib)->get('/app/incidents')->assertForbidden();
+        $this->actingAs($tabib)->get("/app/incidents/{$i->id}")->assertForbidden();
+        $this->assertFalse(\App\Core\Intents\IntentRegistry::forUser($tabib)->contains('key', 'incidents'));
+        $this->actingAs($tabib)->get('/app')->assertOk();
+        // إن أُحيل إليه بلاغ بعينه رآه وعالجه كأي معالج مسمّى
+        app(\App\Modules\Incident\Services\IncidentService::class)->referToField($i, $this->salama->id, $tabib->id);
+        $this->actingAs($tabib)->get("/app/incidents/{$i->id}")->assertOk();
+    }
 }

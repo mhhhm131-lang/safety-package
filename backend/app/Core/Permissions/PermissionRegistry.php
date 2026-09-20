@@ -137,7 +137,7 @@ class PermissionRegistry
         // بلاغ الشاغل (Incident)
         'incident.list'   => ['system_admin', 'system_staff', 'top_management', 'safety_committee', 'branch_manager',
             'department_manager', 'section_manager', 'safety_coordinator', 'contractor_supervisor', 'field_worker',
-            'admin_eng_manager', 'facilities_manager', 'security_safety_head', 'support_team', 'consultant_office'],
+            'admin_eng_manager', 'facilities_manager', 'security_safety_head', 'consultant_office'], // قرار ٥٥: فريق الإسناد (الطبيب والأمن ومراقب الحريق) لا دخل له في بلاغات الشاغلين
         'incident.create' => ['system_admin', 'system_staff', 'safety_coordinator', 'employee', 'contractor_supervisor', 'consultant_office', 'evac_coordinator', 'medic', 'rescuer', 'firefighter'],
         'incident.manage' => ['system_admin', 'system_staff', 'safety_coordinator', 'field_worker', 'safety_committee'],
 

@@ -17,7 +17,7 @@ class IncidentVisibilityService
     private const MANAGEMENT_ROLES = ['top_management', 'safety_committee', 'branch_manager', 'department_manager', 'section_manager', 'security_safety_head', 'admin_eng_manager', 'facilities_manager']; // قرار ٢٠٢٦-٠٩-٠٨: الثلاثة كمديري إدارات
 
     /** الأدوار المعهدية المضافة: اطلاع على الكل (مؤقت حتى يقرر المستخدم — BACKEND.md الفجوة ٩). */
-    private const INSTITUTE_VIEW_ALL = ['top_management', 'safety_committee', 'support_team']; // فريق الإسناد: دوره في الطوارئ (المرحلة ٤)
+    private const INSTITUTE_VIEW_ALL = ['top_management', 'safety_committee']; // قرار ٥٥ (٢٠٢٦-٠٩-٢١): فريق الإسناد خرج — لا يرى إلا بلاغاً أُحيل إليه أو بلّغ عنه؛ // فريق الإسناد: دوره في الطوارئ (المرحلة ٤)
 
     public function canView(Incident $incident, int $userId): bool
     {
