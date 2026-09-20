@@ -61,6 +61,7 @@ class PlaceUnitLinkTest extends TestCase
         $this->post('/incident/normal', ['description' => 'دخان من جهاز العرض', 'place_id' => $this->halls->id, 'place_unit_id' => $this->hall->id])->assertRedirect();
         $i = Incident::first();
         $this->assertSame($this->hall->id, $i->place_unit_id);
+        app(\App\Modules\Incident\Services\IncidentService::class)->referToField($i, $this->salama->id, $this->fani->id); // ٢١-٤ (قرار ٥٤): لا قفز آلي إلى فني المكان — المركز يحيل
         $this->actingAs($this->fani)->get('/app')->assertOk()->assertSee('في HZ-07 القاعات التدريبية · قاعة تدريب ٣١٢');
         $this->actingAs($this->fani)->get("/app/incidents/{$i->id}")->assertOk()->assertSee('قاعة تدريب ٣١٢ الدور ٣');
         auth()->logout();
@@ -74,7 +75,8 @@ class PlaceUnitLinkTest extends TestCase
         $sub = RiskSubCategory::create(['category_id' => $cat->id, 'name' => 'حريق القاعات', 'abbreviation' => 'HAL']);
         $this->actingAs($this->mudir)->get('/app/risk/active/create')->assertOk()->assertSee('name="place_unit_id"', false);
         $base = ['category_id' => $cat->id, 'sub_category_id' => $sub->id, 'title' => 'حريق جهاز عرض', 'severity' => 3, 'likelihood' => 2,
-            'scope_type' => 'org_unit', 'organization_unit_id' => OrganizationUnit::where('code', 'fin')->value('id'), 'place_id' => $this->halls->id];
+            'scope_type' => 'org_unit', 'organization_unit_id' => OrganizationUnit::where('code', 'fin')->value('id'), 'place_id' => $this->halls->id,
+            'assigned_coordinator_id' => $this->mudir->id, 'assigned_field_team_id' => $this->fani->id]; // ٢١-٤: التسمية شرط
         $this->actingAs($this->mudir)->post('/app/risk/active/create', $base + ['place_unit_id' => $this->room->id])->assertSessionHasErrors('place_unit_id');
         $this->actingAs($this->mudir)->post('/app/risk/active/create', $base + ['place_unit_id' => $this->hall->id])->assertRedirect();
         $r = Risk::where('risk_type', 'active')->first();

@@ -80,6 +80,8 @@ class InboxTest extends TestCase
     {
         $this->post('/incident/normal', ['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')])->assertRedirect();
         $i = Incident::first();
+        $this->assertSame('received', $i->status); // ٢١-٤: بلا خطر يبقى في المركز
+        $i = app(\App\Modules\Incident\Services\IncidentService::class)->referToField($i, $this->salama->id, $this->fani->id); // ٢١-٤ (قرار ٥٤): لا قفز آلي إلى فني المكان — المركز يحيل
         $this->assertSame('forwarded', $i->status);
 
         // الفني: مهمة «افتحه» — الموظف والمنسق لا شيء
@@ -234,6 +236,7 @@ class InboxTest extends TestCase
     {
         $this->post('/incident/normal', ['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')]);
         $i = Incident::first();
+        app(\App\Modules\Incident\Services\IncidentService::class)->referToField($i, $this->salama->id, $this->fani->id); // ٢١-٤ (قرار ٥٤): لا قفز آلي إلى فني المكان — المركز يحيل
         $this->assertDatabaseHas('app_notifications', ['user_id' => $this->fani->id, 'type' => 'incident.forwarded', 'is_read' => false]);
         $h = $this->actingAs($this->fani)->get('/app')->assertOk()->getContent();
         $this->assertStringContainsString('/app/inbox/open?url=', $h);
@@ -246,6 +249,7 @@ class InboxTest extends TestCase
     public function test_inbox_separates_occupant_reports_from_inspection_reports(): void
     {
         $this->post('/incident/normal', ['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')]);
+        app(\App\Modules\Incident\Services\IncidentService::class)->referToField(Incident::first(), $this->salama->id, $this->fani->id); // ٢١-٤ (قرار ٥٤): لا قفز آلي إلى فني المكان — المركز يحيل
         $stamp = now()->subHour()->format('Y/m/d').' — '.now()->subHour()->format('H:i');
         \App\Modules\Store\Models\InstituteDocument::create(['key' => 'ipa-office-form-v10', 'version' => 1, 'data' => json_encode(['reports' => [
             ['row' => 'o09', 'id' => 'ب — ٠٣', 'sys' => 'الإضاءة', 'item' => 'إضاءة طوارئ معطلة', 'due' => '٢٤ ساعة', 'when' => $stamp, 'sent' => '', 'path' => 'إداري', 'levels' => []],

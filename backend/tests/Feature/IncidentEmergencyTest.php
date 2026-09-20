@@ -34,6 +34,7 @@ class IncidentEmergencyTest extends TestCase
     use RefreshDatabase;
 
     private Risk $fireRisk; private Risk $physRisk;
+    private int $office;
     private User $salama; private User $munawib; private User $fani; private User $coord; private User $mudir; private User $employee;
 
     protected function setUp(): void
@@ -58,6 +59,13 @@ class IncidentEmergencyTest extends TestCase
         $this->coord = $this->user('coord', 'safety_coordinator', 'HZ-06');
         $this->mudir = $this->user('mudir', 'department_manager');
         $this->employee = $this->user('emp', 'employee');
+        // ٢١-٤ (قرار ٥٤): التوجيه من السجل الفعلي للإدارة المعنية — الضيف في المكاتب يحدد إدارته بوحدة المكان، وخطرها يسمّي المنسق والمعالج
+        $hr = \App\Modules\Governance\Models\OrganizationUnit::where('code', 'hr')->value('id');
+        $this->office = \App\Modules\Governance\Models\PlaceUnit::create(['place_id' => Place::idByCode('HZ-06'), 'type' => 'department', 'name' => 'الموارد البشرية', 'organization_unit_id' => $hr, 'is_active' => true])->id;
+        foreach ([$this->fireRisk, $this->physRisk] as $ref) {
+            app(\App\Modules\Risk\Services\RiskService::class)->activateFromReference($ref, null, ['scope_type' => 'org_unit', 'organization_unit_id' => $hr,
+                'place_id' => Place::idByCode('HZ-06'), 'assigned_coordinator_id' => $this->coord->id, 'assigned_field_team_id' => $this->fani->id]);
+        }
     }
 
     private function risk(string $catName, string $abbr, string $title, array $phases): Risk
@@ -83,7 +91,7 @@ class IncidentEmergencyTest extends TestCase
     public function test_gate_urgent_report_to_emergency_and_back(): void
     {
         // بلاغ عاجل من شاغل بلا حساب على خطر حريق في المكاتب الإدارية
-        $this->post('/incident/urgent', ['description' => 'دخان كثيف من مكتب في الدور الثاني', 'place_id' => Place::idByCode('HZ-06'), 'location_text' => 'الدور الثاني', 'risk_id' => $this->fireRisk->id, 'reporter_name' => 'سعد'])->assertRedirect();
+        $this->post('/incident/urgent', ['description' => 'دخان كثيف من مكتب في الدور الثاني', 'place_id' => Place::idByCode('HZ-06'), 'place_unit_id' => $this->office, 'location_text' => 'الدور الثاني', 'risk_id' => $this->fireRisk->id, 'reporter_name' => 'سعد'])->assertRedirect();
         $i = Incident::first();
         $this->assertSame('urgent', $i->incident_type);
         $this->assertSame('forwarded', $i->status); // (ح-١) الاستلام بيد الفني
@@ -144,7 +152,7 @@ class IncidentEmergencyTest extends TestCase
 
     public function test_normal_report_shows_operational_layer_and_tech_receives_by_opening(): void
     {
-        $this->post('/incident/normal', ['description' => 'حرارة مرتفعة في المكتب', 'place_id' => Place::idByCode('HZ-06'), 'risk_id' => $this->physRisk->id, 'reporter_name' => 'سعد'])->assertRedirect();
+        $this->post('/incident/normal', ['description' => 'حرارة مرتفعة في المكتب', 'place_id' => Place::idByCode('HZ-06'), 'place_unit_id' => $this->office, 'risk_id' => $this->physRisk->id, 'reporter_name' => 'سعد'])->assertRedirect();
         $i = Incident::first();
         $this->assertSame('forwarded', $i->status);
         $this->assertNull($i->field_received_at);
@@ -158,7 +166,7 @@ class IncidentEmergencyTest extends TestCase
         // الزر متاح للمركز على أي بلاغ مفتوح (القرار بيده) والنوع المقترح «أخرى» لصنف فيزيائي
         $r->assertSee('trigger-emergency')->assertSee('<option value="other" selected>', false);
         // ١١-١ (د): خطورة الخطر ٥ ← «حرج» مقترحاً
-        $this->physRisk->update(['severity' => 5]);
+        $i->risk->update(['severity' => 5]); // ٢١-٤: خطر البلاغ هو الخطر الفعلي للإدارة المعنية لا المرجعي
         $this->actingAs($this->munawib)->get("/app/incidents/{$i->id}")->assertOk()->assertSee('<option value="critical" selected>', false);
 
         // ١١-١ (ب، قرار ٣٤): فتح الفني المعيَّن للبلاغ = استلمه؛ غير المعيَّن لا يستلم بالفتح
@@ -182,7 +190,7 @@ class IncidentEmergencyTest extends TestCase
     /** المرحلة ١١-١ (ج): «عولج» بصورة في الطلب نفسه من «استلمه الفني» — الصورة تُرفق، والبدء يُسجَّل، ثم عولج. */
     public function test_resolve_with_inline_photo_from_field_received(): void
     {
-        $this->post('/incident/normal', ['description' => 'حرارة مرتفعة في المكتب', 'place_id' => Place::idByCode('HZ-06'), 'risk_id' => $this->physRisk->id]);
+        $this->post('/incident/normal', ['description' => 'حرارة مرتفعة في المكتب', 'place_id' => Place::idByCode('HZ-06'), 'place_unit_id' => $this->office, 'risk_id' => $this->physRisk->id]);
         $i = Incident::first();
         $this->actingAs($this->fani)->get("/app/incidents/{$i->id}"); // = استلم
         $this->assertSame('field_received', $i->fresh()->status);

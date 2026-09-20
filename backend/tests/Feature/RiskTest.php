@@ -128,7 +128,7 @@ class RiskTest extends TestCase
 
         // ١) مديرة الموارد البشرية تفعّل الخطر لإدارتها وتسمّي المسؤول والمكان (الشاشة تعرض حقل المكان)
         $this->actingAs($hrMgr)->get("/app/risk/{$ref->id}/activate")->assertOk()->assertSee('name="place_id"', false)->assertSee('HZ-06');
-        $this->actingAs($hrMgr)->post("/app/risk/{$ref->id}/activate", [
+        $this->actingAs($hrMgr)->post("/app/risk/{$ref->id}/activate", ['assigned_coordinator_id' => \App\Models\User::min('id'), 'assigned_field_team_id' => \App\Models\User::min('id'), /* ٢١-٤: التسمية شرط التفعيل */ 
             'scope_type' => 'org_unit', 'organization_unit_id' => $hr->id, 'place_id' => Place::where('code', 'HZ-06')->value('id'),
             'severity' => 4, 'likelihood' => 3,
             'phases' => ['proactive' => ['responsible_org_unit_id' => $hr->id, 'responsible_user_text' => 'أحمد — مسؤول السلامة في الإدارة',
@@ -146,7 +146,7 @@ class RiskTest extends TestCase
         $this->assertSame('high', $proactive->affectedGroupDetails()->first()->impact);
 
         // ٢) لا تفعّل لإدارة غيرها
-        $this->actingAs($hrMgr)->post("/app/risk/{$ref->id}/activate", [
+        $this->actingAs($hrMgr)->post("/app/risk/{$ref->id}/activate", ['assigned_coordinator_id' => \App\Models\User::min('id'), 'assigned_field_team_id' => \App\Models\User::min('id'), /* ٢١-٤: التسمية شرط التفعيل */ 
             'scope_type' => 'org_unit', 'organization_unit_id' => $it->id, 'severity' => 2, 'likelihood' => 2,
         ])->assertSessionHas('error');
         $this->assertSame(1, Risk::where('risk_type', 'active')->count());

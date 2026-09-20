@@ -37,6 +37,8 @@ class IncidentTest extends TestCase
     private User $fani;
     private User $fani2;
     private User $coord;
+    private int $office;
+    private Risk $active;
 
     protected function setUp(): void
     {
@@ -57,6 +59,12 @@ class IncidentTest extends TestCase
         $this->fani = $this->user('fani', 'field_worker', null, 'HZ-06');
         $this->fani2 = $this->user('fani2', 'field_worker', null, 'HZ-01');
         $this->coord = $this->user('coord', 'safety_coordinator', null, 'HZ-06');
+
+        // ٢١-٤ (قرار ٥٤): التوجيه من السجل الفعلي للإدارة المعنية — لا قفز إلى «فني المكان». الضيف في المكاتب يحدد إدارته بوحدة المكان.
+        $hr = OrganizationUnit::where('code', 'hr')->value('id');
+        $this->office = \App\Modules\Governance\Models\PlaceUnit::create(['place_id' => $this->placeId('HZ-06'), 'type' => 'department', 'name' => 'الموارد البشرية', 'organization_unit_id' => $hr, 'is_active' => true])->id;
+        $this->active = app(RiskService::class)->activateFromReference($this->reference, null, ['scope_type' => 'org_unit', 'organization_unit_id' => $hr,
+            'place_id' => $this->placeId('HZ-06'), 'assigned_coordinator_id' => $this->coord->id, 'assigned_field_team_id' => $this->fani->id]);
     }
 
     private function user(string $username, string $role, ?string $unitCode = null, ?string $placeCode = null): User
@@ -76,7 +84,7 @@ class IncidentTest extends TestCase
     public function test_gate_secret_report_full_scenario(): void
     {
         // ١) شاغل بلا حساب يرسل بلاغاً سرياً من المكاتب الإدارية مع خطر من السجل العام وصورة
-        $r = $this->post('/incident/secret', ['description' => 'سلك مكشوف قرب المصعد في الدور الثاني', 'place_id' => $this->placeId('HZ-06'),
+        $r = $this->post('/incident/secret', ['description' => 'سلك مكشوف قرب المصعد في الدور الثاني', 'place_id' => $this->placeId('HZ-06'), 'place_unit_id' => $this->office,
             'location_text' => 'الدور الثاني', 'risk_id' => $this->reference->id, 'photo' => 'data:image/png;base64,'.self::PNG]);
         $r->assertRedirect();
         $incident = Incident::first();
@@ -84,7 +92,7 @@ class IncidentTest extends TestCase
         $this->assertNull($incident->actor_id);
         $this->assertNotEmpty($incident->secret_tracking_code);
         $this->assertStringContainsString($incident->secret_tracking_code, $r->headers->get('Location'));
-        // التوجيه الآلي: منسق المكان وفني المكان من ملفات المستخدمين → وصل الفني بلا نقرة بشرية
+        // التوجيه الآلي (٢١-٤): المنسق والمعالج المسمّيان في الخطر الفعلي للإدارة المعنية → وصل المعالج بلا نقرة بشرية
         $this->assertSame($this->fani->id, $incident->incident_field_team_id);
         $this->assertSame($this->coord->id, $incident->incident_coordinator_id);
         $this->assertSame('forwarded', $incident->status); // ١٠-٣ (ح-١): الاستلام بيد الفني لا آلياً
@@ -217,7 +225,7 @@ class IncidentTest extends TestCase
         $this->assertSame('closed', $a->fresh()->status);
         $this->assertTrue(IncidentEvent::where('incident_id', $a->id)->where('action', 'close_with_note')->exists());
         // لا يُغلق بملاحظة ما وصل الفني
-        $this->actingAs($emp)->post('/incident/normal', ['description' => 'رائحة احتراق من لوحة الكهرباء', 'place_id' => $this->placeId('HZ-06'), 'risk_id' => $this->reference->id]);
+        $this->actingAs($emp)->post('/incident/normal', ['description' => 'رائحة احتراق من لوحة الكهرباء', 'place_id' => $this->placeId('HZ-06'), 'place_unit_id' => $this->office, 'risk_id' => $this->reference->id]);
         $b = Incident::latest('id')->first();
         $this->assertSame($emp->id, $b->actor_id);
         $this->assertNull($b->secret_tracking_code); // بحساب: يتابع من حسابه
@@ -246,8 +254,8 @@ class IncidentTest extends TestCase
         $i = Incident::first();
         $this->assertNotNull($i, 'البلاغ بلا خطر لم يُنشأ');
         $this->assertNull($i->risk_id);
-        $this->assertSame($this->fani->id, $i->incident_field_team_id); // فني المكان من ملفات المستخدمين
-        $this->assertSame('forwarded', $i->status);
+        $this->assertNull($i->incident_field_team_id); // ٢١-٤ (قرار ٥٤، يعدّل شق التوجيه في قرار ٣٤): بلا خطر لا قفز إلى فني المكان
+        $this->assertSame('received', $i->status);     // في المركز حتى يصنّفه
         $this->assertStringStartsWith('بلاط مكسور قرب المصعد', $i->title); // العنوان من الوصف حين لا خطر
         // الصفحة العامة: قوائم التصنيف الثلاث ليست إلزامية
         $html = $this->get('/incident/normal')->assertOk()->getContent();
@@ -262,7 +270,7 @@ class IncidentTest extends TestCase
     public function test_escalation_chain_and_permissions(): void
     {
         $lajna = $this->user('lajna', 'safety_committee');
-        $this->post('/incident/urgent', ['description' => 'دخان من غرفة الخوادم', 'place_id' => $this->placeId('HZ-06'), 'risk_id' => $this->reference->id]);
+        $this->post('/incident/urgent', ['description' => 'دخان من غرفة الخوادم', 'place_id' => $this->placeId('HZ-06'), 'place_unit_id' => $this->office, 'risk_id' => $this->reference->id]);
         $i = Incident::first();
         $this->assertSame('urgent', $i->incident_type);
         $this->actingAs($this->fani)->post("/app/incidents/{$i->id}/field-receive")->assertSessionHas('success'); // ١٠-٣ (ح-١)
@@ -295,14 +303,18 @@ class IncidentTest extends TestCase
         $this->post('/incident/secret', ['description' => 'بلاغ سري بلا تصنيف', 'place_id' => $this->placeId('HZ-06')])->assertRedirect();
         $s = Incident::latest('id')->first();
         $this->assertNull($s->risk_id);
-        $this->assertSame('forwarded', $s->status); // فني المكان معروف حتى بلا خطر؛ الاستلام بيده (١٠-٣)
-        // مكان له فني بلا منسق (القبو): خطوتا المنسق يؤديهما النظام ويصل الفني مباشرة
+        $this->assertSame('received', $s->status); // ٢١-٤ (قرار ٥٤): بلا خطر يبقى في المركز حتى يصنّفه — لا قفز إلى فني المكان
+        // خطر فعلي سمّى معالجاً بلا منسق (القبو، إدارته المشغّلة الشؤون الإدارية والهندسية): تحويل مباشر ولا تُسجَّل خطوتا منسق
+        InstituteDocument::create(['key' => 'ipa-place', 'version' => 1, 'data' => json_encode(['HZ-01' => ['units' => ['_' => ['dept' => 'adm-eng']]]])]);
+        app(RiskService::class)->activateFromReference($this->reference, null, ['scope_type' => 'org_unit', 'organization_unit_id' => OrganizationUnit::where('code', 'adm-eng')->value('id'),
+            'place_id' => $this->placeId('HZ-01'), 'assigned_field_team_id' => $this->fani2->id]);
         $this->post('/incident/normal', ['description' => 'إنارة الطوارئ مطفأة في المواقف', 'place_id' => $this->placeId('HZ-01'), 'risk_id' => $this->reference->id]);
         $n = Incident::latest('id')->first();
         $this->assertNull($n->incident_coordinator_id);
         $this->assertSame($this->fani2->id, $n->incident_field_team_id);
         $this->assertSame('forwarded', $n->status);
-        $this->assertTrue(IncidentEvent::where('incident_id', $n->id)->where('action', 'ref_receive')->where('note', 'like', '%لا منسق%')->exists());
+        $this->assertSame(['create', 'receive', 'forward'], $n->events()->orderBy('id')->pluck('action')->all());
+        $this->assertTrue(IncidentEvent::where('incident_id', $n->id)->where('action', 'forward')->where('note', 'like', '%لا منسق مسمّى%')->exists()); // ٢١-٤: لا «استلمه المنسق» بلا منسق
         // المركز يربطه بخطر لاحقاً
         $this->actingAs($this->salama)->post("/app/incidents/{$s->id}/link-risk", ['risk_id' => $this->reference->id])->assertSessionHas('success');
         $this->assertSame($this->reference->id, $s->fresh()->risk_id);

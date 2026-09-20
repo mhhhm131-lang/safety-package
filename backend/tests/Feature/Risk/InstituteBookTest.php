@@ -178,7 +178,7 @@ class InstituteBookTest extends TestCase
 
         $manager = $this->makeUser('department_manager', 'hr');
         $unitId = $this->orgUnit('hr')->id;
-        $this->actingAs($manager)->post("/app/risk/{$ref->id}/activate", [
+        $this->actingAs($manager)->post("/app/risk/{$ref->id}/activate", ['assigned_coordinator_id' => \App\Models\User::min('id'), 'assigned_field_team_id' => \App\Models\User::min('id'), /* ٢١-٤: التسمية شرط التفعيل */ 
             'scope_type' => 'org_unit', 'organization_unit_id' => $unitId, 'severity' => 4, 'likelihood' => 3,
             'title' => 'ضربة الحرارة لحراس بوابة الموارد البشرية', 'description' => 'المصدر: حرارة الصيف — بوابة HR',
         ])->assertRedirect(route('risk.active.index'));
@@ -191,7 +191,7 @@ class InstituteBookTest extends TestCase
         $this->assertSame('الأمن والمواقف', RiskPhaseAffectedGroupDetail::where('risk_phase_id', $ap->id)->value('impact_description'));
 
         // ثم يعدّل المنسق تفصيل المتأثرين واسم الخطر من لوحة السجل الفعلي
-        $this->actingAs($manager)->post("/app/risk/active/{$active->id}/edit", [
+        $this->actingAs($manager)->post("/app/risk/active/{$active->id}/edit", ['assigned_coordinator_id' => \App\Models\User::min('id'), 'assigned_field_team_id' => \App\Models\User::min('id'), /* ٢١-٤: التسمية شرط التفعيل */ 
             'category_id' => $ref->category_id, 'sub_category_id' => $ref->sub_category_id, 'severity' => 4, 'likelihood' => 2,
             'title' => 'ضربة الحرارة — بوابة الموارد البشرية', 'scope_type' => 'org_unit', 'organization_unit_id' => $unitId,
             'phases' => [RiskPhase::PHASE_PROACTIVE => ['affected_group_ids' => [$group->id], 'affected_impact' => [$group->id => 'critical'], 'affected_detail' => [$group->id => 'حارسا البوابة الشمالية']]],

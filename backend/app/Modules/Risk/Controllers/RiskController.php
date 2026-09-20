@@ -86,7 +86,7 @@ class RiskController extends Controller
 
     public function activeStore(Request $request)
     {
-        $validated = $request->validate(array_merge($this->referenceValidationRules(), $this->activeExtraRules()));
+        $validated = $request->validate(array_merge($this->referenceValidationRules(), $this->activeExtraRules()), $this->assignMessages());
         $reference = $this->referenceFor($validated);
         if ($reference === false) return redirect()->back()->withInput()->withErrors(['parent_reference_id' => 'الخطر المرجعي المختار ليس تحت هذه الفئة الفرعية.']);
         try {
@@ -121,7 +121,7 @@ class RiskController extends Controller
     {
         $risk = Risk::findOrFail($risk);
         $this->authorizeScope($risk);
-        $validated = $request->validate(array_merge($this->referenceValidationRules(), $this->activeExtraRules()));
+        $validated = $request->validate(array_merge($this->referenceValidationRules(), $this->activeExtraRules()), $this->assignMessages());
         $reference = $this->referenceFor($validated);
         if ($reference === false) return redirect()->back()->withInput()->withErrors(['parent_reference_id' => 'الخطر المرجعي المختار ليس تحت هذه الفئة الفرعية.']);
         try {
@@ -246,7 +246,7 @@ class RiskController extends Controller
             'severity' => ['required', 'integer', 'min:1', 'max:5'],
             'likelihood' => ['required', 'integer', 'min:1', 'max:5'],
             'legal_reference' => ['nullable', 'string', 'max:500'],
-        ], $this->activeExtraRules(), $this->phaseRules()));
+        ], $this->activeExtraRules(), $this->phaseRules()), $this->assignMessages());
         // مدير الإدارة يفعّل لوحدته فقط
         $profile = $this->userProfile();
         if ($profile && !$this->isGlobalScopeRole()) {
@@ -447,11 +447,18 @@ class RiskController extends Controller
         ], $this->phaseRules());
     }
 
+    private function assignMessages(): array
+    {
+        return ['assigned_coordinator_id.required' => 'سمِّ منسق السلامة لهذا الخطر — إليه يصل بلاغ الشاغل أولاً.',
+            'assigned_field_team_id.required' => 'سمِّ المعالج المختص (فنياً أو إدارياً) — إليه يُحوَّل بلاغ الشاغل.'];
+    }
+
     private function activeExtraRules(): array
     {
         return [
-            'assigned_coordinator_id' => ['nullable', 'integer', 'exists:users,id'],
-            'assigned_field_team_id' => ['nullable', 'integer', 'exists:users,id'],
+            // ٢١-٤ (قرار ٥٤): شرط في الإعداد لا احتياط وقت التشغيل — من الخطر الفعلي يصل بلاغ الشاغل إلى منسقه ومعالجه
+            'assigned_coordinator_id' => ['required', 'integer', 'exists:users,id'],
+            'assigned_field_team_id' => ['required', 'integer', 'exists:users,id'],
             'target_closure_date' => ['nullable', 'date'],
             'notes' => ['nullable', 'string', 'max:5000'],
         ];

@@ -191,8 +191,8 @@
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label" style="color:var(--text-main);">منسق السلامة المعيّن</label>
-                        <select name="assigned_coordinator_id" class="form-select">
+                        <label class="form-label" style="color:var(--text-main);">منسق السلامة المعيّن <span class="text-danger">*</span></label>
+                        <select name="assigned_coordinator_id" class="form-select" required>
                             <option value="">— اختر —</option>
                             @foreach($tenantUsers as $u)
                                 <option value="{{ $u->id }}" @selected(old('assigned_coordinator_id', $risk->assigned_coordinator_id)==$u->id)>{{ $u->name }}</option>
@@ -200,8 +200,8 @@
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label" style="color:var(--text-main);">فريق التنفيذ المعيّن</label>
-                        <select name="assigned_field_team_id" class="form-select">
+                        <label class="form-label" style="color:var(--text-main);">المعالج المختص (فني أو إداري) <span class="text-danger">*</span></label>
+                        <select name="assigned_field_team_id" class="form-select" required>
                             <option value="">— اختر —</option>
                             @foreach($tenantUsers as $u)
                                 <option value="{{ $u->id }}" @selected(old('assigned_field_team_id', $risk->assigned_field_team_id)==$u->id)>{{ $u->name }}</option>

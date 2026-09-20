@@ -24,6 +24,7 @@ class IncidentStateMachine extends StateMachine
             ],
             'received' => [
                 'referred' => ['system_admin', 'system_staff', 'system_bot'],
+                'forwarded' => ['system_bot'], // ٢١-٤: بلا منسق مسمّى يحوّل النظام مباشرة إلى المعالج — لا تُسجَّل خطوتا منسق لم يؤدهما أحد
                 'closed' => ['system_admin', 'system_staff'], // المعهد: إغلاق بملاحظة من المركز
             ],
             'referred' => [

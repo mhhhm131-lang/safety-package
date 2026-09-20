@@ -40,7 +40,7 @@ class RiskControllerTest extends TestCase
 
     private function validPayload(array $overrides = []): array
     {
-        return array_merge([
+        return array_merge(['assigned_coordinator_id' => \App\Models\User::min('id'), 'assigned_field_team_id' => \App\Models\User::min('id'), /* ٢١-٤: التسمية شرط التفعيل */ 
             'category_id' => $this->category()->id,
             'sub_category_id' => $this->subCategory()->id,
             'severity' => 4,

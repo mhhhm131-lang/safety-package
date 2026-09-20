@@ -71,7 +71,7 @@ class RiskActivateWithPhasesTest extends TestCase
     {
         $risk = $this->seedReferenceRisk();
 
-        $response = $this->post(route('risk.activate', $risk), [
+        $response = $this->post(route('risk.activate', $risk), ['assigned_coordinator_id' => \App\Models\User::min('id'), 'assigned_field_team_id' => \App\Models\User::min('id'), /* ٢١-٤: التسمية شرط التفعيل */ 
             'scope_type' => 'general',
             'severity'   => 3,
             'likelihood' => 3,
@@ -94,7 +94,7 @@ class RiskActivateWithPhasesTest extends TestCase
     {
         $risk = $this->seedReferenceRisk();
 
-        $response = $this->post(route('risk.activate', $risk), [
+        $response = $this->post(route('risk.activate', $risk), ['assigned_coordinator_id' => \App\Models\User::min('id'), 'assigned_field_team_id' => \App\Models\User::min('id'), /* ٢١-٤: التسمية شرط التفعيل */ 
             'scope_type' => 'general',
             'severity'   => 5,
             'likelihood' => 4,
@@ -127,7 +127,7 @@ class RiskActivateWithPhasesTest extends TestCase
         $unit = $this->orgUnit('hr');
         $coordinator = $this->makeUser('safety_coordinator');
 
-        $response = $this->post(route('risk.activate', $risk), [
+        $response = $this->post(route('risk.activate', $risk), ['assigned_coordinator_id' => \App\Models\User::min('id'), 'assigned_field_team_id' => \App\Models\User::min('id'), /* ٢١-٤: التسمية شرط التفعيل */ 
             'scope_type'              => 'org_unit',
             'organization_unit_id'    => $unit->id,
             'severity'                => 4,

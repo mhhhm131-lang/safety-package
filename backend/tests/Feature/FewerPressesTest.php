@@ -61,6 +61,7 @@ class FewerPressesTest extends TestCase
         $req->post('/incident/normal', ['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')])->assertRedirect();
         auth()->logout();
         $i = Incident::first();
+        app(\App\Modules\Incident\Services\IncidentService::class)->referToField($i, $this->salama->id, $this->fani->id, $this->coord->id); // ٢١-٤ (قرار ٥٤): لا قفز آلي إلى فني المكان — المركز يحيل ويسمّي المنسق
         $this->actingAs($this->fani)->get("/app/incidents/{$i->id}")->assertOk();
         $this->actingAs($this->fani)->post("/app/incidents/{$i->id}/resolve", ['resolution_summary' => 'بُدّل البلاط المكسور ونُظّف الممر وأُعيد فتحه للمارة',
             'evidence' => UploadedFile::fake()->createWithContent('after.png', base64_decode(self::PNG))])->assertSessionHas('success');
@@ -108,6 +109,7 @@ class FewerPressesTest extends TestCase
     {
         $this->post('/incident/normal', ['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')]);
         $i = Incident::first();
+        app(\App\Modules\Incident\Services\IncidentService::class)->referToField($i, $this->salama->id, $this->fani->id); // ٢١-٤ (قرار ٥٤): لا قفز آلي إلى فني المكان — المركز يحيل
         $this->actingAs($this->fani)->get("/app/incidents/{$i->id}")->assertOk()->assertDontSee('بدء المعالجة')->assertDontSee('begin-work');
         $this->assertSame('field_received', $i->fresh()->status);
         $h = $this->actingAs($this->fani)->get('/app')->assertOk()->getContent();

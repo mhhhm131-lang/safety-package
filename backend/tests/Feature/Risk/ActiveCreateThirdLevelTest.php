@@ -74,7 +74,7 @@ class ActiveCreateThirdLevelTest extends TestCase
         app(RiskService::class)->persistAllPhases($ref, ['proactive' => ['preventive_action' => 'منع الوقوف فوق المصارف وفحص التمديدات',
             'cause_names' => ['تسرب وقود', 'ماس كهربائي في مركبة'], 'affected_group_ids' => [$gid], 'affected_impact' => [$gid => 4]]]);
         // الحقول الفارغة كما يرسلها النموذج لا تمحو المنسوخ؛ والمكتوب يغلب
-        $this->actingAs($this->mudir)->post('/app/risk/active/create', ['category_id' => $this->cat->id, 'sub_category_id' => $this->sub->id,
+        $this->actingAs($this->mudir)->post('/app/risk/active/create', ['assigned_coordinator_id' => \App\Models\User::min('id'), 'assigned_field_team_id' => \App\Models\User::min('id'), /* ٢١-٤: التسمية شرط التفعيل */ 'category_id' => $this->cat->id, 'sub_category_id' => $this->sub->id,
             'parent_reference_id' => $ref->id, 'title' => '', 'severity' => 4, 'likelihood' => 2, 'scope_type' => 'org_unit',
             'organization_unit_id' => OrganizationUnit::first()->id, 'place_id' => Place::idByCode('HZ-01'),
             'phases' => ['proactive' => ['preventive_action' => '', 'corrective_action' => 'إخلاء المواقف وإطفاء بالرغوة', 'cause_names' => ['']],
@@ -91,14 +91,14 @@ class ActiveCreateThirdLevelTest extends TestCase
         $this->assertSame(3, $a->phases()->count());
         // خطر مرجعي من فئة أخرى لا يُقبل
         $other = RiskSubCategory::create(['category_id' => $this->cat->id, 'name' => 'أخرى', 'abbreviation' => 'OTH']);
-        $this->actingAs($this->mudir)->post('/app/risk/active/create', ['category_id' => $this->cat->id, 'sub_category_id' => $other->id,
+        $this->actingAs($this->mudir)->post('/app/risk/active/create', ['assigned_coordinator_id' => \App\Models\User::min('id'), 'assigned_field_team_id' => \App\Models\User::min('id'), /* ٢١-٤: التسمية شرط التفعيل */ 'category_id' => $this->cat->id, 'sub_category_id' => $other->id,
             'parent_reference_id' => $ref->id, 'severity' => 1, 'likelihood' => 1])->assertSessionHasErrors('parent_reference_id');
     }
 
     /** خطر جديد غير موجود: بلا مرجع، الاسم بيده؛ ومسؤول السلامة وحده يضيفه إلى السجل العام بزر. */
     public function test_new_risk_without_reference_and_safety_officer_promotes_it(): void
     {
-        $this->actingAs($this->mudir)->post('/app/risk/active/create', ['category_id' => $this->cat->id, 'sub_category_id' => $this->sub->id,
+        $this->actingAs($this->mudir)->post('/app/risk/active/create', ['assigned_coordinator_id' => \App\Models\User::min('id'), 'assigned_field_team_id' => \App\Models\User::min('id'), /* ٢١-٤: التسمية شرط التفعيل */ 'category_id' => $this->cat->id, 'sub_category_id' => $this->sub->id,
             'parent_reference_id' => '', 'title' => 'انزلاق على منحدر المواقف عند المطر', 'severity' => 3, 'likelihood' => 3,
             'scope_type' => 'org_unit', 'organization_unit_id' => OrganizationUnit::first()->id])->assertRedirect();
         $a = Risk::where('risk_type', 'active')->first();

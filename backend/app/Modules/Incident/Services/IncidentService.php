@@ -5,7 +5,10 @@ namespace App\Modules\Incident\Services;
 use App\Core\Services\AuditLogService;
 use App\Core\Services\NotificationService;
 use App\Core\StateMachine\Exceptions\TransitionException;
+use App\Modules\Emergency\Services\PlaceProfile;
+use App\Modules\Governance\Models\OrganizationUnit;
 use App\Modules\Governance\Models\Place;
+use App\Modules\Governance\Models\PlaceUnit;
 use App\Modules\Governance\Models\Setting;
 use App\Modules\Governance\Models\UserProfile;
 use App\Modules\Incident\Models\Incident;
@@ -64,17 +67,18 @@ class IncidentService
         }
         // المرحلة ١١-١ (أ، قرار ٣٤): بلا خطر ← التوجيه بالمكان وحده (كمسار السري)؛ التصنيف عمل المركز من صفحة البلاغ
         $riskId = !empty($data['risk_id']) ? (int) $data['risk_id'] : null;
-        $routing = $riskId ? $this->resolveRouting($riskId, $data['place_id'] ?? null)
-            : $this->routingByPlace($data['place_id'] ?? null, null, null, 'بلا خطر — يصنّفه المركز');
+        $unitId = $this->concernedUnit($userId, $data); // ٢١-٤ (قرار ٥٤): الإدارة المعنية — منها سجلها الفعلي ومنسقها ومعالجها
+        $routing = $riskId ? $this->resolveRouting($riskId, $data['place_id'] ?? null, $unitId)
+            : $this->noRouting('بلا خطر — يصنّفه المركز');
         $ctx = $this->buildRiskContext($routing['risk_id'], $type);
 
-        $incident = DB::transaction(function () use ($type, $userId, $data, $routing, $ctx) {
+        $incident = DB::transaction(function () use ($type, $userId, $data, $routing, $ctx, $unitId) {
             $incident = Incident::create([
                 'title' => $this->deriveTitle($data, $ctx),
                 'description' => $data['description'] ?? '',
                 'incident_type' => $type,
                 'status' => 'new',
-                'organization_unit_id' => $data['organization_unit_id'] ?? null,
+                'organization_unit_id' => $unitId,
                 'place_id' => $data['place_id'] ?? null,
                 'place_unit_id' => $data['place_unit_id'] ?? null, // ١٨-٣ (ج)
                 'location_text' => $data['location_text'] ?? null,
@@ -98,6 +102,7 @@ class IncidentService
         $incident = $this->fastForwardRouting($incident);
 
         $this->notifyOnCreate($incident, $ctx, $type === 'urgent');
+        $this->notifyRiskNotActivated($incident, $routing);
         $this->auditLogService->log(null, 'create', 'Incident', $incident->id, "Created {$type} incident {$incident->code}: {$incident->title}", $userId);
         return $incident;
     }
@@ -108,15 +113,17 @@ class IncidentService
         $secretKey = (string) Str::uuid();
         $trackingCode = $this->trackingCode();
         $riskId = !empty($data['risk_id']) ? (int) $data['risk_id'] : null;
-        $routing = $riskId ? $this->resolveRouting($riskId, $data['place_id'] ?? null) : $this->routingByPlace($data['place_id'] ?? null, null, null, 'بلا خطر');
+        $unitId = $this->concernedUnit(null, $data); // ٢١-٤: السري بلا فاعل — إدارة المكان المعني وحدها
+        $routing = $riskId ? $this->resolveRouting($riskId, $data['place_id'] ?? null, $unitId) : $this->noRouting('بلا خطر');
         $ctx = $this->buildRiskContext($routing['risk_id'] ?? null);
 
-        $incident = DB::transaction(function () use ($data, $secretKey, $trackingCode, $routing, $ctx) {
+        $incident = DB::transaction(function () use ($data, $secretKey, $trackingCode, $routing, $ctx, $unitId) {
             $incident = Incident::create([
                 'title' => $this->deriveTitle($data, $ctx),
                 'description' => $data['description'] ?? '',
                 'incident_type' => 'secret',
                 'status' => 'new',
+                'organization_unit_id' => $unitId,
                 'place_id' => $data['place_id'] ?? null,
                 'place_unit_id' => $data['place_unit_id'] ?? null, // ١٨-٣ (ج)
                 'location_text' => $data['location_text'] ?? null,
@@ -137,6 +144,7 @@ class IncidentService
 
         $incident = $this->fastForwardRouting($incident);
         $this->notifyOnCreate($incident, $ctx, false);
+        $this->notifyRiskNotActivated($incident, $routing);
 
         return ['incident' => $incident, 'secret_key' => $secretKey];
     }
@@ -191,16 +199,11 @@ class IncidentService
     public function fastForwardRouting(Incident $incident): Incident
     {
         if ($incident->status !== 'new') return $incident;
-        $steps = [['receive', 'received'], ['refer', 'referred'], ['ref_receive', 'ref_received'], ['forward', 'forwarded']];
-        DB::transaction(function () use ($incident, $steps) {
-            $noCoord = empty($incident->incident_coordinator_id);
-            foreach ($steps as [$action, $to]) {
-                // المعهد: لا إحالة آلية بلا فني معروف — يبقى «وصل المركز» حتى يحيله المركز يدوياً
-                if ($to === 'referred' && empty($incident->incident_field_team_id)) {
-                    break;
-                }
-                // بلا منسق للمكان: خطوتا المنسق يؤديهما النظام (الإحالة للفني مباشرة — BACKEND.md ٥-٢-ب)
-                $note = ($noCoord && in_array($to, ['ref_received', 'forwarded'], true)) ? 'لا منسق للمكان — تحويل مباشر إلى الفني' : 'مسار تلقائي عند الإنشاء';
+        DB::transaction(function () use ($incident) {
+            $this->transition($incident, self::BOT_USER_ID, 'receive', 'received', 'مسار تلقائي عند الإنشاء');
+            // المعهد: لا إحالة آلية بلا معالج مسمّى — يبقى «وصل المركز» حتى يحيله المركز
+            if (empty($incident->incident_field_team_id)) return;
+            foreach ($this->stepsToHandler($incident) as [$action, $to, $note]) {
                 $this->transition($incident, self::BOT_USER_ID, $action, $to, $note);
             }
         });
@@ -237,9 +240,9 @@ class IncidentService
             if ($incident->status === 'new') {
                 $this->transition($incident, self::BOT_USER_ID, 'receive', 'received', 'مسار تلقائي');
             }
-            foreach ([['refer', 'referred'], ['ref_receive', 'ref_received'], ['forward', 'forwarded']] as [$action, $to]) {
+            foreach ($this->stepsToHandler($incident, 'إحالة من مركز السلامة') as [$action, $to, $stepNote]) {
                 if ($this->stateMachine->canTransition($incident->status, $to)) {
-                    $this->transition($incident, self::BOT_USER_ID, $action, $to, 'إحالة من مركز السلامة');
+                    $this->transition($incident, self::BOT_USER_ID, $action, $to, $stepNote);
                 }
             }
             $this->notifyUser($fieldWorkerId, 'incident.forwarded', 'بلاغ شاغل حُوّل إليك: '.$incident->code,
@@ -392,18 +395,35 @@ class IncidentService
     {
         $risk = Risk::find($riskId);
         if (!$risk) throw new InvalidArgumentException("الخطر #{$riskId} غير موجود.");
-        DB::transaction(function () use ($incident, $userId, $risk) {
-            $incident->risks()->syncWithoutDetaching([$risk->id]);
+        $routed = false;
+        DB::transaction(function () use ($incident, $userId, $risk, &$routed) {
             if (!$incident->risk_id) {
-                $incident->risk_id = $risk->id;
-                $incident->risk_reference_id = $risk->risk_type === 'reference' ? $risk->id : $risk->parent_reference_id;
-                if (!$incident->incident_coordinator_id && $risk->assigned_coordinator_id) $incident->incident_coordinator_id = $risk->assigned_coordinator_id;
-                if (!$incident->incident_field_team_id && $risk->assigned_field_team_id) $incident->incident_field_team_id = $risk->assigned_field_team_id;
+                // ٢١-٤: تصنيف المركز يوجّه بالقاعدة نفسها — الخطر الفعلي للإدارة المعنية ومنه المنسق والمعالج
+                $routing = $this->resolveRouting($risk->id, $incident->place_id, $incident->organization_unit_id);
+                $incident->risk_id = $routing['risk_id'];
+                $incident->risk_reference_id = $routing['reference_id'];
+                if (!$incident->incident_coordinator_id && $routing['coordinator_id']) $incident->incident_coordinator_id = $routing['coordinator_id'];
+                if (!$incident->incident_field_team_id && $routing['field_team_id']) {
+                    $incident->incident_field_team_id = $routing['field_team_id'];
+                    $routed = true;
+                }
                 $incident->save();
+                $this->notifyRiskNotActivated($incident, $routing);
+                if ($routing['risk_id'] !== $risk->id) $risk = Risk::find($routing['risk_id']);
             }
+            $incident->risks()->syncWithoutDetaching([$risk->id]);
             IncidentEvent::create(['incident_id' => $incident->id, 'action' => 'note', 'from_status' => $incident->status,
                 'to_status' => $incident->status, 'note' => 'رُبط بالخطر '.$risk->code.' — '.$risk->title, 'actor_id' => $userId]);
+            if ($routed && $incident->status === 'received') {
+                foreach ($this->stepsToHandler($incident, 'وُجّه بعد تصنيف المركز') as [$action, $to, $note]) {
+                    $this->transition($incident, self::BOT_USER_ID, $action, $to, $note);
+                }
+            }
         });
+        if ($routed) {
+            $this->notifyUser($incident->incident_field_team_id, 'incident.forwarded', 'بلاغ شاغل حُوّل إليك: '.$incident->code, $incident->title, "/app/incidents/{$incident->id}");
+            if ($incident->incident_coordinator_id) $this->notifyUser($incident->incident_coordinator_id, 'incident.referred', 'بلاغ شاغل في نطاقك: '.$incident->code, $incident->title, "/app/incidents/{$incident->id}");
+        }
     }
 
     public function updateActions(Incident $incident, array $data): void
@@ -493,41 +513,95 @@ class IncidentService
     // ── التوجيه ──
 
     /**
-     * من خطر اختاره المبلّغ (مرجعي غالباً) إلى الخطر الذي يوجّه البلاغ:
-     * خطر فعلي للمكان مشتق منه → منسقه وفنيه؛ وإلا منسق المكان وفنيه من ملفات المستخدمين.
+     * ٢١-٤ (قرار ٥٤): الإدارة المعنية بالبلاغ — وحدة المكان إن حُددت وكانت لإدارة؛ وإلا الإدارة المشغّلة للمكان (ملف المكان)؛
+     * وفي المكاتب الإدارية، حيث الأماكن هي الإدارات نفسها، إدارة المبلّغ من حسابه. بلا أيٍّ منها: إدارة المبلّغ، أو لا شيء للضيف.
      */
-    private function resolveRouting(int $riskId, ?int $placeId): array
+    private function concernedUnit(?int $userId, array $data): ?int
+    {
+        if (!empty($data['organization_unit_id'])) return (int) $data['organization_unit_id'];
+        if (!empty($data['place_unit_id']) && ($u = PlaceUnit::find($data['place_unit_id'])?->organization_unit_id)) return (int) $u;
+        $own = $userId ? UserProfile::where('user_id', $userId)->value('organization_unit_id') : null;
+        $place = !empty($data['place_id']) ? Place::find($data['place_id']) : null;
+        if ($place && $place->code !== PlaceProfile::HUB) {
+            $list = PlaceProfile::unitList($place->code, PlaceProfile::get($place->code));
+            $code = (string) ($list[0]['dept'] ?? '');
+            if ($code !== '' && ($op = OrganizationUnit::where('code', $code)->value('id'))) return (int) $op;
+        }
+        return $own ? (int) $own : null;
+    }
+
+    /**
+     * من خطر اختاره المبلّغ (مرجعي غالباً) إلى الخطر الفعلي **للإدارة المعنية** (هي ثم ما فوقها في الهيكل)، ومنه المنسق والمعالج.
+     * ٢١-٤: كان يطابق بالمكان وحده فيأخذ آخر خطر فعلي أُنشئ فيه لأي إدارة (ع١). لا خطر فعلي للإدارة ← المركز، ويُنبَّه مديرها.
+     */
+    private function resolveRouting(int $riskId, ?int $placeId, ?int $unitId): array
     {
         $risk = Risk::find($riskId);
         if (!$risk) throw new InvalidArgumentException('الخطر المختار غير موجود.');
         $referenceId = $risk->risk_type === 'reference' ? $risk->id : ($risk->parent_reference_id ?: null);
-        $routingRisk = $risk;
-        if ($risk->risk_type !== 'active' && $placeId) {
-            $active = Risk::where('risk_type', 'active')->where('parent_reference_id', $risk->id)->where('place_id', $placeId)
-                ->orderByDesc('id')->first();
-            if ($active) $routingRisk = $active;
+        $routingRisk = $risk->risk_type === 'active' ? $risk : null;
+        if (!$routingRisk && $unitId) {
+            foreach ($this->unitAndAncestors($unitId) as $uid) {
+                $q = Risk::where('risk_type', 'active')->where('parent_reference_id', $risk->id)->where('organization_unit_id', $uid);
+                // خطر الإدارة في هذا المكان أولاً، ثم خطرها بلا مكان، ثم أي خطر لها
+                $routingRisk = (clone $q)->where('place_id', $placeId)->orderByDesc('id')->first()
+                    ?? (clone $q)->whereNull('place_id')->orderByDesc('id')->first()
+                    ?? $q->orderByDesc('id')->first();
+                if ($routingRisk) break;
+            }
         }
-        $r = $this->routingByPlace($placeId, $routingRisk->assigned_coordinator_id, $routingRisk->assigned_field_team_id,
-            $routingRisk->id !== $risk->id ? 'وُجّه عبر الخطر الفعلي '.$routingRisk->code : null);
-        $r['risk_id'] = $routingRisk->id;
-        $r['reference_id'] = $referenceId;
-        return $r;
+        if (!$routingRisk) {
+            $r = $this->noRouting('لا خطر فعلي لهذا الخطر في سجل الإدارة المعنية — بانتظار إحالة المركز');
+            $r['risk_id'] = $risk->id;
+            $r['reference_id'] = $referenceId;
+            $r['not_activated'] = true;
+            return $r;
+        }
+        $notes = array_filter([
+            $routingRisk->id !== $risk->id ? 'وُجّه عبر الخطر الفعلي '.$routingRisk->code : null,
+            $routingRisk->assigned_field_team_id ? null : 'الخطر الفعلي بلا معالج مسمّى — بانتظار إحالة المركز',
+        ]);
+        return ['coordinator_id' => $routingRisk->assigned_coordinator_id, 'field_team_id' => $routingRisk->assigned_field_team_id,
+            'note' => implode('؛ ', $notes) ?: null, 'risk_id' => $routingRisk->id, 'reference_id' => $referenceId];
     }
 
-    private function routingByPlace(?int $placeId, ?int $coordinatorId, ?int $fieldTeamId, ?string $note): array
+    /** لا معيَّن: يبقى البلاغ «وصل المركز». لا قفز إلى «فني المكان» (ع٥). */
+    private function noRouting(string $note): array
     {
-        $notes = array_filter([$note]);
-        if ($placeId) {
-            if (!$fieldTeamId) {
-                $fieldTeamId = UserProfile::whereIn('role', \App\Core\Permissions\PermissionRegistry::techRoles())->where('is_active', true)->where('place_id', $placeId)->orderBy('id')->value('user_id');
-                if ($fieldTeamId) $notes[] = 'فني المكان من ملفات المستخدمين';
-            }
-            if (!$coordinatorId) {
-                $coordinatorId = UserProfile::where('role', 'safety_coordinator')->where('is_active', true)->where('place_id', $placeId)->orderBy('id')->value('user_id');
-            }
+        return ['coordinator_id' => null, 'field_team_id' => null, 'note' => $note, 'risk_id' => null, 'reference_id' => null];
+    }
+
+    /** الوحدة ثم آباؤها حتى الجذر */
+    private function unitAndAncestors(int $unitId): array
+    {
+        $out = [];
+        for ($u = OrganizationUnit::find($unitId), $n = 0; $u && $n < 10; $u = $u->parent_id ? OrganizationUnit::find($u->parent_id) : null, $n++) {
+            $out[] = $u->id;
         }
-        if (!$fieldTeamId) $notes[] = 'لا فني معروف للمكان — بانتظار إحالة المركز';
-        return ['coordinator_id' => $coordinatorId, 'field_team_id' => $fieldTeamId, 'note' => implode('؛ ', $notes) ?: null, 'risk_id' => null, 'reference_id' => null];
+        return $out;
+    }
+
+    /** خطوات النظام من «وصل المركز» إلى «حُوّل للمعالج»: بمنسق مسمّى تمر بخطوتيه ويُشعَر؛ وبلا منسق تحويل مباشر لا يُنسب إلى أحد. */
+    private function stepsToHandler(Incident $incident, string $note = 'مسار تلقائي عند الإنشاء'): array
+    {
+        if (empty($incident->incident_coordinator_id)) {
+            return [['forward', 'forwarded', $note.' — لا منسق مسمّى: تحويل مباشر إلى المعالج']];
+        }
+        return [['refer', 'referred', $note], ['ref_receive', 'ref_received', $note.' — أُشعر المنسق'], ['forward', 'forwarded', $note]];
+    }
+
+    /** ٢١-٤: خطر اختاره المبلّغ ولم تفعّله الإدارة المعنية ← مديرها ومنسق سلامتها يُنبَّهان ليفعّلاه ويسمّيا منسقه ومعالجه */
+    private function notifyRiskNotActivated(Incident $incident, array $routing): void
+    {
+        if (empty($routing['not_activated']) || !$incident->organization_unit_id) return;
+        $risk = Risk::find($routing['risk_id']);
+        $ids = UserProfile::where('organization_unit_id', $incident->organization_unit_id)->where('is_active', true)
+            ->whereIn('role', ['department_manager', 'section_manager', 'branch_manager', 'safety_coordinator'])->pluck('user_id');
+        foreach ($ids as $uid) {
+            $this->notifyUser($uid, 'incident.risk_not_activated', 'بلاغ على خطر لم تفعّله إدارتك: '.$incident->code,
+                'فعّل «'.($risk?->title ?? 'الخطر').'» في السجل الفعلي لإدارتك وسمِّ منسقه ومعالجه — البلاغ الآن عند مركز السلامة.',
+                $risk ? "/app/risk/{$risk->id}/activate" : "/app/incidents/{$incident->id}");
+        }
     }
 
     /**

@@ -109,7 +109,7 @@ class RiskPhaseEndToEndTest extends TestCase
         $this->assertSame('سقوط من ارتفاع', $reference->fresh()->title);
 
         // ─── STAGE 4 — Activate the reference → active risk ────
-        $this->post(route('risk.activate', $reference), [
+        $this->post(route('risk.activate', $reference), ['assigned_coordinator_id' => \App\Models\User::min('id'), 'assigned_field_team_id' => \App\Models\User::min('id'), /* ٢١-٤: التسمية شرط التفعيل */ 
             'scope_type' => 'general',
             'severity'   => 5,
             'likelihood' => 4,
