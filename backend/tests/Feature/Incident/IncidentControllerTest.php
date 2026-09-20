@@ -192,14 +192,19 @@ class IncidentControllerTest extends TestCase
 
     public function test_field_worker_of_same_place_can_view_incident(): void
     {
-        // المعهد: فني المكان (user_profiles.place_id) يرى بلاغات مكانه، وفني مكان آخر لا
-        $incident = $this->makeIncident(['place_id' => $this->placeId('HZ-06')]);
+        // المعهد: فني المكان يرى بلاغات مكانه، وفني مكان آخر لا
+        $incident = $this->makeIncident(['place_id' => $this->placeId('HZ-02')]);
 
-        $this->actingAsRole('field_worker', 'HZ-06');
+        $this->actingAsRole('field_worker', 'HZ-02');
         $this->get(route('incidents.show', $incident))->assertOk();
 
         $this->actingAsRole('field_worker', 'HZ-01');
         $this->get(route('incidents.show', $incident))->assertForbidden();
+
+        // ٢١-٦ (قرارا ٥٤ و٥٥): في المكاتب الإدارية الإدارات كلها في مكان واحد — الرؤية بالإدارة لا بالمكان، ففني المكاتب لا يرى بلاغ إدارة لم يُحَل إليه
+        $office = $this->makeIncident(['place_id' => $this->placeId('HZ-06')]);
+        $this->actingAsRole('field_worker', 'HZ-06');
+        $this->get(route('incidents.show', $office))->assertForbidden();
     }
 
     // ===========================================================

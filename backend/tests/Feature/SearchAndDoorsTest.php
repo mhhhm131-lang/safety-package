@@ -65,7 +65,9 @@ class SearchAndDoorsTest extends TestCase
         $r = $this->actingAs($this->salama)->get('/app/search?q=مكشوف')->assertOk();
         $r->assertSee('data-group="بلاغات الشاغلين"', false)->assertSee($i->code)->assertSee('data-group="المخاطر"', false)->assertSee('صعق كهربائي');
         $this->actingAs($this->salama)->get('/app/search?q=المكاتب')->assertOk()->assertSee('data-group="الأماكن"', false)->assertSee('/app/places/'.\App\Modules\Governance\Models\Place::where('code', 'HZ-06')->value('id').'/file', false); // 19-7
-        // الفني: بلاغ مكانه نعم، المخاطر لا (بلا risk.list)
+        // الفني: البلاغ المُحال إليه نعم (٢١-٦: في المكاتب الرؤية بالإدارة لا بالمكان)، المخاطر لا (بلا risk.list)
+        $this->actingAs($this->fani)->get('/app/search?q=مكشوف')->assertOk()->assertDontSee($i->code);
+        app(\App\Modules\Incident\Services\IncidentService::class)->referToField($i, $this->salama->id, $this->fani->id);
         $this->actingAs($this->fani)->get('/app/search?q=مكشوف')->assertOk()->assertSee($i->code)->assertDontSee('data-group="المخاطر"', false);
         // الموظف: لا شيء
         $this->actingAs($this->emp)->get('/app/search?q=مكشوف')->assertOk()->assertSee('لا نتائج');
