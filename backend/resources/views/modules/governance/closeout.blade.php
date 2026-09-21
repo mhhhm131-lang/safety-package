@@ -14,6 +14,27 @@
   </div>
 @endif
 
+{{-- ٢١-٩ (قرار ٥٤): وضع التجربة — النظام يُعبَّأ كما يجب أن يعمل، وكل ما يُنشأ أثناءه يُحذف عند إنهائه، وما قبله لا يُمس --}}
+<div class="card mb-3" id="trialCard" style="border-color:#d9b25a">
+  <div class="card-body">
+    <h2 class="h6 mb-2"><i class="bi bi-cone-striped"></i> وضع التجربة</h2>
+    @if(!$trialOn)
+      <p class="small text-muted mb-2">يُعبّئ النظام كله بحسابات وفرق وسجلات فعلية تجريبية لتجرّبه كاملاً. <strong>كل ما يُدخل والوضع مشغَّل — منك أو من غيرك — يُحذف عند إنهائه</strong>، وما كان قبله لا يُمس. خذ نسخة احتياطية أولاً.</p>
+      <button class="btn btn-sm btn-warning" id="trialStart"><i class="bi bi-play-fill"></i> ابدأ التجربة وعبّئ النظام</button>
+    @else
+      <p class="small mb-2"><span class="badge text-bg-warning">مشغَّل</span> أُنشئ منذ تشغيله:
+        @forelse($trialInventory as $t => $n)<span class="badge text-bg-light border font-monospace">{{ $t }} {{ $n }}</span> @empty <span class="text-muted">لا شيء بعد</span> @endforelse</p>
+      @if($trialFilling)<button class="btn btn-sm btn-outline-warning mb-2" id="trialResume"><i class="bi bi-arrow-repeat"></i> أكمل التعبئة</button>@endif
+      <form method="post" action="{{ route('app.closeout.trial.stop') }}" class="d-flex gap-2 flex-wrap align-items-center">@csrf
+        <input name="confirm" class="form-control form-control-sm" style="max-width:220px" placeholder="اكتب: {{ $confirmTrial }}" required>
+        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-stop-fill"></i> أنهِ التجربة واحذف بياناتها</button>
+      </form>
+      @error('confirm')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+    @endif
+    <div id="trialLog" class="small mt-2" hidden></div>
+  </div>
+</div>
+
 {{-- ٠) النسخة الاحتياطية — قبل أي حذف --}}
 <div class="card mb-3">
   <div class="card-body">
@@ -171,3 +192,30 @@
 </div>
 
 @endsection
+@push('scripts')
+<script>
+/* ٢١-٩: التعبئة تُستأنف — كل طلب دون حد قطع الخادم، والشاشة تكرره حتى تكتمل */
+(function(){
+  var log=document.getElementById('trialLog'), tok=document.querySelector('meta[name=csrf-token]').content;
+  function post(u){return fetch(u,{method:'POST',headers:{'X-CSRF-TOKEN':tok,'Accept':'application/json'},credentials:'same-origin'}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.message||('HTTP '+r.status));return j;});});}
+  function say(h){log.hidden=false;log.innerHTML=h;}
+  function fill(head){
+    post({{ \Illuminate\Support\Js::from(route('app.closeout.trial.fill')) }}).then(function(j){
+      var made=Object.keys(j.made||{}).map(function(k){return k+' '+j.made[k];}).join(' · ');
+      if(j.done){say(head+'<div class="text-success fw-bold">اكتملت التعبئة: '+made+'</div>');return;}
+      say(head+'<div>جارٍ: '+j.step+' '+j.progress+' — '+made+'</div>');fill(head);
+    }).catch(function(e){say(head+'<div class="text-danger">توقفت: '+e.message+' — اضغط «أكمل التعبئة» بعد تحديث الصفحة.</div>');});
+  }
+  var s=document.getElementById('trialStart');
+  if(s) s.addEventListener('click',function(){
+    if(!confirm('يبدأ وضع التجربة ويُعبَّأ النظام. كل ما يُدخل بعد الآن يُحذف عند إنهائها. متابعة؟'))return;
+    s.disabled=true;say('جارٍ التشغيل…');
+    post({{ \Illuminate\Support\Js::from(route('app.closeout.trial.start')) }}).then(function(j){
+      fill('<div class="alert alert-warning py-2 mb-2">كلمة مرور الحسابات التجريبية (تظهر <b>مرة واحدة</b> — انسخها الآن): <code dir="ltr" style="font-size:1.05rem">'+j.password+'</code><br>أسماء الدخول تبدأ بـ <code dir="ltr">'+j.prefix+'</code> — مثل <code dir="ltr">tj.hr.m</code> مدير، <code dir="ltr">tj.hr.c</code> منسق سلامة، <code dir="ltr">tj.hr.e1</code> موظف، <code dir="ltr">tj.fani.electrical</code> فني.</div>');
+    }).catch(function(e){s.disabled=false;say('<span class="text-danger">'+e.message+'</span>');});
+  });
+  var r=document.getElementById('trialResume');
+  if(r) r.addEventListener('click',function(){r.disabled=true;fill('');});
+})();
+</script>
+@endpush

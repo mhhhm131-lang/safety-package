@@ -122,6 +122,12 @@ class CloseoutService
      */
     public function accountAudit()
     {
+        // ٢١-٩: الفحص مرة لكل بصمة لا لكل حساب — الحسابات التجريبية (١٨٤) تحمل بصمة واحدة، وفحصها واحداً واحداً أسقط الشاشة بتجاوز زمن التنفيذ
+        $seen = [];
+        $seeded = function (string $hash) use (&$seen): bool {
+            return $seen[$hash] ??= Hash::check(self::SEEDED_PASSWORD, $hash);
+        };
+
         return User::query()
             ->leftJoin('user_profiles', 'user_profiles.user_id', '=', 'users.id')
             ->orderBy('users.username')
@@ -133,7 +139,7 @@ class CloseoutService
                 'name'     => (string) $row->name,
                 'role'     => $row->role ?? '—',
                 'active'   => (bool) $row->is_active,
-                'seeded'   => Hash::check(self::SEEDED_PASSWORD, (string) $row->password),
+                'seeded'   => $seeded((string) $row->password),
             ]);
     }
 
