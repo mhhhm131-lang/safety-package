@@ -110,7 +110,9 @@ class IntentsTest extends TestCase
           ->assertSee('آخر جولة: <b>2026-09-12</b>', false)->assertSee('الجولات 2')->assertSee('لم يُفتح بعد'); // أحدث تاريخ عبر الأنظمة، وعدد الجولات كلها
         $this->assertSame(10, substr_count($p->getContent(), 'data-form="'));
         $this->actingAs($this->user('emp2', 'employee'))->get('/app/inspections')->assertForbidden();
-        foreach (['trigger', 'lockdown', 'drill', 'teams', 'systems', 'permit', 'sendform', 'worker', 'project', 'party', 'reports', 'settings'] as $k) {
+        // ٢٢-٨ (د): «lockdown» لم تعد نيةً مستقلة — دُمجت في «فعّل» لأنها كانت تفتح الشاشة نفسها
+        $this->assertStringNotContainsString('data-intent="lockdown"', $h);
+        foreach (['trigger', 'drill', 'teams', 'systems', 'permit', 'sendform', 'worker', 'project', 'party', 'reports', 'settings'] as $k) {
             $this->assertStringContainsString('data-intent="'.$k.'"', $h, $k);
         }
         $this->assertStringContainsString('?place=HZ-00', $h); // التفعيل بمكانه محدداً

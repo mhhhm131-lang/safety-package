@@ -72,8 +72,8 @@ class IntentRegistry
             $myCheckIn?->incident?->is_drill ? 'تمرين إخلاء — ماذا أفعل' : 'حالة طارئة — ماذا أفعل',
             route('emergency.me'), 'bi-exclamation-octagon-fill', 'الطوارئ', true,
             $myCheckIn ? trim(($myCheckIn->incident->place?->name ?? '').' · أقرب مخرج ونقطة التجمع، وسجّل وصولك بزر') : null);
-        $add($can('emergency.trigger') && $main, 'trigger', 'فعّل حالة طارئة', $main ? route('emergency.buildings.control', $main).($placeCode ? '?place='.$placeCode : '') : null, 'bi-bell-fill', 'الطوارئ', true, 'الفريق الأولي والقيادة يُنبَّهون فوراً');
-        $add($can('emergency.trigger') && $main, 'lockdown', 'إخلاء أو إغلاق', $main ? route('emergency.buildings.control', $main).'#lockdown' : null, 'bi-door-closed', 'الطوارئ');
+        // ٢٢-٨ (د): «إخلاء أو إغلاق» كانت نيةً ثانية تفتح الشاشة نفسها — دُمجت في «فعّل»، والوظيفة باقية في الشاشة
+        $add($can('emergency.trigger') && $main, 'trigger', 'فعّل حالة طارئة', $main ? route('emergency.buildings.control', $main).($placeCode ? '?place='.$placeCode : '') : null, 'bi-bell-fill', 'الطوارئ', true, 'الفريق الأولي والقيادة يُنبَّهون فوراً — ومنها الإخلاء والإغلاق الأمني');
         // ٢٢-٣ (د): الاستغاثة لكل حساب مفعَّل — كانت للمستجيبين وحدهم وتفتح لوحة المركز ولا تُطلق شيئاً.
         $add((bool) $profile?->is_active, 'sos', 'أستغيث الآن', route('emergency.sos'), 'bi-exclamation-octagon-fill', 'الطوارئ', true, 'تصل مركز السلامة فوراً باسمك ومكانك');
         // ٢٢-٤ (د): «وصلتُ» تفتح الفعل على شاشته لا لوحة المركز؛ وتسجيل وصول غيره يبقى في شاشة الحالة

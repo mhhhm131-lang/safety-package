@@ -273,7 +273,11 @@ class EmergencyController extends Controller
         $places = Place::orderBy('sort')->get();
         $lockdown = $building->activeLockdown();
         $user = auth()->user();
-        return view('modules.emergency.buildings.control', compact('building', 'activeIncident', 'stats', 'places', 'lockdown', 'user'));
+        // ٢٢-٨: ما يعرفه النظام لا يُسأل — المكان من الرمز (جاء من ملف مكان) ثم من حساب المفعِّل.
+        // يبقى قابلاً للتغيير، وحين لا يعرفه النظام يبقى السؤال ولا يُخترع مكان.
+        $preset = request('place') ? Place::idByCode((string) request('place')) : null;
+        $preset = old('place_id', $preset ?: $user->profile?->myPlace()?->id);
+        return view('modules.emergency.buildings.control', compact('building', 'activeIncident', 'stats', 'places', 'lockdown', 'user', 'preset'));
     }
 
     public function triggerAlarm(Request $request, EmergencyBuilding $building)

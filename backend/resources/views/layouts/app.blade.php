@@ -146,15 +146,6 @@
       @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'report.view'))
         <a href="{{ route('reports.dashboard') }}" class="{{ request()->routeIs('reports.*') ? 'active' : '' }}"><i class="bi bi-clipboard-data"></i>التقارير</a>
       @endif
-      @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'incident.list'))
-        <hr>
-        <div class="small text-muted px-2 mb-1">بلاغات الشاغلين</div>
-        <a href="{{ route('incidents.index') }}" class="{{ request()->routeIs('incidents.index') || request()->routeIs('incidents.show') ? 'active' : '' }}"><i class="bi bi-megaphone"></i>سجل مركز السلامة</a>
-        <a href="{{ route('incident.landing') }}" target="_blank"><i class="bi bi-box-arrow-up-left"></i>صفحة البلاغ العامة</a>
-        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'system.settings'))
-          <a href="{{ route('incidents.settings') }}" class="{{ request()->routeIs('incidents.settings') ? 'active' : '' }}"><i class="bi bi-clock"></i>المهل</a>
-        @endif
-      @endif
       @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'risk.list'))
         <hr>
         <div class="small text-muted px-2 mb-1">المخاطر</div>
@@ -188,35 +179,51 @@
           <a href="{{ route('permits.settings') }}" class="{{ request()->routeIs('permits.settings') ? 'active' : '' }}"><i class="bi bi-sliders"></i>السعة والتعارض</a>
         @endif
       @endif
-      @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'emergency.view') || \App\Core\Permissions\PermissionRegistry::hasPermission($role, 'emergency.respond'))
+      {{-- ٢٢-٩ (قرارا ٥٨ و٦١): باب واحد — الغرفة واحدة والمناوب واحد والهاتف واحد.
+           الترتيب: ما يجري الآن ← البلاغات ← الخطط ← الفريق ← البقية ← ما ينتظر التركيب.
+           لا يُخفى شيء: ما يفترض أجهزة يبقى ظاهراً تحت عنوانه. --}}
+      @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'emergency.view') || \App\Core\Permissions\PermissionRegistry::hasPermission($role, 'emergency.respond') || \App\Core\Permissions\PermissionRegistry::hasPermission($role, 'incident.list'))
         <hr>
-        <div class="small text-muted px-2 mb-1">الطوارئ</div>
-        <a href="{{ route('emergency.dashboard') }}" class="{{ request()->routeIs('emergency.dashboard') ? 'active' : '' }}"><i class="bi bi-exclamation-octagon"></i>مركز الطوارئ</a>
-        <a href="{{ route('emergency.incidents.index') }}" class="{{ request()->routeIs('emergency.incidents.*') ? 'active' : '' }}"><i class="bi bi-broadcast"></i>الحالات الطارئة</a>
-        <a href="{{ route('emergency.plans.index') }}" class="{{ request()->routeIs('emergency.plans.*') ? 'active' : '' }}"><i class="bi bi-list-ol"></i>خطط الاستجابة</a>
-        <a href="{{ route('emergency.teams.index') }}" class="{{ request()->routeIs('emergency.teams.*') ? 'active' : '' }}"><i class="bi bi-people-fill"></i>الفريق الأولي</a>
-        {{-- ٢٢-٧: تقارير ما بعد الحادث — كانت أربع عشرة وظيفة بلا مدخل --}}
-        <a href="{{ route('emergency.aar.index') }}" class="{{ request()->routeIs('emergency.aar.*') ? 'active' : '' }}"><i class="bi bi-journal-check"></i>تقارير ما بعد الحادث</a>
-        <a href="{{ route('emergency.drills.index') }}" class="{{ request()->routeIs('emergency.drills.*') ? 'active' : '' }}"><i class="bi bi-calendar-event"></i>التمارين</a>
-        <a href="{{ route('emergency.equipment.index') }}" class="{{ request()->routeIs('emergency.equipment.*') ? 'active' : '' }}"><i class="bi bi-fire"></i>معدات الطوارئ</a>
-        <a href="{{ route('emergency.contacts.index') }}" class="{{ request()->routeIs('emergency.contacts.*') ? 'active' : '' }}"><i class="bi bi-telephone"></i>جهات الاتصال</a>
-        <a href="{{ route('emergency.buildings.index') }}" class="{{ request()->routeIs('emergency.buildings.*') ? 'active' : '' }}"><i class="bi bi-building"></i>المبنى</a>
-        <a href="{{ route('emergency.analytics.index') }}" class="{{ request()->routeIs('emergency.analytics.*') ? 'active' : '' }}"><i class="bi bi-graph-up"></i>مؤشرات الطوارئ</a>
-        <a href="{{ route('emergency.iot.dashboard') }}" class="{{ request()->routeIs('emergency.iot.dashboard') || request()->routeIs('emergency.iot.events') ? 'active' : '' }}"><i class="bi bi-cpu"></i>أنظمة المبنى</a>
-        {{-- قرار ٣٣: الشاشات الخمس كانت مبنية بلا مدخل --}}
-        <a href="{{ route('emergency.panic.dashboard') }}" class="{{ request()->routeIs('emergency.panic.*') ? 'active' : '' }}"><i class="bi bi-exclamation-diamond"></i>تنبيهات الذعر</a>
-        <a href="{{ route('emergency.iot.wearables.dashboard') }}" class="{{ request()->routeIs('emergency.iot.wearables.*') ? 'active' : '' }}"><i class="bi bi-smartwatch"></i>الأساور</a>
-        <a href="{{ route('emergency.iot.cameras.dashboard') }}" class="{{ request()->routeIs('emergency.iot.cameras.*') ? 'active' : '' }}"><i class="bi bi-camera-video"></i>الكاميرات</a>
-        <a href="{{ route('emergency.visitors.dashboard') }}" class="{{ request()->routeIs('emergency.visitors.*') ? 'active' : '' }}"><i class="bi bi-person-vcard"></i>الزوار</a>
-        {{-- ٢٢-٦ب (قرار ٦٠): الملفات الطبية للطبيب وحده — كان الرابط يظهر لكل من يرى الطوارئ --}}
+        <div class="small text-muted px-2 mb-1">مركز السلامة وإدارة الطوارئ</div>
+        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'emergency.view') || \App\Core\Permissions\PermissionRegistry::hasPermission($role, 'emergency.respond'))
+          <a href="{{ route('emergency.dashboard') }}" class="{{ request()->routeIs('emergency.dashboard') ? 'active' : '' }}"><i class="bi bi-exclamation-octagon"></i>ما يجري الآن</a>
+          <a href="{{ route('emergency.incidents.index') }}" class="{{ request()->routeIs('emergency.incidents.*') ? 'active' : '' }}"><i class="bi bi-broadcast"></i>الحالات الطارئة</a>
+        @endif
+        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'incident.list'))
+          <a href="{{ route('incidents.index') }}" class="{{ request()->routeIs('incidents.index') || request()->routeIs('incidents.show') ? 'active' : '' }}"><i class="bi bi-megaphone"></i>سجل مركز السلامة</a>
+          <a href="{{ route('incident.landing') }}" target="_blank"><i class="bi bi-box-arrow-up-left"></i>صفحة البلاغ العامة</a>
+        @endif
+        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'emergency.view') || \App\Core\Permissions\PermissionRegistry::hasPermission($role, 'emergency.respond'))
+          <a href="{{ route('emergency.plans.index') }}" class="{{ request()->routeIs('emergency.plans.*') ? 'active' : '' }}"><i class="bi bi-list-ol"></i>خطط الاستجابة</a>
+          <a href="{{ route('emergency.teams.index') }}" class="{{ request()->routeIs('emergency.teams.*') ? 'active' : '' }}"><i class="bi bi-people-fill"></i>الفريق الأولي</a>
+          <a href="{{ route('emergency.panic.dashboard') }}" class="{{ request()->routeIs('emergency.panic.*') ? 'active' : '' }}"><i class="bi bi-exclamation-diamond"></i>تنبيهات الذعر</a>
+          <a href="{{ route('emergency.aar.index') }}" class="{{ request()->routeIs('emergency.aar.*') ? 'active' : '' }}"><i class="bi bi-journal-check"></i>تقارير ما بعد الحادث</a>
+          <a href="{{ route('emergency.drills.index') }}" class="{{ request()->routeIs('emergency.drills.*') ? 'active' : '' }}"><i class="bi bi-calendar-event"></i>التمارين</a>
+          <a href="{{ route('emergency.equipment.index') }}" class="{{ request()->routeIs('emergency.equipment.*') ? 'active' : '' }}"><i class="bi bi-fire"></i>معدات الطوارئ</a>
+          <a href="{{ route('emergency.contacts.index') }}" class="{{ request()->routeIs('emergency.contacts.*') ? 'active' : '' }}"><i class="bi bi-telephone"></i>جهات الاتصال</a>
+          <a href="{{ route('emergency.buildings.index') }}" class="{{ request()->routeIs('emergency.buildings.*') ? 'active' : '' }}"><i class="bi bi-building"></i>المبنى</a>
+          <a href="{{ route('emergency.visitors.dashboard') }}" class="{{ request()->routeIs('emergency.visitors.*') ? 'active' : '' }}"><i class="bi bi-person-vcard"></i>الزوار</a>
+          <a href="{{ route('emergency.analytics.index') }}" class="{{ request()->routeIs('emergency.analytics.*') ? 'active' : '' }}"><i class="bi bi-graph-up"></i>مؤشرات الطوارئ</a>
+        @endif
         @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'medical.read'))
           <a href="{{ route('emergency.medical.dashboard') }}" class="{{ request()->routeIs('emergency.medical.dashboard') || request()->routeIs('emergency.medical.show') ? 'active' : '' }}"><i class="bi bi-heart-pulse"></i>الملفات الطبية</a>
         @endif
-        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'integration.manage'))
-          <a href="{{ route('emergency.iot.devices.index') }}" class="{{ request()->routeIs('emergency.iot.devices.*') ? 'active' : '' }}"><i class="bi bi-hdd-network"></i>الأجهزة الموصولة</a>
+        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'system.settings'))
+          <a href="{{ route('incidents.settings') }}" class="{{ request()->routeIs('incidents.settings') ? 'active' : '' }}"><i class="bi bi-clock"></i>مهل البلاغات</a>
         @endif
         @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'emergency.manage'))
           <a href="{{ route('emergency.settings') }}" class="{{ request()->routeIs('emergency.settings') ? 'active' : '' }}"><i class="bi bi-clock-history"></i>مهل التصعيد</a>
+        @endif
+
+        {{-- قرار ٦١: لا يُخفى شيء — ما يفترض أجهزة غير مركَّبة يبقى ظاهراً تحت عنوانه --}}
+        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'emergency.view') || \App\Core\Permissions\PermissionRegistry::hasPermission($role, 'emergency.respond'))
+          <div class="small text-muted px-2 mt-2 mb-1">تنتظر التركيب</div>
+          <a href="{{ route('emergency.iot.dashboard') }}" class="{{ request()->routeIs('emergency.iot.dashboard') || request()->routeIs('emergency.iot.events') ? 'active' : '' }}"><i class="bi bi-cpu"></i>أنظمة المبنى</a>
+          <a href="{{ route('emergency.iot.wearables.dashboard') }}" class="{{ request()->routeIs('emergency.iot.wearables.*') ? 'active' : '' }}"><i class="bi bi-smartwatch"></i>الأساور</a>
+          <a href="{{ route('emergency.iot.cameras.dashboard') }}" class="{{ request()->routeIs('emergency.iot.cameras.*') ? 'active' : '' }}"><i class="bi bi-camera-video"></i>الكاميرات</a>
+          @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'integration.manage'))
+            <a href="{{ route('emergency.iot.devices.index') }}" class="{{ request()->routeIs('emergency.iot.devices.*') ? 'active' : '' }}"><i class="bi bi-hdd-network"></i>الأجهزة الموصولة</a>
+          @endif
         @endif
       @endif
       @if(auth()->user()->isContractor())

@@ -47,11 +47,15 @@
             @csrf
             <div class="mb-3">
               <label class="form-label">المكان <span class="text-danger">*</span></label>
+              {{-- ٢٢-٨: المكان مُملوء مما يعرفه النظام (الرابط ثم حساب المفعِّل)، ويبقى قابلاً للتغيير --}}
               <select name="place_id" class="form-select" required>
-                <option value="">اختر المكان…</option>
-                @foreach($places as $p)<option value="{{ $p->id }}" @selected(old('place_id', request('place') === $p->code ? $p->id : null) == $p->id)>{{ $p->code }} — {{ $p->name }}</option>@endforeach
+                @unless($preset)<option value="">اختر المكان…</option>@endunless
+                @foreach($places as $p)<option value="{{ $p->id }}" @selected($preset == $p->id)>{{ $p->code }} — {{ $p->name }}</option>@endforeach
               </select>
-              <div class="form-text">يُنبَّه الفريق الأولي لهذا المكان (من ملف المكان في اللوحة) مع الإسناد والقيادة.</div>
+              <div class="form-text">
+                @if($preset)مُملوء مما يعرفه النظام — غيّره إن كانت الحالة في مكان آخر. @endif
+                يُنبَّه الفريق الأولي لهذا المكان (من ملف المكان في اللوحة) مع الإسناد والقيادة.
+              </div>
             </div>
             <div class="mb-3">
               <label class="form-label">نوع الحالة <span class="text-danger">*</span></label>
