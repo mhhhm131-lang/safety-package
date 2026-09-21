@@ -95,10 +95,6 @@ Route::middleware(['web', 'auth'])->prefix('app')->name('app.')->group(function 
         Route::post('/demo-off', [CloseoutController::class, 'disableDemo'])->name('demo-off');
         Route::post('/book-replace', [CloseoutController::class, 'replaceBook'])->name('book-replace');
         Route::get('/backup', [CloseoutController::class, 'backupDownload'])->name('backup');
-        // ٢١-٩ (قرار ٥٤): وضع التجربة من الشاشة — Render بلا سطر أوامر، والطلب يُقطع عند ٦٠ ثانية فالتعبئة تُستأنف
-        Route::post('/trial/start', [CloseoutController::class, 'trialStart'])->name('trial.start');
-        Route::post('/trial/fill', [CloseoutController::class, 'trialFill'])->name('trial.fill');
-        Route::post('/trial/stop', [CloseoutController::class, 'trialStop'])->name('trial.stop');
     });
 
     Route::prefix('notifications')->name('notifications.')->group(function () {
