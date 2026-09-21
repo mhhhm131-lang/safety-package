@@ -16,7 +16,7 @@
     {{-- ٢٢-٦ب (قرار ٦٠): بحث الطبيب عمّن أمامه الآن — وكل فتح لملف يُسجَّل باسمه ووقته --}}
     <div class="card mb-4">
         <div class="card-body">
-            <form method="get" class="row g-2 align-items-center">
+            <form method="get" class="row g-2 align-items-center" id="medicalSearch">
                 <div class="col-md-9">
                     <input name="q" value="{{ $q ?? '' }}" class="form-control form-control-lg" placeholder="ابحث عن الشخص بالاسم…" autofocus>
                 </div>
