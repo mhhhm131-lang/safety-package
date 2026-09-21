@@ -206,7 +206,10 @@
         <a href="{{ route('emergency.iot.wearables.dashboard') }}" class="{{ request()->routeIs('emergency.iot.wearables.*') ? 'active' : '' }}"><i class="bi bi-smartwatch"></i>الأساور</a>
         <a href="{{ route('emergency.iot.cameras.dashboard') }}" class="{{ request()->routeIs('emergency.iot.cameras.*') ? 'active' : '' }}"><i class="bi bi-camera-video"></i>الكاميرات</a>
         <a href="{{ route('emergency.visitors.dashboard') }}" class="{{ request()->routeIs('emergency.visitors.*') ? 'active' : '' }}"><i class="bi bi-person-vcard"></i>الزوار</a>
-        <a href="{{ route('emergency.medical.dashboard') }}" class="{{ request()->routeIs('emergency.medical.*') ? 'active' : '' }}"><i class="bi bi-heart-pulse"></i>الملفات الطبية</a>
+        {{-- ٢٢-٦ب (قرار ٦٠): الملفات الطبية للطبيب وحده — كان الرابط يظهر لكل من يرى الطوارئ --}}
+        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'medical.read'))
+          <a href="{{ route('emergency.medical.dashboard') }}" class="{{ request()->routeIs('emergency.medical.dashboard') || request()->routeIs('emergency.medical.show') ? 'active' : '' }}"><i class="bi bi-heart-pulse"></i>الملفات الطبية</a>
+        @endif
         @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'integration.manage'))
           <a href="{{ route('emergency.iot.devices.index') }}" class="{{ request()->routeIs('emergency.iot.devices.*') ? 'active' : '' }}"><i class="bi bi-hdd-network"></i>الأجهزة الموصولة</a>
         @endif

@@ -41,7 +41,7 @@ class CoordinatorSplitTest extends TestCase
         $this->assertSame('منسق الإخلاء والطوارئ', PermissionRegistry::ROLES['evac_coordinator'] ?? null);
         $this->assertContains('evac_coordinator', PermissionRegistry::ALL);
         $this->assertNull(PermissionRegistry::uiRole('evac_coordinator'));
-        $this->assertCount(27, PermissionRegistry::assignableRoles());
+        $this->assertCount(28, PermissionRegistry::assignableRoles()); // ٢٢-٦ب (قرار ٦٠): + طبيب العيادة
 
         $perms = PermissionRegistry::getRolePermissions('evac_coordinator');
         $expected = array_merge(PermissionRegistry::getRolePermissions('employee'), ['emergency.respond']);

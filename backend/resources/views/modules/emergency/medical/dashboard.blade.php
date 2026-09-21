@@ -13,6 +13,35 @@
         </a>
     </div>
 
+    {{-- ٢٢-٦ب (قرار ٦٠): بحث الطبيب عمّن أمامه الآن — وكل فتح لملف يُسجَّل باسمه ووقته --}}
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-2 align-items-center">
+                <div class="col-md-9">
+                    <input name="q" value="{{ $q ?? '' }}" class="form-control form-control-lg" placeholder="ابحث عن الشخص بالاسم…" autofocus>
+                </div>
+                <div class="col-md-3 d-grid"><button class="btn btn-primary btn-lg">ابحث</button></div>
+            </form>
+            @if(($q ?? '') !== '')
+                @if($people->isEmpty())
+                    <div class="text-muted mt-3">لا أحد بهذا الاسم.</div>
+                @else
+                    <div class="list-group list-group-flush mt-3">
+                        @foreach($people as $p)
+                            <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                               href="{{ route('emergency.medical.show', $p->id) }}">
+                                <span>{{ $p->name }} <span class="text-muted small">{{ $p->username }}</span></span>
+                                <span class="btn btn-sm btn-outline-primary">افتح الملف</span>
+                            </a>
+                        @endforeach
+                    </div>
+                @endif
+            @else
+                <div class="text-muted small mt-2">هذه بيانات صحية — الاطّلاع مقصور على العيادة، وكل فتح يُسجَّل.</div>
+            @endif
+        </div>
+    </div>
+
     <!-- Stats Cards -->
     <div class="row g-3 mb-4">
         <div class="col-md-3">

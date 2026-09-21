@@ -34,6 +34,8 @@ class PermissionRegistry
         'consultant_office'     => 'المكتب الاستشاري',
         // الفريق الأولي (قرار ٤٣، المرحلة ١٥): صلاحيات الموظف + الاستجابة؛ ٢١-١ (قرار ٥٣): منسق الفريق = evac_coordinator لا منسق السلامة
         'evac_coordinator'      => 'منسق الإخلاء والطوارئ',
+        // ٢٢-٦ب (قرار ٦٠): الملف الطبي داخل النظام، والطبيب وحده يطّلع عليه
+        'clinic_doctor'         => 'طبيب العيادة',
         'medic'                 => 'مسعف',
         'rescuer'               => 'منقذ',
         'firefighter'           => 'إطفائي',
@@ -103,6 +105,7 @@ class PermissionRegistry
         'employee'              => null,
         'external'              => null,
         'evac_coordinator'      => null,
+        'clinic_doctor'         => null,
         'medic'                 => null,
         'rescuer'               => null,
         'firefighter'           => null,
@@ -118,11 +121,12 @@ class PermissionRegistry
     public const ALL = ['system_admin', 'system_staff', 'top_management', 'safety_committee', 'branch_manager',
         'department_manager', 'section_manager', 'safety_coordinator', 'field_worker', 'contractor_supervisor',
         'contractor', 'employee', 'external', 'admin_eng_manager', 'facilities_manager', 'security_safety_head',
-        'support_team', 'consultant_office', 'evac_coordinator', 'medic', 'rescuer', 'firefighter',
+        'support_team', 'consultant_office', 'evac_coordinator', 'clinic_doctor', 'medic', 'rescuer', 'firefighter',
         'tech_fire_pump', 'tech_generator', 'tech_fire_alarm', 'tech_hvac', 'tech_elevator', 'tech_electrical'];
 
     private const MGMT = ['branch_manager', 'department_manager', 'section_manager'];
-    private const INSTITUTE_VIEW = ['admin_eng_manager', 'facilities_manager', 'security_safety_head', 'support_team'];
+    // ٢٢-٦ب (قرار ٦٠): طبيب العيادة يأخذ ما كان لطبيب المعهد ضمن «فريق الإسناد» ويزيد عليه `medical.read` وحدها
+    private const INSTITUTE_VIEW = ['admin_eng_manager', 'facilities_manager', 'security_safety_head', 'support_team', 'clinic_doctor'];
 
     public const PERMISSIONS = [
         // النظام والحوكمة
@@ -144,7 +148,7 @@ class PermissionRegistry
         // المخاطر
         'risk.list'    => ['system_admin', 'system_staff', 'top_management', 'safety_committee', 'branch_manager',
             'department_manager', 'section_manager', 'safety_coordinator',
-            'admin_eng_manager', 'facilities_manager', 'security_safety_head', 'support_team', 'consultant_office'],
+            'admin_eng_manager', 'facilities_manager', 'security_safety_head', 'support_team', 'clinic_doctor', 'consultant_office'],
         'risk.create'  => ['system_admin', 'system_staff', 'safety_coordinator', 'consultant_office'],
         // إضافة معهدية: مدير الإدارة/الفرع/القسم يفعّل من السجل العام في سجل وحدته ويسمّي المسؤول (BACKEND.md ٥-٥)
         'risk.activate' => ['system_admin', 'system_staff', 'safety_coordinator', 'branch_manager', 'department_manager', 'section_manager', 'security_safety_head', 'admin_eng_manager', 'facilities_manager'],
@@ -193,7 +197,7 @@ class PermissionRegistry
 
         // الطوارئ
         'emergency.view'      => ['system_admin', 'system_staff', 'top_management', 'safety_committee', 'safety_coordinator', 'branch_manager', 'department_manager', 'section_manager',
-            'admin_eng_manager', 'facilities_manager', 'security_safety_head', 'support_team'],
+            'admin_eng_manager', 'facilities_manager', 'security_safety_head', 'support_team', 'clinic_doctor'],
         'emergency.manage'    => ['system_admin', 'system_staff', 'safety_coordinator'],
         'emergency.trigger'   => ['system_admin', 'system_staff', 'safety_coordinator', 'branch_manager', 'department_manager', 'security_safety_head', 'admin_eng_manager', 'facilities_manager'],
         'emergency.respond'   => ['system_admin', 'system_staff', 'safety_coordinator', 'branch_manager', 'department_manager', 'section_manager', 'field_worker', 'security_safety_head', 'admin_eng_manager', 'facilities_manager', 'evac_coordinator', 'medic', 'rescuer', 'firefighter'],
@@ -202,6 +206,10 @@ class PermissionRegistry
         'emergency.teams'     => ['system_admin', 'system_staff', 'safety_coordinator'],
         'epc.manage'          => ['system_admin', 'system_staff', 'safety_coordinator'],
         'integration.manage'  => ['system_admin', 'system_staff'],
+
+        // ٢٢-٦ب (قرار ٦٠): الملف الطبي — الطبيب وحده. لا المسعف ولا المنسق ولا مسؤول السلامة ولا المناوب.
+        // (ملف الشخص نفسه خارج هذه الصلاحية: `medical/my-profile` مفتوح لكل حساب.)
+        'medical.read'        => ['clinic_doctor'],
 
         // التقارير والتوعية والدعم
         'report.view'      => ['system_admin', 'top_management', 'safety_committee', 'branch_manager', 'department_manager', 'section_manager', 'safety_coordinator', 'security_safety_head', 'admin_eng_manager', 'facilities_manager'],

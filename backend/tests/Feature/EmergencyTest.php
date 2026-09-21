@@ -251,16 +251,20 @@ class EmergencyTest extends TestCase
         $this->assertDatabaseHas('app_notifications', ['user_id' => $this->coord->id, 'type' => 'emergency.cancelled']);
     }
 
-    /** قرار ٣٣: الشاشات الخمس (الذعر، الزوار، الطبية، الأساور، الكاميرات) لها مدخل في القائمة وبطاقتا عدّ في مركز الطوارئ. */
-    public function test_dashboard_links_the_five_screens_and_counts_open_alerts(): void
+    /**
+     * قرار ٣٣: الشاشات التي كانت مبنية بلا مدخل صار لها مدخل في القائمة، وبطاقتا عدّ في مركز الطوارئ.
+     * ٢٢-٦ب (قرار ٦٠): «الملفات الطبية» خرجت من قائمة المناوب — صارت للطبيب وحده، ويُحرسها اختبارها.
+     */
+    public function test_dashboard_links_the_screens_and_counts_open_alerts(): void
     {
-        $screens = ['/app/emergency/panic', '/app/emergency/visitors', '/app/emergency/medical', '/app/emergency/iot/wearables', '/app/emergency/iot/cameras'];
+        $screens = ['/app/emergency/panic', '/app/emergency/visitors', '/app/emergency/iot/wearables', '/app/emergency/iot/cameras'];
 
         // بلا تنبيهات: الروابط الخمسة في القائمة والبطاقتان بصفر
         $r = $this->actingAs($this->munawib)->get('/app/emergency')->assertOk();
         foreach ($screens as $u) {
             $r->assertSee('href="'.url($u).'"', false);
         }
+        $r->assertDontSee('href="'.url('/app/emergency/medical').'"', false); // ٢٢-٦ب: للطبيب وحده
         $r->assertSeeInOrder(['<div class="fs-4 fw-bold">0</div><div class="small text-muted">تنبيهات ذعر مفتوحة'], false);
         $r->assertSeeInOrder(['<div class="fs-4 fw-bold">0</div><div class="small text-muted">تنبيهات أساور مفتوحة'], false);
 
@@ -389,7 +393,10 @@ class EmergencyTest extends TestCase
 
         // الملف الطبي الشخصي
         $this->actingAs($this->employee)->putJson('/api/emergency/medical/my-profile', ['blood_type' => 'O+', 'needs_evacuation_assistance' => true, 'mobility_level' => 'limited'])->assertOk();
-        $this->actingAs($this->coord)->getJson('/api/emergency/medical/needs-assistance')->assertOk()->assertJsonPath('count', 1);
+        // ٢٢-٦ب (قرار ٦٠): كان منسق السلامة يقرأ هذا؛ صار للطبيب وحده
+        $tabib = $this->user('tabib', 'clinic_doctor');
+        $this->actingAs($tabib)->getJson('/api/emergency/medical/needs-assistance')->assertOk()->assertJsonPath('count', 1);
+        $this->actingAs($this->coord)->getJson('/api/emergency/medical/needs-assistance')->assertForbidden();
         $this->actingAs($this->employee)->getJson('/api/emergency/medical/needs-assistance')->assertForbidden();
         $this->actingAs($this->employee)->get('/app/emergency/medical/my-profile')->assertOk();
 
@@ -438,9 +445,10 @@ class EmergencyTest extends TestCase
             '/app/emergency/teams', "/app/emergency/teams/{$team->id}", "/app/emergency/teams/{$derived->id}", '/app/emergency/teams/create', "/app/emergency/teams/{$team->id}/edit",
             '/app/emergency/drills', '/app/emergency/drills/create', '/app/emergency/equipment', '/app/emergency/equipment/create',
             '/app/emergency/contacts', '/app/emergency/contacts/create', '/app/emergency/analytics', '/app/emergency/settings',
-            '/app/emergency/panic', '/app/emergency/visitors', '/app/emergency/visitors/kiosk', "/app/emergency/visitors/{$this->building->id}", '/app/emergency/medical', '/app', '/app/emergency/analytics/export'] as $url) {
+            '/app/emergency/panic', '/app/emergency/visitors', '/app/emergency/visitors/kiosk', "/app/emergency/visitors/{$this->building->id}", '/app', '/app/emergency/analytics/export'] as $url) {
             $s->get($url)->assertOk();
         }
+        $this->actingAs($this->salama)->get('/app/emergency/medical')->assertForbidden(); // ٢٢-٦ب: للطبيب وحده
         $this->actingAs($this->fani)->get('/app/emergency/settings')->assertForbidden();
         $this->actingAs($this->employee)->get('/app/emergency/teams')->assertForbidden();
         $this->actingAs($this->salama)->getJson("/api/emergency/incidents/{$incident->id}/events?after=0")->assertOk()->assertJsonPath('status', 'active');

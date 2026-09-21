@@ -44,6 +44,22 @@ class EmergencyNotificationService
         $this->notifyManagement($incident);
         $this->notifyContacts($incident);
         $this->notifyOccupants($incident);
+        $this->notifyClinic($incident);
+    }
+
+    /**
+     * ٢٢-٦ب (قرار ٦٠): الحالة الطبية تُنبّه طبيب العيادة — وإلا بقي الملف الطبي خزانة مقفلة
+     * لا تُفتح وقت الحاجة. غير الطبية لا تُنبّهه (لا شأن للعيادة بها).
+     */
+    public function notifyClinic(EmergencyIncident $incident): void
+    {
+        if ($incident->incident_type !== 'medical') {
+            return;
+        }
+        foreach ($this->usersWithRoles(['clinic_doctor']) as $user) {
+            $this->sendToUser($incident, $user, 'حالة طبية — '.$incident->getAlertMessage(),
+                $this->getDetailedMessage($incident), 'emergency.medical');
+        }
     }
 
     /** ١. الفريق الأولي للمكان + الفرق اليدوية النشطة في المبنى. */

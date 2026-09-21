@@ -81,7 +81,9 @@ class TrialFill
         $this->account('shuon', 'admin_eng_manager', 'مدير الشؤون الإدارية والهندسية', ['organization_unit_id' => $adm]);
         $this->account('marafiq', 'facilities_manager', 'مدير المرافق والصيانة', ['organization_unit_id' => $adm]);
         $this->account('amn', 'security_safety_head', 'رئيس الأمن والسلامة', ['organization_unit_id' => $adm]);
-        foreach ([4 => ['tabib', 'طبيب المعهد'], 5 => ['haris', 'فرد الأمن المكلف'], 13 => ['muraqib', 'مراقب الحريق']] as $card => [$n, $label]) {
+        // ٢٢-٦ب (قرار ٦٠): طبيب المعهد صار دوره «طبيب العيادة» — ما كان له كفريق إسناد يبقى، ويزيد الملف الطبي
+        $this->account('tabib', 'clinic_doctor', 'طبيب العيادة', ['role_card_no' => 4], $all);
+        foreach ([5 => ['haris', 'فرد الأمن المكلف'], 13 => ['muraqib', 'مراقب الحريق']] as $card => [$n, $label]) {
             $this->account($n, 'support_team', $label, ['role_card_no' => $card], $all);
         }
         $this->account('maktab', 'consultant_office', 'المكتب الاستشاري');

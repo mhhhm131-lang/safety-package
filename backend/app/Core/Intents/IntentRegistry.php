@@ -81,6 +81,9 @@ class IntentRegistry
         $add($can('emergency.drill'), 'drill', 'أجدول تمريناً', route('emergency.drills.create'), 'bi-calendar-event', 'الطوارئ');
         $add($can('emergency.teams'), 'teams', 'الفريق الأولي', route('emergency.teams.index'), 'bi-people-fill', 'الطوارئ');
         $add($can('emergency.view'), 'emergency', 'مركز الطوارئ', route('emergency.dashboard'), 'bi-broadcast', 'الطوارئ');
+        // ٢٢-٦ب (قرار ٦٠): ملف الشخص الطبي — كان مبنياً بلا رابط يصله صاحبه؛ والطبيب وحده يرى ملفات الناس
+        $add((bool) $profile?->is_active, 'my_medical', 'ملفي الطبي', route('emergency.medical.my-profile'), 'bi-heart-pulse', 'مكاني', false, 'اختياري — لا يطّلع عليه إلا طبيب العيادة');
+        $add($can('medical.read'), 'medical', 'الملفات الطبية', route('emergency.medical.dashboard'), 'bi-file-medical', 'الطوارئ', true, 'للعيادة وحدها، وكل اطّلاع يُسجَّل');
         $add($can('emergency.view') && in_array($role, ['facilities_manager', 'system_admin', 'system_staff'], true), 'systems', 'أنظمة المبنى', route('emergency.iot.dashboard'), 'bi-cpu', 'الطوارئ');
         // الإدارة: الفريق والمخاطر
         // ١٩-٥ (قرار ٤٨): الترشيح في ملف مكان الإدارة داخل الخلفية (كان يفتح اللوحة)

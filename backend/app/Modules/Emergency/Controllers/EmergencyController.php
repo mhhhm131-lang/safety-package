@@ -915,19 +915,40 @@ class EmergencyController extends Controller
 
     // ==================== الملفات الطبية ====================
 
-    public function medicalDashboard()
+    public function medicalDashboard(Request $request)
     {
         $medicalService = app(MedicalProfileService::class);
         $stats = $medicalService->getStats();
         $needsAssistance = $medicalService->getUsersNeedingAssistance();
         $needsReview = $medicalService->getProfilesNeedingReview()->take(10);
-        return view('modules.emergency.medical.dashboard', compact('stats', 'needsAssistance', 'needsReview'));
+        // ٢٢-٦ب: الطبيب يبحث عمّن أمامه الآن — اللوحة كانت بلا مدخل إلى ملف شخص بعينه
+        $q = trim((string) $request->query('q', ''));
+        $people = $q === '' ? collect() : User::query()
+            ->whereHas('profile', fn ($w) => $w->where('is_active', true))
+            ->where(fn ($w) => $w->where('name', 'like', "%{$q}%")->orWhere('username', 'like', "%{$q}%"))
+            ->orderBy('name')->limit(20)->get(['id', 'name', 'username']);
+        return view('modules.emergency.medical.dashboard', compact('stats', 'needsAssistance', 'needsReview', 'people', 'q'));
     }
 
     public function myMedicalProfile()
     {
         $profile = app(MedicalProfileService::class)->getOrCreate(auth()->id());
         return view('modules.emergency.medical.my-profile', compact('profile'));
+    }
+
+    /**
+     * ٢٢-٦ب (قرار ٦٠): ملف شخصٍ ما — للطبيب وحده، وكل اطّلاع يُسجَّل باسمه ووقته.
+     * التسجيل ضمانة للموظف: يستطيع أن يعرف من فتح ملفه ومتى.
+     */
+    public function medicalShow(Request $request, int $userId)
+    {
+        $person = User::findOrFail($userId);
+        $profile = app(MedicalProfileService::class)->getOrCreate($person->id);
+        app(\App\Core\Services\AuditLogService::class)->log(
+            $request, 'medical.view', 'EmergencyMedicalProfile', $profile->id,
+            'اطّلع طبيب العيادة على الملف الطبي لـ'.$person->name
+        );
+        return view('modules.emergency.medical.show', compact('person', 'profile'));
     }
 
     // ==================== ٢٢-٢: الشخص وقت الحالة — شاشة واحدة لكل حساب ====================
@@ -975,6 +996,9 @@ class EmergencyController extends Controller
             // ٢٢-٤: عضويته في فريق الحالة — يظهر له «وصلتُ إلى الموقع»
             'teamMember' => $teamMember = ($incident ? $this->teamMemberOf($user, $incident) : null),
             'arrivedLog' => ($incident && $teamMember) ? $this->arrivedAt($incident, $teamMember) : null,
+            // ٢٢-٦: طلبه عولج؟ من الخط الزمني، فلا يظل ينتظر
+            'helpHandled' => ($incident && $checkIn && !$checkIn->needs_assistance)
+                ? $this->helpHandledLog($incident, $checkIn) : null,
         ]);
     }
 
@@ -998,6 +1022,34 @@ class EmergencyController extends Controller
         }
         $this->musteringService->selfCheckIn($checkIn, AssemblyPoint::findOrFail($v['assembly_point_id']));
         return redirect()->route('emergency.me')->with('success', 'سُجّل وصولك بأمان. ابقَ في نقطة التجمع حتى يُعلَن انتهاء الخطر.');
+    }
+
+    // ==================== ٢٢-٦: طلب المساعدة يُغلق بزر ====================
+
+    /**
+     * «عولج» — من يستجيب يغلق طلب المساعدة فلا يبقى معلّقاً، ويُقيَّد من عالجه ومتى.
+     * لا يحمل الطلب ولا إغلاقه أي بيان طبي (قرار ٥٩): ما كتبه صاحبه فقط.
+     */
+    public function helpDone(Request $request, EmergencyIncident $incident, int $checkIn)
+    {
+        $this->authorize('respond', $incident);
+        $row = EvacuationCheckIn::where('incident_id', $incident->id)->findOrFail($checkIn);
+        if (!$row->needs_assistance) {
+            return back()->with('success', 'هذا الطلب مغلق مسبقاً.');
+        }
+        $row->update(['needs_assistance' => false, 'assistance_type' => null]);
+        EmergencyEventLog::log($incident, EmergencyEventLog::TYPE_HELP_REQUESTED,
+            'عولج طلب المساعدة: '.$row->getPersonName(), ['check_in_id' => $row->id, 'resolved' => true], 'info', auth()->id());
+        return back()->with('success', 'سُجّل أنك عالجت طلب «'.$row->getPersonName().'».');
+    }
+
+    /** سطر «عولج طلب المساعدة» لصاحب هذا السجل، إن وُجد. */
+    protected function helpHandledLog(EmergencyIncident $incident, EvacuationCheckIn $checkIn): ?EmergencyEventLog
+    {
+        return EmergencyEventLog::where('incident_id', $incident->id)
+            ->where('event_type', EmergencyEventLog::TYPE_HELP_REQUESTED)
+            ->latest('id')->get()
+            ->first(fn ($e) => ($e->data['resolved'] ?? false) && (int) ($e->data['check_in_id'] ?? 0) === $checkIn->id);
     }
 
     // ==================== ٢٢-٥: الرسائل الجماعية — زر الإرسال ====================

@@ -164,8 +164,23 @@
     @if($needHelp->isNotEmpty())
     <div class="card mb-3 border-warning">
       <div class="card-header bg-warning"><strong><i class="bi bi-exclamation-triangle"></i> يحتاجون مساعدة</strong> <span class="badge text-bg-dark">{{ $needHelp->count() }}</span></div>
+      {{-- ٢٢-٦: الوقت وزر «عولج» — كان الطلب يظهر بلا وقت ولا سبيل لإغلاقه --}}
       <ul class="list-group list-group-flush small">
-        @foreach($needHelp as $c)<li class="list-group-item"><strong>{{ $c->getPersonName() }}</strong> — <span class="text-danger">{{ $c->getAssistanceTypeLabel() }}</span>@if($c->last_known_location) · {{ $c->last_known_location }}@endif @if($c->notes)<br><small class="text-muted">{{ $c->notes }}</small>@endif</li>@endforeach
+        @foreach($needHelp as $c)
+          <li class="list-group-item d-flex align-items-start gap-2 flex-wrap">
+            <div class="flex-grow-1">
+              <strong>{{ $c->getPersonName() }}</strong> — <span class="text-danger">{{ $c->getAssistanceTypeLabel() }}</span>
+              @if($c->last_known_location) · {{ $c->last_known_location }}@endif
+              @if($c->updated_at) · <span class="text-muted">منذ {{ $c->updated_at->diffForHumans(null, true) }}</span>@endif
+              @if($c->notes)<br><small class="text-muted">{{ $c->notes }}</small>@endif
+            </div>
+            @can('respond', $incident)
+              <form method="post" action="{{ route('emergency.incidents.help.done', [$incident, $c->id]) }}" class="m-0">
+                @csrf<button class="btn btn-sm btn-success">عولج</button>
+              </form>
+            @endcan
+          </li>
+        @endforeach
       </ul>
     </div>
     @endif

@@ -128,7 +128,9 @@ Route::middleware(['web', 'auth'])->prefix('api/emergency')->name('api.emergency
         Route::get('/my-profile', [MedicalProfileController::class, 'myProfile'])->name('my-profile');
         Route::put('/my-profile', [MedicalProfileController::class, 'updateMyProfile'])->name('my-profile.update');
         Route::get('/emergency-card', [MedicalProfileController::class, 'emergencyCard'])->name('emergency-card');
-        Route::middleware('permission:emergency.respond,emergency.trigger')->group(function () {
+        // ٢٢-٦ب (قرار ٦٠): كان هذا كله خلف `emergency.respond,emergency.trigger` — أي المسعف والفني
+        // ومديري الإدارات والمركز. صار للطبيب وحده.
+        Route::middleware('permission:medical.read')->group(function () {
             Route::get('/stats', [MedicalProfileController::class, 'stats'])->name('stats');
             Route::get('/needs-assistance', [MedicalProfileController::class, 'needsAssistance'])->name('needs-assistance');
             Route::get('/critical-info', [MedicalProfileController::class, 'criticalInfo'])->name('critical-info');
@@ -136,8 +138,6 @@ Route::middleware(['web', 'auth'])->prefix('api/emergency')->name('api.emergency
             Route::get('/blood-type/{bloodType}', [MedicalProfileController::class, 'byBloodType'])->name('blood-type');
             Route::get('/users/{userId}', [MedicalProfileController::class, 'show'])->name('users.show');
             Route::get('/users/{userId}/for-responders', [MedicalProfileController::class, 'forResponders'])->name('users.for-responders');
-        });
-        Route::middleware('permission:emergency.manage')->group(function () {
             Route::post('/{profile}/verify', [MedicalProfileController::class, 'verify'])->name('verify');
             Route::post('/{profile}/reviewed', [MedicalProfileController::class, 'markReviewed'])->name('reviewed');
         });

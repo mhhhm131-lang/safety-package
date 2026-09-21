@@ -141,7 +141,15 @@
             <strong>طلبك وصل.</strong> {{ $checkIn->getAssistanceTypeLabel() }}@if($checkIn->notes) — {{ $checkIn->notes }}@endif
             <div class="small">فريق الاستجابة والمركز يريانه الآن. ابقَ مكانك إن كنت آمناً.</div>
           </div>
-        @else
+        @elseif($helpHandled)
+          {{-- ٢٢-٦: من طلب مساعدة يعرف أنها عولجت فلا يظل ينتظر --}}
+          <div class="alert alert-success mb-0">
+            <strong>عولج طلبك.</strong>@if($helpHandled->logged_at) · {{ $helpHandled->logged_at->format('H:i') }}@endif
+            <div class="small">إن احتجت شيئاً آخر فاضغط «أحتاج مساعدة» من جديد، أو اتصل بالمركز.</div>
+          </div>
+        @endif
+
+        @if(!$checkIn || !$checkIn->needs_assistance)
           <button class="btn btn-outline-danger btn-lg w-100 py-3 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#helpForm">
             <i class="bi bi-hand-index-thumb"></i> أحتاج مساعدة
           </button>

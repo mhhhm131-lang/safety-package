@@ -84,7 +84,7 @@ class RoleCardsMatchTest extends TestCase
         $emp = $this->user('emp', 'employee');
         $this->get('/app/roles')->assertRedirect('/login'); // الضيف قبل أي دخول
         $h = $this->actingAs($emp)->get('/app/roles')->assertOk()->getContent();
-        $this->assertSame(27, substr_count($h, 'data-role="')); // ٢١-١ (قرار ٥٣): + منسق الإخلاء والطوارئ
+        $this->assertSame(28, substr_count($h, 'data-role="')); // ٢١-١ (قرار ٥٣) + ٢٢-٦ب (قرار ٦٠): + منسق الإخلاء والطوارئ + طبيب العيادة
         $this->assertSame(21, substr_count($h, 'data-card="'));
         $this->assertStringContainsString('فني الكهرباء', $h);
         $this->assertStringContainsString('طبيب المعهد', $h);

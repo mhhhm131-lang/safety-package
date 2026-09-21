@@ -51,7 +51,6 @@ Route::middleware(['web', 'auth'])->prefix('app/emergency')->name('emergency.')-
         Route::get('/visitors', [EmergencyController::class, 'visitorsDashboard'])->name('visitors.dashboard');
         Route::get('/visitors/kiosk', [EmergencyController::class, 'visitorsKiosk'])->name('visitors.kiosk');
         Route::get('/visitors/{building}', [EmergencyController::class, 'visitorsBuilding'])->name('visitors.building')->whereNumber('building');
-        Route::get('/medical', [EmergencyController::class, 'medicalDashboard'])->name('medical.dashboard');
     });
 
     // الاستجابة الميدانية أثناء الحالة (السياسة تتحقق من الكائن)
@@ -62,6 +61,8 @@ Route::middleware(['web', 'auth'])->prefix('app/emergency')->name('emergency.')-
         Route::post('/mark-missing', [EmergencyController::class, 'markMissing'])->name('markMissing');
         Route::post('/report-missing', [EmergencyController::class, 'reportMissingPerson'])->name('reportMissing');
         // خطوات خطة الاستجابة (المرحلة ١٠-٢): «تم» بيد المناوب أو صاحب الدور، أو تخطٍّ بسبب
+        // ٢٢-٦: «عولج» يغلق طلب المساعدة فلا يبقى معلّقاً ويُعرف من عالجه
+        Route::post('/help/{checkIn}/done', [EmergencyController::class, 'helpDone'])->name('help.done')->whereNumber('checkIn');
         Route::post('/steps/{step}/done', [EmergencyController::class, 'stepDone'])->name('steps.done')->whereNumber('step');
         Route::post('/steps/{step}/skip', [EmergencyController::class, 'stepSkip'])->name('steps.skip')->whereNumber('step');
     });
@@ -143,8 +144,14 @@ Route::middleware(['web', 'auth'])->prefix('app/emergency')->name('emergency.')-
         Route::delete('/teams/{team}/members/{member}', [EmergencyController::class, 'teamMembersDestroy'])->name('teams.members.destroy');
     });
 
-    // الملف الطبي الشخصي: لكل حساب
+    // ٢٢-٦ب (قرار ٦٠): الملف الطبي الشخصي لكل حساب — يملؤه صاحبه اختياراً
     Route::get('/medical/my-profile', [EmergencyController::class, 'myMedicalProfile'])->name('medical.my-profile');
+
+    // وملفات الناس للطبيب وحده، وكل اطّلاع يُسجَّل
+    Route::middleware('permission:medical.read')->group(function () {
+        Route::get('/medical', [EmergencyController::class, 'medicalDashboard'])->name('medical.dashboard');
+        Route::get('/medical/users/{userId}', [EmergencyController::class, 'medicalShow'])->name('medical.show')->whereNumber('userId');
+    });
 
     // مسح رمز الشخص عند نقطة التجمع (يفتح على جوال المنسق بعد الدخول) — يعرض هوية الرمز ويحيل إلى التسجيل
     Route::get('/checkin/{token}', function (string $token) {

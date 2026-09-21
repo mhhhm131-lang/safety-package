@@ -35,7 +35,7 @@ class TechRolesTest extends TestCase
     public function test_six_technician_roles_carry_the_technician_permissions_and_cards(): void
     {
         $this->assertSame(['tech_fire_pump', 'tech_generator', 'tech_fire_alarm', 'tech_hvac', 'tech_elevator', 'tech_electrical'], P::TECH_ROLES);
-        $this->assertCount(27, P::assignableRoles(), 'الأدوار القابلة للإسناد ليست ٢٧'); // ٢١-١ (قرار ٥٣): + منسق الإخلاء والطوارئ
+        $this->assertCount(28, P::assignableRoles(), 'الأدوار القابلة للإسناد ليست ٢٨'); // ٢١-١ (قرار ٥٣) + ٢٢-٦ب (قرار ٦٠)
         $this->assertArrayNotHasKey('field_worker', P::assignableRoles());
         $this->assertArrayHasKey('field_worker', P::ROLES, 'مفتاح الفني المنفّذ يبقى للحسابات القائمة');
 
