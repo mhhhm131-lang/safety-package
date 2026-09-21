@@ -15,6 +15,7 @@ use App\Modules\Emergency\Models\EmergencyEquipmentInspection;
 use App\Modules\Emergency\Models\EmergencyEventLog;
 use App\Modules\Emergency\Models\EmergencyIncident;
 use App\Modules\Emergency\Models\EmergencyIncidentStep;
+use App\Modules\Emergency\Models\EmergencyNotification;
 use App\Modules\Emergency\Models\EmergencyTeam;
 use App\Modules\Emergency\Models\EmergencyTeamMember;
 use App\Modules\Emergency\Models\EvacuationCheckIn;
@@ -964,6 +965,9 @@ class EmergencyController extends Controller
                 ? app(\App\Modules\Emergency\Services\EmergencyNotificationService::class)->getEvacuationInstructions($incident)
                 : null,
             'helpTypes' => EvacuationCheckIn::ASSISTANCE_TYPES,
+            // ٢٢-٤: عضويته في فريق الحالة — يظهر له «وصلتُ إلى الموقع»
+            'teamMember' => $teamMember = ($incident ? $this->teamMemberOf($user, $incident) : null),
+            'arrivedLog' => ($incident && $teamMember) ? $this->arrivedAt($incident, $teamMember) : null,
         ]);
     }
 
@@ -987,6 +991,89 @@ class EmergencyController extends Controller
         }
         $this->musteringService->selfCheckIn($checkIn, AssemblyPoint::findOrFail($v['assembly_point_id']));
         return redirect()->route('emergency.me')->with('success', 'سُجّل وصولك بأمان. ابقَ في نقطة التجمع حتى يُعلَن انتهاء الخطر.');
+    }
+
+    // ==================== ٢٢-٤: المستجيب يردّ بزر ====================
+
+    /** «استلمتُ» و«أنا في الطريق» و«وصلتُ» على تنبيه الذعر (ع٤: الشاشة كانت تعرض المستجيبين بلا زر). */
+    public function panicRespond(Request $request, PanicAlert $alert)
+    {
+        $v = $request->validate(['response_type' => 'required|in:acknowledged,en_route,arrived']);
+        $svc = app(PanicAlertService::class);
+        $user = auth()->user();
+        try {
+            match ($v['response_type']) {
+                'acknowledged' => $alert->canBeAcknowledged()
+                    ? $svc->acknowledge($alert, $user)
+                    : $svc->markEnRoute($alert, $user),   // استُلم قبلك: ردّك يُسجَّل ولا يسقط
+                'en_route' => $svc->markEnRoute($alert, $user),
+                'arrived' => $svc->markArrived($alert, $user),
+            };
+        } catch (\RuntimeException $e) {
+            return redirect()->route('emergency.panic.show', $alert)->with('error', 'تعذّر تسجيل ردّك: حالة التنبيه تغيّرت.');
+        }
+        return redirect()->route('emergency.panic.show', $alert)->with('success', match ($v['response_type']) {
+            'acknowledged' => 'سُجّل استلامك. صاحب الاستغاثة يعرف الآن أن أحداً رآها.',
+            'en_route' => 'سُجّل أنك في الطريق.',
+            'arrived' => 'سُجّل وصولك إلى الموقع.',
+        });
+    }
+
+    /** «نوديَ» — المركز يغلق النداء الهاتفي فيُعرف من اتُّصل به فعلاً (ع٥). */
+    public function callDone(\App\Modules\Emergency\Models\EmergencyNotification $notification)
+    {
+        if ($notification->status !== EmergencyNotification::STATUS_MANUAL) {
+            return back()->with('success', 'هذا النداء مغلق مسبقاً.');
+        }
+        $notification->update(['status' => EmergencyNotification::STATUS_SENT, 'sent_at' => now()]);
+        if ($notification->incident) {
+            EmergencyEventLog::log($notification->incident, EmergencyEventLog::TYPE_TEAM_NOTIFIED,
+                'نُوديَ هاتفياً: '.$notification->recipient_name.($notification->recipient_contact ? ' ('.$notification->recipient_contact.')' : ''),
+                ['notification_id' => $notification->id], 'info', auth()->id());
+        }
+        return back()->with('success', 'سُجّل أنك ناديت «'.$notification->recipient_name.'».');
+    }
+
+    /**
+     * «وصلتُ إلى الموقع» — عضو الفريق يسجّل وصوله بنفسه بدل أن ينتظر من يسجّله.
+     * الأثر نفسه الذي يحدثه تسجيل المركز اليدوي (`checkInManual`): سجل زمني + حصر الفريق.
+     */
+    public function myArrived()
+    {
+        $user = auth()->user();
+        $incident = EmergencyIncident::open()->latest('id')->first();
+        $member = $incident ? $this->teamMemberOf($user, $incident) : null;
+        if (!$incident || !$member) {
+            return redirect()->route('emergency.me')->with('error', 'لا حالة مفتوحة أنت من فريقها.');
+        }
+        if ($this->arrivedAt($incident, $member)) {
+            return redirect()->route('emergency.me')->with('success', 'وصولك مسجَّل مسبقاً.');
+        }
+        $this->service->teamMemberArrived($incident, $member, $user);
+        return redirect()->route('emergency.me')->with('success', 'سُجّل وصولك إلى الموقع. المركز يراه الآن.');
+    }
+
+    /**
+     * متى سُجّل وصول هذا العضو في هذه الحالة — من الخط الزمني.
+     * (عضو الفريق الذي له حساب لا يُنشأ له سجل حضور من نوع «فريق»: `generateQrCodesForIncident`
+     * يسجّله موظفاً بحسابه، وسجلات «الفريق» لمن بلا حساب. مسجَّل في المؤجلات: `team_arrived` في
+     * الإحصاء يَعدّ من بلا حساب وحدهم.)
+     */
+    protected function arrivedAt(EmergencyIncident $incident, EmergencyTeamMember $member): ?EmergencyEventLog
+    {
+        return EmergencyEventLog::where('incident_id', $incident->id)
+            ->where('event_type', EmergencyEventLog::TYPE_TEAM_ARRIVED)
+            ->get()
+            ->first(fn ($e) => (int) ($e->data['team_member_id'] ?? 0) === $member->id);
+    }
+
+    /** عضوية الحساب في فريق فعّال بمكان الحالة (أو فريق بلا مكان). */
+    protected function teamMemberOf(User $user, EmergencyIncident $incident): ?EmergencyTeamMember
+    {
+        return EmergencyTeamMember::where('user_id', $user->id)
+            ->whereHas('team', fn ($q) => $q->where('is_active', true)
+                ->where(fn ($w) => $w->where('place_id', $incident->place_id)->orWhereNull('place_id')))
+            ->first();
     }
 
     // ==================== ٢٢-٣: الاستغاثة لكل حساب ====================

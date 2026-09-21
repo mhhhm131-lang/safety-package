@@ -119,6 +119,23 @@
           </form>
         @endif
 
+        {{-- ٢٢-٤: عضو الفريق يسجّل وصوله إلى الموقع بنفسه (كانت نية «وصلتُ» تفتح لوحة المركز) --}}
+        @if($teamMember)
+          @if($arrivedLog)
+            <div class="alert alert-info mb-0 d-flex align-items-center gap-2">
+              <i class="bi bi-geo-alt-fill fs-4"></i>
+              <div><strong>وصولك إلى الموقع مسجَّل</strong>@if($arrivedLog->logged_at) · {{ $arrivedLog->logged_at->format('H:i') }}@endif</div>
+            </div>
+          @else
+            <form method="post" action="{{ route('emergency.me.arrived') }}">
+              @csrf
+              <button class="btn btn-dark btn-lg w-100 py-3 fw-bold">
+                <i class="bi bi-geo-alt-fill"></i> وصلتُ إلى الموقع
+              </button>
+            </form>
+          @endif
+        @endif
+
         @if($checkIn && $checkIn->needs_assistance)
           <div class="alert alert-warning mb-0">
             <strong>طلبك وصل.</strong> {{ $checkIn->getAssistanceTypeLabel() }}@if($checkIn->notes) — {{ $checkIn->notes }}@endif

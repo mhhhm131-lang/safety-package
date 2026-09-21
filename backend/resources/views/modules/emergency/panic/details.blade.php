@@ -55,6 +55,34 @@
         </div>
     </div>
 
+    {{-- ٢٢-٤ (ع٤): ردّ المستجيب بزر — كانت الشاشة تعرض جدول المستجيبين ولا سبيل لأحد أن يصير مستجيباً --}}
+    @if($alert->isActive() || $alert->status === \App\Modules\Emergency\Models\PanicAlert::STATUS_ACKNOWLEDGED || $alert->status === \App\Modules\Emergency\Models\PanicAlert::STATUS_RESPONDING)
+      @php $me = $alert->responders->firstWhere('user_id', auth()->id()); @endphp
+      <div class="card mb-3 border-danger">
+        <div class="card-body d-flex flex-wrap align-items-center gap-2">
+          <strong class="me-2">ردّك:</strong>
+          @if($me?->response_type === 'arrived')
+            <span class="badge text-bg-success fs-6">سُجّل وصولك إلى الموقع</span>
+          @else
+            @foreach([['acknowledged', 'استلمتُ', 'bi-check2', 'btn-outline-danger'],
+                      ['en_route', 'أنا في الطريق', 'bi-person-walking', 'btn-danger'],
+                      ['arrived', 'وصلتُ', 'bi-geo-alt-fill', 'btn-success']] as [$k, $label, $icon, $cls])
+              <form method="post" action="{{ route('emergency.panic.respond', $alert) }}" class="m-0">
+                @csrf
+                <input type="hidden" name="response_type" value="{{ $k }}">
+                <button class="btn {{ $cls }}" @disabled($me?->response_type === $k)>
+                  <i class="bi {{ $icon }}"></i> {{ $label }}
+                </button>
+              </form>
+            @endforeach
+          @endif
+          @if($me?->response_type && $me->response_type !== 'arrived')
+            <span class="text-muted small ms-auto">آخر ردّ لك: {{ $me->getResponseLabel() }}@if($me->responded_at) · {{ $me->responded_at->format('H:i') }}@endif</span>
+          @endif
+        </div>
+      </div>
+    @endif
+
     <div class="row g-4">
         {{-- Main Info --}}
         <div class="col-lg-8">

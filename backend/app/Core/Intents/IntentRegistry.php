@@ -76,7 +76,8 @@ class IntentRegistry
         $add($can('emergency.trigger') && $main, 'lockdown', 'إخلاء أو إغلاق', $main ? route('emergency.buildings.control', $main).'#lockdown' : null, 'bi-door-closed', 'الطوارئ');
         // ٢٢-٣ (د): الاستغاثة لكل حساب مفعَّل — كانت للمستجيبين وحدهم وتفتح لوحة المركز ولا تُطلق شيئاً.
         $add((bool) $profile?->is_active, 'sos', 'أستغيث الآن', route('emergency.sos'), 'bi-exclamation-octagon-fill', 'الطوارئ', true, 'تصل مركز السلامة فوراً باسمك ومكانك');
-        $add($can('emergency.respond'), 'arrived', 'وصلتُ / أسجّل وصول عضو', route('emergency.dashboard'), 'bi-check2-circle', 'الطوارئ');
+        // ٢٢-٤ (د): «وصلتُ» تفتح الفعل على شاشته لا لوحة المركز؛ وتسجيل وصول غيره يبقى في شاشة الحالة
+        $add($can('emergency.respond'), 'arrived', 'وصلتُ إلى الموقع', route('emergency.me'), 'bi-check2-circle', 'الطوارئ', false, 'يُسجَّل وصولك فيراه المركز');
         $add($can('emergency.drill'), 'drill', 'أجدول تمريناً', route('emergency.drills.create'), 'bi-calendar-event', 'الطوارئ');
         $add($can('emergency.teams'), 'teams', 'الفريق الأولي', route('emergency.teams.index'), 'bi-people-fill', 'الطوارئ');
         $add($can('emergency.view'), 'emergency', 'مركز الطوارئ', route('emergency.dashboard'), 'bi-broadcast', 'الطوارئ');

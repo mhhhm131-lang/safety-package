@@ -52,7 +52,9 @@ class EmergencyTasks implements TaskSource
                 $out->push(new Task(
                     key: "ecall:{$n->id}", module: 'الطوارئ',
                     question: ($inc?->incident_code ?? '').': نادِ هاتفياً «'.$n->recipient_name.'»'.($n->recipient_contact ? ' '.$n->recipient_contact : ' — بلا رقم'),
-                    primary: ['label' => 'شاشة الحالة', 'url' => route('emergency.incidents.live', $n->incident_id)],
+                    // ٢٢-٤ (ع٥): البطاقة كانت زرّها الوحيد «شاشة الحالة» فلا تُغلق ولا يُعرف من اتُّصل به
+                    primary: ['label' => 'نوديَ', 'url' => route('emergency.calls.done', $n->id), 'method' => 'POST'],
+                    secondary: ['label' => 'شاشة الحالة', 'url' => route('emergency.incidents.live', $n->incident_id)],
                     isOverdue: true, place: $inc?->place?->name, detailsUrl: route('emergency.incidents.live', $n->incident_id), createdAt: $n->created_at,
                 ));
             }

@@ -24,6 +24,9 @@ Route::middleware(['web', 'auth'])->prefix('app/emergency')->name('emergency.')-
     Route::get('/sos', [EmergencyController::class, 'sos'])->name('sos');
     Route::post('/sos', [EmergencyController::class, 'sosTrigger'])->name('sos.trigger')->middleware('throttle:10,1');
 
+    // ٢٢-٤: المستجيب يردّ بزر — «وصلتُ» من شاشته (عضو فريق في حالة مفتوحة؛ السياسة في المتحكّم)
+    Route::post('/me/arrived', [EmergencyController::class, 'myArrived'])->name('me.arrived');
+
     // الاطلاع والاستجابة: من يملك view أو respond (الفني يصل ليسجّل وصوله ووصول فريقه)
     Route::middleware('permission:emergency.view,emergency.respond')->group(function () {
         Route::get('/', [EmergencyController::class, 'dashboard'])->name('dashboard');
@@ -75,6 +78,14 @@ Route::middleware(['web', 'auth'])->prefix('app/emergency')->name('emergency.')-
         Route::post('/drills/{drill}/end', [EmergencyController::class, 'drillsEnd'])->name('drills.end');
     });
     Route::middleware('permission:emergency.manage')->post('/incidents/{incident}/cancel', [EmergencyController::class, 'cancelIncident'])->name('incidents.cancel');
+
+    // ٢٢-٤ (ع٤): ردّ المستجيب على تنبيه الذعر بزر — كانت الشاشة تعرض جدول المستجيبين بلا زر يجعل أحداً مستجيباً
+    Route::middleware('permission:emergency.respond,emergency.trigger')
+        ->post('/panic/{alert}/respond', [EmergencyController::class, 'panicRespond'])->name('panic.respond');
+
+    // ٢٢-٤ (ع٥): «نوديَ» يغلق النداء الهاتفي — للمركز وحده (هو من ينادي)
+    Route::middleware('permission:emergency.manage')
+        ->post('/calls/{notification}/done', [EmergencyController::class, 'callDone'])->name('calls.done');
 
     // الإدارة: المبنى وطوابقه ومخارجه ونقاط تجمعه، جهات الاتصال، المهل
     Route::middleware('permission:emergency.manage')->group(function () {
