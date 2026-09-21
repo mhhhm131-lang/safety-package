@@ -144,6 +144,17 @@ class PanicAlert extends Model
         return in_array($this->status, [self::STATUS_TRIGGERED, self::STATUS_ACKNOWLEDGED, self::STATUS_RESPONDING]);
     }
 
+    /**
+     * ٢٢-٣: الأنواع كما يراها صاحب الاستغاثة على شاشته — مصدر واحد للشاشة وللتحقق.
+     * [الاسم على الزر، الأيقونة، سطر يوضّح متى يُضغط].
+     */
+    const ALERT_TYPES = [
+        'medical'  => ['طوارئ طبية', 'bi-heart-pulse-fill', 'إغماء أو إصابة أو ألم شديد'],
+        'fire'     => ['حريق أو دخان', 'bi-fire', 'لهب أو دخان أو رائحة احتراق'],
+        'security' => ['تهديد أمني', 'bi-shield-exclamation', 'شخص مهدِّد أو اعتداء أو تهديد'],
+        'panic'    => ['أحتاج نجدة الآن', 'bi-exclamation-circle-fill', 'خطر لا ينطبق عليه ما سبق'],
+    ];
+
     public function getTypeLabel(): string
     {
         return match($this->alert_type) {

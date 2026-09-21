@@ -86,10 +86,14 @@
 @php
   /* المرحلة ١٣-٢: الزر الأحمر الثابت على الجوال — نية الطوارئ القائمة (فعّل حالة طارئة / أستغيث الآن) لمن يملكها؛ لا نية جديدة */
   $allIntents = isset($intents) ? $intents : \App\Core\Intents\IntentRegistry::forUser(auth()->user());
-  $sosIntent = $allIntents->first(fn ($i) => in_array($i->key, ['trigger', 'sos'], true))
-      /* ٢٢-٢ (د): من لا يملك تفعيلاً ولا استغاثة — الموظف — يأخذ الزر الأحمر إلى شاشته وقت الحالة */
-      ?: $allIntents->first(fn ($i) => $i->key === 'my_emergency');
   $myEmergency = $allIntents->first(fn ($i) => $i->key === 'my_emergency');
+  /* الزر الأحمر الثابت بأولوية واحدة (٢٢-٢ و٢٢-٣): القيادة تبقى على «فعّل»؛ ومن دونها
+     تأخذ شاشتَها وقت حالة مفتوحة تخصّها، وإلا «أستغيث الآن». */
+  $sosIntent = null;
+  foreach (['trigger', 'my_emergency', 'sos'] as $k) {
+      $sosIntent = $allIntents->first(fn ($i) => $i->key === $k);
+      if ($sosIntent) break;
+  }
 @endphp
 <body class="{{ $sosIntent ? 'has-sos' : '' }}">
 @include('layouts._trial_banner')

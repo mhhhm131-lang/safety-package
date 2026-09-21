@@ -989,6 +989,43 @@ class EmergencyController extends Controller
         return redirect()->route('emergency.me')->with('success', 'سُجّل وصولك بأمان. ابقَ في نقطة التجمع حتى يُعلَن انتهاء الخطر.');
     }
 
+    // ==================== ٢٢-٣: الاستغاثة لكل حساب ====================
+
+    /** شاشة الاستغاثة: أربعة أنواع، كلٌّ بضغطة واحدة ترسل فعلاً (لا تفتح شاشة أخرى). */
+    public function sos()
+    {
+        $user = auth()->user();
+        return view('modules.emergency.sos', [
+            'myPlace' => $user->profile?->myPlace(),
+            'mine' => PanicAlert::where('user_id', $user->id)
+                ->whereIn('status', ['triggered', 'acknowledged', 'responding'])
+                ->latest('id')->first(),
+            'types' => PanicAlert::ALERT_TYPES,
+        ]);
+    }
+
+    /** ضغطة واحدة = استغاثة حقيقية تصل المركز فوراً. */
+    public function sosTrigger(Request $request)
+    {
+        $v = $request->validate([
+            'alert_type' => 'required|in:'.implode(',', array_keys(PanicAlert::ALERT_TYPES)),
+            'message' => 'nullable|string|max:300',
+        ]);
+        $user = auth()->user();
+        $open = PanicAlert::where('user_id', $user->id)
+            ->whereIn('status', ['triggered', 'acknowledged', 'responding'])->latest('id')->first();
+        if ($open) {
+            return redirect()->route('emergency.sos')->with('success', 'استغاثتك السابقة ما زالت مفتوحة والمركز يتابعها.');
+        }
+        app(PanicAlertService::class)->trigger($user, [
+            'alert_type' => $v['alert_type'],
+            'severity' => 'high',
+            'message' => $v['message'] ?? null,
+            'location_description' => $user->profile?->myPlace()?->name,
+        ]);
+        return redirect()->route('emergency.sos')->with('success', 'وصلت استغاثتك إلى مركز السلامة. ابقَ مكانك إن كنت آمناً.');
+    }
+
     /** «أحتاج مساعدة» — تصريح الشخص نفسه، يظهر لمن يستجيب في شاشة الحالة (قرار ٥٩: بلا أي بيان طبي). */
     public function myHelp(Request $request)
     {

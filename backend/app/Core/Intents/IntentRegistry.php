@@ -74,7 +74,8 @@ class IntentRegistry
             $myCheckIn ? trim(($myCheckIn->incident->place?->name ?? '').' · أقرب مخرج ونقطة التجمع، وسجّل وصولك بزر') : null);
         $add($can('emergency.trigger') && $main, 'trigger', 'فعّل حالة طارئة', $main ? route('emergency.buildings.control', $main).($placeCode ? '?place='.$placeCode : '') : null, 'bi-bell-fill', 'الطوارئ', true, 'الفريق الأولي والقيادة يُنبَّهون فوراً');
         $add($can('emergency.trigger') && $main, 'lockdown', 'إخلاء أو إغلاق', $main ? route('emergency.buildings.control', $main).'#lockdown' : null, 'bi-door-closed', 'الطوارئ');
-        $add(($can('emergency.respond') || $isTeamMember) && !$can('emergency.trigger'), 'sos', 'أستغيث الآن', route('emergency.dashboard'), 'bi-exclamation-octagon-fill', 'الطوارئ', true, 'زر الذعر يصل المركز فوراً');
+        // ٢٢-٣ (د): الاستغاثة لكل حساب مفعَّل — كانت للمستجيبين وحدهم وتفتح لوحة المركز ولا تُطلق شيئاً.
+        $add((bool) $profile?->is_active, 'sos', 'أستغيث الآن', route('emergency.sos'), 'bi-exclamation-octagon-fill', 'الطوارئ', true, 'تصل مركز السلامة فوراً باسمك ومكانك');
         $add($can('emergency.respond'), 'arrived', 'وصلتُ / أسجّل وصول عضو', route('emergency.dashboard'), 'bi-check2-circle', 'الطوارئ');
         $add($can('emergency.drill'), 'drill', 'أجدول تمريناً', route('emergency.drills.create'), 'bi-calendar-event', 'الطوارئ');
         $add($can('emergency.teams'), 'teams', 'الفريق الأولي', route('emergency.teams.index'), 'bi-people-fill', 'الطوارئ');

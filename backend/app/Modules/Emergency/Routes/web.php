@@ -20,6 +20,10 @@ Route::middleware(['web', 'auth'])->prefix('app/emergency')->name('emergency.')-
     Route::post('/me/check-in', [EmergencyController::class, 'myCheckIn'])->name('me.check-in');
     Route::post('/me/help', [EmergencyController::class, 'myHelp'])->name('me.help');
 
+    // ٢٢-٣: الاستغاثة لكل حساب بضغطة واحدة (كانت مبنية ولا تُرى إلا داخل لوحة المركز).
+    Route::get('/sos', [EmergencyController::class, 'sos'])->name('sos');
+    Route::post('/sos', [EmergencyController::class, 'sosTrigger'])->name('sos.trigger')->middleware('throttle:10,1');
+
     // الاطلاع والاستجابة: من يملك view أو respond (الفني يصل ليسجّل وصوله ووصول فريقه)
     Route::middleware('permission:emergency.view,emergency.respond')->group(function () {
         Route::get('/', [EmergencyController::class, 'dashboard'])->name('dashboard');

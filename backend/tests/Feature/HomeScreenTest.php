@@ -81,15 +81,24 @@ class HomeScreenTest extends TestCase
         $this->assertMatchesRegularExpression('~id="sosBar".*?data-intent="sos"~s', $html);
     }
 
-    public function test_employee_without_emergency_role_has_no_sos_bar_and_the_bar_follows_every_screen(): void
+    /**
+     * ٢٢-٣ (د، ٢٠٢٦-٠٩-٢٢): كان هذا الاختبار يؤكّد أن الموظف **بلا** زر أحمر، وهو السلوك الذي غيّرته
+     * المرحلة عمداً: الاستغاثة صارت لكل حساب مفعَّل بعد أن كانت مبنية في الخلفية ولا تُرى إلا داخل
+     * لوحة مركز الطوارئ. فصار الاختبار يحرس الأولوية الجديدة: كلٌّ يأخذ زره الصحيح.
+     */
+    public function test_every_account_has_the_right_red_bar_and_it_follows_every_screen(): void
     {
         $emp = $this->user('emp', 'employee');
         $html = $this->actingAs($emp)->get('/app')->assertOk()->getContent();
-        $this->assertStringNotContainsString('id="sosBar"', $html);
-        $this->assertStringContainsString('<body class="">', $html);
+        $this->assertStringContainsString('id="sosBar"', $html);
+        $this->assertStringContainsString('أستغيث الآن', $html);
+        $this->assertStringContainsString('<body class="has-sos">', $html);
 
+        // القيادة تبقى على «فعّل حالة طارئة»، والزر يتبعها في كل شاشة لا الشاشة الأولى وحدها
         $salama = $this->user('salama', 'system_admin');
-        $this->actingAs($salama)->get('/app/users')->assertOk()->assertSee('id="sosBar"', false);
+        $this->actingAs($salama)->get('/app/users')->assertOk()
+            ->assertSee('id="sosBar"', false)
+            ->assertSee('فعّل حالة طارئة', false);
     }
 
     public function test_guest_pages_carry_the_report_button_except_the_report_page_itself(): void
