@@ -921,4 +921,87 @@ class EmergencyController extends Controller
         $profile = app(MedicalProfileService::class)->getOrCreate(auth()->id());
         return view('modules.emergency.medical.my-profile', compact('profile'));
     }
+
+    // ==================== ٢٢-٢: الشخص وقت الحالة — شاشة واحدة لكل حساب ====================
+
+    /**
+     * شاشة الشخص وقت الحالة الطارئة. لكل حساب بلا صلاحية طوارئ (عيب ٢٢-١/ع١: الموظف لا يرى الحالة إطلاقاً).
+     * كل ما فيها كان مبنياً في الخلفية بلا شاشة: الحالة، التعليمات، أقرب مخرج، نقطة التجمع، تسجيل الوصول، طلب المساعدة.
+     * تُقرأ في الخادم لا من الواجهة البرمجية: مسار نقاط التجمع محجوب بصلاحية الطوارئ (ع٢).
+     */
+    public function myEmergency()
+    {
+        $user = auth()->user();
+        $checkIn = $this->musteringService->getUserCheckIn($user);
+        $incident = $checkIn?->incident;
+
+        $building = $incident?->building ?? EmergencyBuilding::main();
+        $myPlace = $user->profile?->myPlace();
+
+        // أقرب مخرج = مخرج طابق الشخص (الطابق يُعرف من مكانه عبر zone)، وإلا مخارج المبنى كلها.
+        $floor = $this->floorOfUser($building, $myPlace);
+        $exits = $building
+            ? BuildingExit::where('building_id', $building->id)->where('status', 'available')
+                ->when($floor, fn ($q) => $q->where('floor_id', $floor->id))
+                ->with(['floor', 'assemblyPoint'])->orderBy('exit_type')->get()
+            : collect();
+
+        $points = $building
+            ? AssemblyPoint::where('building_id', $building->id)->where('status', '!=', 'unavailable')
+                ->orderByDesc('is_primary')->get()
+            : collect();
+
+        return view('modules.emergency.me', [
+            'incident' => $incident,
+            'checkIn' => $checkIn,
+            'building' => $building,
+            'myPlace' => $myPlace,
+            'floor' => $floor,
+            'exits' => $exits,
+            'nearestExit' => $exits->first(),
+            'points' => $points,
+            'instructions' => $incident
+                ? app(\App\Modules\Emergency\Services\EmergencyNotificationService::class)->getEvacuationInstructions($incident)
+                : null,
+            'helpTypes' => EvacuationCheckIn::ASSISTANCE_TYPES,
+        ]);
+    }
+
+    /** طابق الشخص من مكانه: الطوابق تحمل رمز المكان في `zone` (أُدخلت في ٢٢-١). */
+    protected function floorOfUser(?EmergencyBuilding $building, ?Place $place): ?BuildingFloor
+    {
+        if (!$building || !$place) return null;
+        return BuildingFloor::where('building_id', $building->id)->where('zone', $place->code)->first();
+    }
+
+    /** «سجّل وصولي» بزر واحد من شاشة الشخص. */
+    public function myCheckIn(Request $request)
+    {
+        $v = $request->validate(['assembly_point_id' => 'required|exists:assembly_points,id']);
+        $checkIn = $this->musteringService->getUserCheckIn(auth()->user());
+        if (!$checkIn) {
+            return redirect()->route('emergency.me')->with('error', 'لا توجد حالة طارئة مفتوحة.');
+        }
+        if ($checkIn->status === EvacuationCheckIn::STATUS_SAFE) {
+            return redirect()->route('emergency.me')->with('success', 'وصولك مسجَّل مسبقاً.');
+        }
+        $this->musteringService->selfCheckIn($checkIn, AssemblyPoint::findOrFail($v['assembly_point_id']));
+        return redirect()->route('emergency.me')->with('success', 'سُجّل وصولك بأمان. ابقَ في نقطة التجمع حتى يُعلَن انتهاء الخطر.');
+    }
+
+    /** «أحتاج مساعدة» — تصريح الشخص نفسه، يظهر لمن يستجيب في شاشة الحالة (قرار ٥٩: بلا أي بيان طبي). */
+    public function myHelp(Request $request)
+    {
+        $v = $request->validate([
+            'help_type' => 'required|in:mobility,medical,injured,trapped,panic,child,elderly,other',
+            'notes' => 'nullable|string|max:500',
+        ]);
+        $checkIn = $this->musteringService->getUserCheckIn(auth()->user());
+        if (!$checkIn) {
+            return redirect()->route('emergency.me')->with('error', 'لا توجد حالة طارئة مفتوحة.');
+        }
+        $place = auth()->user()->profile?->myPlace();
+        $this->musteringService->requestHelp($checkIn, $v['help_type'], $place?->name, $v['notes'] ?? null);
+        return redirect()->route('emergency.me')->with('success', 'وصل طلبك إلى المركز وفريق الاستجابة. ابقَ مكانك إن كنت آمناً.');
+    }
 }

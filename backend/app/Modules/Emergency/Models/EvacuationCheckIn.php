@@ -86,12 +86,15 @@ class EvacuationCheckIn extends Model
         };
     }
 
+    /** أنواع المساعدة كما يختارها الشخص بنفسه (٢٢-٢) — مصدر واحد للشاشة وللوسم. */
+    const ASSISTANCE_TYPES = [
+        'mobility' => 'صعوبة حركة', 'medical' => 'حالة طبية', 'injured' => 'إصابة', 'trapped' => 'محاصر',
+        'panic' => 'هلع', 'child' => 'طفل معي', 'elderly' => 'كبير سن معي', 'other' => 'غير ذلك',
+    ];
+
     public function getAssistanceTypeLabel(): string
     {
-        return match ($this->assistance_type) {
-            'mobility' => 'صعوبة حركة', 'medical' => 'حالة طبية', 'injured' => 'إصابة', 'trapped' => 'محاصر',
-            'panic' => 'هلع', 'child' => 'طفل', 'elderly' => 'كبير سن', default => $this->assistance_type ?? 'غير محدد',
-        };
+        return self::ASSISTANCE_TYPES[$this->assistance_type] ?? ($this->assistance_type ?? 'غير محدد');
     }
 
     /** ما يُرمَّز في QR الشخص: يُمسح عند نقطة التجمع (verify-qr). */

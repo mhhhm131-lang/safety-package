@@ -14,6 +14,12 @@ use Illuminate\Support\Facades\Route;
  */
 Route::middleware(['web', 'auth'])->prefix('app/emergency')->name('emergency.')->group(function () {
 
+    // ٢٢-٢: شاشة الشخص وقت الحالة — لكل حساب بلا صلاحية طوارئ (عيب ع١: الموظف لا يرى الحالة إطلاقاً).
+    // خارج كل `permission:` عمداً: ما فيها يخص صاحبها وحده (حالته هو، وصوله هو، طلبه هو).
+    Route::get('/me', [EmergencyController::class, 'myEmergency'])->name('me');
+    Route::post('/me/check-in', [EmergencyController::class, 'myCheckIn'])->name('me.check-in');
+    Route::post('/me/help', [EmergencyController::class, 'myHelp'])->name('me.help');
+
     // الاطلاع والاستجابة: من يملك view أو respond (الفني يصل ليسجّل وصوله ووصول فريقه)
     Route::middleware('permission:emergency.view,emergency.respond')->group(function () {
         Route::get('/', [EmergencyController::class, 'dashboard'])->name('dashboard');

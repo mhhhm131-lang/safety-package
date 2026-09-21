@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python database/data/book/tables/build_tables.py OR-01-01 OR-01-02 OR-01-03 OR-02-01 OR-02-02 OR-02-03 OR-03-01 OR-03-02 OR-03-03 OR-03-04 OR-04-01 OR-04-02 OR-04-03 OR-04-04 OR-04-05)"
+    ]
+  }
+}

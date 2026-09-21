@@ -85,8 +85,11 @@
 </head>
 @php
   /* المرحلة ١٣-٢: الزر الأحمر الثابت على الجوال — نية الطوارئ القائمة (فعّل حالة طارئة / أستغيث الآن) لمن يملكها؛ لا نية جديدة */
-  $sosIntent = (isset($intents) ? $intents : \App\Core\Intents\IntentRegistry::forUser(auth()->user()))
-      ->first(fn ($i) => in_array($i->key, ['trigger', 'sos'], true));
+  $allIntents = isset($intents) ? $intents : \App\Core\Intents\IntentRegistry::forUser(auth()->user());
+  $sosIntent = $allIntents->first(fn ($i) => in_array($i->key, ['trigger', 'sos'], true))
+      /* ٢٢-٢ (د): من لا يملك تفعيلاً ولا استغاثة — الموظف — يأخذ الزر الأحمر إلى شاشته وقت الحالة */
+      ?: $allIntents->first(fn ($i) => $i->key === 'my_emergency');
+  $myEmergency = $allIntents->first(fn ($i) => $i->key === 'my_emergency');
 @endphp
 <body class="{{ $sosIntent ? 'has-sos' : '' }}">
 @include('layouts._trial_banner')
@@ -236,6 +239,14 @@
       </div>
     </aside>
     <main class="col-12 py-3" style="max-width:1100px;margin:0 auto">
+      {{-- ٢٢-٢ (د): حالة مفتوحة تخصّ صاحب الحساب — شريط ظاهر في كل صفحة حتى يجدها بلا بحث --}}
+      @if($myEmergency && !request()->routeIs('emergency.me'))
+        <a href="{{ $myEmergency->url }}" class="alert alert-danger d-flex align-items-center gap-2 py-2 text-decoration-none" style="border-width:2px">
+          <i class="bi bi-exclamation-octagon-fill fs-4"></i>
+          <span class="fw-bold">{{ $myEmergency->label }}</span>
+          <span class="ms-auto small">افتح <i class="bi bi-chevron-left"></i></span>
+        </a>
+      @endif
       @if(session('ok'))<div class="alert alert-success py-2">{{ session('ok') }}</div>@endif
       @if(session('success'))<div class="alert alert-success py-2">{{ session('success') }}</div>@endif
       @if(session('err'))<div class="alert alert-danger py-2">{{ session('err') }}</div>@endif

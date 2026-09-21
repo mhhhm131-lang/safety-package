@@ -63,6 +63,15 @@ class IntentRegistry
         $add((bool) $ui, 'forms', 'نماذج الفحص', route('app.inspections'), 'bi-clipboard-check', 'الفحص', $ui !== 'tech', 'النماذج العشرة: آخر جولة وبلاغاتها المفتوحة، وكل نموذج بضغطة');
         // ١٩-٧ (قرار ٤٨): نية «العمل اليومي» حُذفت — كل ما كان في اللوحة صار في «ما ينتظرك» و«الأماكن» وملف المكان
         // الطوارئ
+        // ٢٢-٢ (د): حالة مفتوحة تخصّ صاحب الحساب ← شاشته أولاً وقبل كل شيء. لكل حساب، ومنه الموظف بلا صلاحية طوارئ.
+        $myCheckIn = $profile?->is_active
+            ? \App\Modules\Emergency\Models\EvacuationCheckIn::where('user_id', $user->id)
+                ->whereHas('incident', fn ($q) => $q->whereIn('status', ['active', 'contained']))->latest('id')->first()
+            : null;
+        $add((bool) $myCheckIn, 'my_emergency',
+            $myCheckIn?->incident?->is_drill ? 'تمرين إخلاء — ماذا أفعل' : 'حالة طارئة — ماذا أفعل',
+            route('emergency.me'), 'bi-exclamation-octagon-fill', 'الطوارئ', true,
+            $myCheckIn ? trim(($myCheckIn->incident->place?->name ?? '').' · أقرب مخرج ونقطة التجمع، وسجّل وصولك بزر') : null);
         $add($can('emergency.trigger') && $main, 'trigger', 'فعّل حالة طارئة', $main ? route('emergency.buildings.control', $main).($placeCode ? '?place='.$placeCode : '') : null, 'bi-bell-fill', 'الطوارئ', true, 'الفريق الأولي والقيادة يُنبَّهون فوراً');
         $add($can('emergency.trigger') && $main, 'lockdown', 'إخلاء أو إغلاق', $main ? route('emergency.buildings.control', $main).'#lockdown' : null, 'bi-door-closed', 'الطوارئ');
         $add(($can('emergency.respond') || $isTeamMember) && !$can('emergency.trigger'), 'sos', 'أستغيث الآن', route('emergency.dashboard'), 'bi-exclamation-octagon-fill', 'الطوارئ', true, 'زر الذعر يصل المركز فوراً');
