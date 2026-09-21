@@ -88,6 +88,22 @@ Route::middleware(['web', 'auth'])->prefix('app/emergency')->name('emergency.')-
     Route::middleware('permission:emergency.manage')
         ->post('/calls/{notification}/done', [EmergencyController::class, 'callDone'])->name('calls.done');
 
+    // ٢٢-٧ (ع٧): تقرير ما بعد الحادث — أربع عشرة وظيفة كانت بلا شاشة
+    Route::middleware('permission:emergency.view,emergency.respond')->group(function () {
+        Route::get('/aar', [EmergencyController::class, 'aarIndex'])->name('aar.index');
+        Route::get('/aar/{report}', [EmergencyController::class, 'aarShow'])->name('aar.show')->whereNumber('report');
+        // إغلاق الإجراء التصحيحي: صاحبه وحده (السياسة في المتحكّم)
+        Route::post('/aar/actions/{action}/done', [EmergencyController::class, 'aarActionDone'])->name('aar.actions.done')->whereNumber('action');
+    });
+    Route::middleware('permission:emergency.manage')->group(function () {
+        Route::post('/incidents/{incident}/aar', [EmergencyController::class, 'aarCreate'])->name('incidents.aar');
+        Route::post('/aar/{report}', [EmergencyController::class, 'aarUpdate'])->whereNumber('report');
+        Route::post('/aar/{report}/submit', [EmergencyController::class, 'aarSubmit'])->name('aar.submit')->whereNumber('report');
+        Route::post('/aar/{report}/approve', [EmergencyController::class, 'aarApprove'])->name('aar.approve')->whereNumber('report');
+        Route::post('/aar/{report}/publish', [EmergencyController::class, 'aarPublish'])->name('aar.publish')->whereNumber('report');
+        Route::post('/aar/{report}/actions', [EmergencyController::class, 'aarActionAdd'])->name('aar.actions.add')->whereNumber('report');
+    });
+
     // ٢٢-٥ (ع٦): زر إرسال الرسالة الجماعية من شاشة الحالة — كان الردّ بزر والإرسال بلا زر
     Route::middleware('permission:emergency.trigger')->group(function () {
         Route::post('/incidents/{incident}/message', [EmergencyController::class, 'sendMessage'])->name('incidents.message');

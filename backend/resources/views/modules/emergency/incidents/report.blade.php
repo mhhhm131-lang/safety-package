@@ -9,6 +9,26 @@
   <button class="btn btn-sm btn-g ms-auto" onclick="window.print()"><i class="bi bi-printer"></i> طباعة</button>
 </div>
 
+{{-- ٢٢-٧ (ع٧): زر واحد يبني تقرير ما بعد الحادث من سجل الحالة — كانت الوظيفة كاملة بلا شاشة --}}
+@if(!$incident->isOpen())
+  @php $aar = \App\Modules\Emergency\Models\AfterActionReport::where('incident_id', $incident->id)->first(); @endphp
+  <div class="card mb-3 no-print">
+    <div class="card-body d-flex align-items-center gap-3 flex-wrap">
+      <div class="flex-grow-1">
+        <strong>تقرير ما بعد الحادث</strong>
+        <div class="small text-muted">ما الذي سار، وما الذي لم يسر، وما يُصحَّح ومن يصحّحه. يُبنى من سجل هذه الحالة.</div>
+      </div>
+      @if($aar)
+        <a class="btn btn-outline-primary" href="{{ route('emergency.aar.show', $aar) }}">افتح التقرير <span class="badge text-bg-secondary">{{ $aar->getStatusLabel() }}</span></a>
+      @elseif(\App\Core\Permissions\PermissionRegistry::hasPermission(auth()->user()->role(), 'emergency.manage'))
+        <form method="post" action="{{ route('emergency.incidents.aar', $incident) }}" class="m-0">
+          @csrf<button class="btn btn-primary"><i class="bi bi-journal-plus"></i> أنشئه بزر واحد</button>
+        </form>
+      @endif
+    </div>
+  </div>
+@endif
+
 <div class="card mb-3"><div class="card-body">
   <h2 class="h5">{{ $incident->is_drill ? 'تمرين إخلاء' : 'حالة طارئة' }} — {{ $incident->getTypeLabel() }} — {{ $incident->place?->name ?? $incident->building->name }}</h2>
   <div class="row small g-2">

@@ -195,6 +195,8 @@
         <a href="{{ route('emergency.incidents.index') }}" class="{{ request()->routeIs('emergency.incidents.*') ? 'active' : '' }}"><i class="bi bi-broadcast"></i>الحالات الطارئة</a>
         <a href="{{ route('emergency.plans.index') }}" class="{{ request()->routeIs('emergency.plans.*') ? 'active' : '' }}"><i class="bi bi-list-ol"></i>خطط الاستجابة</a>
         <a href="{{ route('emergency.teams.index') }}" class="{{ request()->routeIs('emergency.teams.*') ? 'active' : '' }}"><i class="bi bi-people-fill"></i>الفريق الأولي</a>
+        {{-- ٢٢-٧: تقارير ما بعد الحادث — كانت أربع عشرة وظيفة بلا مدخل --}}
+        <a href="{{ route('emergency.aar.index') }}" class="{{ request()->routeIs('emergency.aar.*') ? 'active' : '' }}"><i class="bi bi-journal-check"></i>تقارير ما بعد الحادث</a>
         <a href="{{ route('emergency.drills.index') }}" class="{{ request()->routeIs('emergency.drills.*') ? 'active' : '' }}"><i class="bi bi-calendar-event"></i>التمارين</a>
         <a href="{{ route('emergency.equipment.index') }}" class="{{ request()->routeIs('emergency.equipment.*') ? 'active' : '' }}"><i class="bi bi-fire"></i>معدات الطوارئ</a>
         <a href="{{ route('emergency.contacts.index') }}" class="{{ request()->routeIs('emergency.contacts.*') ? 'active' : '' }}"><i class="bi bi-telephone"></i>جهات الاتصال</a>

@@ -69,6 +69,18 @@ class EmergencyTasks implements TaskSource
                 isOverdue: true, createdAt: $m->sent_at,
             ));
         }
+        // ٢٢-٧: إجراء تصحيحي من تقرير ما بعد الحادث — يصل صاحبه ويُغلق بزر
+        foreach (\App\Modules\Emergency\Models\AarCorrectiveAction::where('assigned_to_id', $user->id)
+            ->whereNull('completed_date')->with('report')->get() as $a) {
+            $out->push(new Task(
+                key: "aaract:{$a->id}", module: 'الطوارئ',
+                question: 'إجراء تصحيحي بعد حادث: '.$a->title.($a->due_date ? ' — المهلة '.$a->due_date->format('Y-m-d') : ''),
+                primary: ['label' => 'أنجزته', 'url' => route('emergency.aar.actions.done', $a->id), 'method' => 'POST'],
+                secondary: ['label' => 'التقرير', 'url' => route('emergency.aar.show', $a->report_id)],
+                dueAt: $a->due_date, isOverdue: (bool) ($a->due_date?->isPast()),
+                detailsUrl: route('emergency.aar.show', $a->report_id), createdAt: $a->created_at,
+            ));
+        }
         // تنبيهات الذعر والأساور المفتوحة — لمن يستجيب
         if (PermissionRegistry::hasPermission($role, 'emergency.respond')) {
             foreach (PanicAlert::active()->with(['user', 'place'])->get() as $a) {

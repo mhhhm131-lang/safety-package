@@ -1024,6 +1024,112 @@ class EmergencyController extends Controller
         return redirect()->route('emergency.me')->with('success', 'سُجّل وصولك بأمان. ابقَ في نقطة التجمع حتى يُعلَن انتهاء الخطر.');
     }
 
+    // ==================== ٢٢-٧: تقرير ما بعد الحادث ====================
+
+    public function aarIndex()
+    {
+        $reports = \App\Modules\Emergency\Models\AfterActionReport::with(['incident', 'preparedBy'])
+            ->latest('id')->paginate(20);
+        $openActions = app(\App\Modules\Emergency\Services\AfterActionReportService::class)->getOpenCorrectiveActions();
+        return view('modules.emergency.aar.index', compact('reports', 'openActions'));
+    }
+
+    public function aarShow(\App\Modules\Emergency\Models\AfterActionReport $report)
+    {
+        $report->load(['incident.eventLogs.user', 'incident.planSteps', 'correctiveActions.assignedTo', 'preparedBy', 'approvedBy']);
+        $people = User::whereHas('profile', fn ($q) => $q->where('is_active', true))->orderBy('name')->get(['id', 'name']);
+        return view('modules.emergency.aar.show', compact('report', 'people'));
+    }
+
+    /** الزر الواحد: يبني التقرير من سجل الحالة (الأزمنة ومن حضر)، ولا يبني ثانياً للحالة نفسها. */
+    public function aarCreate(EmergencyIncident $incident)
+    {
+        $existing = \App\Modules\Emergency\Models\AfterActionReport::where('incident_id', $incident->id)->first();
+        if ($existing) {
+            return redirect()->route('emergency.aar.show', $existing)->with('success', 'لهذه الحالة تقرير مسبقاً.');
+        }
+        $report = app(\App\Modules\Emergency\Services\AfterActionReportService::class)
+            ->createFromIncident($incident, ['chronology' => $this->chronologyOf($incident)]);
+        return redirect()->route('emergency.aar.show', $report)
+            ->with('success', 'بُني التقرير من سجل الحالة. اكتب ما سار وما لم يسر، ثم اعتمده.');
+    }
+
+    /** الخط الزمني نصّاً داخل التقرير — فيبقى محفوظاً ولو تغيّرت الحالة لاحقاً. */
+    protected function chronologyOf(EmergencyIncident $incident): string
+    {
+        return $incident->eventLogs()->orderBy('logged_at')->get()
+            ->map(fn ($e) => ($e->logged_at?->format('H:i') ?? '').' — '.$e->message)
+            ->implode("\n");
+    }
+
+    public function aarUpdate(Request $request, \App\Modules\Emergency\Models\AfterActionReport $report)
+    {
+        $v = $request->validate([
+            'what_went_well' => 'nullable|string|max:5000',
+            'what_went_wrong' => 'nullable|string|max:5000',
+            'lessons_learned' => 'nullable|string|max:5000',
+            'recommendations' => 'nullable|string|max:5000',
+            'root_cause_analysis' => 'nullable|string|max:5000',
+        ]);
+        app(\App\Modules\Emergency\Services\AfterActionReportService::class)->updateFindings($report, $v);
+        return redirect()->route('emergency.aar.show', $report)->with('success', 'حُفظ.');
+    }
+
+    public function aarSubmit(\App\Modules\Emergency\Models\AfterActionReport $report)
+    {
+        app(\App\Modules\Emergency\Services\AfterActionReportService::class)->submitForReview($report);
+        return redirect()->route('emergency.aar.show', $report)->with('success', 'رُفع للمراجعة.');
+    }
+
+    public function aarApprove(Request $request, \App\Modules\Emergency\Models\AfterActionReport $report)
+    {
+        app(\App\Modules\Emergency\Services\AfterActionReportService::class)
+            ->approve($report, auth()->id(), $request->string('review_comments')->toString() ?: null);
+        return redirect()->route('emergency.aar.show', $report)->with('success', 'اعتُمد التقرير.');
+    }
+
+    public function aarPublish(\App\Modules\Emergency\Models\AfterActionReport $report)
+    {
+        app(\App\Modules\Emergency\Services\AfterActionReportService::class)->publish($report);
+        return redirect()->route('emergency.aar.show', $report)->with('success', 'نُشر التقرير.');
+    }
+
+    /** إجراء تصحيحي لشخص بعينه بمهلة — يظهر في بطاقاته («ما ينتظرك»). */
+    public function aarActionAdd(Request $request, \App\Modules\Emergency\Models\AfterActionReport $report)
+    {
+        $v = $request->validate([
+            'title' => 'required|string|max:200',
+            'description' => 'nullable|string|max:2000',
+            'assigned_to_id' => 'required|exists:users,id',
+            'due_date' => 'required|date',
+            'priority' => 'nullable|in:low,medium,high,critical',
+        ]);
+        // عمود الوصف إلزامي في القاعدة؛ حين لا يكتبه المركز يكفي العنوان
+        $v['description'] = $v['description'] ?? $v['title'];
+        app(\App\Modules\Emergency\Services\AfterActionReportService::class)->addCorrectiveAction($report, $v + ['status' => 'open']);
+        app(\App\Core\Services\NotificationService::class)->create(
+            (int) $v['assigned_to_id'], 'aar.action',
+            'إجراء تصحيحي بعد حادث: '.$v['title'],
+            'من تقرير '.$report->title.' — المهلة '.$v['due_date'],
+            route('emergency.aar.show', $report)
+        );
+        return redirect()->route('emergency.aar.show', $report)->with('success', 'أُسند الإجراء ووصل صاحبه.');
+    }
+
+    /** «أنجزته» — صاحب الإجراء وحده (أو المركز). */
+    public function aarActionDone(\App\Modules\Emergency\Models\AarCorrectiveAction $action)
+    {
+        $user = auth()->user();
+        $isCentre = \App\Core\Permissions\PermissionRegistry::hasPermission($user->role(), 'emergency.manage');
+        abort_unless($action->assigned_to_id === $user->id || $isCentre, 403, 'هذا الإجراء ليس لك.');
+        if ($action->completed_date) {
+            return back()->with('success', 'هذا الإجراء مغلق مسبقاً.');
+        }
+        app(\App\Modules\Emergency\Services\AfterActionReportService::class)
+            ->updateCorrectiveAction($action, ['status' => 'completed', 'completed_date' => now()]);
+        return back()->with('success', 'سُجّل إنجاز «'.$action->title.'».');
+    }
+
     // ==================== ٢٢-٦: طلب المساعدة يُغلق بزر ====================
 
     /**
