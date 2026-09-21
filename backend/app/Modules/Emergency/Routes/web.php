@@ -87,6 +87,12 @@ Route::middleware(['web', 'auth'])->prefix('app/emergency')->name('emergency.')-
     Route::middleware('permission:emergency.manage')
         ->post('/calls/{notification}/done', [EmergencyController::class, 'callDone'])->name('calls.done');
 
+    // ٢٢-٥ (ع٦): زر إرسال الرسالة الجماعية من شاشة الحالة — كان الردّ بزر والإرسال بلا زر
+    Route::middleware('permission:emergency.trigger')->group(function () {
+        Route::post('/incidents/{incident}/message', [EmergencyController::class, 'sendMessage'])->name('incidents.message');
+        Route::post('/messages/{message}/follow-up', [EmergencyController::class, 'messageFollowUp'])->name('messages.follow-up');
+    });
+
     // الإدارة: المبنى وطوابقه ومخارجه ونقاط تجمعه، جهات الاتصال، المهل
     Route::middleware('permission:emergency.manage')->group(function () {
         Route::get('/buildings/create', [EmergencyController::class, 'buildingsCreate'])->name('buildings.create');

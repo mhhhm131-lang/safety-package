@@ -172,6 +172,51 @@
   </div>
 
   <div class="col-lg-6">
+    {{-- ٢٢-٥ (ع٦): إرسال رسالة للجميع — كان الردّ بزر والإرسال بلا زر --}}
+    @if($open)@can('trigger', $incident)
+    <div class="card mb-3">
+      <div class="card-header"><strong><i class="bi bi-megaphone"></i> أرسل رسالة للجميع</strong> <span class="small text-muted">تصل داخل النظام وبالبريد، ويردّ الناس بضغطة</span></div>
+      <div class="card-body">
+        <form method="post" action="{{ route('emergency.incidents.message', $incident) }}" class="row g-2">
+          @csrf
+          <div class="col-12 d-flex flex-wrap gap-1">
+            @foreach($templates as $t)
+              <button name="template_id" value="{{ $t->id }}" class="btn btn-sm btn-outline-primary">{{ $t->title_ar }}</button>
+            @endforeach
+          </div>
+        </form>
+        <hr class="my-3">
+        <form method="post" action="{{ route('emergency.incidents.message', $incident) }}" class="row g-2">
+          @csrf
+          <div class="col-md-4"><input name="title" class="form-control" placeholder="العنوان" maxlength="200" required></div>
+          <div class="col-md-6"><input name="message" class="form-control" placeholder="نصّك أنت…" maxlength="2000" required></div>
+          <div class="col-md-2 d-grid"><button class="btn btn-primary">أرسل</button></div>
+        </form>
+      </div>
+      @if($messages->isNotEmpty())
+      <ul class="list-group list-group-flush small">
+        @foreach($messages as $m)
+          <li class="list-group-item d-flex align-items-center gap-2 flex-wrap">
+            <div class="flex-grow-1">
+              <strong>{{ $m->title }}</strong>
+              <span class="text-muted">· {{ $m->sent_at?->format('H:i') }}</span>
+              <div class="text-muted">{{ \Illuminate\Support\Str::limit($m->message, 90) }}</div>
+            </div>
+            <span class="badge {{ $m->answered_count >= $m->total_recipients ? 'text-bg-success' : 'text-bg-secondary' }}">
+              ردّوا {{ $m->answered_count }} من {{ $m->total_recipients }}
+            </span>
+            @if($m->answered_count < $m->total_recipients)
+              <form method="post" action="{{ route('emergency.messages.follow-up', $m) }}" class="m-0">
+                @csrf<button class="btn btn-sm btn-outline-secondary">تابِع من لم يردّ</button>
+              </form>
+            @endif
+          </li>
+        @endforeach
+      </ul>
+      @endif
+    </div>
+    @endcan @endif
+
     {{-- مسح رمز الوصول --}}
     @if($open)@can('respond', $incident)
     <div class="card mb-3">

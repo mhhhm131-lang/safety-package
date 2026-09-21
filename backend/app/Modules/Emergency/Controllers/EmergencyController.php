@@ -332,8 +332,15 @@ class EmergencyController extends Controller
             }
         }
         $memberKeys = EmergencyTeamMember::whereIn('id', $manualCalls->where('recipient_type', 'team_member')->pluck('recipient_id'))->pluck('role_key', 'id');
+        // ٢٢-٥: القوالب العشرة ورسائل هذه الحالة بعدّاد ردودها
+        $templates = \App\Modules\Emergency\Models\EmergencyMessageTemplate::where('is_active', true)
+            ->orderBy('sort_order')->get(['id', 'code', 'title_ar']);
+        $messages = \App\Modules\Emergency\Models\EmergencyMassMessage::where('incident_id', $incident->id)
+            ->withCount(['responses as answered_count' => fn ($q) => $q->whereNotNull('responded_at')])
+            ->latest('id')->get();
         return view('modules.emergency.incidents.live', compact(
-            'incident', 'stats', 'missingPeople', 'needHelp', 'byAssemblyPoint', 'teamCheckIns', 'teams', 'manualCalls', 'user', 'planSteps', 'stepsByTeamKey', 'memberKeys'
+            'incident', 'stats', 'missingPeople', 'needHelp', 'byAssemblyPoint', 'teamCheckIns', 'teams', 'manualCalls', 'user', 'planSteps', 'stepsByTeamKey', 'memberKeys',
+            'templates', 'messages'
         ));
     }
 
@@ -991,6 +998,63 @@ class EmergencyController extends Controller
         }
         $this->musteringService->selfCheckIn($checkIn, AssemblyPoint::findOrFail($v['assembly_point_id']));
         return redirect()->route('emergency.me')->with('success', 'سُجّل وصولك بأمان. ابقَ في نقطة التجمع حتى يُعلَن انتهاء الخطر.');
+    }
+
+    // ==================== ٢٢-٥: الرسائل الجماعية — زر الإرسال ====================
+
+    /**
+     * «أرسل رسالة للجميع» من شاشة الحالة: قالب جاهز أو نصّ من المركز.
+     * متغيّرات القالب تُملأ من الحالة نفسها فلا يصل الناسَ نصٌّ فيه `{{…}}` (ع٦).
+     */
+    public function sendMessage(Request $request, EmergencyIncident $incident)
+    {
+        $v = $request->validate([
+            'template_id' => 'nullable|exists:emergency_message_templates,id',
+            'title' => 'required_without:template_id|nullable|string|max:200',
+            'message' => 'required_without:template_id|nullable|string|max:2000',
+        ]);
+
+        if (!empty($v['template_id'])) {
+            $tpl = \App\Modules\Emergency\Models\EmergencyMessageTemplate::findOrFail($v['template_id']);
+            $rendered = $tpl->render($this->messageVariables($incident));
+            $title = $rendered['title'];
+            $message = $rendered['message'];
+        } else {
+            $title = $v['title'];
+            $message = $v['message'];
+        }
+
+        $msg = app(\App\Modules\Emergency\Services\EmergencyMessagingService::class)->sendMassMessage([
+            'incident_id' => $incident->id, 'title' => $title, 'message' => $message,
+            'message_type' => 'alert', 'target_type' => 'all', 'channels' => ['app', 'email'],
+        ], auth()->user());
+
+        return redirect()->route('emergency.incidents.live', $incident)
+            ->with('success', 'أُرسلت إلى '.$msg->total_recipients.' شخصاً. الردود تظهر هنا.');
+    }
+
+    /** «تابِع من لم يردّ» — تُعاد الرسالة إلى غير الرادّين وحدهم. */
+    public function messageFollowUp(\App\Modules\Emergency\Models\EmergencyMassMessage $message)
+    {
+        try {
+            $followUp = app(\App\Modules\Emergency\Services\EmergencyMessagingService::class)->sendFollowUp($message);
+        } catch (\RuntimeException $e) {
+            return back()->with('success', 'كل المستلمين ردّوا — لا حاجة للمتابعة.');
+        }
+        return back()->with('success', 'أُعيدت إلى '.$followUp->total_recipients.' لم يردّوا.');
+    }
+
+    /** ما يعرفه النظام عن الحالة، لملء متغيّرات القوالب العشرة. */
+    protected function messageVariables(EmergencyIncident $incident): array
+    {
+        $point = $incident->building?->getPrimaryAssemblyPoint();
+        $where = $incident->place?->name ?? $incident->building?->name ?? '';
+        return [
+            'building_name' => $incident->building?->name ?? '',
+            'assembly_point' => $point?->name ?? 'نقطة التجمع المحددة',
+            'location' => $where,
+            'weather_type' => 'الطقس',
+        ];
     }
 
     // ==================== ٢٢-٤: المستجيب يردّ بزر ====================

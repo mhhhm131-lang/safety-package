@@ -145,7 +145,9 @@ class EmergencyMessagingService
      */
     public function sendFollowUp(EmergencyMassMessage $originalMessage): EmergencyMassMessage
     {
-        $responderIds = $originalMessage->responses()->pluck('user_id');
+        // OHSMS: سجل الرد يُنشأ لكل مستلم عند الإرسال (للتتبع)، فكان «من ردّ» = كل المستلمين
+        // فلا تُرسَل متابعة أبداً. الإصلاح (٢٢-٥): من ردّ فعلاً هو من له `responded_at`.
+        $responderIds = $originalMessage->responses()->whereNotNull('responded_at')->pluck('user_id');
 
         $nonResponders = $this->getRecipients($originalMessage)
             ->whereNotIn('id', $responderIds);
