@@ -3,6 +3,7 @@
 namespace App\Modules\Emergency\Controllers;
 
 use App\Core\StateMachine\Exceptions\TransitionException;
+use App\Core\Permissions\PermissionRegistry;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Modules\Emergency\Models\AssemblyPoint;
@@ -1040,6 +1041,13 @@ class EmergencyController extends Controller
 
     public function aarShow(\App\Modules\Emergency\Models\AfterActionReport $report)
     {
+        // من يرى الطوارئ، أو من أُسند إليه إجراء في هذا التقرير (وقد يكون موظفاً بلا صلاحية طوارئ)
+        $role = auth()->user()->role();
+        $mayView = PermissionRegistry::hasPermission($role, 'emergency.view')
+            || PermissionRegistry::hasPermission($role, 'emergency.respond')
+            || $report->correctiveActions()->where('assigned_to_id', auth()->id())->exists();
+        abort_unless($mayView, 403, 'هذا التقرير ليس لك.');
+
         $report->load(['incident.eventLogs.user', 'incident.planSteps', 'correctiveActions.assignedTo', 'preparedBy', 'approvedBy']);
         $people = User::whereHas('profile', fn ($q) => $q->where('is_active', true))->orderBy('name')->get(['id', 'name']);
         return view('modules.emergency.aar.show', compact('report', 'people'));
@@ -1147,7 +1155,13 @@ class EmergencyController extends Controller
         if (!$row->needs_assistance) {
             return back()->with('success', 'هذا الطلب مغلق مسبقاً.');
         }
-        $row->update(['needs_assistance' => false, 'assistance_type' => null]);
+        // تُعاد حالته إلى ما كانت: «بأمان» لمن وصل نقطة التجمع، و«قيد الإخلاء» لمن لم يصل بعد.
+        // (كان يبقى «يُساعَد» إلى الأبد فيختل الحصر — عيب كُشف ٢٠٢٦-٠٩-٢٢.)
+        $row->update([
+            'needs_assistance' => false,
+            'assistance_type' => null,
+            'status' => $row->checked_in_at ? EvacuationCheckIn::STATUS_SAFE : EvacuationCheckIn::STATUS_EVACUATING,
+        ]);
         EmergencyEventLog::log($incident, EmergencyEventLog::TYPE_HELP_REQUESTED,
             'عولج طلب المساعدة: '.$row->getPersonName(), ['check_in_id' => $row->id, 'resolved' => true], 'info', auth()->id());
         return back()->with('success', 'سُجّل أنك عالجت طلب «'.$row->getPersonName().'».');

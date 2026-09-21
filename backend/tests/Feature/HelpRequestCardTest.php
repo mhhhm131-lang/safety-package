@@ -116,6 +116,74 @@ class HelpRequestCardTest extends TestCase
             ->assertDontSee('طلبك وصل', false);
     }
 
+    /**
+     * عيب كشفه فحص المراجعة (٢٠٢٦-٠٩-٢٢): من سجّل وصوله «بأمان» ثم طلب مساعدة تنقلب حالته،
+     * ولا تعود بعد «عولج» — فيقول عدّاد الآمنين صفراً ورجلٌ واقف في نقطة التجمع.
+     */
+    public function test_asking_for_help_does_not_lose_a_person_from_the_headcount(): void
+    {
+        $incident = app(EmergencyService::class)->triggerAlarm(
+            $this->building, 'fire', $this->salama, 'high', false, 'حصر', Place::idByCode('HZ-06')
+        );
+        $point = AssemblyPoint::where('building_id', $this->building->id)->firstOrFail();
+
+        $this->actingAs($this->employee)->post('/app/emergency/me/check-in', ['assembly_point_id' => $point->id]);
+        $checkIn = EvacuationCheckIn::where('incident_id', $incident->id)
+            ->where('user_id', $this->employee->id)->firstOrFail();
+        $this->assertTrue($checkIn->fresh()->isSafe());
+
+        // يطلب مساعدة وهو في نقطة التجمع: يبقى محصوراً آمناً، وعليه علامة «يحتاج مساعدة»
+        $this->actingAs($this->employee)->post('/app/emergency/me/help', ['help_type' => 'mobility', 'notes' => 'لا أستطيع المشي']);
+        $this->assertTrue((bool) $checkIn->fresh()->needs_assistance);
+        $this->assertTrue($checkIn->fresh()->isSafe(), 'خرج من الحصر بمجرد طلبه المساعدة');
+
+        $stats = app(\App\Modules\Emergency\Services\QrMusteringService::class)->getLiveStats($incident);
+        $this->assertSame(1, $stats['safe'], 'عدّاد الآمنين لا يعدّه');
+        $this->assertSame(1, $stats['needs_help']);
+
+        // وبعد «عولج» يبقى آمناً
+        $this->actingAs($this->medic)->post("/app/emergency/incidents/{$incident->id}/help/{$checkIn->id}/done");
+        $this->assertTrue($checkIn->fresh()->isSafe(), 'لم تعد حالته بعد المعالجة');
+        $this->assertSame(1, app(\App\Modules\Emergency\Services\QrMusteringService::class)->getLiveStats($incident)['safe']);
+    }
+
+    /** ومن لم يسجّل وصوله بعد: يعود «قيد الإخلاء» لا «بأمان» — لا يُدّعى وصول لم يحدث. */
+    public function test_someone_who_never_arrived_goes_back_to_evacuating(): void
+    {
+        [$incident, $checkIn] = $this->triggerAndAskForHelp();
+        $this->assertFalse($checkIn->fresh()->isSafe());
+
+        $this->actingAs($this->medic)->post("/app/emergency/incidents/{$incident->id}/help/{$checkIn->id}/done");
+
+        $this->assertSame(EvacuationCheckIn::STATUS_EVACUATING, $checkIn->fresh()->status);
+        $this->assertFalse((bool) $checkIn->fresh()->needs_assistance);
+    }
+
+    /**
+     * عيب كشفه الفحص: الطلب لا يصل أحداً — لا إشعار ولا بطاقة. يظهر فقط لمن شاشة الحالة مفتوحة
+     * أمامه، بينما شاشة الموظف تقول له «فريق الاستجابة والمركز يريانه الآن».
+     */
+    public function test_the_request_actually_reaches_the_centre_and_the_responders(): void
+    {
+        [$incident, $checkIn] = $this->triggerAndAskForHelp();
+
+        // إشعار للمركز
+        $this->assertDatabaseHas('app_notifications', [
+            'user_id' => $this->salama->id, 'type' => 'emergency.help_requested',
+        ]);
+
+        // وبطاقة في «ما ينتظرك» بزر «عولج»
+        $home = $this->actingAs($this->salama)->get('/app')->assertOk();
+        $home->assertSee('يحتاج مساعدة', false);
+        $home->assertSee('لا أستطيع النزول من الدرج', false);
+        $home->assertSee(route('emergency.incidents.help.done', [$incident, $checkIn->id]), false);
+
+        // وتختفي البطاقة بعد «عولج»
+        $this->actingAs($this->medic)->post("/app/emergency/incidents/{$incident->id}/help/{$checkIn->id}/done");
+        $this->actingAs($this->salama)->get('/app')->assertOk()
+            ->assertDontSee(route('emergency.incidents.help.done', [$incident, $checkIn->id]), false);
+    }
+
     public function test_plain_employee_cannot_close_someone_elses_request(): void
     {
         [$incident, $checkIn] = $this->triggerAndAskForHelp();

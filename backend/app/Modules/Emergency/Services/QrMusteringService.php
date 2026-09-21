@@ -96,18 +96,54 @@ class QrMusteringService
         EmergencyEventLog::log($checkIn->incident, EmergencyEventLog::TYPE_PERSON_FOUND, 'تم العثور على: '.$checkIn->getPersonName(), [], 'info', $foundBy?->id);
     }
 
+    /**
+     * طلب المساعدة: علامة على السجل، **لا إخراج من الحصر**.
+     * (عيب كُشف ٢٠٢٦-٠٩-٢٢: من سجّل وصوله «بأمان» ثم طلب مساعدة كان يخرج من عدّاد الآمنين،
+     * فيقول العدّاد صفراً ورجلٌ واقف في نقطة التجمع. الإصابة وحدها تغيّر حالة الآمن.)
+     */
     public function requestHelp(EvacuationCheckIn $checkIn, string $helpType, ?string $location = null, ?string $notes = null): void
     {
+        $status = $helpType === 'injured'
+            ? EvacuationCheckIn::STATUS_INJURED
+            : ($checkIn->isSafe() ? EvacuationCheckIn::STATUS_SAFE : EvacuationCheckIn::STATUS_ASSISTED);
         $checkIn->update([
-            'status' => $helpType === 'injured' ? EvacuationCheckIn::STATUS_INJURED : EvacuationCheckIn::STATUS_ASSISTED,
+            'status' => $status,
             'needs_assistance' => true,
             'assistance_type' => $helpType,
             'last_known_location' => $location ?? $checkIn->last_known_location,
             'notes' => $notes,
         ]);
+        $this->notifyHelpRequest($checkIn, $location);
         EmergencyEventLog::log($checkIn->incident, EmergencyEventLog::TYPE_HELP_REQUESTED,
             'طلب مساعدة: '.$checkIn->getPersonName().' — '.$checkIn->getAssistanceTypeLabel(),
             ['help_type' => $helpType, 'location' => $location], 'critical', $checkIn->user_id);
+    }
+
+    /**
+     * الطلب يصل فعلاً: المركز، وأعضاء الفريق الأولي لمكان الحالة ممن لهم حسابات.
+     * (كان لا يصل أحداً ويظهر فقط لمن شاشة الحالة مفتوحة أمامه، بينما شاشة الموظف تقول
+     * «فريق الاستجابة والمركز يريانه الآن» — عيب كُشف ٢٠٢٦-٠٩-٢٢.)
+     */
+    protected function notifyHelpRequest(EvacuationCheckIn $checkIn, ?string $location): void
+    {
+        $incident = $checkIn->incident;
+        if (!$incident) return;
+
+        $title = 'طلب مساعدة: '.$checkIn->getPersonName().($location ? ' — '.$location : '');
+        $body = $checkIn->getAssistanceTypeLabel().($checkIn->notes ? ' — '.$checkIn->notes : '');
+        $url = route('emergency.incidents.live', $incident);
+
+        $ids = UserProfile::where('is_active', true)
+            ->whereIn('role', ['system_admin', 'system_staff'])->pluck('user_id');
+        $team = EmergencyTeam::active()
+            ->where(fn ($w) => $w->where('place_id', $incident->place_id)->orWhereNull('place_id'))
+            ->with('members')->get()->flatMap->members->pluck('user_id')->filter();
+
+        $inbox = app(\App\Core\Services\NotificationService::class);
+        foreach ($ids->merge($team)->unique() as $userId) {
+            if ((int) $userId === (int) $checkIn->user_id) continue;   // صاحب الطلب لا يُنبَّه بطلبه
+            $inbox->create((int) $userId, 'emergency.help_requested', $title, $body, $url);
+        }
     }
 
     public function getLiveStats(EmergencyIncident $incident): array

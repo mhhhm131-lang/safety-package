@@ -133,7 +133,11 @@ with sync_playwright() as p:
     # ── ٥) المركز يرى الحصر والطلب، ويرسل رسالة للجميع ──
     dp.goto(BASE + live, wait_until='domcontentloaded')
     body = dp.inner_text('body')
-    log('٥) المركز يرى الحصر', bool(re.search(r'آمنون', body)), bool(re.search(r'آمنون', body)))
+    # يُقرأ **الرقم** لا العنوان: البحث عن كلمة «آمنون» كان يمرّ دائماً لأنها عنوان ثابت،
+    # فبقيت البوابة عمياء عن خروج الموظف من الحصر بمجرد طلبه المساعدة (عيب ٢٠٢٦-٠٩-٢٢).
+    m = re.search(r'(\d+)\s*آمنون', body) or re.search(r'آمنون\s*(\d+)', body)
+    safe_n = int(m.group(1)) if m else -1
+    log('٥) المركز يرى الحصر ورقم الآمنين صحيح', f'آمنون = {safe_n}', safe_n >= 1)
     log('   ويرى طلب المساعدة بوقته وزر «عولج»',
         f'«يحتاجون مساعدة»={"يحتاجون مساعدة" in body} · «عولج»={"عولج" in body}',
         ('يحتاجون مساعدة' in body) and ('عولج' in body))

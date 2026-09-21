@@ -1,0 +1,4 @@
+
+# إعدادات Claude المحلية — لا تُرفع (رُفعت سهواً ٢٠٢٦-٠٩-٢٢ بـ«أضف كل شيء»)
+.claude/settings.json
+.claude/settings.local.json

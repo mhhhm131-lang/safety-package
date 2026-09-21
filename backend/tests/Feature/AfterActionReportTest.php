@@ -165,6 +165,47 @@ class AfterActionReportTest extends TestCase
             ->assertDontSee(route('emergency.aar.actions.done', $action->id), false);
     }
 
+    /**
+     * عيب كشفه فحص المراجعة (٢٠٢٦-٠٩-٢٢): قائمة الإسناد مفتوحة لكل الموظفين، والإغلاق خلف صلاحية
+     * الطوارئ. فموظف عادي تصله البطاقة ولا يستطيع فتح التقرير ولا الضغط على «أنجزته».
+     * (اختباري السابق أسند المهمة لمدير المرافق — وهو يملك الصلاحية — فمرّ.)
+     */
+    public function test_a_plain_employee_can_close_the_action_given_to_him(): void
+    {
+        $incident = $this->endedIncident();
+        $this->actingAs($this->salama)->post("/app/emergency/incidents/{$incident->id}/aar");
+        $report = AfterActionReport::where('incident_id', $incident->id)->firstOrFail();
+
+        $this->assertFalse(
+            \App\Core\Permissions\PermissionRegistry::hasPermission('employee', 'emergency.view'),
+            'الموظف يجب أن يكون بلا صلاحية طوارئ حتى يكون الاختبار ذا معنى'
+        );
+
+        $this->actingAs($this->salama)->post("/app/emergency/aar/{$report->id}/actions", [
+            'title' => 'إغلاق باب المخزن بعد الدوام',
+            'assigned_to_id' => $this->employee->id,
+            'due_date' => now()->addDays(5)->toDateString(),
+        ]);
+        $action = AarCorrectiveAction::where('report_id', $report->id)->firstOrFail();
+
+        // البطاقة تصله، ويفتح التقرير منها، ويغلق مهمته
+        $this->actingAs($this->employee)->get('/app')->assertOk()->assertSee('إغلاق باب المخزن بعد الدوام', false);
+        $this->actingAs($this->employee)->get("/app/emergency/aar/{$report->id}")->assertOk();
+        $this->actingAs($this->employee)->post("/app/emergency/aar/actions/{$action->id}/done")->assertRedirect();
+        $this->assertNotNull($action->fresh()->completed_date);
+    }
+
+    /** ولا يفتح تقريراً لا مهمة له فيه. */
+    public function test_a_plain_employee_sees_no_report_he_has_no_part_in(): void
+    {
+        $incident = $this->endedIncident();
+        $this->actingAs($this->salama)->post("/app/emergency/incidents/{$incident->id}/aar");
+        $report = AfterActionReport::where('incident_id', $incident->id)->firstOrFail();
+
+        $this->actingAs($this->employee)->get("/app/emergency/aar/{$report->id}")->assertForbidden();
+        $this->actingAs($this->employee)->get('/app/emergency/aar')->assertForbidden();
+    }
+
     public function test_only_the_centre_writes_the_report(): void
     {
         $incident = $this->endedIncident();

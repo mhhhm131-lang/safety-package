@@ -13,6 +13,7 @@ use App\Modules\Emergency\Models\PanicAlert;
 use App\Modules\Emergency\Models\WearableAlert;
 use App\Modules\Emergency\Services\EmergencyMessagingService;
 use App\Modules\Emergency\Services\IncidentStepsService;
+use App\Modules\Emergency\Services\QrMusteringService;
 use Illuminate\Support\Collection;
 
 /**
@@ -21,7 +22,7 @@ use Illuminate\Support\Collection;
  */
 class EmergencyTasks implements TaskSource
 {
-    public function __construct(private IncidentStepsService $steps, private EmergencyMessagingService $messages) {}
+    public function __construct(private IncidentStepsService $steps, private EmergencyMessagingService $messages, private QrMusteringService $mustering) {}
 
     public function tasksFor(User $user): Collection
     {
@@ -68,6 +69,22 @@ class EmergencyTasks implements TaskSource
                 secondary: ['label' => 'أحتاج مساعدة', 'url' => route('api.emergency.messages.quick', [$m, 'need_help']), 'method' => 'POST'],
                 isOverdue: true, createdAt: $m->sent_at,
             ));
+        }
+        // طلب مساعدة مفتوح — للمركز ولمن يستجيب. (كان يظهر في شاشة الحالة وحدها فلا يراه إلا من فتحها.)
+        if (PermissionRegistry::hasPermission($role, 'emergency.respond') || in_array($role, ['system_admin', 'system_staff'], true)) {
+            foreach ($open as $inc) {
+                foreach ($this->mustering->getPeopleNeedingHelp($inc) as $c) {
+                    $out->push(new Task(
+                        key: "ehelp:{$c->id}", module: 'الطوارئ',
+                        question: $inc->incident_code.': '.$c->getPersonName().' يحتاج مساعدة — '.$c->getAssistanceTypeLabel()
+                            .($c->last_known_location ? ' · '.$c->last_known_location : '').($c->notes ? ' · '.$c->notes : ''),
+                        primary: ['label' => 'عولج', 'url' => route('emergency.incidents.help.done', [$inc, $c->id]), 'method' => 'POST'],
+                        secondary: ['label' => 'شاشة الحالة', 'url' => route('emergency.incidents.live', $inc)],
+                        isOverdue: true, place: $inc->place?->name,
+                        detailsUrl: route('emergency.incidents.live', $inc), createdAt: $c->updated_at,
+                    ));
+                }
+            }
         }
         // ٢٢-٧: إجراء تصحيحي من تقرير ما بعد الحادث — يصل صاحبه ويُغلق بزر
         foreach (\App\Modules\Emergency\Models\AarCorrectiveAction::where('assigned_to_id', $user->id)
