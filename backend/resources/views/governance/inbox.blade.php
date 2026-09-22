@@ -37,7 +37,7 @@
   <div class="tiles mb-3" id="tiles">
     <a class="card tile" href="#inboxList" data-tile="waiting"><span class="lbl">ينتظرك الآن</span><span class="n">{{ $overview['waiting'] }}</span><span class="lbl">{{ $overview['waiting'] ? 'قرارات تحتاجك' : 'لا شيء يحتاجك' }}</span></a>
     <a class="card tile" href="{{ route('incidents.index') }}" data-tile="pending"><span class="lbl">بلاغات شاغلين قبل استلام الفني</span><span class="n">{{ $rg['incident']['pending'] }}</span><span class="lbl">{{ $rg['incident']['pending'] ? 'بانتظار فني' : 'كلها استُلمت' }}</span></a>
-    <a class="card tile" href="{{ route('emergency.incidents.index') }}" data-tile="unack"><span class="lbl">حالات طارئة بلا إقرار</span><span class="n {{ $rg['emergency']['unacknowledged'] ? 'text-danger' : '' }}">{{ $rg['emergency']['unacknowledged'] }}</span><span class="lbl">{{ $rg['emergency']['unacknowledged'] ? 'يحتاج إقراراً الآن' : 'لا شيء معلّق' }}</span></a>
+    <a class="card tile" href="{{ route('emergency.incidents.index') }}" data-tile="unack"><span class="lbl">حالات طارئة بلا إقرار</span><span class="n {{ $rg['emergency']['unacknowledged_open'] ? 'text-danger' : '' }}">{{ $rg['emergency']['unacknowledged_open'] }}</span><span class="lbl">{{ $rg['emergency']['unacknowledged_open'] ? 'يحتاج إقراراً الآن' : 'لا شيء معلّق' }}</span></a>
     <a class="card tile" href="{{ route('reports.dashboard') }}" data-tile="gap">
       <span class="lbl">فجوة الاستجابة</span>
       @if($rg['incident']['avg_minutes'] === null)

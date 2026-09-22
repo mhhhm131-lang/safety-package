@@ -72,9 +72,9 @@ class EmergencyMessagingService
     /**
      * Record a user's response to a message
      */
-    public function recordResponse(EmergencyMassMessage $message, User $user, array $responseData): EmergencyMessageResponse
+    public function recordResponse(EmergencyMassMessage $message, User $user, array $responseData, bool $logHelp = true): EmergencyMessageResponse
     {
-        return DB::transaction(function () use ($message, $user, $responseData) {
+        return DB::transaction(function () use ($message, $user, $responseData, $logHelp) {
             // Check if response already exists
             $existingResponse = EmergencyMessageResponse::where('message_id', $message->id)
                 ->where('user_id', $user->id)
@@ -94,7 +94,7 @@ class EmergencyMessagingService
                 if ($firstResponse) {
                     $message->incrementResponded();
                     $this->logEvent($message, 'message_response_received', ['user_name' => $user->name, 'response_type' => $responseData['response_type']]);
-                    if ($responseData['response_type'] === 'need_help') {
+                    if ($logHelp && $responseData['response_type'] === 'need_help') {
                         $this->notifyHelpRequest($message, $user, $responseData);
                     }
                 }
@@ -124,7 +124,7 @@ class EmergencyMessagingService
             ]);
 
             // If user needs help, notify incident commander
-            if ($responseData['response_type'] === 'need_help') {
+            if ($logHelp && $responseData['response_type'] === 'need_help') {
                 $this->notifyHelpRequest($message, $user, $responseData);
             }
 
@@ -276,8 +276,9 @@ class EmergencyMessagingService
     /** داخل النظام (صندوق الوارد) — يرسل البريد أيضاً إن كان للمستخدم بريد. */
     protected function sendInAppNotification(EmergencyMassMessage $message, User $user): void
     {
+        // ٢٢-١٢: كان `/app/emergency/messages/{id}` — مسار بلا صفحة، فيفتح «غير موجود» للجميع
         app(NotificationService::class)->create($user->id, 'emergency.message', $message->title, $message->message,
-            '/app/emergency/messages/'.$message->id);
+            EmergencyNotificationService::linkFor($user, $message->incident));
     }
 
     protected function sendSmsNotification(EmergencyMassMessage $message, User $user): void
@@ -357,12 +358,51 @@ class EmergencyMessagingService
             ->whereNotNull('responded_at')
             ->pluck('message_id');
 
+        // ٢٢-١٣: رسالة حالةٍ انتهت لا تنتظر رداً (رأيتُ ٩ بطاقات «متأخر» عند موظف والمفتوحة صفر)،
+        // ولكل حالة بطاقة واحدة — التذكير لا يضيف بطاقة بل يحلّ محل الأصل (أحدث رسالة).
         return EmergencyMassMessage::query()
             ->whereHas('responses', fn ($q) => $q->where('user_id', $user->id))
             ->where('sent_at', '>=', now()->subHours(24))
             ->whereNotIn('id', $respondedMessageIds)
-            ->orderByDesc('sent_at')
-            ->get();
+            ->where(fn ($q) => $q->whereNull('incident_id')
+                ->orWhereHas('incident', fn ($i) => $i->whereIn('status', EmergencyIncident::OPEN_STATUSES)))
+            ->orderByDesc('sent_at')->orderByDesc('id')
+            ->get()
+            ->unique(fn (EmergencyMassMessage $m) => $m->incident_id ? 'i'.$m->incident_id : 'm'.$m->id)
+            ->values();
+    }
+
+    /**
+     * ٢٢-١٣: الرد من البطاقة يُحتسب على كل رسائل الحالة المعلّقة له (الأصل وتذكيره) — ردّ واحد لا ردّان،
+     * ويُحتسب في عدّاد كل رسالة. رسالة بلا حالة تبقى وحدها.
+     */
+    public function recordResponseForIncident(EmergencyMassMessage $message, User $user, array $responseData): void
+    {
+        // ٢٢-١٤: الرد من البطاقة هو فعل الشاشة نفسه — «أنا بخير» يسجّله في الحصر «بأمان» (كان يُحسب مفقوداً
+        // حتى يضغط زراً ثانياً في شاشة أخرى)، و«أحتاج مساعدة» طلبُ مساعدة يظهر للمركز ويصل الفريق (كان سطراً في السجل).
+        $checkIn = $message->incident_id
+            ? \App\Modules\Emergency\Models\EvacuationCheckIn::where('incident_id', $message->incident_id)->where('user_id', $user->id)
+                ->whereHas('incident', fn ($i) => $i->whereIn('status', EmergencyIncident::OPEN_STATUSES))->latest('id')->first()
+            : null;
+        $type = $responseData['response_type'];
+        $this->recordResponse($message, $user, $responseData, !($checkIn && $type === 'need_help'));
+        if ($checkIn) {
+            $mustering = app(QrMusteringService::class);
+            if ($type === 'safe' && !$checkIn->isSafe()) {
+                $mustering->markSafeByMessage($checkIn);
+            } elseif ($type === 'need_help' && !$checkIn->needs_assistance) {
+                $mustering->requestHelp($checkIn, 'other', $user->profile?->myPlace()?->name, 'من الرد على رسالة المركز');
+            }
+        }
+        if (!$message->incident_id) return;
+        $pending = EmergencyMessageResponse::where('user_id', $user->id)->whereNull('responded_at')
+            ->whereHas('message', fn ($q) => $q->where('incident_id', $message->incident_id)->where('id', '!=', $message->id))
+            ->with('message')->get();
+        // بلا تبليغ ثانٍ ولا سطر ثانٍ في السجل: الرد وُجّه مرة واحدة أعلاه
+        foreach ($pending as $r) {
+            $r->update(['response_type' => $responseData['response_type'], 'read_at' => $r->read_at ?? now(), 'responded_at' => now()]);
+            $r->message->incrementResponded();
+        }
     }
 
     /**

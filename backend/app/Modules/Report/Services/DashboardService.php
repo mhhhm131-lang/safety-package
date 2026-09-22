@@ -106,6 +106,10 @@ class DashboardService
                 'max_minutes' => $emergencyMinutes->count() ? round((float) $emergencyMinutes->max(), 1) : null,
                 'unacknowledged' => $scope->apply(EmergencyIncident::query(), 'triggered_at', 'place_id', null)
                     ->where('is_drill', false)->whereNull('acknowledged_at')->count(),
+                // ٢٢-١٣: ما يحتاج إقراراً «الآن» = المفتوحة فقط. السابق مؤشر تاريخي للتقرير، وكانت بطاقة
+                // الصفحة الأولى تعرضه بالأحمر «يحتاج إقراراً الآن» (٢٧ والمفتوحة صفر)
+                'unacknowledged_open' => $scope->apply(EmergencyIncident::query(), 'triggered_at', 'place_id', null)
+                    ->open()->where('is_drill', false)->whereNull('acknowledged_at')->count(),
             ],
         ];
     }
@@ -278,7 +282,7 @@ class DashboardService
         }
 
         $unack = $scope->apply(EmergencyIncident::query(), 'triggered_at', 'place_id', null)
-            ->where('is_drill', false)->whereNull('acknowledged_at')->count();
+            ->open()->where('is_drill', false)->whereNull('acknowledged_at')->count(); // ٢٢-١٣: «يحتاج انتباهك» = المفتوحة
         if ($unack) {
             $out[] = ['n' => $unack, 'text' => 'حالة طارئة بلا إقرار باستلام التنبيه', 'route' => 'emergency.incidents.index'];
         }

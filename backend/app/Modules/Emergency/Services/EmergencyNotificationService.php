@@ -172,6 +172,18 @@ class EmergencyNotificationService
 
     // ── القنوات ──
 
+    /**
+     * ٢٢-١٢: رابط إشعار الحالة بحسب مستلمه. كان ثابتاً إلى شاشة المتابعة، فالموظف يضغطه في أهم دقيقة
+     * فيجد «ليس لديك صلاحية». من يملك الاطلاع أو الاستجابة ← المتابعة؛ وغيره ← شاشته (المخرج ونقطة التجمع و«أنا بخير»).
+     */
+    public static function linkFor(User $user, ?EmergencyIncident $incident): string
+    {
+        $role = $user->role();
+        $staff = PermissionRegistry::hasPermission($role, 'emergency.view') || PermissionRegistry::hasPermission($role, 'emergency.respond');
+        if (!$staff) return route('emergency.me', [], false);
+        return $incident ? route('emergency.incidents.live', $incident, false) : route('emergency.dashboard', [], false);
+    }
+
     protected function sendToUser(?EmergencyIncident $incident, User $user, string $subject, string $body, string $type): void
     {
         $row = EmergencyNotification::create([
@@ -180,7 +192,7 @@ class EmergencyNotificationService
             'subject' => $subject, 'body' => $body, 'status' => 'pending',
         ]);
         try {
-            $url = $incident ? '/app/emergency/incidents/'.$incident->id.'/live' : '/app/emergency';
+            $url = self::linkFor($user, $incident);
             // NotificationService يرسل البريد أيضاً إن كان للمستخدم بريد (§٦)
             $this->inbox->create($user->id, $type, $subject, $body, $url);
             $row->markAsSent();

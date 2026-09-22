@@ -290,10 +290,19 @@
 <div class="modal fade" id="endModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><form method="post" action="{{ route('emergency.incidents.end', $incident) }}">@csrf
   <div class="modal-header"><h5 class="modal-title">انتهاء الخطر</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
   <div class="modal-body">
-    @if($stats['missing'] > 0)<div class="alert alert-danger py-2">يوجد {{ $stats['missing'] }} مفقود. تأكد قبل الإنهاء.</div>@endif
+    {{-- ٢٢-١٥: كان ينبّه بالمفقود المسجَّل وحده؛ من لم يصل بعد وطلبات المساعدة المفتوحة لا تُذكر. تنبيه لا منع، بلا ضغطة زائدة --}}
+    @php($pending = ['missing' => $stats['missing'], 'evacuating' => $stats['evacuating'], 'help' => $stats['needs_help']])
+    @if(array_sum($pending) > 0)
+      <div class="alert alert-danger py-2" id="endWarn">
+        @if($pending['missing'])<div>مفقود: <b>{{ $pending['missing'] }}</b></div>@endif
+        @if($pending['evacuating'])<div>لم يسجّل وصوله بعد: <b>{{ $pending['evacuating'] }}</b></div>@endif
+        @if($pending['help'])<div>طلب مساعدة مفتوح: <b>{{ $pending['help'] }}</b></div>@endif
+        <div class="small mt-1">تأكد قبل الإنهاء.</div>
+      </div>
+    @endif
     <label class="form-label">التقرير النهائي</label><textarea name="final_report" class="form-control" rows="4" placeholder="ما حدث، ما فُعل، النتيجة، ما يُصحَّح"></textarea>
   </div>
-  <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button><button class="btn btn-success">إنهاء وإعلان الأمان</button></div>
+  <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button><button class="btn {{ array_sum($pending) > 0 ? 'btn-danger' : 'btn-success' }}" id="endSubmit">{{ array_sum($pending) > 0 ? 'أنهِ رغم ذلك' : 'إنهاء وإعلان الأمان' }}</button></div>
 </form></div></div></div>
 <div class="modal fade" id="cancelModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><form method="post" action="{{ route('emergency.incidents.cancel', $incident) }}">@csrf
   <div class="modal-header"><h5 class="modal-title">إلغاء الحالة</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>

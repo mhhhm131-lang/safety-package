@@ -2,6 +2,7 @@
 
 namespace App\Modules\Emergency\Services;
 
+use App\Core\Permissions\PermissionRegistry;
 use App\Models\User;
 use App\Modules\Governance\Models\UserProfile;
 use App\Core\Services\NotificationService;
@@ -397,7 +398,12 @@ class PanicAlertService
         $message = $messages[$status] ?? "تحديث على تنبيهك: {$status}";
 
         try {
-            app(NotificationService::class)->create($alert->user_id, 'emergency.panic', 'تحديث تنبيهك', $message, '/app/emergency/panic/'.$alert->id);
+            // ٢٢-١٢: صفحة التنبيه للمستجيبين وحدهم فتُرفض لصاحبها الموظف — يُفتح له ما يعرض حال استغاثته
+            $owner = $alert->user;
+            $role = $owner?->role();
+            $staff = $role && (PermissionRegistry::hasPermission($role, 'emergency.view') || PermissionRegistry::hasPermission($role, 'emergency.respond'));
+            $url = $staff ? route('emergency.panic.show', $alert, false) : route('emergency.sos', [], false);
+            app(NotificationService::class)->create($alert->user_id, 'emergency.panic', 'تحديث تنبيهك', $message, $url);
         } catch (\Exception $e) {
             Log::warning("Failed to notify alert creator: {$e->getMessage()}");
         }

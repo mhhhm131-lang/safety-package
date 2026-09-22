@@ -54,6 +54,12 @@ class QrMusteringService
         return $this->performCheckIn($checkIn, $point, null, 'self', $lat, $lng);
     }
 
+    /** ٢٢-١٤: «أنا بخير» من رسالة المركز — بأمان بلا نقطة تجمع (لا نفترض أيّ نقطة وقف فيها). */
+    public function markSafeByMessage(EvacuationCheckIn $checkIn): EvacuationCheckIn
+    {
+        return $this->performCheckIn($checkIn, null, null, EvacuationCheckIn::METHOD_MESSAGE);
+    }
+
     public function manualCheckIn(EvacuationCheckIn $checkIn, ?AssemblyPoint $point, User $checkedBy): EvacuationCheckIn
     {
         return $this->performCheckIn($checkIn, $point, $checkedBy, 'manual');

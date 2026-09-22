@@ -86,6 +86,21 @@ class EmergencyTasks implements TaskSource
                 }
             }
         }
+        // ٢٢-١٥: حالة حقيقية انتهت ولا تقرير بعدها — للمركز، والزر يبني التقرير من سجل الحالة (كان لا يذكّر أحداً فيضيع الدرس).
+        // التمرين خارجها: له تقييمه. بلا مهلة ولا حد زمني (النظام لم يُطلق، والتجريبي يُحذف).
+        if (in_array($role, ['system_admin', 'system_staff'], true)) {
+            $ended = EmergencyIncident::where('status', EmergencyIncident::STATUS_ENDED)->where('is_drill', false)
+                ->whereDoesntHave('afterActionReport')->with('place')->orderByDesc('ended_at')->get();
+            foreach ($ended as $inc) {
+                $out->push(new Task(
+                    key: "aarmissing:{$inc->id}", module: 'الطوارئ',
+                    question: 'انتهت الحالة '.$inc->incident_code.' ولا تقرير بعدها — اكتبه',
+                    primary: ['label' => 'اكتبه', 'url' => route('emergency.incidents.aar', $inc), 'method' => 'POST'],
+                    secondary: ['label' => 'تقرير الحالة', 'url' => route('emergency.incidents.report', $inc)],
+                    place: $inc->place?->name, detailsUrl: route('emergency.incidents.report', $inc), createdAt: $inc->ended_at,
+                ));
+            }
+        }
         // ٢٢-٧: إجراء تصحيحي من تقرير ما بعد الحادث — يصل صاحبه ويُغلق بزر
         foreach (\App\Modules\Emergency\Models\AarCorrectiveAction::where('assigned_to_id', $user->id)
             ->whereNull('completed_date')->with('report')->get() as $a) {

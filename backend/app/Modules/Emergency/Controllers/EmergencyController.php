@@ -966,8 +966,8 @@ class EmergencyController extends Controller
     public function myEmergency()
     {
         $user = auth()->user();
-        $checkIn = $this->musteringService->getUserCheckIn($user);
-        $incident = $checkIn?->incident;
+        $checkIn = $this->screenCheckIn($user);
+        $incident = $checkIn?->incident ?? $this->myTeamIncident($user)[0];
 
         $building = $incident?->building ?? EmergencyBuilding::main();
         $myPlace = $user->profile?->myPlace();
@@ -1018,7 +1018,7 @@ class EmergencyController extends Controller
     public function myCheckIn(Request $request)
     {
         $v = $request->validate(['assembly_point_id' => 'required|exists:assembly_points,id']);
-        $checkIn = $this->musteringService->getUserCheckIn(auth()->user());
+        $checkIn = $this->screenCheckIn(auth()->user()); // ٢٢-١٥: ما تعرضه الشاشة
         if (!$checkIn) {
             return redirect()->route('emergency.me')->with('error', 'لا توجد حالة طارئة مفتوحة.');
         }
@@ -1281,8 +1281,8 @@ class EmergencyController extends Controller
     public function myArrived()
     {
         $user = auth()->user();
-        $incident = EmergencyIncident::open()->latest('id')->first();
-        $member = $incident ? $this->teamMemberOf($user, $incident) : null;
+        // ٢٢-١٥: الحالة المفتوحة التي هو من فريقها — كان يأخذ آخر حالة مفتوحة، فإن فُتحت حالتان خطّأه أو رفضه
+        [$incident, $member] = $this->myTeamIncident($user);
         if (!$incident || !$member) {
             return redirect()->route('emergency.me')->with('error', 'لا حالة مفتوحة أنت من فريقها.');
         }
@@ -1308,6 +1308,29 @@ class EmergencyController extends Controller
     }
 
     /** عضوية الحساب في فريق فعّال بمكان الحالة (أو فريق بلا مكان). */
+    /**
+     * ٢٢-١٥: سجل الحصر الذي تعرضه «شاشتي» وتسجّل عليه أزرارها — مصدر واحد للثلاثة (الشاشة، «أنا بخير»، «أحتاج مساعدة»).
+     * عضو الفريق: حالة فريقه ولو فُتحت بعدها حالة أخرى (وفيها «وصلتُ»)؛ وغيره: أحدث حالة مفتوحة تخصّه.
+     */
+    protected function screenCheckIn(User $user): ?EvacuationCheckIn
+    {
+        [$teamIncident] = $this->myTeamIncident($user);
+        if ($teamIncident) {
+            $c = EvacuationCheckIn::where('incident_id', $teamIncident->id)->where('user_id', $user->id)->latest('id')->first();
+            if ($c) return $c;
+        }
+        return $this->musteringService->getUserCheckIn($user);
+    }
+
+    /** ٢٢-١٥: أحدث حالة مفتوحة هو من فريقها، وعضويته فيها — [null, null] إن لم يكن. */
+    protected function myTeamIncident(User $user): array
+    {
+        foreach (EmergencyIncident::open()->latest('id')->get() as $inc) {
+            if ($m = $this->teamMemberOf($user, $inc)) return [$inc, $m];
+        }
+        return [null, null];
+    }
+
     protected function teamMemberOf(User $user, EmergencyIncident $incident): ?EmergencyTeamMember
     {
         return EmergencyTeamMember::where('user_id', $user->id)
@@ -1360,7 +1383,7 @@ class EmergencyController extends Controller
             'help_type' => 'required|in:mobility,medical,injured,trapped,panic,child,elderly,other',
             'notes' => 'nullable|string|max:500',
         ]);
-        $checkIn = $this->musteringService->getUserCheckIn(auth()->user());
+        $checkIn = $this->screenCheckIn(auth()->user()); // ٢٢-١٥: ما تعرضه الشاشة
         if (!$checkIn) {
             return redirect()->route('emergency.me')->with('error', 'لا توجد حالة طارئة مفتوحة.');
         }

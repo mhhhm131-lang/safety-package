@@ -13,7 +13,13 @@ class InboxController extends Controller
 {
     public function count(Request $request, InboxService $inbox): JsonResponse
     {
-        return response()->json(['count' => $inbox->countFor($request->user())]);
+        // ٢٢-١٤: الاستطلاع نفسه (كل ٦٠ث) يحمل «حالتي» فيظهر الشريط الأحمر بلا فتح صفحة جديدة —
+        // كان يُبنى عند تحميل الصفحة فقط والشاشة تَعِد «ستفتح لك هذه الصفحة». المصدر الواحد: نية my_emergency.
+        $mine = \App\Core\Intents\IntentRegistry::forUser($request->user())->first(fn ($i) => $i->key === 'my_emergency');
+        return response()->json([
+            'count' => $inbox->countFor($request->user()),
+            'emergency' => $mine ? ['url' => $mine->url, 'label' => $mine->label] : null,
+        ]);
     }
 
     /**

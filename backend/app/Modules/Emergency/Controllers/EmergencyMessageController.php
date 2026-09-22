@@ -59,7 +59,7 @@ class EmergencyMessageController extends Controller
     public function quick(EmergencyMassMessage $message, string $type)
     {
         try {
-            $this->messagingService->recordResponse($message, auth()->user(), ['response_type' => $type]);
+            $this->messagingService->recordResponseForIncident($message, auth()->user(), ['response_type' => $type]);
             return redirect()->back()->with('success', $type === 'safe' ? 'سُجّل أنك بخير.' : 'سُجّل طلب المساعدة وأُبلغ المركز.');
         } catch (\Throwable $e) {
             return redirect()->back()->with('error', 'تعذّر تسجيل الرد: '.$e->getMessage());

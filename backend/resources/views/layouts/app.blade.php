@@ -257,7 +257,7 @@
     <main class="col-12 py-3" style="max-width:1100px;margin:0 auto">
       {{-- ٢٢-٢ (د): حالة مفتوحة تخصّ صاحب الحساب — شريط ظاهر في كل صفحة حتى يجدها بلا بحث --}}
       @if($myEmergency && !request()->routeIs('emergency.me'))
-        <a href="{{ $myEmergency->url }}" class="alert alert-danger d-flex align-items-center gap-2 py-2 text-decoration-none" style="border-width:2px">
+        <a href="{{ $myEmergency->url }}" id="myEmergencyBanner" class="alert alert-danger d-flex align-items-center gap-2 py-2 text-decoration-none" style="border-width:2px">
           <i class="bi bi-exclamation-octagon-fill fs-4"></i>
           <span class="fw-bold">{{ $myEmergency->label }}</span>
           <span class="ms-auto small">افتح <i class="bi bi-chevron-left"></i></span>
@@ -279,7 +279,12 @@
 <script>
 (function(){
   function poll(){fetch('{{ route('app.notifications.count') }}',{credentials:'same-origin',headers:{'Accept':'application/json'}}).then(r=>r.ok?r.json():null).then(j=>{if(!j)return;var b=document.getElementById('bellN');b.textContent=j.count;b.hidden=!j.count;}).catch(()=>{});
-    fetch('{{ route('app.inbox.count') }}',{credentials:'same-origin',headers:{'Accept':'application/json'}}).then(r=>r.ok?r.json():null).then(j=>{if(!j)return;var b=document.getElementById('inboxN');if(b){b.textContent=j.count;b.hidden=!j.count;}}).catch(()=>{});}
+    fetch('{{ route('app.inbox.count') }}',{credentials:'same-origin',headers:{'Accept':'application/json'}}).then(r=>r.ok?r.json():null).then(j=>{if(!j)return;var b=document.getElementById('inboxN');if(b){b.textContent=j.count;b.hidden=!j.count;}
+      /* ٢٢-١٤: حالة فُتحت وأنت على الصفحة ← الشريط الأحمر يظهر بلا إعادة تحميل (ليس على شاشتك نفسها) */
+      if(j.emergency&&!document.getElementById('myEmergencyBanner')&&{{ request()->routeIs('emergency.me') ? 'false' : 'true' }}){var a=document.createElement('a');a.id='myEmergencyBanner';a.href=j.emergency.url;a.className='alert alert-danger d-flex align-items-center gap-2 py-2 text-decoration-none';a.style.borderWidth='2px';
+        var i=document.createElement('i');i.className='bi bi-exclamation-octagon-fill fs-4';var s=document.createElement('span');s.className='fw-bold';s.textContent=j.emergency.label;var o=document.createElement('span');o.className='ms-auto small';o.textContent='افتح';
+        a.append(i,s,o);var m=document.querySelector('main');if(m)m.prepend(a);}
+    }).catch(()=>{});}
   poll();setInterval(poll,60000);
 })();
 </script>

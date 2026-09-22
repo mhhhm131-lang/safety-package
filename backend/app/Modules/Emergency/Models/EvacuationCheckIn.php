@@ -42,6 +42,7 @@ class EvacuationCheckIn extends Model
     const METHOD_SELF = 'self';
     const METHOD_MANUAL = 'manual';
     const METHOD_AUTO = 'auto';
+    const METHOD_MESSAGE = 'message'; // ٢٢-١٤: «أنا بخير» من رسالة المركز
 
     public function incident(): BelongsTo { return $this->belongsTo(EmergencyIncident::class, 'incident_id'); }
     public function user(): BelongsTo { return $this->belongsTo(User::class); }
