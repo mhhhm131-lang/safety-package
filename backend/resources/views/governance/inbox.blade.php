@@ -51,16 +51,16 @@
 
 @endif
 
-{{-- ٢. الأماكن (٢٥-١، قرار ٦٤): لكل حساب في نطاقه، المربع يفتح ملف المكان، لونه من حال الفحص — وبجانبها الرسم لمن يملك report.view (يتغيّر في ٢٥-٢) --}}
+{{-- ٢. الأماكن (٢٥-١، قرار ٦٤): لكل حساب في نطاقه، لونه من حال الفحص؛ مكان واحد = المربع يفتح ملفه، أكثر = المربع يرشّح الرسم وزر «افتح ملف المكان» يفتحه --}}
 <div class="row g-3 mb-3">
   @if(!empty($placeTiles))
-  <div class="{{ $overview ? 'col-md-5' : 'col-12' }}">
+  <div class="col-md-5">
     <div class="card h-100"><div class="card-body">
       <h2 class="sec-h"><i class="bi bi-geo-alt"></i> {{ $scopeAll ? 'الأماكن (٨+١)' : (count($placeTiles) === 1 ? 'مكانك' : 'أماكنك') }} <span class="small text-muted fw-normal">اضغط المكان لملفه</span></h2>
       <div class="pl-grid" id="places">
         @foreach($placeTiles as $hz => $t)
           @if($p = $placeByCode[$hz] ?? null)
-          <a class="pl-tile {{ $t['cls'] }}" href="{{ route('app.places.units.file', $p) }}" data-place="{{ $hz }}" data-cls="{{ $t['cls'] }}" data-open="{{ $t['open'] }}" data-od="{{ $t['od'] }}" data-a="{{ $t['a'] }}">
+          <a class="pl-tile {{ $t['cls'] }}" href="{{ route('app.places.units.file', $p) }}" data-place="{{ $hz }}" data-cls="{{ $t['cls'] }}" data-open="{{ $t['open'] }}" data-od="{{ $t['od'] }}" data-a="{{ $t['a'] }}"@if(count($placeTiles) > 1) data-filter="1"@endif>
             <span class="small text-muted" dir="ltr">{{ $hz }}</span>
             <span class="nm">{{ $p->name }}</span>
             <span class="small st">
@@ -76,42 +76,34 @@
     </div></div>
   </div>
   @endif
-  @if($overview)
+  @if(!empty($placeTiles))
   <div class="col-md-7">
-    {{-- الرسم — على الجوال خلف «التفاصيل» --}}
-    <button class="btn btn-o w-100 d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#homeDetails" id="homeDetailsToggle"><i class="bi bi-bar-chart"></i> الرسم <i class="bi bi-chevron-down small"></i></button>
-    <div class="collapse d-md-block h-100" id="homeDetails">
-        <div class="card h-100"><div class="card-body">
-          <h2 class="sec-h"><i class="bi bi-bar-chart"></i> بلاغات الشاغلين شهراً بشهر</h2>
+    {{-- ٢٥-٢: الرسم «حال الآن» — ستة أعمدة من مصدر واحد لنطاق الحساب، تتغيّر بالمكان المضغوط بلا طلب ثانٍ، وكل عمود يفتح قائمته --}}
+    @php
+      $S = \App\Modules\Governance\Services\PlaceSnapshot::class;
+      $cmax = max(max($snapshot['total']), 1);
+    @endphp
+    <div class="card h-100" id="chart"><div class="card-body d-flex flex-column">
+      <h2 class="sec-h d-flex align-items-center gap-2 flex-wrap"><i class="bi bi-bar-chart"></i> حال الآن · <span id="chartScope">{{ $scopeAll ? 'المبنى كله' : (count($placeTiles) === 1 ? reset($snapshot['places'])['name'] : 'أماكنك') }}</span>
+        @if(count($placeTiles) > 1)
+        <span class="ms-auto d-flex gap-1">
+          <a class="btn btn-g btn-sm" id="chartFile" href="#" hidden>افتح ملف المكان</a>
+          <button class="btn btn-o btn-sm" id="chartAll" type="button" hidden>{{ $scopeAll ? 'المبنى كله' : 'أماكنك' }}</button>
+        </span>
+        @endif
+      </h2>
+      <div class="bars flex-grow-1" id="bars">
+        @foreach($S::KEYS as $k => [$label, $warn])
           @php
-            $months = ['01' => 'يناير', '02' => 'فبراير', '03' => 'مارس', '04' => 'أبريل', '05' => 'مايو', '06' => 'يونيو', '07' => 'يوليو', '08' => 'أغسطس', '09' => 'سبتمبر', '10' => 'أكتوبر', '11' => 'نوفمبر', '12' => 'ديسمبر'];
-            $bm = $overview['by_month'];
-            $max = count($bm) ? max(array_column($bm, 'count')) : 0;
-            $w = 600; $h = 190; $base = 160; $n = max(count($bm), 1); $slot = ($w - 40) / $n; $bw = min(28, $slot * 0.5);
+            $n = $snapshot['total'][$k];
+            $href = $snapshot['links'][$k];
           @endphp
-          @if(!count($bm))
-            <p class="text-muted small m-0" id="trendEmpty">لا بلاغات في الأشهر الستة الأخيرة.</p>
-          @else
-          <svg viewBox="0 0 {{ $w }} {{ $h }}" width="100%" role="img" aria-label="بلاغات الشاغلين شهراً بشهر" id="trend">
-            <line x1="20" y1="{{ $base }}" x2="{{ $w - 20 }}" y2="{{ $base }}" stroke="#d9e2de"></line>
-            @foreach($bm as $i => $m)
-              @php
-                $x = 20 + $slot * $i + ($slot - $bw) / 2;
-                $bh = $max ? max(4, round($m['count'] / $max * ($base - 30))) : 4;
-                $last = $i === count($bm) - 1;
-                $mm = substr($m['label'], 5, 2);
-              @endphp
-              <g data-month="{{ $m['label'] }}" data-count="{{ $m['count'] }}">
-                <rect x="{{ $x }}" y="{{ $base - $bh }}" width="{{ $bw }}" height="{{ $bh }}" rx="4" fill="{{ $last ? '#d9b25a' : '#0f4c3a' }}"><title>{{ $months[$mm] ?? $m['label'] }}: {{ $m['count'] }}</title></rect>
-                <rect x="{{ $x }}" y="{{ $base - 4 }}" width="{{ $bw }}" height="4" fill="{{ $last ? '#d9b25a' : '#0f4c3a' }}"></rect>
-                @if($last || $m['count'] === $max)<text x="{{ $x + $bw / 2 }}" y="{{ $base - $bh - 8 }}" font-size="14" font-weight="700" text-anchor="middle" fill="#1a2a24">{{ $m['count'] }}</text>@endif
-                <text x="{{ $x + $bw / 2 }}" y="{{ $base + 20 }}" font-size="12" text-anchor="middle" fill="{{ $last ? '#1a2a24' : '#6b7a74' }}" font-weight="{{ $last ? '700' : '400' }}">{{ $months[$mm] ?? $m['label'] }}</text>
-              </g>
-            @endforeach
-          </svg>
-          @endif
-        </div></div>
-    </div>
+          <a class="bar {{ $n ? '' : 'zero' }} {{ $warn && $n ? 'warn' : '' }}" data-k="{{ $k }}" data-n="{{ $n }}"@if($href) href="{{ $href }}"@endif title="{{ $label }} — اضغط للقائمة"><span class="col"><span class="fill" style="height:{{ $n ? max(6, round($n / $cmax * 100)) : 3 }}%"></span></span><span class="n">{{ $n }}</span><span class="lbl">{{ $label }}</span></a>
+        @endforeach
+      </div>
+      <p class="small text-muted mt-2 mb-0">{{ count($placeTiles) > 1 ? 'اضغط مكاناً فيتغيّر الرسم له وحده، واضغط عموداً لقائمته.' : 'اضغط عموداً لقائمته.' }}</p>
+    </div></div>
+    <script type="application/json" id="snapshot">{!! json_encode(['places' => $snapshot['places'], 'total' => $snapshot['total'], 'links' => $snapshot['links'], 'keys' => array_map(fn ($v) => $v[1], $S::KEYS)], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}</script>
   </div>
   @endif
 </div>
@@ -225,6 +217,31 @@
   var h=document.getElementById('inboxHint'),b=document.getElementById('inboxHintHide');
   try{if(localStorage.getItem('ipa-inbox-hint')==='1')h.hidden=true;}catch(e){}
   b.addEventListener('click',function(e){e.preventDefault();h.hidden=true;try{localStorage.setItem('ipa-inbox-hint','1');}catch(x){}});
+})();
+/* ٢٥-٢: ضغطة المكان ترشّح الرسم من بيانات الصفحة نفسها (بلا طلب)؛ «المبنى كله» يعيده؛ بلا سكربت يبقى المربع رابطاً إلى ملف المكان */
+(function(){
+  var el=document.getElementById('snapshot'),bars=document.getElementById('bars');if(!el||!bars)return;
+  var D=JSON.parse(el.textContent),scope=document.getElementById('chartScope'),all=document.getElementById('chartAll'),file=document.getElementById('chartFile');
+  function draw(n,links,name,fileUrl){
+    var vals=Object.keys(n).map(function(k){return n[k]}),m=Math.max.apply(null,vals.concat([1]));
+    bars.querySelectorAll('.bar').forEach(function(b){
+      var k=b.dataset.k,v=n[k]||0;b.dataset.n=v;b.querySelector('.n').textContent=v;
+      b.querySelector('.fill').style.height=(v?Math.max(6,Math.round(v/m*100)):3)+'%';
+      b.classList.toggle('zero',!v);b.classList.toggle('warn',!!(D.keys[k]&&v));
+      if(links[k])b.setAttribute('href',links[k]);else b.removeAttribute('href');
+    });
+    scope.textContent=name;
+    if(all)all.hidden=!fileUrl;if(file){file.hidden=!fileUrl;if(fileUrl)file.href=fileUrl;}
+  }
+  var base=scope.textContent;
+  document.querySelectorAll('#places .pl-tile[data-filter]').forEach(function(t){
+    t.addEventListener('click',function(e){
+      e.preventDefault();var p=D.places[t.dataset.place];if(!p)return;
+      document.querySelectorAll('#places .pl-tile.on').forEach(function(x){x.classList.remove('on')});t.classList.add('on');
+      draw(p.n,p.links,p.name,p.file);
+    });
+  });
+  if(all)all.addEventListener('click',function(){document.querySelectorAll('#places .pl-tile.on').forEach(function(x){x.classList.remove('on')});draw(D.total,D.links,base,null);});
 })();
 </script>
 @endpush

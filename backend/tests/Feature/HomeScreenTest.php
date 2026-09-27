@@ -50,14 +50,15 @@ class HomeScreenTest extends TestCase
         $this->assertMatchesRegularExpression('~data-tile="pending".*?<span class="n">1</span>~s', $html);
         $this->assertMatchesRegularExpression('~data-tile="unack".*?<span class="n[^"]*">0</span>~s', $html);
         $this->assertMatchesRegularExpression('~data-tile="gap".*?لا بيانات~s', $html);
-        // ٢ الرسم بشهر واحد فيه بلاغ، والأماكن التسعة مربعات تُضغط (٢٥-١، قرار ٦٤)
-        $this->assertStringContainsString('id="trend"', $html);
-        $this->assertStringContainsString('data-month="'.now()->format('Y-m').'" data-count="1"', $html);
+        // ٢ الأماكن التسعة مربعات تُضغط (٢٥-١)، والرسم «حال الآن» بستة أعمدة وبلاغ شاغل واحد مفتوح (٢٥-٢) — لا رسم شهري
         $this->assertSame(9, preg_match_all('~class="pl-tile [a-z]+" href="[^"]+/file" data-place="HZ-~', $html));
+        $this->assertStringContainsString('id="chart"', $html);
+        $this->assertMatchesRegularExpression('~data-k="incidents" data-n="1"~', $html);
+        $this->assertStringNotContainsString('id="trend"', $html);
         // ٣ و٤ و٥ بالترتيب
         $this->assertStringContainsString($i->code, $html);
         $this->assertStringContainsString('دخول مسؤول السلامة', $html);
-        $order = [strpos($html, 'id="tiles"'), strpos($html, 'id="places"'), strpos($html, 'id="homeDetails"'), strpos($html, 'id="inboxList"'), strpos($html, 'id="intents"'), strpos($html, 'id="recent"')];
+        $order = [strpos($html, 'id="tiles"'), strpos($html, 'id="places"'), strpos($html, 'id="chart"'), strpos($html, 'id="inboxList"'), strpos($html, 'id="intents"'), strpos($html, 'id="recent"')];
         $this->assertSame($order, array_values(array_filter($order, fn ($p) => $p !== false)));
         $sorted = $order; sort($sorted);
         $this->assertSame($sorted, $order, 'الأجزاء الخمسة بترتيبها');
@@ -66,13 +67,13 @@ class HomeScreenTest extends TestCase
         $this->assertStringContainsString('<body class="has-sos">', $html);
     }
 
-    /** ٢٥-١ (قرار ٦٤): كان «الفني بلا أرقام»؛ صار يرى مكانه مربعاً يُضغط، وتبقى الأرقام الكبيرة والرسم لمن يملك report.view (حتى ٢٥-٢) */
+    /** ٢٥-١ (قرار ٦٤): كان «الفني بلا أرقام»؛ صار يرى مكانه مربعاً يُضغط ورسم حاله (٢٥-٢)، وتبقى الأرقام الكبيرة لمن يملك report.view */
     public function test_technician_sees_his_place_without_report_numbers_and_keeps_tasks_intents_and_sos(): void
     {
         $fani = $this->user('fani', 'field_worker', 'HZ-06');
         $html = $this->actingAs($fani)->get('/app')->assertOk()->getContent();
         $this->assertStringNotContainsString('id="tiles"', $html);
-        $this->assertStringNotContainsString('id="homeDetails"', $html);
+        $this->assertStringContainsString('id="chart"', $html);
         $this->assertSame(1, substr_count($html, 'data-place="HZ-'));
         $this->assertStringContainsString('data-place="HZ-06"', $html);
         $this->assertStringContainsString('لا شيء ينتظرك الآن', $html);

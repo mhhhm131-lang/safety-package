@@ -66,6 +66,17 @@
   .pl-tile:hover{color:var(--ink);box-shadow:0 2px 8px rgba(15,76,58,.12)}
   .pl-tile.calm{border-bottom-color:var(--g)}.pl-tile.busy{border-bottom-color:var(--gold)}.pl-tile.late{border-bottom-color:var(--red)}.pl-tile.none{background:#f8f9fa}
   .pl-tile .nm{font-weight:700;font-size:.9rem;line-height:1.25}.pl-tile .st{line-height:1.3}
+  .pl-tile.on{outline:2px solid var(--g);outline-offset:1px}
+  /* ٢٥-٢: الرسم «حال الآن» — ستة أعمدة تُضغط */
+  .bars{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;align-items:stretch}
+  .bar{display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;color:var(--ink);border-radius:8px;padding:4px 1px;min-width:0}
+  .bar[href]:hover{background:var(--tint);color:var(--ink)}
+  .bar .col{flex:1 1 auto;width:100%;min-height:130px;display:flex;align-items:flex-end;justify-content:center}
+  .bar .fill{width:70%;max-width:44px;background:var(--g);border-radius:6px 6px 0 0;transition:height .3s;min-height:3px}
+  .bar.zero .fill{background:var(--line)}.bar.warn .fill{background:var(--red)}
+  .bar .n{font-weight:900;font-size:1.25rem;line-height:1.1}.bar.zero .n{color:var(--mut)}.bar.warn .n{color:var(--red)}
+  .bar .lbl{font-size:.68rem;text-align:center;color:var(--mut);line-height:1.15;white-space:normal;overflow-wrap:anywhere;min-height:2.3em}
+  @media(max-width:575.98px){.bar .col{min-height:100px}.bar .n{font-size:1.05rem}.bar .lbl{font-size:.62rem}}
   .task-late{border-color:var(--red)}
   .task-actions{display:flex;gap:.5rem;flex-wrap:wrap}
   .row-act{display:flex;gap:.75rem;padding:.5rem 0;border-bottom:1px solid #edf1ef;color:var(--ink);text-decoration:none;font-size:.95rem}

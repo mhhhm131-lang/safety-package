@@ -13,7 +13,6 @@ use App\Modules\Governance\Models\Setting;
 use App\Modules\Report\Services\DashboardService;
 use App\Modules\Report\Services\ReportScope;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 /**
@@ -38,21 +37,11 @@ class HomeController extends Controller
 
         $overview = null;
         if (PermissionRegistry::hasPermission($role, 'report.view')) {
-            // الشهر الجاري كما في لوحة التقارير (لا رقم مخترع)؛ الاتجاه ستة أشهر حتى يكون للرسم معنى
+            // الشهر الجاري كما في لوحة التقارير (لا رقم مخترع). ٢٥-٢: الرسم الشهري وشبكة الشهر خرجا من هنا إلى لوحة التقارير
             $month = ReportScope::fromRequest(null, null, null, $user->id);
-            $trend = ReportScope::fromRequest(Carbon::now()->subMonths(5)->startOfMonth()->toDateString(), null, null, $user->id);
-            // الخدمة تعيد الأشهر التي فيها بلاغ فقط؛ الرسم يحتاج الستة كلها والفارغ صفر
-            $counts = collect($dashboard->incidentsByMonth($trend))->pluck('count', 'label');
-            $byMonth = [];
-            for ($m = 5; $m >= 0; $m--) {
-                $label = Carbon::now()->subMonths($m)->format('Y-m');
-                $byMonth[] = ['label' => $label, 'count' => (int) ($counts[$label] ?? 0)];
-            }
             $overview = [
                 'waiting'  => $tasks->count(),
                 'response' => $dashboard->responseGap($month),
-                'by_month' => $byMonth,
-                'by_place' => $dashboard->byPlace($month),
             ];
         }
 
@@ -85,17 +74,17 @@ class HomeController extends Controller
 
         // المرحلة ٢٥-١ (قرار ٦٤): الأماكن في الصفحة الأولى لكل حساب في نطاقه — مربعات ملف المكان نفسها
         // (لونها من حال الفحص) بلا شرط report.view؛ الموظف مكانه، الفني ما يغطيه، مدير الفرع فرعه، القيادة الكل
-        $R = \App\Modules\Store\Services\InspectionDocReader::class;
-        $scope = \App\Modules\Governance\Services\ScopeService::forUser($user);
-        $placeTiles = $R::placeTiles();
-        if (!$scope->isAll()) $placeTiles = array_intersect_key($placeTiles, array_flip($scope->codes()));
+        // المرحلة ٢٥-٢: الرسم «حال الآن» من المصدر الواحد `PlaceSnapshot` بالنطاق نفسه، ويترشّح بالمكان في المتصفح
+        $snapshot = \App\Modules\Governance\Services\PlaceSnapshot::forUser($user);
+        $placeTiles = array_intersect_key(\App\Modules\Store\Services\InspectionDocReader::placeTiles(), $snapshot['places']);
         $placeByCode = Place::all()->keyBy('code');
 
         // المرحلة ١٢ (قرار ٣٥): «ما ينتظرك» + «أريد أن…»
         return view('governance.inbox', [
             'placeTiles' => $placeTiles,
             'placeByCode' => $placeByCode,
-            'scopeAll' => $scope->isAll(),
+            'scopeAll' => $snapshot['all'],
+            'snapshot' => $snapshot,
             'follow' => $follow,
             'makani' => ($p = $user->profile) && $p->is_active ? $p->myPlace() : null, // ١٩-٦ (قرار ٤٩)
             'tasks' => $tasks,
