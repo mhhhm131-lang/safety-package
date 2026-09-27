@@ -78,11 +78,15 @@
   .bar .lbl{font-size:.68rem;text-align:center;color:var(--mut);line-height:1.15;white-space:normal;overflow-wrap:anywhere;min-height:2.3em}
   @media(max-width:575.98px){.bar .col{min-height:100px}.bar .n{font-size:1.05rem}.bar .lbl{font-size:.62rem}}
   .task-late{border-color:var(--red)}
-  /* ٢٥-٣-ب: «ما ينتظرك» منسدلة — عدّادات ورؤوس مجموعات تُضغط */
-  .chip{display:inline-flex;align-items:center;gap:.35rem;padding:.3rem .7rem;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);text-decoration:none;font-size:.9rem}
-  .chip:hover{border-color:var(--g);color:var(--g)}.chip.chip-late{border-color:var(--red)}.chip b{font-weight:900}
-  .grp-h{display:flex;align-items:center;gap:.4rem;width:100%;background:none;border:0;padding:.4rem 0;text-align:start;color:var(--ink);cursor:pointer}
-  .grp-h .grp-caret{transition:transform .2s}.grp-h:not(.collapsed) .grp-caret{transform:rotate(180deg)}.grp-h:hover{color:var(--g)}
+  /* ٢٥-٣-ب: «ما ينتظرك» منسدلة — سطر لكل مجموعة: أيقونة برقم (أحمر إن فيها متأخر)، وتُفتح بالنقر */
+  .grp-h{display:flex;align-items:center;gap:.6rem;width:100%;background:#fff;border:1px solid var(--line);border-radius:10px;padding:.55rem .8rem;text-align:start;color:var(--ink);cursor:pointer;font-weight:700}
+  .grp-h:hover{border-color:var(--g);color:var(--g)}.grp-h:not(.collapsed){border-bottom-left-radius:0;border-bottom-right-radius:0;border-bottom-color:transparent}
+  .grp-ic{position:relative;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:9px;background:var(--tint);color:var(--g);font-size:1.1rem}
+  .grp-ic .grp-n{position:absolute;top:-7px;inset-inline-start:-8px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--g);color:#fff;font-size:.72rem;font-weight:900;display:inline-flex;align-items:center;justify-content:center}
+  .grp-ic.late{background:#fde8e8;color:var(--red)}.grp-ic.late .grp-n{background:var(--red)}
+  .grp-od{color:var(--red);font-size:.8rem;font-weight:600}
+  .grp-h .grp-caret{transition:transform .2s;color:var(--mut)}.grp-h:not(.collapsed) .grp-caret{transform:rotate(180deg)}
+  #inboxList .collapse>.d-grid{border:1px solid var(--line);border-top:0;border-radius:0 0 10px 10px;padding:.6rem;background:#fbfcfb}
   .task-actions{display:flex;gap:.5rem;flex-wrap:wrap}
   .row-act{display:flex;gap:.75rem;padding:.5rem 0;border-bottom:1px solid #edf1ef;color:var(--ink);text-decoration:none;font-size:.95rem}
   .row-act:last-child{border-bottom:0}.row-act:hover{color:var(--g)}.row-act .when{color:var(--mut);min-width:3.5rem;font-size:.85rem}

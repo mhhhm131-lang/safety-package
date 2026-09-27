@@ -32,25 +32,29 @@ class InboxCollapseTest extends TestCase
         return $u;
     }
 
-    public function test_many_tasks_are_folded_under_counters_and_few_tasks_stay_open(): void
+    public function test_groups_are_one_folded_line_each_with_icon_count_and_red_mark(): void
     {
         $salama = $this->user('salama', 'system_admin');
-        // مهمة واحدة: تبقى مفتوحة
+        // مهمة واحدة: مطويّة أيضاً — لا فتح تلقائي (بكلمته)
         $this->post('/incident/normal', ['description' => 'بلاط مكسور ١', 'place_id' => Place::idByCode('HZ-06')])->assertRedirect();
         $h = $this->actingAs($salama)->get('/app')->assertOk()->getContent();
-        $this->assertStringContainsString('id="inboxSummary"', $h);
-        $this->assertMatchesRegularExpression('~<a[^>]*class="[^"]*chip[^"]*"[^>]*data-group="بلاغات الشاغلين" data-n="1" data-od="0"~', $h);
-        $this->assertMatchesRegularExpression('~<section data-module="بلاغات الشاغلين"[^>]*>.*?data-bs-toggle="collapse".*?class="collapse show"~s', $h);
+        $this->assertStringNotContainsString('id="inboxSummary"', $h); // سطر العدّادات حُذف (تكرار)
+        $this->assertMatchesRegularExpression('~<section data-module="بلاغات الشاغلين" data-n="1" data-od="0">\s*<button class="grp-h collapsed"[^>]*data-bs-toggle="collapse"[^>]*>.*?<span class="grp-ic "><i class="bi bi-megaphone-fill"></i><span class="grp-n">1</span></span>.*?class="collapse" id="grp-0"~s', $h);
+        $this->assertStringNotContainsString('class="collapse show"', $h);
+        $this->assertStringNotContainsString('<span class="grp-od"', $h); // لا متأخر ← لا علامة حمراء
 
-        // أربع مهام: تُطوى، والعنوان يحمل العدد، والبطاقات كلها موجودة في الصفحة (لا يُخفى شيء عن البحث والسكربتات)
+        // أربع مهام: السطر نفسه بالعدد ٤، والبطاقات كلها في الصفحة (لا يُحذف شيء)
         foreach ([2, 3, 4] as $i) $this->post('/incident/normal', ['description' => "بلاط مكسور $i", 'place_id' => Place::idByCode('HZ-06')])->assertRedirect();
         $h = $this->actingAs($salama)->get('/app')->assertOk()->getContent();
-        $this->assertMatchesRegularExpression('~data-group="بلاغات الشاغلين" data-n="4" data-od="0"~', $h);
-        $this->assertMatchesRegularExpression('~<section data-module="بلاغات الشاغلين"[^>]*>.*?<button[^>]*data-bs-toggle="collapse"[^>]*>.*?<span class="badge text-bg-dark">4</span>~s', $h);
-        $this->assertMatchesRegularExpression('~<section data-module="بلاغات الشاغلين"[^>]*>.*?class="collapse"~s', $h);
-        $this->assertStringNotContainsString('class="collapse show"', $h);
+        $this->assertMatchesRegularExpression('~data-module="بلاغات الشاغلين" data-n="4" data-od="0"~', $h);
+        $this->assertStringContainsString('<span class="grp-n">4</span>', $h);
         $this->assertSame(4, substr_count($h, 'data-task="'));
-        // العدّاد يقفز إلى مجموعته
-        $this->assertStringContainsString('href="#grp-0"', $h);
+
+        // متأخر: مهلة البلاغ انقضت ← أيقونة حمراء و«١ متأخر»
+        \App\Modules\Incident\Models\Incident::query()->orderBy('id')->first()->update(['deadline_at' => now()->subHour()]);
+        $h = $this->actingAs($salama)->get('/app')->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('~data-module="بلاغات الشاغلين" data-n="4" data-od="1"~', $h);
+        $this->assertStringContainsString('<span class="grp-ic late">', $h);
+        $this->assertStringContainsString('<span class="grp-od" title="1 متأخر">1 متأخر</span>', $h);
     }
 }

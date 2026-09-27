@@ -53,25 +53,18 @@
 @else
   {{-- قرار المستخدم ٢٠٢٦-٠٩-١٣: لا خلط — كل نوع في قسمه بأيقونته وعدّه. بلاغات الشاغلين ≠ بلاغات الفحص الفني --}}
   @php
-    $ICONS = ['بلاغات الشاغلين' => 'bi-megaphone-fill', 'بلاغات الفحص' => 'bi-clipboard-check', 'جولات الفحص' => 'bi-calendar-check', 'الطوارئ' => 'bi-broadcast', 'التصاريح' => 'bi-file-earmark-check', 'المخاطر' => 'bi-lightning-charge', 'النماذج' => 'bi-ui-checks', 'المقاولون' => 'bi-buildings'];
+    $ICONS = ['بلاغات الشاغلين' => 'bi-megaphone-fill', 'بلاغات الفحص' => 'bi-clipboard-check', 'جولات الفحص' => 'bi-calendar-check', 'الطوارئ' => 'bi-broadcast', 'الفريق الأولي' => 'bi-people-fill', 'التصاريح' => 'bi-file-earmark-check', 'المخاطر' => 'bi-lightning-charge', 'النماذج' => 'bi-ui-checks', 'المقاولون' => 'bi-buildings', 'الحسابات' => 'bi-person-check'];
     $ORDER = array_keys($ICONS);
     $groups = $tasks->groupBy('module')->sortBy(fn ($g, $m) => array_search($m, $ORDER) === false ? 99 : array_search($m, $ORDER));
   @endphp
-  {{-- ٢٥-٣-ب (بكلمته «ما ينتظرك قائمة منسدلة»): سطر عدّادات يقفز إلى مجموعته، وكل مجموعة تُفتح وتُغلق بعنوانها؛ حتى ثلاث مهام مفتوحة، وأكثر مطويّة والمتأخر في العنوان --}}
-  @php $openAll = $tasks->count() <= 3; @endphp
+  {{-- ٢٥-٣-ب (بكلمته «ما ينتظرك قائمة منسدلة» ثم «احذف سطر العدّادات… أيقونة ورقم وعلامة حمراء وتفتح بالنقر»): كل مجموعة سطر واحد مطويّ دائماً — الأيقونة والاسم والعدد، وبالأحمر إن فيها متأخر؛ البطاقات تنزل بالنقر؛ المتصفح يتذكر ما فُتح --}}
   <h2 class="sec-h sec-h-lg mb-2"><i class="bi bi-inbox-fill"></i> ما ينتظرك</h2>
-  <div class="d-flex flex-wrap gap-2 mb-2" id="inboxSummary">
-    @foreach($groups as $module => $items)
-      @php $od = $items->where('isOverdue', true)->count(); @endphp
-      <a class="chip {{ $od ? 'chip-late' : '' }}" href="#grp-{{ $loop->index }}" data-group="{{ $module }}" data-n="{{ $items->count() }}" data-od="{{ $od }}"><i class="bi {{ $ICONS[$module] ?? 'bi-dot' }}"></i> {{ $module }} <b>{{ $items->count() }}</b>@if($od) <span class="text-danger">· {{ $od }} متأخر</span>@endif</a>
-    @endforeach
-  </div>
-  <div class="d-grid gap-3 mb-3" id="inboxList">
+  <div class="d-grid gap-2 mb-3" id="inboxList">
   @foreach($groups as $module => $items)
     @php $od = $items->where('isOverdue', true)->count(); @endphp
-    <section data-module="{{ $module }}" data-od="{{ $od }}">
-      <button class="sec-h mb-2 grp-h {{ $openAll ? '' : 'collapsed' }}" type="button" data-bs-toggle="collapse" data-bs-target="#grp-{{ $loop->index }}" aria-expanded="{{ $openAll ? 'true' : 'false' }}" aria-controls="grp-{{ $loop->index }}"><i class="bi {{ $ICONS[$module] ?? 'bi-dot' }} text-g"></i> {{ $module }} <span class="badge text-bg-dark">{{ $items->count() }}</span>@if($od) <span class="badge st-late">{{ $od }} متأخر</span>@endif <i class="bi bi-chevron-down small ms-auto grp-caret"></i></button>
-      <div class="{{ $openAll ? 'collapse show' : 'collapse' }}" id="grp-{{ $loop->index }}">
+    <section data-module="{{ $module }}" data-n="{{ $items->count() }}" data-od="{{ $od }}">
+      <button class="grp-h collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#grp-{{ $loop->index }}" aria-expanded="false" aria-controls="grp-{{ $loop->index }}"><span class="grp-ic {{ $od ? 'late' : '' }}"><i class="bi {{ $ICONS[$module] ?? 'bi-folder2' }}"></i><span class="grp-n">{{ $items->count() }}</span></span> <span class="grp-nm">{{ $module }}</span>@if($od)<span class="grp-od" title="{{ $od }} متأخر">{{ $od }} متأخر</span>@endif <i class="bi bi-chevron-down small ms-auto grp-caret"></i></button>
+      <div class="collapse" id="grp-{{ $loop->index }}">
       <div class="d-grid gap-2">
     @foreach($items as $t)
       <div class="card task {{ $t->isOverdue ? 'task-late' : '' }}" data-task="{{ $t->key }}">
@@ -234,9 +227,6 @@
     if(state[m]===false&&body.classList.contains('show')){body.classList.remove('show');btn.classList.add('collapsed');btn.setAttribute('aria-expanded','false');}
     body.addEventListener('shown.bs.collapse',function(){state[m]=true;try{localStorage.setItem(key,JSON.stringify(state));}catch(e){}});
     body.addEventListener('hidden.bs.collapse',function(){state[m]=false;try{localStorage.setItem(key,JSON.stringify(state));}catch(e){}});
-  });
-  document.querySelectorAll('#inboxSummary .chip').forEach(function(a){
-    a.addEventListener('click',function(){var body=document.querySelector(a.getAttribute('href'));if(body&&window.bootstrap&&!body.classList.contains('show'))bootstrap.Collapse.getOrCreateInstance(body).show();});
   });
 })();
 /* ٢٥-٢: ضغطة المكان ترشّح الرسم من بيانات الصفحة نفسها (بلا طلب)؛ «المبنى كله» يعيده؛ بلا سكربت يبقى المربع رابطاً إلى ملف المكان */
