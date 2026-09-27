@@ -50,28 +50,30 @@ class BuildingPictureTest extends TestCase
         return $u;
     }
 
+    /** ٢٥-١ (قرار ٦٤): الفسيفساء انتقلت إلى الصفحة الأولى `/app` لكل حساب في نطاقه؛ المسار القديم يحوّل إليها */
     public function test_places_mosaic_states_and_counts(): void
     {
-        $h = $this->actingAs($this->salama)->get('/app/places/units')->assertOk()->getContent();
+        $h = $this->actingAs($this->salama)->get('/app')->assertOk()->getContent();
         $this->assertSame(9, substr_count($h, 'data-place="'));
         $this->assertStringContainsString('data-place="HZ-01" data-cls="late" data-open="2" data-od="1" data-a="1"', $h);
         $this->assertStringContainsString('data-place="HZ-02" data-cls="calm" data-open="0" data-od="0" data-a="0"', $h);
         $this->assertStringContainsString('data-place="HZ-03" data-cls="none"', $h);
         $this->assertStringContainsString('لم تُفتح جولة بعد', $h);
-        $this->assertStringContainsString('لا بلاغات مفتوحة', $h);
+        $this->assertStringContainsString('لا شيء مفتوح', $h);
         // ترتيب اللوحة: HZ-01 قبل HZ-00
         $this->assertTrue(strpos($h, 'data-place="HZ-01"') < strpos($h, 'data-place="HZ-00"'));
         // مدير الإدارة يرى مكان إدارته وحده
-        $hd = $this->actingAs($this->mudir)->get('/app/places/units')->assertOk()->getContent();
+        $hd = $this->actingAs($this->mudir)->get('/app')->assertOk()->getContent();
         $this->assertSame(1, substr_count($hd, 'data-place="'));
         $this->assertStringContainsString('data-place="HZ-06"', $hd);
     }
 
+    /** ٢٥-١: «صورة المبنى» تُعرض مع `?k=` فقط (بلا k المسار يحوّل إلى الصفحة الأولى)؛ الأرقام الأربعة نفسها */
     public function test_building_picture_kpis_are_clickable_for_decision_roles_only(): void
     {
-        $h = $this->actingAs($this->salama)->get('/app/places/units')->assertOk()->getContent();
+        $this->actingAs($this->salama)->get('/app/places/units')->assertRedirect(url('/app').'#places');
+        $h = $this->actingAs($this->salama)->get('/app/places/units?k=a')->assertOk()->getContent();
         foreach (['open' => 2, 'od' => 1, 'a' => 1, 'reg' => 1] as $k => $v) $this->assertStringContainsString('data-k="'.$k.'" data-v="'.$v.'"', $h);
-        $this->assertStringNotContainsString('id="kList"', $h); // لا قائمة قبل النقر
         // النقر = ?k= : «تصعيد رقابي» يعرض بلاغه وحده
         $r = $this->actingAs($this->salama)->get('/app/places/units?k=reg')->assertOk()->getContent();
         $sec = substr($r, strpos($r, 'id="kList"'), 3000);
@@ -84,9 +86,10 @@ class BuildingPictureTest extends TestCase
         $this->assertTrue(strpos($so, 'مراوح لا تعمل') < strpos($so, 'توقف المسار عند المدير'));
         $this->assertStringNotContainsString('أُصلح', $so);
         // الفني ليس من أدوار القرار: يرى الفسيفساء بلا الأرقام — و(٢٠-٥) ما يغطيه فقط: بلا تغطية لا مكان، وبتغطية القبو بلاطة القبو
-        $this->assertSame(0, substr_count($this->actingAs($this->fani)->get('/app/places/units')->assertOk()->getContent(), 'data-place="'));
+        $this->assertSame(0, substr_count($this->actingAs($this->fani)->get('/app')->assertOk()->getContent(), 'data-place="'));
         $this->fani->profile->coverage()->sync([Place::idByCode('HZ-01')]);
-        $hf = $this->actingAs($this->fani)->get('/app/places/units')->assertOk()->getContent();
+        $hf = $this->actingAs($this->fani)->get('/app')->assertOk()->getContent();
+        $this->actingAs($this->fani)->get('/app/places/units?k=open')->assertRedirect(url('/app').'#places'); // ليس من أدوار القرار
         $this->assertStringNotContainsString('data-k="open"', $hf);
         $this->assertSame(1, substr_count($hf, 'data-place="'));
         $this->assertStringContainsString('data-place="HZ-01"', $hf);

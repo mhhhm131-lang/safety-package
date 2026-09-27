@@ -72,9 +72,9 @@ class ScopeRoutingTest extends TestCase
         $this->assertSame(['HZ-06'], $codes('emp'));
 
         // «الأماكن»: الفني يرى ما يغطيه، والموظف مكانه، ومسؤول السلامة الكل
-        $this->actingAs($this->u['kah'])->get('/app/places/units')->assertOk()->assertSee('data-place="HZ-02"', false)->assertDontSee('data-place="HZ-01"', false);
-        $this->actingAs($this->u['emp'])->get('/app/places/units')->assertOk()->assertSee('data-place="HZ-06"', false)->assertDontSee('data-place="HZ-02"', false);
-        $h = $this->actingAs($this->u['salama'])->get('/app/places/units')->assertOk()->getContent();
+        $this->actingAs($this->u['kah'])->get('/app')->assertOk()->assertSee('data-place="HZ-02"', false)->assertDontSee('data-place="HZ-01"', false);
+        $this->actingAs($this->u['emp'])->get('/app')->assertOk()->assertSee('data-place="HZ-06"', false)->assertDontSee('data-place="HZ-02"', false);
+        $h = $this->actingAs($this->u['salama'])->get('/app')->assertOk()->getContent();
         $this->assertSame(9, substr_count($h, 'data-place="HZ-'));
     }
 

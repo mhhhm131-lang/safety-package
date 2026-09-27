@@ -106,7 +106,7 @@ class PlaceFileTest extends TestCase
 
     public function test_hub_opens_the_place_file_and_empty_place_is_calm(): void
     {
-        $this->actingAs($this->fani)->get('/app/places/units')->assertOk()->assertSee('href="'.url("/app/places/{$this->park->id}/file").'"', false);
+        $this->actingAs($this->fani)->get('/app')->assertOk()->assertSee('href="'.url("/app/places/{$this->park->id}/file").'"', false);
         $offices = Place::where('code', 'HZ-06')->first();
         $this->actingAs($this->fani)->get("/app/places/{$offices->id}/file")->assertOk()->assertSee('لم تُفتح جولة لهذا المكان بعد');
     }

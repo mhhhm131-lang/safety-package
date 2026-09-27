@@ -3,6 +3,7 @@
 @section('content')
 {{-- المرحلة ١١-٢ (قرار ٣٤): شاشة واحدة — سؤال وزر لكل بند. لا يحتاج المستخدم أن يتعلم شيئاً. --}}
 {{-- المرحلة ١٣-٢ (قرار ٣٩): خمسة أجزاء بالترتيب — أرقام كبيرة · رسم وخريطة · ما ينتظرك · أريد أن… · آخر الإجراءات. الأرقام لمن يملك report.view. --}}
+{{-- المرحلة ٢٥-١ (قرار ٦٤): الأماكن لكل حساب في نطاقه، مربعاتها تفتح ملف المكان؛ لا شبكة ميتة --}}
 <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
   <h1 class="page-h m-0" id="inboxTitle">
     @if($tasks->isEmpty()) لا شيء ينتظرك الآن
@@ -48,11 +49,38 @@
     </a>
   </div>
 
-  {{-- ٢. الرسم والخريطة — على الجوال خلف «التفاصيل» --}}
-  <button class="btn btn-o w-100 d-md-none mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#homeDetails" id="homeDetailsToggle"><i class="bi bi-bar-chart"></i> الرسم وخريطة الأماكن <i class="bi bi-chevron-down small"></i></button>
-  <div class="collapse d-md-block mb-3" id="homeDetails">
-    <div class="row g-3">
-      <div class="col-md-7">
+@endif
+
+{{-- ٢. الأماكن (٢٥-١، قرار ٦٤): لكل حساب في نطاقه، المربع يفتح ملف المكان، لونه من حال الفحص — وبجانبها الرسم لمن يملك report.view (يتغيّر في ٢٥-٢) --}}
+<div class="row g-3 mb-3">
+  @if(!empty($placeTiles))
+  <div class="{{ $overview ? 'col-md-5' : 'col-12' }}">
+    <div class="card h-100"><div class="card-body">
+      <h2 class="sec-h"><i class="bi bi-geo-alt"></i> {{ $scopeAll ? 'الأماكن (٨+١)' : (count($placeTiles) === 1 ? 'مكانك' : 'أماكنك') }} <span class="small text-muted fw-normal">اضغط المكان لملفه</span></h2>
+      <div class="pl-grid" id="places">
+        @foreach($placeTiles as $hz => $t)
+          @if($p = $placeByCode[$hz] ?? null)
+          <a class="pl-tile {{ $t['cls'] }}" href="{{ route('app.places.units.file', $p) }}" data-place="{{ $hz }}" data-cls="{{ $t['cls'] }}" data-open="{{ $t['open'] }}" data-od="{{ $t['od'] }}" data-a="{{ $t['a'] }}">
+            <span class="small text-muted" dir="ltr">{{ $hz }}</span>
+            <span class="nm">{{ $p->name }}</span>
+            <span class="small st">
+              @if(!$t['has'])<span class="text-muted">لم تُفتح جولة بعد</span>
+              @elseif($t['open'])<b>{{ $t['open'] }}</b> مفتوح@if($t['od']) · <b class="text-danger">{{ $t['od'] }} متجاوز</b>@endif
+              @else<b class="text-success">لا شيء مفتوح</b>@endif
+            </span>
+          </a>
+          @endif
+        @endforeach
+      </div>
+      <p class="small text-muted mt-2 mb-0">أخضر لا شيء مفتوح · ذهبي مفتوح · أحمر متجاوز</p>
+    </div></div>
+  </div>
+  @endif
+  @if($overview)
+  <div class="col-md-7">
+    {{-- الرسم — على الجوال خلف «التفاصيل» --}}
+    <button class="btn btn-o w-100 d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#homeDetails" id="homeDetailsToggle"><i class="bi bi-bar-chart"></i> الرسم <i class="bi bi-chevron-down small"></i></button>
+    <div class="collapse d-md-block h-100" id="homeDetails">
         <div class="card h-100"><div class="card-body">
           <h2 class="sec-h"><i class="bi bi-bar-chart"></i> بلاغات الشاغلين شهراً بشهر</h2>
           @php
@@ -83,27 +111,10 @@
           </svg>
           @endif
         </div></div>
-      </div>
-      <div class="col-md-5">
-        <div class="card h-100"><div class="card-body">
-          <h2 class="sec-h"><i class="bi bi-geo-alt"></i> الأماكن التسعة · بلاغات الشهر</h2>
-          @php
-            $pmax = max(array_column($overview['by_place'], 'incidents') ?: [0]);
-          @endphp
-          <div class="places" id="places">
-            @foreach($overview['by_place'] as $p)
-              @php
-                $c = $p['incidents'];
-                $lvl = !$c ? 0 : ($c >= $pmax ? 3 : ($c >= $pmax / 2 ? 2 : 1));
-              @endphp
-              <div class="place lvl{{ $lvl }}" data-place="{{ $p['code'] }}" data-count="{{ $c }}" title="{{ $p['name'] }}: {{ $c }} بلاغ هذا الشهر{{ $p['emergency'] ? '، '.$p['emergency'].' حالة طارئة' : '' }}"><span class="pn">{{ $p['name'] }}</span><span class="pc">{{ $c }}</span></div>
-            @endforeach
-          </div>
-        </div></div>
-      </div>
     </div>
   </div>
-@endif
+  @endif
+</div>
 
 {{-- ٣. ما ينتظرك --}}
 @if($tasks->isEmpty())

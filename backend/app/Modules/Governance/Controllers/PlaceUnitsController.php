@@ -18,20 +18,23 @@ use Illuminate\View\View;
  */
 class PlaceUnitsController extends Controller
 {
-    /** فهرس الأماكن التسعة بعدد وحداتها — مدخل «أريد أن… وحدات مكاني». */
-    public function hub(Request $request): View
+    /**
+     * كان فهرس الأماكن التسعة (١٩-٤). المرحلة ٢٥-١ (قرار ٦٤): الأماكن صارت في الصفحة الأولى لكل حساب،
+     * فهذا المسار يحوّل إليها (لا رابط مكسور)، ويبقى مع `?k=` قائمةَ بلاغات الفحص بتصنيفها لأدوار القرار.
+     */
+    public function hub(Request $request): View|RedirectResponse
     {
-        // المرحلة ١٩-٤ (قرار ٤٨): صفحة «الأماكن» = فسيفساء اللوحة + «صورة المبنى» لأدوار القرار (dashboard.html:602-632)
         $R = \App\Modules\Store\Services\InspectionDocReader::class;
         $user = Auth::user(); $role = $user->role();
         $ui = \App\Core\Permissions\PermissionRegistry::uiRole($role);
+        $decision = in_array($ui, ['fm', 'adm', 'exec', 'safety'], true);
+        $k = $decision && array_key_exists((string) $request->query('k'), $R::KPI) ? (string) $request->query('k') : null;
+        if ($k === null) return redirect(route('app.home').'#places');
         $tiles = $R::placeTiles();
         $byCode = Place::all()->keyBy('code');
         // ٢٠-٥ (قرار ٥١): النطاق من الحساب — المعهد كله، أو الفرع، أو الوحدة، أو ما يغطيه، أو مكانه (كان: مدير الإدارة مكان إدارته وحده)
         $scope = \App\Modules\Governance\Services\ScopeService::forUser($user);
         if (!$scope->isAll()) $tiles = array_intersect_key($tiles, array_flip($scope->codes()));
-        $decision = in_array($ui, ['fm', 'adm', 'exec', 'safety'], true);
-        $k = $decision && array_key_exists((string) $request->query('k'), $R::KPI) ? (string) $request->query('k') : null;
         $counts = PlaceUnit::where('is_active', true)->selectRaw('place_id, count(*) as c')->groupBy('place_id')->pluck('c', 'place_id');
         return view('governance.places.units_hub', ['tiles' => $tiles, 'byCode' => $byCode, 'counts' => $counts, 'ui' => $ui,
             'kpis' => $decision ? $R::buildingKpis() : null, 'k' => $k, 'kList' => $k ? $R::reportsByKpi($k) : []]);

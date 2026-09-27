@@ -58,7 +58,7 @@ class PlaceUnitsTest extends TestCase
         $this->actingAs($this->fani)->get("/app/places/{$this->halls->id}/units")->assertOk()->assertSee('٣١٢')->assertDontSee('أضف وحدة');
         $this->actingAs($this->fani)->post("/app/places/{$this->halls->id}/units", ['type' => 'training_hall', 'name' => '٤٠٠'])->assertForbidden();
         // المدخل يعرض العدّ
-        $this->actingAs($this->marafiq)->get('/app/places/units')->assertOk()->assertSee('data-place="HZ-07"', false);
+        $this->actingAs($this->marafiq)->get('/app')->assertOk()->assertSee('data-place="HZ-07"', false);
         $this->actingAs($this->marafiq)->get('/app')->assertOk()->assertSee('data-intent="places"', false); // ١٩-٤: النية صارت «الأماكن» لكل أدوار الواجهة
     }
 

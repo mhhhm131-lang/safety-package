@@ -7,7 +7,7 @@
 @php($MK = ['ok' => ['✓', 'text-success'], 'no' => ['✗', 'text-danger'], 'na' => ['لا ينطبق', 'text-muted'], '' => ['—', 'text-muted']])
 @php($openN = count(array_filter($s['reports'], fn ($r) => !$R::isClosed($r))))
 <div class="d-flex flex-wrap align-items-center gap-2 mb-1 small">
-  <a href="{{ route('app.places.units.hub') }}">الأماكن</a><span class="text-muted">›</span>
+  <a href="{{ route('app.home') }}#places">الأماكن</a><span class="text-muted">›</span>
   <a href="{{ route('app.places.units.file', $place) }}">{{ $place->name }}</a><span class="text-muted">›</span>
 </div>
 <h1 class="page-h mb-1">{{ $s['name'] }} <span class="small text-muted fw-normal" dir="ltr">{{ $place->code }}{{ $s['code'] ? ' · '.$s['code'] : '' }}</span></h1>

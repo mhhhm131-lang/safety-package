@@ -59,10 +59,13 @@
   .tile{display:flex;flex-direction:column;gap:2px;padding:14px 16px;border-top:3px solid var(--gold);color:var(--ink);text-decoration:none}
   .tile:hover{border-color:var(--gold);box-shadow:0 2px 8px rgba(15,76,58,.12);color:var(--ink)}
   .tile .lbl{color:var(--mut);font-size:.8rem}.tile .n{font-size:2.4rem;font-weight:900;line-height:1.15;color:var(--g)}.tile .n small{font-size:1rem;font-weight:700}
-  .places{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-  .place{border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:0;color:var(--ink)}
-  .place .pn{font-size:.75rem;line-height:1.3}.place .pc{font-size:1.4rem;font-weight:900;line-height:1.2}
-  .place.lvl0{background:var(--tint)}.place.lvl1{background:#c9dfd3}.place.lvl2{background:#9fc7b4}.place.lvl3{background:var(--g);color:#fff}
+  /* ٢٥-١ (قرار ٦٤): مربعات الأماكن في الصفحة الأولى — تُضغط وتفتح ملف المكان، ولونها السفلي من حال الفحص */
+  .pl-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  @media(max-width:575.98px){.pl-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .pl-tile{display:flex;flex-direction:column;gap:2px;text-decoration:none;color:var(--ink);border:1px solid var(--line);border-bottom:5px solid #adb5bd;border-radius:10px;padding:8px 10px;background:#fff;min-height:84px}
+  .pl-tile:hover{color:var(--ink);box-shadow:0 2px 8px rgba(15,76,58,.12)}
+  .pl-tile.calm{border-bottom-color:var(--g)}.pl-tile.busy{border-bottom-color:var(--gold)}.pl-tile.late{border-bottom-color:var(--red)}.pl-tile.none{background:#f8f9fa}
+  .pl-tile .nm{font-weight:700;font-size:.9rem;line-height:1.25}.pl-tile .st{line-height:1.3}
   .task-late{border-color:var(--red)}
   .task-actions{display:flex;gap:.5rem;flex-wrap:wrap}
   .row-act{display:flex;gap:.75rem;padding:.5rem 0;border-bottom:1px solid #edf1ef;color:var(--ink);text-decoration:none;font-size:.95rem}
@@ -122,10 +125,7 @@
         <hr>
       @endif
       <div class="small text-muted px-2 mb-1">السجلات</div>
-      {{-- ١٩-٧ (قرار ٤٨): بند «العمل اليومي» صار «الأماكن» — الفسيفساء وملف كل مكان في الخلفية --}}
-      @if(\App\Core\Permissions\PermissionRegistry::uiRole($role))
-        <a href="{{ route('app.places.units.hub') }}" class="{{ request()->routeIs('app.places.units.*') || request()->routeIs('app.places.team.*') ? 'active' : '' }}"><i class="bi bi-geo-alt-fill"></i>الأماكن وملفاتها</a>
-      @endif
+      {{-- ١٩-٧ (قرار ٤٨) ثم ٢٥-١ (قرار ٦٤): «الأماكن وملفاتها» خرجت من القائمة — الأماكن في الصفحة الأولى لكل حساب --}}
       @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'system.users'))
         <a href="{{ route('app.users.index') }}" class="{{ request()->routeIs('app.users.*') ? 'active' : '' }}"><i class="bi bi-people"></i>المستخدمون</a>
       @endif

@@ -26,7 +26,7 @@
 </style>
 
 <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-  <a class="small" href="{{ route('app.places.units.hub') }}">الأماكن</a><span class="text-muted">›</span>
+  <a class="small" href="{{ route('app.home') }}#places">الأماكن</a><span class="text-muted">›</span>
   <h1 class="page-h m-0">{{ $place->name }}</h1><span class="small text-muted" dir="ltr">{{ $place->code }}</span>
 </div>
 <p class="small text-muted mb-2" id="pfSum" data-sum-ok="{{ $sum['ok'] }}" data-sum-late="{{ $sum['late'] }}" data-sum-fault="{{ $sum['fault'] }}">

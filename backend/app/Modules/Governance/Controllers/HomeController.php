@@ -8,6 +8,7 @@ use App\Core\Permissions\PermissionRegistry;
 use App\Http\Controllers\Controller;
 use App\Modules\Governance\Models\AppNotification;
 use App\Modules\Governance\Models\AuditLog;
+use App\Modules\Governance\Models\Place;
 use App\Modules\Governance\Models\Setting;
 use App\Modules\Report\Services\DashboardService;
 use App\Modules\Report\Services\ReportScope;
@@ -82,8 +83,19 @@ class HomeController extends Controller
             if (!$rail['open'] && !$follow['mine']) $follow = null; // لا بلاغات فحص: لا يُعرض القسم
         }
 
+        // المرحلة ٢٥-١ (قرار ٦٤): الأماكن في الصفحة الأولى لكل حساب في نطاقه — مربعات ملف المكان نفسها
+        // (لونها من حال الفحص) بلا شرط report.view؛ الموظف مكانه، الفني ما يغطيه، مدير الفرع فرعه، القيادة الكل
+        $R = \App\Modules\Store\Services\InspectionDocReader::class;
+        $scope = \App\Modules\Governance\Services\ScopeService::forUser($user);
+        $placeTiles = $R::placeTiles();
+        if (!$scope->isAll()) $placeTiles = array_intersect_key($placeTiles, array_flip($scope->codes()));
+        $placeByCode = Place::all()->keyBy('code');
+
         // المرحلة ١٢ (قرار ٣٥): «ما ينتظرك» + «أريد أن…»
         return view('governance.inbox', [
+            'placeTiles' => $placeTiles,
+            'placeByCode' => $placeByCode,
+            'scopeAll' => $scope->isAll(),
             'follow' => $follow,
             'makani' => ($p = $user->profile) && $p->is_active ? $p->myPlace() : null, // ١٩-٦ (قرار ٤٩)
             'tasks' => $tasks,
