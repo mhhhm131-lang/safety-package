@@ -4,14 +4,8 @@
 {{-- المرحلة ١١-٢ (قرار ٣٤): شاشة واحدة — سؤال وزر لكل بند. لا يحتاج المستخدم أن يتعلم شيئاً. --}}
 {{-- المرحلة ١٣-٢ (قرار ٣٩): خمسة أجزاء بالترتيب — أرقام كبيرة · رسم وخريطة · ما ينتظرك · أريد أن… · آخر الإجراءات. الأرقام لمن يملك report.view. --}}
 {{-- المرحلة ٢٥-١ (قرار ٦٤): الأماكن لكل حساب في نطاقه، مربعاتها تفتح ملف المكان؛ لا شبكة ميتة. ٢٦-١ (قرار ٦٦): الترتيب الأماكن ← الرسم ← ما ينتظرك ← أريد أن… --}}
-<div class="d-flex align-items-center gap-2 flex-wrap mb-2">
-  <h1 class="page-h m-0" id="inboxTitle">
-    @if($tasks->isEmpty()) لا شيء ينتظرك الآن
-    @else عندك <span id="inboxCount">{{ $tasks->count() }}</span> {{ $tasks->count() === 1 ? 'شيء ينتظرك' : ($tasks->count() === 2 ? 'شيئان ينتظرانك' : 'أشياء تنتظرك') }}
-    @endif
-  </h1>
-  <span class="small text-muted">{{ auth()->user()->name }} · {{ auth()->user()->roleName() }}@if($overview) · الشهر الجاري@endif</span>
-</div>
+{{-- ٢٦-١-ب (بكلمته «موافق»): عنوان الصفحة «عندك N» حُذف — «ما ينتظرك» في زر الشريط وفي عنوان القسم فقط --}}
+<div class="small text-muted mb-2">{{ auth()->user()->name }} · {{ auth()->user()->roleName() }}</div>
 {{-- ١٩-٦ (قرار ٤٩) ثم ٢٥-٣ (قرار ٦٥): سطر «مكاني» حُذف — مربع المكان يقوم مقامه، وهاتف المركز في بطاقة الأماكن --}}
 <p class="small text-muted mb-3" id="inboxHint">كل ما يحتاجك يظهر هنا. لا تبحث عنه. <a href="#" id="inboxHintHide" class="text-muted">فهمت</a></p>
 {{-- المرحلة ١٨-١ (ز، قرار ٤٦): بلا رقم للمهلة لا «متأخر» ولا تصعيد آلي — الرقم يُدخله مسؤول السلامة بيده --}}
@@ -104,6 +98,7 @@
 
 {{-- ٣. ما ينتظرك --}}
 @if($tasks->isEmpty())
+  <h2 class="sec-h sec-h-lg mb-2"><i class="bi bi-inbox-fill"></i> لا شيء ينتظرك الآن</h2>
   <div class="card mb-3" id="inboxEmpty"><div class="card-body text-center py-5 text-muted">
     <i class="bi bi-check-circle fs-1 text-success d-block mb-2"></i>
     لا شيء ينتظر قرارك. حين يحتاجك شيء يظهر هنا، ويصلك إشعار به. وما تريد أن تبدأه بنفسك تجده تحت «أريد أن…».
@@ -116,7 +111,7 @@
     $groups = $tasks->groupBy('module')->sortBy(fn ($g, $m) => array_search($m, $ORDER) === false ? 99 : array_search($m, $ORDER));
   @endphp
   {{-- ٢٥-٣-ب (بكلمته «ما ينتظرك قائمة منسدلة» ثم «احذف سطر العدّادات… أيقونة ورقم وعلامة حمراء وتفتح بالنقر»): كل مجموعة سطر واحد مطويّ دائماً — الأيقونة والاسم والعدد، وبالأحمر إن فيها متأخر؛ البطاقات تنزل بالنقر؛ ومطويّة عند كل فتح للصفحة --}}
-  <h2 class="sec-h sec-h-lg mb-2"><i class="bi bi-inbox-fill"></i> ما ينتظرك</h2>
+  <h2 class="sec-h sec-h-lg mb-2"><i class="bi bi-inbox-fill"></i> ما ينتظرك <span class="badge text-bg-dark" id="inboxCount">{{ $tasks->count() }}</span></h2>
   <div class="d-grid gap-2 mb-3" id="inboxList">
   @foreach($groups as $module => $items)
     @php $od = $items->where('isOverdue', true)->count(); @endphp

@@ -85,7 +85,7 @@ class InboxTest extends TestCase
         $this->assertSame('forwarded', $i->status);
 
         // الفني: مهمة «افتحه» — الموظف والمنسق لا شيء
-        $this->actingAs($this->fani)->get('/app')->assertOk()->assertSee('عندك')->assertSee($i->code)->assertSee('افتحه');
+        $this->actingAs($this->fani)->get('/app')->assertOk()->assertSee('id="inboxCount">1<', false)->assertSee($i->code)->assertSee('افتحه');
         $this->assertSame(1, $this->pending($this->fani));
         $this->assertSame(0, $this->pending($this->emp));
         $this->assertSame(0, $this->pending($this->coord));
@@ -263,7 +263,7 @@ class InboxTest extends TestCase
         $occ = substr($h, strpos($h, 'data-module="بلاغات الشاغلين"'), strpos($h, 'data-module="بلاغات الفحص"') - strpos($h, 'data-module="بلاغات الشاغلين"'));
         $this->assertStringContainsString('بلاط مكسور', $occ);
         $this->assertStringNotContainsString('إضاءة طوارئ', $occ);
-        $this->assertStringContainsString('عندك <span id="inboxCount">2</span>', $h);
+        $this->assertStringContainsString('ما ينتظرك <span class="badge text-bg-dark" id="inboxCount">2</span>', $h); // ٢٦-١-ب: الرقم في عنوان القسم لا عنوان الصفحة
     }
 
     /** الترتيب: المتأخر أولاً ثم الأقرب مهلةً — والشارة في الشريط تستطلع /app/inbox/count. */
@@ -274,7 +274,7 @@ class InboxTest extends TestCase
         FormAssignment::create(['form_id' => $f2->id, 'assigned_to_id' => $this->fani->id, 'assigned_by_id' => $this->salama->id, 'due_date' => now()->addDays(3)->toDateString()]);
         FormAssignment::create(['form_id' => $f1->id, 'assigned_to_id' => $this->fani->id, 'assigned_by_id' => $this->salama->id, 'due_date' => now()->subDays(2)->toDateString()]);
         $r = $this->actingAs($this->fani)->get('/app')->assertOk();
-        $r->assertSeeInOrder(['نموذج متأخر', 'نموذج قادم'])->assertSee('عندك <span id="inboxCount">2</span> شيئان ينتظرانك', false);
+        $r->assertSeeInOrder(['نموذج متأخر', 'نموذج قادم'])->assertSee('ما ينتظرك <span class="badge text-bg-dark" id="inboxCount">2</span>', false)->assertDontSee('أشياء تنتظرك');
         $r->assertSee(url('/app/inbox/count'), false)->assertSee('id="inboxN"', false);
     }
 }
