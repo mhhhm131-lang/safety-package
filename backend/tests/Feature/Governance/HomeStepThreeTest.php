@@ -44,10 +44,11 @@ class HomeStepThreeTest extends TestCase
 
         // الترتيب: ما ينتظرك ← الأماكن ← الرسم ← أريد أن…
         $inbox = strpos($h, 'id="inboxList"'); if ($inbox === false) $inbox = strpos($h, 'id="inboxEmpty"'); // بلا مهام: بطاقة «لا شيء ينتظرك» في الموضع نفسه
-        $pos = [$inbox, strpos($h, 'id="places"'), strpos($h, 'id="chart"'), strpos($h, 'id="intents"')];
+        // ٢٦-١ (قرار ٦٦، بكلمته «نفّذ الترتيب: الأماكن، الرسم، ما ينتظرك، ثم أريد أن»)
+        $pos = [strpos($h, 'id="places"'), strpos($h, 'id="chart"'), $inbox, strpos($h, 'id="intents"')];
         $this->assertNotContains(false, $pos);
         $sorted = $pos; sort($sorted);
-        $this->assertSame($sorted, $pos, 'الترتيب: ما ينتظرك ← الأماكن ← الرسم ← أريد أن');
+        $this->assertSame($sorted, $pos, 'الترتيب: الأماكن ← الرسم ← ما ينتظرك ← أريد أن');
         // لا سطر «مكاني» فوق المربع، وهاتف المركز في بطاقة الأماكن
         $this->assertStringNotContainsString('id="makaniLine"', $h);
         $this->assertMatchesRegularExpression('~id="placesCard".*?href="tel:0505498966".*?id="places"~s', $h);

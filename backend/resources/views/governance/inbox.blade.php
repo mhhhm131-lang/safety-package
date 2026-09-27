@@ -3,7 +3,7 @@
 @section('content')
 {{-- المرحلة ١١-٢ (قرار ٣٤): شاشة واحدة — سؤال وزر لكل بند. لا يحتاج المستخدم أن يتعلم شيئاً. --}}
 {{-- المرحلة ١٣-٢ (قرار ٣٩): خمسة أجزاء بالترتيب — أرقام كبيرة · رسم وخريطة · ما ينتظرك · أريد أن… · آخر الإجراءات. الأرقام لمن يملك report.view. --}}
-{{-- المرحلة ٢٥-١ (قرار ٦٤): الأماكن لكل حساب في نطاقه، مربعاتها تفتح ملف المكان؛ لا شبكة ميتة. ٢٥-٣ (قرار ٦٥): الترتيب ما ينتظرك ← الأماكن ← الرسم ← أريد أن… --}}
+{{-- المرحلة ٢٥-١ (قرار ٦٤): الأماكن لكل حساب في نطاقه، مربعاتها تفتح ملف المكان؛ لا شبكة ميتة. ٢٦-١ (قرار ٦٦): الترتيب الأماكن ← الرسم ← ما ينتظرك ← أريد أن… --}}
 <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
   <h1 class="page-h m-0" id="inboxTitle">
     @if($tasks->isEmpty()) لا شيء ينتظرك الآن
@@ -44,98 +44,7 @@
 
 @endif
 
-{{-- ٢. ما ينتظرك --}}
-@if($tasks->isEmpty())
-  <div class="card mb-3" id="inboxEmpty"><div class="card-body text-center py-5 text-muted">
-    <i class="bi bi-check-circle fs-1 text-success d-block mb-2"></i>
-    لا شيء ينتظر قرارك. حين يحتاجك شيء يظهر هنا، ويصلك إشعار به. وما تريد أن تبدأه بنفسك تجده تحت «أريد أن…».
-  </div></div>
-@else
-  {{-- قرار المستخدم ٢٠٢٦-٠٩-١٣: لا خلط — كل نوع في قسمه بأيقونته وعدّه. بلاغات الشاغلين ≠ بلاغات الفحص الفني --}}
-  @php
-    $ICONS = ['بلاغات الشاغلين' => 'bi-megaphone-fill', 'بلاغات الفحص' => 'bi-clipboard-check', 'جولات الفحص' => 'bi-calendar-check', 'الطوارئ' => 'bi-broadcast', 'الفريق الأولي' => 'bi-people-fill', 'التصاريح' => 'bi-file-earmark-check', 'المخاطر' => 'bi-lightning-charge', 'النماذج' => 'bi-ui-checks', 'المقاولون' => 'bi-buildings', 'الحسابات' => 'bi-person-check'];
-    $ORDER = array_keys($ICONS);
-    $groups = $tasks->groupBy('module')->sortBy(fn ($g, $m) => array_search($m, $ORDER) === false ? 99 : array_search($m, $ORDER));
-  @endphp
-  {{-- ٢٥-٣-ب (بكلمته «ما ينتظرك قائمة منسدلة» ثم «احذف سطر العدّادات… أيقونة ورقم وعلامة حمراء وتفتح بالنقر»): كل مجموعة سطر واحد مطويّ دائماً — الأيقونة والاسم والعدد، وبالأحمر إن فيها متأخر؛ البطاقات تنزل بالنقر؛ ومطويّة عند كل فتح للصفحة --}}
-  <h2 class="sec-h sec-h-lg mb-2"><i class="bi bi-inbox-fill"></i> ما ينتظرك</h2>
-  <div class="d-grid gap-2 mb-3" id="inboxList">
-  @foreach($groups as $module => $items)
-    @php $od = $items->where('isOverdue', true)->count(); @endphp
-    <section data-module="{{ $module }}" data-n="{{ $items->count() }}" data-od="{{ $od }}">
-      <button class="grp-h collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#grp-{{ $loop->index }}" aria-expanded="false" aria-controls="grp-{{ $loop->index }}"><span class="grp-ic {{ $od ? 'late' : '' }}"><i class="bi {{ $ICONS[$module] ?? 'bi-folder2' }}"></i><span class="grp-n">{{ $items->count() }}</span></span> <span class="grp-nm">{{ $module }}</span>@if($od)<span class="grp-od" title="{{ $od }} متأخر">{{ $od }} متأخر</span>@endif <i class="bi bi-chevron-down small ms-auto grp-caret"></i></button>
-      <div class="collapse" id="grp-{{ $loop->index }}">
-      <div class="d-grid gap-2">
-    @foreach($items as $t)
-      <div class="card task {{ $t->isOverdue ? 'task-late' : '' }}" data-task="{{ $t->key }}">
-        <div class="card-body py-3 d-flex flex-wrap align-items-center gap-3">
-          <div class="flex-grow-1" style="min-width:220px">
-            <div class="fw-bold">{{ $t->question }}</div>
-            <div class="small text-muted mt-1">
-              @if($t->isOverdue)<span class="badge st-late">متأخر</span>
-              @elseif($t->dueAt)<span class="badge st-wait">المهلة {{ $t->dueAt->format('m/d H:i') }}</span>@endif
-              @if($t->createdAt) · {{ $t->createdAt->diffForHumans() }}@endif
-            </div>
-          </div>
-          <div class="task-actions">
-            @if($t->primaryMethod() === 'POST')
-              <form method="post" action="{{ $t->primary['url'] }}" class="m-0">@csrf<button class="btn btn-g">{{ $t->primary['label'] }}</button></form>
-            @else
-              <a class="btn btn-g" href="{{ route('app.inbox.open', ['url' => $t->primary['url']]) }}" data-target="{{ $t->primary['url'] }}">{{ $t->primary['label'] }}</a>
-            @endif
-            @if($t->secondary)
-              @if($t->secondaryMethod() === 'POST')
-                <form method="post" action="{{ $t->secondary['url'] }}" class="m-0">@csrf<button class="btn btn-o">{{ $t->secondary['label'] }}</button></form>
-              @else
-                <a class="btn btn-o" href="{{ $t->secondary['url'] }}">{{ $t->secondary['label'] }}</a>
-              @endif
-            @endif
-          </div>
-        </div>
-      </div>
-    @endforeach
-      </div>
-      </div>
-    </section>
-  @endforeach
-  </div>
-@endif
-
-{{-- ٣. المرحلة ١٩-٣ (قرار ٤٨): من العمل اليومي — أين تقف بلاغات الفحص، وبلاغاتي التي قررتُ فيها ولم تُغلق --}}
-@if(!empty($follow))
-  @php $RD = \App\Modules\Store\Services\InspectionDocReader::class; @endphp
-  <div class="card mb-3" id="flowRail"><div class="card-body">
-    <h2 class="sec-h"><i class="bi bi-signpost-split"></i> أين تقف بلاغات الفحص <span class="small text-muted fw-normal">{{ $follow['rail']['open'] ? $follow['rail']['open'].' مفتوح' : 'لا بلاغات مفتوحة' }}</span></h2>
-    <div class="row g-2 text-center">
-      @foreach([1, 2, 3, 4] as $n)
-        @php $c = $follow['rail']['cnt'][$n]; @endphp
-        @php $o = $follow['rail']['od'][$n]; @endphp
-        <div class="col-3"><div class="border rounded py-2 {{ $follow['me'] === $n ? 'border-2 border-success' : '' }} {{ $c ? 'bg-white' : 'bg-light text-muted' }}" data-lvl="{{ $n }}" data-n="{{ $c }}" data-od="{{ $o }}"@if($follow['me'] === $n) data-me="1"@endif>
-          <div class="fs-4 fw-bold {{ $o ? 'text-danger' : '' }}">{{ $c }}</div>
-          <div class="small">{{ $RD::LEVEL_NAMES[$n] }}@if($follow['me'] === $n) <span class="badge st-ok">أنت</span>@endif</div>
-          @if($o)<div class="small text-danger">{{ $o }} متأخر</div>@endif
-        </div></div>
-      @endforeach
-    </div>
-  </div></div>
-  @if($follow['hasLevel'])
-  <div class="card mb-3" id="myReports"><div class="card-body">
-    <h2 class="sec-h"><i class="bi bi-eye"></i> بلاغاتي <span class="badge text-bg-dark">{{ count($follow['mine']) }}</span> <span class="small text-muted fw-normal">قررتَ فيها ولم تُغلق بعد</span></h2>
-    @forelse($follow['mine'] as $r)
-      @php $over = $RD::overdueHours($r); @endphp
-      <div class="d-flex flex-wrap align-items-center gap-2 border-top py-2">
-        <div class="flex-grow-1 small"><b>{{ $r['id'] ?? $r['row'] ?? '' }}</b> · {{ $r['_form']['name'] }}@if(!empty($r['unit'])) · {{ $r['unit'] }}@endif: {{ $r['item'] ?? '' }}
-          <div class="text-muted">@if($over !== null && $over > 0)<span class="badge st-late">متأخر</span> @endif عند {{ $RD::LEVEL_NAMES[$RD::holder($r)] ?? '—' }} · المهلة {{ $r['due'] ?? '—' }}</div></div>
-        <a class="btn btn-o btn-sm" href="/{{ $r['_form']['file'] }}#open={{ rawurlencode((string) ($r['row'] ?? '')) }}">اعرضه</a>
-      </div>
-    @empty
-      <div class="small text-muted">لا بلاغات قيد المتابعة عند غيرك.</div>
-    @endforelse
-  </div></div>
-  @endif
-@endif
-
-{{-- ٤. الأماكن (٢٥-١، قرار ٦٤) والرسم (٢٥-٢) — بعد «ما ينتظرك» وقبل «أريد أن…» (٢٥-٣، قرار ٦٥): لكل حساب في نطاقه، لونه من حال الفحص؛ مكان واحد = المربع يفتح ملفه، أكثر = المربع يرشّح الرسم وزر «افتح ملف المكان» يفتحه --}}
+{{-- ٢. الأماكن (٢٥-١، قرار ٦٤) والرسم (٢٥-٢) — أولاً، ثم «ما ينتظرك» ثم «أريد أن…» (٢٦-١، قرار ٦٦ بكلمته): لكل حساب في نطاقه، لونه من حال الفحص؛ مكان واحد = المربع يفتح ملفه، أكثر = المربع يرشّح الرسم وزر «افتح ملف المكان» يفتحه --}}
 <div class="row g-3 mb-3">
   @if(!empty($placeTiles))
   <div class="col-md-5">
@@ -192,6 +101,97 @@
   </div>
   @endif
 </div>
+
+{{-- ٣. ما ينتظرك --}}
+@if($tasks->isEmpty())
+  <div class="card mb-3" id="inboxEmpty"><div class="card-body text-center py-5 text-muted">
+    <i class="bi bi-check-circle fs-1 text-success d-block mb-2"></i>
+    لا شيء ينتظر قرارك. حين يحتاجك شيء يظهر هنا، ويصلك إشعار به. وما تريد أن تبدأه بنفسك تجده تحت «أريد أن…».
+  </div></div>
+@else
+  {{-- قرار المستخدم ٢٠٢٦-٠٩-١٣: لا خلط — كل نوع في قسمه بأيقونته وعدّه. بلاغات الشاغلين ≠ بلاغات الفحص الفني --}}
+  @php
+    $ICONS = ['بلاغات الشاغلين' => 'bi-megaphone-fill', 'بلاغات الفحص' => 'bi-clipboard-check', 'جولات الفحص' => 'bi-calendar-check', 'الطوارئ' => 'bi-broadcast', 'الفريق الأولي' => 'bi-people-fill', 'التصاريح' => 'bi-file-earmark-check', 'المخاطر' => 'bi-lightning-charge', 'النماذج' => 'bi-ui-checks', 'المقاولون' => 'bi-buildings', 'الحسابات' => 'bi-person-check'];
+    $ORDER = array_keys($ICONS);
+    $groups = $tasks->groupBy('module')->sortBy(fn ($g, $m) => array_search($m, $ORDER) === false ? 99 : array_search($m, $ORDER));
+  @endphp
+  {{-- ٢٥-٣-ب (بكلمته «ما ينتظرك قائمة منسدلة» ثم «احذف سطر العدّادات… أيقونة ورقم وعلامة حمراء وتفتح بالنقر»): كل مجموعة سطر واحد مطويّ دائماً — الأيقونة والاسم والعدد، وبالأحمر إن فيها متأخر؛ البطاقات تنزل بالنقر؛ ومطويّة عند كل فتح للصفحة --}}
+  <h2 class="sec-h sec-h-lg mb-2"><i class="bi bi-inbox-fill"></i> ما ينتظرك</h2>
+  <div class="d-grid gap-2 mb-3" id="inboxList">
+  @foreach($groups as $module => $items)
+    @php $od = $items->where('isOverdue', true)->count(); @endphp
+    <section data-module="{{ $module }}" data-n="{{ $items->count() }}" data-od="{{ $od }}">
+      <button class="grp-h collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#grp-{{ $loop->index }}" aria-expanded="false" aria-controls="grp-{{ $loop->index }}"><span class="grp-ic {{ $od ? 'late' : '' }}"><i class="bi {{ $ICONS[$module] ?? 'bi-folder2' }}"></i><span class="grp-n">{{ $items->count() }}</span></span> <span class="grp-nm">{{ $module }}</span>@if($od)<span class="grp-od" title="{{ $od }} متأخر">{{ $od }} متأخر</span>@endif <i class="bi bi-chevron-down small ms-auto grp-caret"></i></button>
+      <div class="collapse" id="grp-{{ $loop->index }}">
+      <div class="d-grid gap-2">
+    @foreach($items as $t)
+      <div class="card task {{ $t->isOverdue ? 'task-late' : '' }}" data-task="{{ $t->key }}">
+        <div class="card-body py-3 d-flex flex-wrap align-items-center gap-3">
+          <div class="flex-grow-1" style="min-width:220px">
+            <div class="fw-bold">{{ $t->question }}</div>
+            <div class="small text-muted mt-1">
+              @if($t->isOverdue)<span class="badge st-late">متأخر</span>
+              @elseif($t->dueAt)<span class="badge st-wait">المهلة {{ $t->dueAt->format('m/d H:i') }}</span>@endif
+              @if($t->createdAt) · {{ $t->createdAt->diffForHumans() }}@endif
+            </div>
+          </div>
+          <div class="task-actions">
+            @if($t->primaryMethod() === 'POST')
+              <form method="post" action="{{ $t->primary['url'] }}" class="m-0">@csrf<button class="btn btn-g">{{ $t->primary['label'] }}</button></form>
+            @else
+              <a class="btn btn-g" href="{{ route('app.inbox.open', ['url' => $t->primary['url']]) }}" data-target="{{ $t->primary['url'] }}">{{ $t->primary['label'] }}</a>
+            @endif
+            @if($t->secondary)
+              @if($t->secondaryMethod() === 'POST')
+                <form method="post" action="{{ $t->secondary['url'] }}" class="m-0">@csrf<button class="btn btn-o">{{ $t->secondary['label'] }}</button></form>
+              @else
+                <a class="btn btn-o" href="{{ $t->secondary['url'] }}">{{ $t->secondary['label'] }}</a>
+              @endif
+            @endif
+          </div>
+        </div>
+      </div>
+    @endforeach
+      </div>
+      </div>
+    </section>
+  @endforeach
+  </div>
+@endif
+
+{{-- ٤. المرحلة ١٩-٣ (قرار ٤٨): من العمل اليومي — أين تقف بلاغات الفحص، وبلاغاتي التي قررتُ فيها ولم تُغلق --}}
+@if(!empty($follow))
+  @php $RD = \App\Modules\Store\Services\InspectionDocReader::class; @endphp
+  <div class="card mb-3" id="flowRail"><div class="card-body">
+    <h2 class="sec-h"><i class="bi bi-signpost-split"></i> أين تقف بلاغات الفحص <span class="small text-muted fw-normal">{{ $follow['rail']['open'] ? $follow['rail']['open'].' مفتوح' : 'لا بلاغات مفتوحة' }}</span></h2>
+    <div class="row g-2 text-center">
+      @foreach([1, 2, 3, 4] as $n)
+        @php $c = $follow['rail']['cnt'][$n]; @endphp
+        @php $o = $follow['rail']['od'][$n]; @endphp
+        <div class="col-3"><div class="border rounded py-2 {{ $follow['me'] === $n ? 'border-2 border-success' : '' }} {{ $c ? 'bg-white' : 'bg-light text-muted' }}" data-lvl="{{ $n }}" data-n="{{ $c }}" data-od="{{ $o }}"@if($follow['me'] === $n) data-me="1"@endif>
+          <div class="fs-4 fw-bold {{ $o ? 'text-danger' : '' }}">{{ $c }}</div>
+          <div class="small">{{ $RD::LEVEL_NAMES[$n] }}@if($follow['me'] === $n) <span class="badge st-ok">أنت</span>@endif</div>
+          @if($o)<div class="small text-danger">{{ $o }} متأخر</div>@endif
+        </div></div>
+      @endforeach
+    </div>
+  </div></div>
+  @if($follow['hasLevel'])
+  <div class="card mb-3" id="myReports"><div class="card-body">
+    <h2 class="sec-h"><i class="bi bi-eye"></i> بلاغاتي <span class="badge text-bg-dark">{{ count($follow['mine']) }}</span> <span class="small text-muted fw-normal">قررتَ فيها ولم تُغلق بعد</span></h2>
+    @forelse($follow['mine'] as $r)
+      @php $over = $RD::overdueHours($r); @endphp
+      <div class="d-flex flex-wrap align-items-center gap-2 border-top py-2">
+        <div class="flex-grow-1 small"><b>{{ $r['id'] ?? $r['row'] ?? '' }}</b> · {{ $r['_form']['name'] }}@if(!empty($r['unit'])) · {{ $r['unit'] }}@endif: {{ $r['item'] ?? '' }}
+          <div class="text-muted">@if($over !== null && $over > 0)<span class="badge st-late">متأخر</span> @endif عند {{ $RD::LEVEL_NAMES[$RD::holder($r)] ?? '—' }} · المهلة {{ $r['due'] ?? '—' }}</div></div>
+        <a class="btn btn-o btn-sm" href="/{{ $r['_form']['file'] }}#open={{ rawurlencode((string) ($r['row'] ?? '')) }}">اعرضه</a>
+      </div>
+    @empty
+      <div class="small text-muted">لا بلاغات قيد المتابعة عند غيرك.</div>
+    @endforelse
+  </div></div>
+  @endif
+@endif
 
 {{-- ٥. أريد أن… --}}
 @include('governance._intents', ['intents' => $intents])

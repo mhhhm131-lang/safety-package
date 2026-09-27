@@ -58,8 +58,8 @@ with sync_playwright() as p:
     assert login(page, 'emp', '1234'), 'فشل دخول الموظف'
     page.goto(BASE + '/app', wait_until='networkidle')
     inbox = y(page, '#inboxList') if page.locator('#inboxList').count() else y(page, '#inboxEmpty')
-    ys = [inbox, y(page, '#places'), y(page, '#chart'), y(page, '#intents')]
-    log('emp: الترتيب ما ينتظرك ← الأماكن ← الرسم ← أريد أن', [round(v) for v in ys], None not in ys and ys == sorted(ys))
+    ys = [y(page, '#places'), y(page, '#chart'), inbox, y(page, '#intents')]
+    log('emp: الترتيب الأماكن ← الرسم ← ما ينتظرك ← أريد أن (٢٦-١)', [round(v) for v in ys], None not in ys and ys == sorted(ys))
     log('emp: لا سطر «مكاني» مكرر', page.locator('#makaniLine').count() == 0, page.locator('#makaniLine').count() == 0)
     tel = page.locator('#placesCard a[href^="tel:"]')
     log('emp: هاتف المركز في بطاقة الأماكن', tel.count(), tel.count() == 1)
