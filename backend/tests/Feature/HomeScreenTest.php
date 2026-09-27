@@ -58,7 +58,8 @@ class HomeScreenTest extends TestCase
         // ٣ و٤ و٥ بالترتيب
         $this->assertStringContainsString($i->code, $html);
         $this->assertStringContainsString('دخول مسؤول السلامة', $html);
-        $order = [strpos($html, 'id="tiles"'), strpos($html, 'id="places"'), strpos($html, 'id="chart"'), strpos($html, 'id="inboxList"'), strpos($html, 'id="intents"'), strpos($html, 'id="recent"')];
+        // ٢٥-٣ (قرار ٦٥): ما ينتظرك ← الأماكن ← الرسم ← أريد أن…
+        $order = [strpos($html, 'id="tiles"'), strpos($html, 'id="inboxList"'), strpos($html, 'id="places"'), strpos($html, 'id="chart"'), strpos($html, 'id="intents"'), strpos($html, 'id="recent"')];
         $this->assertSame($order, array_values(array_filter($order, fn ($p) => $p !== false)));
         $sorted = $order; sort($sorted);
         $this->assertSame($sorted, $order, 'الأجزاء الخمسة بترتيبها');

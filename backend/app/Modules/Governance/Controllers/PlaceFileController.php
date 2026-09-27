@@ -76,7 +76,7 @@ class PlaceFileController extends Controller
         $ui = PermissionRegistry::uiRole($user->role());
         return view('governance.places.file', [
             'place' => $place, 'forms' => R::formsOf($hz), 'systems' => $systems, 'open' => $open, 'kpi' => $kpi, 'sum' => $sum, 'plans' => $plans,
-            'units' => PlaceUnit::where('place_id', $place->id)->where('is_active', true)->orderBy('type')->orderBy('sort')->orderBy('name')->get(),
+            'units' => $this->units($place),
             'canUnits' => PlaceUnit::canManageAny($user, $place),
             'teamUnits' => $units, 'events' => $events, 'pl' => $pl,
             'can' => ['plans' => P::canPlans($user), 'events' => P::canEvents($user), 'eventApprove' => P::canApproveEvent($user)],
@@ -85,6 +85,22 @@ class PlaceFileController extends Controller
             'canRisks' => PermissionRegistry::hasPermission($user->role(), 'risk.list'),
             'ui' => $ui,
         ]);
+    }
+
+    /**
+     * ٢٥-٣ (قرار ٦٥): وحدات المكان كما يراها الناس — في المكاتب الإدارية الإدارات كلها من الهيكل التنظيمي (لا ما سُجّل دوره فقط)،
+     * ومن سُجّل دوره وموقعه يظهران معه؛ وفي بقية الأماكن الوحدات المسجّلة.
+     * @return \Illuminate\Support\Collection<int, PlaceUnit>
+     */
+    private function units(Place $place)
+    {
+        $rows = PlaceUnit::where('place_id', $place->id)->where('is_active', true)->orderBy('type')->orderBy('sort')->orderBy('name')->get();
+        if (!in_array('department', PlaceUnit::typesFor($place->code), true)) return $rows;
+        $byUnit = $rows->where('type', 'department')->keyBy('organization_unit_id');
+        $depts = \App\Modules\Governance\Models\OrganizationUnit::where('place_id', $place->id)->where('is_active', true)->orderBy('order')->orderBy('name')->get()
+            ->map(fn ($ou) => $byUnit->get($ou->id) ?? new PlaceUnit(['place_id' => $place->id, 'type' => 'department', 'organization_unit_id' => $ou->id, 'name' => $ou->name]));
+        foreach ($depts as $d) $d->setAttribute('unit_code', \App\Modules\Governance\Models\OrganizationUnit::find($d->organization_unit_id)?->code);
+        return $depts->concat($rows->where('type', '!=', 'department'))->values();
     }
 
     /** ١٩-٥: وحدات الفريق بفرقها وحالاتها وأزرارها، وبطاقة الجاهزية الرابعة (dashboard.html:925-945 readiness) */

@@ -48,9 +48,10 @@ class MakaniTest extends TestCase
         $salama = $this->user('salama', 'system_admin');                  // بلا مكان
 
         $h = $this->actingAs($emp)->get('/app')->assertOk()->getContent();
+        // ٢٥-٣ (قرار ٦٥): سطر «مكاني» حُذف — مربع المكان في الصفحة الأولى يفتح الملف، وهاتف المركز في بطاقة الأماكن
         $this->assertStringContainsString('data-intent="makani"', $h);
-        $this->assertStringContainsString('id="makaniLine"', $h);
-        $this->assertStringContainsString('href="/app/places/'.$this->hub->id.'/file"', $h);
+        $this->assertStringNotContainsString('id="makaniLine"', $h);
+        $this->assertStringContainsString('href="'.url('/app/places/'.$this->hub->id.'/file').'" data-place="HZ-06"', $h);
         $this->assertStringContainsString('المكاتب الإدارية', $h);
         $this->assertStringContainsString('href="tel:0505498966"', $h);
         // الموظف يفتح ملف مكانه ويجد رقم المركز مع الفريق
@@ -66,8 +67,8 @@ class MakaniTest extends TestCase
         $this->assertSame((string) $last->code, $m[1] ?? null, 'إدارة الشخص ليست أولاً في ملف مكانه');
 
         $h = $this->actingAs($fani)->get('/app')->assertOk()->getContent();
-        $this->assertStringContainsString('href="/app/places/'.$this->park->id.'/file"', $h);
-        $this->assertStringContainsString('id="makaniLine"', $h);
+        $this->assertStringContainsString('href="'.url('/app/places/'.$this->park->id.'/file').'" data-place="HZ-01"', $h);
+        $this->assertStringNotContainsString('id="makaniLine"', $h);
 
         $h = $this->actingAs($salama)->get('/app')->assertOk()->getContent();
         $this->assertStringNotContainsString('data-intent="makani"', $h);

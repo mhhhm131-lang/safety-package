@@ -93,7 +93,7 @@ class BuildingPictureTest extends TestCase
         $this->assertStringNotContainsString('data-k="open"', $hf);
         $this->assertSame(1, substr_count($hf, 'data-place="'));
         $this->assertStringContainsString('data-place="HZ-01"', $hf);
-        // النية «الأماكن» لأدوار الواجهة
-        $this->actingAs($this->fani)->get('/app')->assertOk()->assertSee('data-intent="places"', false);
+        // ٢٥-٣: نية «الأماكن» حُذفت — الأماكن في الصفحة الأولى نفسها
+        $this->actingAs($this->fani)->get('/app')->assertOk()->assertSee('id="places"', false)->assertDontSee('data-intent="places"', false);
     }
 }

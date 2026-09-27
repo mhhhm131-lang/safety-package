@@ -1,10 +1,10 @@
 @extends('layouts.app')
-@section('page_title', 'مركز الطوارئ')
+@section('page_title', 'مركز السلامة وإدارة الطوارئ')
 @section('content')
 @php($role = auth()->user()->role())
 @php($P = \App\Core\Permissions\PermissionRegistry::class)
 <div class="d-flex align-items-center gap-2 flex-wrap mb-3">
-  <h1 class="h4 m-0"><i class="bi bi-exclamation-octagon"></i> مركز الطوارئ</h1>
+  <h1 class="h4 m-0"><i class="bi bi-exclamation-octagon"></i> مركز السلامة وإدارة الطوارئ</h1>
   <span class="small text-muted">التفعيل ← تنبيه الفريق الأولي ← تسجيل الوصول ← انتهاء الخطر ← التقرير</span>
   @if($mainBuilding && $P::hasPermission($role, 'emergency.trigger'))
     <a class="btn btn-sm btn-danger ms-auto" href="{{ route('emergency.buildings.control', $mainBuilding) }}"><i class="bi bi-bell-fill"></i> تفعيل حالة طارئة</a>
@@ -28,6 +28,8 @@
 <div class="row g-2 mb-3">
   @foreach([
     ['حالات مفتوحة', $stats['active_incidents'], $stats['active_incidents'] ? 'danger' : 'success', route('emergency.incidents.index', ['status' => 'active'])],
+    // ٢٥-٣ (قرار ٦٥، وقرار ٥٨): الباب الواحد — سجل بلاغات الشاغلين يُفتح من هنا لمن يملكه
+    ...($P::hasPermission($role, 'incident.list') ? [['سجل بلاغات الشاغلين', \App\Modules\Incident\Models\Incident::whereNotIn('status', \App\Modules\Incident\Models\Incident::TERMINAL)->count(), 'primary', route('incidents.index')]] : []),
     ['نداءات هاتفية معلّقة', $pendingCalls, $pendingCalls ? 'warning' : 'secondary', $activeIncidents->first() ? route('emergency.incidents.live', $activeIncidents->first()) : route('emergency.incidents.index')],
     ['تنبيهات ذعر مفتوحة', $panicOpen, $panicOpen ? 'danger' : 'secondary', route('emergency.panic.dashboard')],
     ['تنبيهات أساور مفتوحة', $wearableOpen, $wearableOpen ? 'danger' : 'secondary', route('emergency.iot.wearables.dashboard')],

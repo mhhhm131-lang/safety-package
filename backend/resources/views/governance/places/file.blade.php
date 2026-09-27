@@ -83,7 +83,7 @@
 @else
   <div class="d-flex flex-wrap gap-2 mb-3" id="pfUnits">
     @foreach($units as $u)
-      <span class="border rounded px-2 py-1 bg-white small"><b>{{ $u->name }}</b> <span class="text-muted">{{ $L[$u->type] ?? $u->type }}{{ $u->floor ? ' · الدور '.$u->floor : '' }}{{ $u->capacity ? ' · '.$u->capacity.' شخصاً' : '' }}{{ $u->operator ? ' · '.$u->operator : '' }}</span></span>
+      <span class="border rounded px-2 py-1 bg-white small"@if($u->type === 'department') data-unit-chip="{{ $u->unit_code ?? $u->organization_unit_id }}"@endif><b>{{ $u->name }}</b> <span class="text-muted">{{ $L[$u->type] ?? $u->type }}{{ $u->floor ? ' · الدور '.$u->floor : '' }}{{ $u->location ? ' · '.$u->location : '' }}{{ $u->capacity ? ' · '.$u->capacity.' شخصاً' : '' }}{{ $u->operator ? ' · '.$u->operator : '' }}</span></span>
     @endforeach
   </div>
 @endif

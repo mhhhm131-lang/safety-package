@@ -57,7 +57,7 @@ class IntentRegistry
         // البلاغ
         // قرار المستخدم ٢٠٢٦-٠٩-١٣: زر واحد للجميع يفتح اختيار النوع (عادي/سري/عاجل) بميزة كل نوع له
         $add(true, 'report', 'أبلّغ عن خطر', route('incident.landing'), 'bi-megaphone-fill', 'البلاغ', true, 'عادي لا يُغلق إلا بموافقتك · سري يخفي هويتك · عاجل اتصل بالمركز');
-        $add($can('incident.list'), 'incidents', 'سجل مركز السلامة', route('incidents.index'), 'bi-journal-text', 'البلاغ');
+        // ٢٥-٣ (قرار ٦٥): «سجل مركز السلامة» دُمج في باب «مركز السلامة وإدارة الطوارئ» أدناه (قرار ٥٨: باب واحد)
         // الفني: مكانه
         $add($ui === 'tech' && $folder, 'inspect', 'أفحص مكاني', $folder ? '/'.$folder.'/inspection-form.html' : null, 'bi-clipboard-check', 'الفحص', true, $placeCode ? 'نموذج فحص '.$placeCode : null);
         $add((bool) $ui, 'forms', 'نماذج الفحص', route('app.inspections'), 'bi-clipboard-check', 'الفحص', $ui !== 'tech', 'النماذج العشرة: آخر جولة وبلاغاتها المفتوحة، وكل نموذج بضغطة');
@@ -75,12 +75,16 @@ class IntentRegistry
         // ٢٢-٨ (د): «إخلاء أو إغلاق» كانت نيةً ثانية تفتح الشاشة نفسها — دُمجت في «فعّل»، والوظيفة باقية في الشاشة
         $add($can('emergency.trigger') && $main, 'trigger', 'فعّل حالة طارئة', $main ? route('emergency.buildings.control', $main).($placeCode ? '?place='.$placeCode : '') : null, 'bi-bell-fill', 'الطوارئ', true, 'الفريق الأولي والقيادة يُنبَّهون فوراً — ومنها الإخلاء والإغلاق الأمني');
         // ٢٢-٣ (د): الاستغاثة لكل حساب مفعَّل — كانت للمستجيبين وحدهم وتفتح لوحة المركز ولا تُطلق شيئاً.
+        // ٢٥-٣ (قرار ٦٥): «أستغيث الآن» تبقى نيةً لأن الشريط الأحمر الثابت يُبنى منها، وتُخفى من قائمة «أريد أن…» (_intents.blade.php) حتى لا تتكرر
         $add((bool) $profile?->is_active, 'sos', 'أستغيث الآن', route('emergency.sos'), 'bi-exclamation-octagon-fill', 'الطوارئ', true, 'تصل مركز السلامة فوراً باسمك ومكانك');
         // ٢٢-٤ (د): «وصلتُ» تفتح الفعل على شاشته لا لوحة المركز؛ وتسجيل وصول غيره يبقى في شاشة الحالة
         $add($can('emergency.respond'), 'arrived', 'وصلتُ إلى الموقع', route('emergency.me'), 'bi-check2-circle', 'الطوارئ', false, 'يُسجَّل وصولك فيراه المركز');
         $add($can('emergency.drill'), 'drill', 'أجدول تمريناً', route('emergency.drills.create'), 'bi-calendar-event', 'الطوارئ');
         $add($can('emergency.teams'), 'teams', 'الفريق الأولي', route('emergency.teams.index'), 'bi-people-fill', 'الطوارئ');
-        $add($can('emergency.view'), 'emergency', 'مركز الطوارئ', route('emergency.dashboard'), 'bi-broadcast', 'الطوارئ');
+        // ٢٥-٣ (قرار ٦٥، وقرار ٥٨): باب واحد «مركز السلامة وإدارة الطوارئ» — لوحته لمن يملك الطوارئ، وسجل بلاغات الشاغلين لمن يملك السجل وحده
+        $add($can('emergency.view') || $can('incident.list'), 'center', 'مركز السلامة وإدارة الطوارئ',
+            $can('emergency.view') ? route('emergency.dashboard') : route('incidents.index'), 'bi-broadcast', 'الطوارئ', false,
+            $can('emergency.view') ? 'ما يجري الآن، والحالات، وسجل بلاغات الشاغلين' : 'سجل بلاغات الشاغلين');
         // ٢٢-٦ب (قرار ٦٠): ملف الشخص الطبي — كان مبنياً بلا رابط يصله صاحبه؛ والطبيب وحده يرى ملفات الناس
         $add((bool) $profile?->is_active, 'my_medical', 'ملفي الطبي', route('emergency.medical.my-profile'), 'bi-heart-pulse', 'مكاني', false, 'اختياري — لا يطّلع عليه إلا طبيب العيادة');
         $add($can('medical.read'), 'medical', 'الملفات الطبية', route('emergency.medical.dashboard'), 'bi-file-medical', 'الطوارئ', true, 'للعيادة وحدها، وكل اطّلاع يُسجَّل');
@@ -95,7 +99,8 @@ class IntentRegistry
             ? route('app.places.units.index', $ouPlace) : route('app.places.units.hub');
         // ١٩-٤ (قرار ٤٨): «الأماكن» لكل أدوار الواجهة — الفسيفساء وملف كل مكان (ومنه وحداته)؛ ومدير الإدارة يبقى له «موقع إدارتي في مكانها»
         $isCenter = in_array($role, ['system_admin', 'system_staff'], true);
-        $add((bool) $ui, 'places', 'الأماكن', route('app.places.units.hub'), 'bi-geo-alt', 'الفحص', false,
+        // ٢٥-١/٢٥-٣ (قرار ٦٤/٦٥): نية «الأماكن» حُذفت — الأماكن في الصفحة الأولى لكل حساب
+        $add(false, 'places', 'الأماكن', route('app.places.units.hub'), 'bi-geo-alt', 'الفحص', false,
             $role === 'facilities_manager' || $isCenter ? 'حالة كل مكان وملفه، ووحداته: القاعات والغرف والمستودعات' : 'حالة كل مكان وملفه: أنظمته وبلاغاته وفريقه وخطتاه');
         $add($ui === 'dept' && !$isCenter && $profile?->organization_unit_id, 'units', 'موقع إدارتي في مكانها', $unitsUrl, 'bi-grid-3x3-gap', 'إدارتي', false, 'الدور والموقع');
         $add($can('risk.activate'), 'activate', 'أفعّل خطراً لإدارتي', route('risk.reference.index'), 'bi-lightning-charge', 'إدارتي', false, 'من كتاب المعهد');

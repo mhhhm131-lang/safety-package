@@ -31,7 +31,7 @@ class IntentsTest extends TestCase
     private const INITIATING = [
         'incident.create' => 'report', 'permit.create' => 'permit', 'risk.activate' => 'activate', 'form.send' => 'sendform',
         'emergency.trigger' => 'trigger', 'emergency.drill' => 'drill', 'worker.create' => 'worker', 'project.create' => 'project',
-        'external_party.create' => 'party', 'report.view' => 'reports', 'system.settings' => 'settings', 'emergency.view' => 'emergency',
+        'external_party.create' => 'party', 'report.view' => 'reports', 'system.settings' => 'settings', 'emergency.view' => 'center',
     ];
 
     protected function setUp(): void
@@ -67,7 +67,7 @@ class IntentsTest extends TestCase
                 if ($perm === 'permit.create') $needs = $needs && PermissionRegistry::hasPermission($role, 'permit.list'); // المسار نفسه يشترطهما (خلل قائم للموظف)
                 if ($needs) {
                     $this->assertStringContainsString('data-intent="'.$key.'"', $html, "الدور {$role} يملك {$perm} ولا زر «{$key}» في شاشته الأولى");
-                } elseif (!in_array($key, ['report'], true)) {
+                } elseif (!in_array($key, ['report', 'center'], true)) { // ٢٥-٣: باب «مركز السلامة وإدارة الطوارئ» يظهر أيضاً لمن يملك incident.list وحده
                     $this->assertStringNotContainsString('data-intent="'.$key.'"', $html, "الدور {$role} لا يملك {$perm} ويرى زر «{$key}»");
                 }
             }
@@ -85,7 +85,7 @@ class IntentsTest extends TestCase
         $fani = $this->user('fani', 'field_worker', 'HZ-06');
         $h = $this->actingAs($fani)->get('/app')->assertOk()->getContent();
         $this->assertStringContainsString('href="/HZ-06-offices/inspection-form.html"', $h);   // أفحص مكاني
-        $this->assertStringContainsString('data-intent="sos"', $h);                             // أستغيث الآن
+        $this->assertSame(1, substr_count($h, 'data-intent="sos"'));                            // أستغيث الآن: الشريط الثابت وحده (٢٥-٣)
         $this->assertStringNotContainsString('data-intent="trigger"', $h);
         $this->assertStringNotContainsString('data-intent="nominate"', $h);
 

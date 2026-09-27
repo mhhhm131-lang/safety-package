@@ -75,7 +75,7 @@ class TeamRolesTest extends TestCase
         $medic = $this->user('saad', 'medic', 'HZ-06');
         $h = $this->actingAs($medic)->get('/app')->assertOk()->getContent();
         $this->assertStringContainsString('data-intent="report"', $h);
-        $this->assertStringContainsString('data-intent="sos"', $h);      // أستغيث الآن
+        $this->assertSame(1, substr_count($h, 'data-intent="sos"'));      // أستغيث الآن: الشريط الثابت وحده (٢٥-٣)
         $this->assertStringNotContainsString('data-intent="trigger"', $h);
         $this->assertStringNotContainsString('data-intent="forms"', $h); // لا نماذج فحص
         $this->assertFalse(IntentRegistry::forUser($medic)->contains('key', 'inspections'));

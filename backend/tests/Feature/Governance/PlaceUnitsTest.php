@@ -59,7 +59,7 @@ class PlaceUnitsTest extends TestCase
         $this->actingAs($this->fani)->post("/app/places/{$this->halls->id}/units", ['type' => 'training_hall', 'name' => '٤٠٠'])->assertForbidden();
         // المدخل يعرض العدّ
         $this->actingAs($this->marafiq)->get('/app')->assertOk()->assertSee('data-place="HZ-07"', false);
-        $this->actingAs($this->marafiq)->get('/app')->assertOk()->assertSee('data-intent="places"', false); // ١٩-٤: النية صارت «الأماكن» لكل أدوار الواجهة
+        $this->actingAs($this->marafiq)->get('/app')->assertOk()->assertSee('id="places"', false); // ١٩-٤ ثم ٢٥-٣: الأماكن في الصفحة الأولى نفسها، لا نية
     }
 
     /** لصق جدول: ثلاث قاعات دفعة واحدة، والتكرار يحدّث لا يكرّر. */
