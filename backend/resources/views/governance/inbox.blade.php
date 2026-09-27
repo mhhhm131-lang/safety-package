@@ -57,7 +57,7 @@
     $ORDER = array_keys($ICONS);
     $groups = $tasks->groupBy('module')->sortBy(fn ($g, $m) => array_search($m, $ORDER) === false ? 99 : array_search($m, $ORDER));
   @endphp
-  {{-- ٢٥-٣-ب (بكلمته «ما ينتظرك قائمة منسدلة» ثم «احذف سطر العدّادات… أيقونة ورقم وعلامة حمراء وتفتح بالنقر»): كل مجموعة سطر واحد مطويّ دائماً — الأيقونة والاسم والعدد، وبالأحمر إن فيها متأخر؛ البطاقات تنزل بالنقر؛ المتصفح يتذكر ما فُتح --}}
+  {{-- ٢٥-٣-ب (بكلمته «ما ينتظرك قائمة منسدلة» ثم «احذف سطر العدّادات… أيقونة ورقم وعلامة حمراء وتفتح بالنقر»): كل مجموعة سطر واحد مطويّ دائماً — الأيقونة والاسم والعدد، وبالأحمر إن فيها متأخر؛ البطاقات تنزل بالنقر؛ ومطويّة عند كل فتح للصفحة --}}
   <h2 class="sec-h sec-h-lg mb-2"><i class="bi bi-inbox-fill"></i> ما ينتظرك</h2>
   <div class="d-grid gap-2 mb-3" id="inboxList">
   @foreach($groups as $module => $items)
@@ -216,19 +216,7 @@
   try{if(localStorage.getItem('ipa-inbox-hint')==='1')h.hidden=true;}catch(e){}
   b.addEventListener('click',function(e){e.preventDefault();h.hidden=true;try{localStorage.setItem('ipa-inbox-hint','1');}catch(x){}});
 })();
-/* ٢٥-٣-ب: «ما ينتظرك» منسدلة — المتصفح يتذكر ما فتحه صاحبه، وعدّاد المجموعة يفتحها ويقفز إليها */
-(function(){
-  var list=document.getElementById('inboxList');if(!list)return;
-  var key='ipa-inbox-open',state={};try{state=JSON.parse(localStorage.getItem(key)||'{}')||{};}catch(e){}
-  list.querySelectorAll('section[data-module]').forEach(function(sec){
-    var body=sec.querySelector('.collapse'),btn=sec.querySelector('[data-bs-toggle="collapse"]'),m=sec.dataset.module;
-    if(!body||!btn)return;
-    if(state[m]===true&&!body.classList.contains('show')){body.classList.add('show');btn.classList.remove('collapsed');btn.setAttribute('aria-expanded','true');}
-    if(state[m]===false&&body.classList.contains('show')){body.classList.remove('show');btn.classList.add('collapsed');btn.setAttribute('aria-expanded','false');}
-    body.addEventListener('shown.bs.collapse',function(){state[m]=true;try{localStorage.setItem(key,JSON.stringify(state));}catch(e){}});
-    body.addEventListener('hidden.bs.collapse',function(){state[m]=false;try{localStorage.setItem(key,JSON.stringify(state));}catch(e){}});
-  });
-})();
+/* ٢٥-٣-ب (بكلمته «قابلة للطي تنطوي»): المجموعات مطويّة عند كل فتح — لا تذكّر */
 /* ٢٥-٢: ضغطة المكان ترشّح الرسم من بيانات الصفحة نفسها (بلا طلب)؛ «المبنى كله» يعيده؛ بلا سكربت يبقى المربع رابطاً إلى ملف المكان */
 (function(){
   var el=document.getElementById('snapshot'),bars=document.getElementById('bars');if(!el||!bars)return;

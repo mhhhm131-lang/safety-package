@@ -15,7 +15,6 @@ with sync_playwright() as p:
     pg.on('console', lambda m: console.append(m.text) if m.type == 'error' else None)
     pg.on('response', lambda r: console.append(f'HTTP {r.status} {r.url}') if r.status >= 500 else None)
     pg.goto(BASE + '/login'); pg.fill('input[name=username]', 'munawib'); pg.fill('input[name=password]', '1234'); pg.click('button[type=submit]'); pg.wait_for_load_state('networkidle')
-    pg.evaluate("try{localStorage.removeItem('ipa-inbox-open')}catch(e){}")
     pg.goto(BASE + '/app', wait_until='networkidle')
     log('المناوب: لا سطر عدّادات (كان تكراراً)', pg.locator('#inboxSummary').count() == 0, pg.locator('#inboxSummary').count() == 0)
     secs = pg.locator('#inboxList section')
@@ -37,7 +36,8 @@ with sync_playwright() as p:
     pg.screenshot(path=os.path.join(SHOT, '25-3b-munawib-open.png'), full_page=False)
     # يتذكر بعد التحديث
     pg.reload(wait_until='networkidle'); pg.wait_for_timeout(300)
-    log('المناوب: يتذكر المفتوح بعد التحديث', pg.locator('#inboxList section').first.locator('.collapse').get_attribute('class'), 'show' in pg.locator('#inboxList section').first.locator('.collapse').get_attribute('class'))
+    log('المناوب: بعد التحديث تعود مطويّة (لا تذكّر)', pg.locator('#inboxList .collapse.show').count(), pg.locator('#inboxList .collapse.show').count() == 0)
+    first.locator('button.grp-h').click(); pg.wait_for_timeout(600)
     # ضغطة ثانية تطوي
     first.locator('button.grp-h').click(); pg.wait_for_timeout(600)
     log('المناوب: ضغطة ثانية تطوي المجموعة', first.locator('.collapse').get_attribute('class'), 'show' not in first.locator('.collapse').get_attribute('class'))
