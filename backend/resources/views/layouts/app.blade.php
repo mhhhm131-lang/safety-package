@@ -78,6 +78,11 @@
   .bar .lbl{font-size:.68rem;text-align:center;color:var(--mut);line-height:1.15;white-space:normal;overflow-wrap:anywhere;min-height:2.3em}
   @media(max-width:575.98px){.bar .col{min-height:100px}.bar .n{font-size:1.05rem}.bar .lbl{font-size:.62rem}}
   .task-late{border-color:var(--red)}
+  /* ٢٥-٣-ب: «ما ينتظرك» منسدلة — عدّادات ورؤوس مجموعات تُضغط */
+  .chip{display:inline-flex;align-items:center;gap:.35rem;padding:.3rem .7rem;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);text-decoration:none;font-size:.9rem}
+  .chip:hover{border-color:var(--g);color:var(--g)}.chip.chip-late{border-color:var(--red)}.chip b{font-weight:900}
+  .grp-h{display:flex;align-items:center;gap:.4rem;width:100%;background:none;border:0;padding:.4rem 0;text-align:start;color:var(--ink);cursor:pointer}
+  .grp-h .grp-caret{transition:transform .2s}.grp-h:not(.collapsed) .grp-caret{transform:rotate(180deg)}.grp-h:hover{color:var(--g)}
   .task-actions{display:flex;gap:.5rem;flex-wrap:wrap}
   .row-act{display:flex;gap:.75rem;padding:.5rem 0;border-bottom:1px solid #edf1ef;color:var(--ink);text-decoration:none;font-size:.95rem}
   .row-act:last-child{border-bottom:0}.row-act:hover{color:var(--g)}.row-act .when{color:var(--mut);min-width:3.5rem;font-size:.85rem}

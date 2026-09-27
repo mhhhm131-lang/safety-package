@@ -57,11 +57,21 @@
     $ORDER = array_keys($ICONS);
     $groups = $tasks->groupBy('module')->sortBy(fn ($g, $m) => array_search($m, $ORDER) === false ? 99 : array_search($m, $ORDER));
   @endphp
+  {{-- ٢٥-٣-ب (بكلمته «ما ينتظرك قائمة منسدلة»): سطر عدّادات يقفز إلى مجموعته، وكل مجموعة تُفتح وتُغلق بعنوانها؛ حتى ثلاث مهام مفتوحة، وأكثر مطويّة والمتأخر في العنوان --}}
+  @php $openAll = $tasks->count() <= 3; @endphp
   <h2 class="sec-h sec-h-lg mb-2"><i class="bi bi-inbox-fill"></i> ما ينتظرك</h2>
+  <div class="d-flex flex-wrap gap-2 mb-2" id="inboxSummary">
+    @foreach($groups as $module => $items)
+      @php $od = $items->where('isOverdue', true)->count(); @endphp
+      <a class="chip {{ $od ? 'chip-late' : '' }}" href="#grp-{{ $loop->index }}" data-group="{{ $module }}" data-n="{{ $items->count() }}" data-od="{{ $od }}"><i class="bi {{ $ICONS[$module] ?? 'bi-dot' }}"></i> {{ $module }} <b>{{ $items->count() }}</b>@if($od) <span class="text-danger">· {{ $od }} متأخر</span>@endif</a>
+    @endforeach
+  </div>
   <div class="d-grid gap-3 mb-3" id="inboxList">
   @foreach($groups as $module => $items)
-    <section data-module="{{ $module }}">
-      <h3 class="sec-h mb-2"><i class="bi {{ $ICONS[$module] ?? 'bi-dot' }} text-g"></i> {{ $module }} <span class="badge text-bg-dark">{{ $items->count() }}</span></h3>
+    @php $od = $items->where('isOverdue', true)->count(); @endphp
+    <section data-module="{{ $module }}" data-od="{{ $od }}">
+      <button class="sec-h mb-2 grp-h {{ $openAll ? '' : 'collapsed' }}" type="button" data-bs-toggle="collapse" data-bs-target="#grp-{{ $loop->index }}" aria-expanded="{{ $openAll ? 'true' : 'false' }}" aria-controls="grp-{{ $loop->index }}"><i class="bi {{ $ICONS[$module] ?? 'bi-dot' }} text-g"></i> {{ $module }} <span class="badge text-bg-dark">{{ $items->count() }}</span>@if($od) <span class="badge st-late">{{ $od }} متأخر</span>@endif <i class="bi bi-chevron-down small ms-auto grp-caret"></i></button>
+      <div class="{{ $openAll ? 'collapse show' : 'collapse' }}" id="grp-{{ $loop->index }}">
       <div class="d-grid gap-2">
     @foreach($items as $t)
       <div class="card task {{ $t->isOverdue ? 'task-late' : '' }}" data-task="{{ $t->key }}">
@@ -91,6 +101,7 @@
         </div>
       </div>
     @endforeach
+      </div>
       </div>
     </section>
   @endforeach
@@ -211,6 +222,22 @@
   var h=document.getElementById('inboxHint'),b=document.getElementById('inboxHintHide');
   try{if(localStorage.getItem('ipa-inbox-hint')==='1')h.hidden=true;}catch(e){}
   b.addEventListener('click',function(e){e.preventDefault();h.hidden=true;try{localStorage.setItem('ipa-inbox-hint','1');}catch(x){}});
+})();
+/* ٢٥-٣-ب: «ما ينتظرك» منسدلة — المتصفح يتذكر ما فتحه صاحبه، وعدّاد المجموعة يفتحها ويقفز إليها */
+(function(){
+  var list=document.getElementById('inboxList');if(!list)return;
+  var key='ipa-inbox-open',state={};try{state=JSON.parse(localStorage.getItem(key)||'{}')||{};}catch(e){}
+  list.querySelectorAll('section[data-module]').forEach(function(sec){
+    var body=sec.querySelector('.collapse'),btn=sec.querySelector('[data-bs-toggle="collapse"]'),m=sec.dataset.module;
+    if(!body||!btn)return;
+    if(state[m]===true&&!body.classList.contains('show')){body.classList.add('show');btn.classList.remove('collapsed');btn.setAttribute('aria-expanded','true');}
+    if(state[m]===false&&body.classList.contains('show')){body.classList.remove('show');btn.classList.add('collapsed');btn.setAttribute('aria-expanded','false');}
+    body.addEventListener('shown.bs.collapse',function(){state[m]=true;try{localStorage.setItem(key,JSON.stringify(state));}catch(e){}});
+    body.addEventListener('hidden.bs.collapse',function(){state[m]=false;try{localStorage.setItem(key,JSON.stringify(state));}catch(e){}});
+  });
+  document.querySelectorAll('#inboxSummary .chip').forEach(function(a){
+    a.addEventListener('click',function(){var body=document.querySelector(a.getAttribute('href'));if(body&&window.bootstrap&&!body.classList.contains('show'))bootstrap.Collapse.getOrCreateInstance(body).show();});
+  });
 })();
 /* ٢٥-٢: ضغطة المكان ترشّح الرسم من بيانات الصفحة نفسها (بلا طلب)؛ «المبنى كله» يعيده؛ بلا سكربت يبقى المربع رابطاً إلى ملف المكان */
 (function(){
