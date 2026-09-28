@@ -82,7 +82,15 @@ class PlaceFileController extends Controller
             'can' => ['plans' => P::canPlans($user), 'events' => P::canEvents($user), 'eventApprove' => P::canApproveEvent($user)],
             'incidents' => Incident::where('place_id', $place->id)->whereNotIn('status', Incident::TERMINAL)->with('placeUnit')->orderByDesc('id')->limit(20)->get(),
             'canIncidents' => PermissionRegistry::hasPermission($user->role(), 'incident.list'),
-            'canRisks' => PermissionRegistry::hasPermission($user->role(), 'risk.list'),
+            'canRisks' => $canRisks = PermissionRegistry::hasPermission($user->role(), 'risk.list'),
+            // ٢٦-٦ (قرار ٦٦): البنود الثمانية — مخاطر المكان بمنسقها ومعالجها (لمن يملك السجل)، والحالة الطارئة المفتوحة، وطلب التصريح هنا
+            'risks' => $canRisks ? \App\Modules\Risk\Models\Risk::where('risk_type', 'active')->where('place_id', $place->id)->whereNotIn('status', ['closed'])
+                ->with('assignedCoordinator', 'assignedFieldTeam')->orderByDesc('risk_score')->limit(12)->get() : collect(),
+            'risksTotal' => $canRisks ? \App\Modules\Risk\Models\Risk::where('risk_type', 'active')->where('place_id', $place->id)->whereNotIn('status', ['closed'])->count() : 0,
+            'openEmergency' => \App\Modules\Emergency\Models\EmergencyIncident::open()->where('place_id', $place->id)->orderByDesc('triggered_at')->get(),
+            'canEmergency' => PermissionRegistry::hasPermission($user->role(), 'emergency.view') || PermissionRegistry::hasPermission($user->role(), 'emergency.respond'),
+            'canPermit' => PermissionRegistry::hasPermission($user->role(), 'permit.create'),
+            'folder' => $folder,
             'ui' => $ui,
         ]);
     }

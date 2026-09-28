@@ -1,10 +1,13 @@
 @extends('layouts.app')
 @section('title', 'ملف '.$place->name)
 @section('content')
-{{-- المرحلة ١٩-١ (قرار ٤٨): ملف المكان — ما كان في dashboard.html#place= بالبيانات نفسها، داخل الخلفية. قراءة؛ التحرير في مواضعه. --}}
+{{-- المرحلة ١٩-١ (قرار ٤٨): ملف المكان — ما كان في dashboard.html#place= بالبيانات نفسها، داخل الخلفية. قراءة؛ التحرير في مواضعه.
+     ٢٦-٦ (قرار ٦٦، بكلمته «بقية الأماكن باستثناء المركز»): البنود الثمانية بالترتيب — خطة السلامة ← خطة الاستجابة ← نماذج الفحص ← مخاطر المكان
+     ← المفتوح الآن ← الوحدات ← الفريق الأولي ← طلب تصريح هنا. ما ليس للشخص يظهر باهتاً باسم صاحبه (لا «ليس لديك صلاحية» بعد ضغطة). --}}
 @php($R = \App\Modules\Store\Services\InspectionDocReader::class)
 @php($L = \App\Modules\Governance\Models\PlaceUnit::TYPE_LABELS)
 @php($ST = ['ok' => 'st-ok', 'late' => 'st-late', 'fault' => 'st-wait', 'none' => 'text-bg-secondary'])
+@php($PL = collect($plans)->keyBy('key'))
 <style>
   .pf-sys{display:grid;grid-template-columns:1.6fr 1fr 1fr auto auto;gap:6px 12px;align-items:center;padding:10px 12px;border:1px solid var(--bs-border-color);border-radius:10px;background:#fff}
   .pf-sys small{color:#6b7a74;display:block}
@@ -19,6 +22,9 @@
   .pf-steps{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
   .pf-steps span{border:1px solid var(--bs-border-color);border-radius:999px;padding:2px 10px;color:#6b7a74}
   .pf-steps span.done{background:#e7f1ec;border-color:#0f4c3a;color:#0f4c3a}.pf-steps span.cur{border-color:#d9b25a;color:#7a5b00}
+  /* ٢٦-٦: القسم الباهت لمن لا يملكه */
+  .pf-dim{opacity:.5}.pf-dim .btn,.pf-dim a{pointer-events:none}
+  .pf-n{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--tint);color:var(--g);font-weight:900;font-size:.85rem;margin-inline-end:.35rem}
   @media(max-width:700px){.pf-members{grid-template-columns:1fr 1fr}.pf-sys{grid-template-columns:1fr 1fr}.pf-sys .nm{grid-column:1/-1}
     /* الأرقام الأربعة مربعان في صفين على الجوال — كلها ظاهرة بلا تمرير أفقي */
     #pfKpi.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible;margin-inline:0;padding-inline:0;gap:.6rem}
@@ -29,33 +35,21 @@
   <a class="small" href="{{ route('app.home') }}#places">الأماكن</a><span class="text-muted">›</span>
   <h1 class="page-h m-0">{{ $place->name }}</h1><span class="small text-muted" dir="ltr">{{ $place->code }}</span>
 </div>
-<p class="small text-muted mb-2" id="pfSum" data-sum-ok="{{ $sum['ok'] }}" data-sum-late="{{ $sum['late'] }}" data-sum-fault="{{ $sum['fault'] }}">
+<p class="small text-muted mb-3" id="pfSum" data-sum-ok="{{ $sum['ok'] }}" data-sum-late="{{ $sum['late'] }}" data-sum-fault="{{ $sum['fault'] }}">
   @if(count($systems))
-    <b>{{ $sum['ok'] }}</b> من {{ count($systems) }} نظاماً فُحص في موعده وسليم@if($sum['late']) · <b class="text-danger">{{ $sum['late'] }}</b> فحصه متأخر أو لم يُفحص@endif @if($sum['fault']) · <b style="color:#b8860b">{{ $sum['fault'] }}</b> في آخر فحصه ✗@endif
+    <b>{{ $sum['ok'] }}</b> من {{ count($systems) }} نظاماً فُحص في موعده وسليم@if($sum['late']) · <b class="text-danger">{{ $sum['late'] }}</b> فحصه متأخر أو لم يُفحص@endif @if($sum['fault']) · <b style="color:#b8860b">{{ $sum['fault'] }}</b> فيه عطل مفتوح@endif
   @else لم تُفتح جولة لهذا المكان بعد @endif
 </p>
-<div class="d-flex flex-wrap gap-2 mb-3" id="pfActs">
-  @if($ui)@foreach($forms as $f)<a class="btn btn-g btn-sm" href="/{{ $f['file'] }}"><i class="bi bi-clipboard-check"></i> {{ str_contains($f['key'], 'fire') ? 'فحص أنظمة الحريق' : (str_contains($f['key'], 'center') ? 'فحص الجاهزية' : 'نموذج الفحص') }}</a>@endforeach @endif
-  {{-- ٢٦-٢: «أبلغ عن خطر هنا» حُذف — البلاغ من صفحة الرؤية فقط (بكلمته) --}}
-  @if($canRisks)<a class="btn btn-o btn-sm" href="{{ route('risk.active.index') }}?place={{ $place->code }}">مخاطر المكان</a>@endif
-  @if($canIncidents)<a class="btn btn-o btn-sm" href="{{ route('incidents.index') }}?place={{ $place->code }}">سجل بلاغات المكان</a>@endif
-</div>
 
-{{-- الأرقام الأربعة --}}
-@php($KL = ['open' => 'بلاغ فحص مفتوح', 'overdue' => 'متجاوز المهلة', 'cat-a' => 'فئة أ — حماية معطّلة', 'closed' => 'عطل أُصلح وأُغلق'])
-<div class="tiles mb-3" id="pfKpi">
-  @foreach($kpi as $k => $v)
-    <div class="card tile" data-kpi="{{ $k }}" data-v="{{ $v }}"><span class="n {{ $v && in_array($k, ['overdue', 'cat-a']) ? 'text-danger' : '' }}">{{ $v }}</span><span class="lbl">{{ $KL[$k] }}</span></div>
-  @endforeach
-</div>
-
-{{-- الجاهزية: أربع بطاقات كاللوحة — بطاقة الخطة تفتح الخطة نفسها، وتواريخها تُحرَّر من هنا (١٩-٥) --}}
-<h2 class="sec-h"><i class="bi bi-shield-check"></i> الجاهزية <span class="small text-muted fw-normal">الخطتان والفحص والفريق — ما فُعّل فعلاً</span></h2>
+{{-- ١ و٢. خطة السلامة (الاستباقية والتشغيلية) وخطة الاستجابة — البطاقة تفتح الخطة نفسها، وتواريخها تُحرَّر من هنا (١٩-٥) --}}
 <div class="row g-2 mb-2" id="pfPlans">
-  @foreach($plans as $p)
-    <div class="col-6 col-lg-3">
-      <a class="pf-plan {{ $p['cls'] }}" data-ready="{{ $p['key'] }}" href="{{ $p['url'] ?: '#'.($p['key'] === 'insp' ? 'pfSystems' : ($events ? 'pfEvents' : 'pfTeams')) }}">
-        <div class="small text-muted">{{ $p['label'] }} @if($p['url'])<i class="bi bi-box-arrow-up-left"></i>@endif</div><div class="v">{{ $p['v'] }}</div><div class="d">{{ $p['d'] }}</div></a>
+  @foreach(['sa', 'ra'] as $k)
+    @continue(!$PL->has($k))
+    @php($p = $PL[$k])
+    <div class="col-12 col-lg-6" id="{{ $k === 'sa' ? 'pfPlanSafety' : 'pfPlanResponse' }}">
+      <a class="pf-plan {{ $p['cls'] }}" data-ready="{{ $p['key'] }}" href="{{ $p['url'] }}">
+        <div class="small text-muted"><span class="pf-n">{{ $k === 'sa' ? '١' : '٢' }}</span>{{ $p['label'] }}{{ $k === 'sa' ? ' — الاستباقية والتشغيلية' : '' }} <i class="bi bi-box-arrow-up-left"></i></div>
+        <div class="v">{{ $p['v'] }}</div><div class="d">{{ $p['d'] }}</div></a>
     </div>
   @endforeach
 </div>
@@ -75,21 +69,14 @@
   <div class="mb-3"></div>
 @endif
 
-{{-- الوحدات --}}
-<h2 class="sec-h"><i class="bi bi-grid-3x3-gap"></i> الوحدات <span class="badge text-bg-dark">{{ $units->count() }}</span>
-  @if($canUnits)<a class="btn btn-o btn-sm ms-auto" href="{{ route('app.places.units.index', $place) }}">تعديل الوحدات</a>@endif</h2>
-@if($units->isEmpty())
-  <div class="card mb-3"><div class="card-body small text-muted py-2">لم تُدخل وحدات هذا المكان بعد.@if($canUnits) <a href="{{ route('app.places.units.index', $place) }}">أدخلها الآن</a>@endif</div></div>
-@else
-  <div class="d-flex flex-wrap gap-2 mb-3" id="pfUnits">
-    @foreach($units as $u)
-      <span class="border rounded px-2 py-1 bg-white small"@if($u->type === 'department') data-unit-chip="{{ $u->unit_code ?? $u->organization_unit_id }}"@endif><b>{{ $u->name }}</b> <span class="text-muted">{{ $L[$u->type] ?? $u->type }}{{ $u->floor ? ' · الدور '.$u->floor : '' }}{{ $u->location ? ' · '.$u->location : '' }}{{ $u->capacity ? ' · '.$u->capacity.' شخصاً' : '' }}{{ $u->operator ? ' · '.$u->operator : '' }}</span></span>
-    @endforeach
-  </div>
-@endif
-
-{{-- الأنظمة --}}
-<h2 class="sec-h"><i class="bi bi-cpu"></i> الأنظمة <span class="badge text-bg-dark">{{ count($systems) }}</span></h2>
+{{-- ٣. نماذج الفحص الخاصة بالمكان: النموذج بضغطة، وكل نظام بآخر جولة وموعد القادمة --}}
+@php($ins = $PL['insp'] ?? null)
+<h2 class="sec-h" id="pfForms"><span class="pf-n">٣</span><i class="bi bi-clipboard-check"></i> نماذج الفحص <span class="badge text-bg-dark">{{ count($systems) }}</span>
+  @if($ins)<span class="small text-muted fw-normal" data-ready="insp">{{ $ins['v'] }}</span>@endif</h2>
+<div class="d-flex flex-wrap gap-2 mb-2" id="pfActs">
+  @if($ui)@foreach($forms as $f)<a class="btn btn-g btn-sm" href="/{{ $f['file'] }}"><i class="bi bi-clipboard-check"></i> {{ str_contains($f['key'], 'fire') ? 'فحص أنظمة الحريق' : (str_contains($f['key'], 'center') ? 'فحص الجاهزية' : 'نموذج الفحص') }}</a>@endforeach
+  @else<span class="btn btn-o btn-sm pf-dim" title="لفني المكان ومدير المرافق ومسؤول السلامة"><i class="bi bi-clipboard-check"></i> نموذج الفحص <span class="small">— لفني المكان</span></span>@endif
+</div>
 @if(!count($systems))
   <div class="card mb-3"><div class="card-body small text-muted py-2">لا بيانات — افتح نموذج الفحص وسجّل جولة.</div></div>
 @else
@@ -107,8 +94,41 @@
   </div>
 @endif
 
-{{-- بلاغات الفحص المفتوحة --}}
-<h2 class="sec-h"><i class="bi bi-clipboard-x"></i> بلاغات الفحص المفتوحة <span class="badge {{ $kpi['overdue'] ? 'text-bg-danger' : 'text-bg-dark' }}">{{ count($open) }}</span></h2>
+{{-- ٤. مخاطر المكان المفعّلة بمنسقها ومعالجها — لمن يملك السجل؛ وإلا باهت باسم صاحبه --}}
+<h2 class="sec-h {{ $canRisks ? '' : 'pf-dim' }}" id="pfRisks"><span class="pf-n">٤</span><i class="bi bi-lightning-charge"></i> مخاطر المكان
+  @if($canRisks)<span class="badge text-bg-dark">{{ $risksTotal }}</span><a class="btn btn-o btn-sm ms-auto" href="{{ route('risk.active.index') }}?place={{ $place->code }}">السجل كاملاً</a>
+  @else<span class="small text-muted fw-normal">— لمنسق السلامة ومديري الإدارات ومسؤول السلامة</span>@endif</h2>
+@if($canRisks)
+  <div class="d-grid gap-1 mb-3">
+    @forelse($risks as $rk)
+      <div class="card" data-risk="{{ $rk->code }}"><div class="card-body py-2 small d-flex flex-wrap align-items-center gap-2">
+        <div class="flex-grow-1"><b>{{ $rk->code }}</b> · {{ $rk->title }}
+          <div class="text-muted">الدرجة {{ $rk->risk_score }} · المنسق: {{ $rk->assignedCoordinator?->name ?? '—' }} · المعالج: {{ $rk->assignedFieldTeam?->name ?? '—' }}</div></div>
+      </div></div>
+    @empty
+      <div class="card"><div class="card-body small text-muted py-2">لم يُفعَّل خطر لهذا المكان بعد.</div></div>
+    @endforelse
+  </div>
+@else
+  <div class="mb-3"></div>
+@endif
+
+{{-- ٥. المفتوح الآن: الأرقام الأربعة، بلاغات الفحص ومتأخرها، بلاغات الشاغلين، الحالة الطارئة --}}
+<h2 class="sec-h" id="pfNow"><span class="pf-n">٥</span><i class="bi bi-activity"></i> المفتوح الآن</h2>
+@php($KL = ['open' => 'بلاغ فحص مفتوح', 'overdue' => 'متجاوز المهلة', 'cat-a' => 'فئة أ — حماية معطّلة', 'closed' => 'عطل أُصلح وأُغلق'])
+<div class="tiles mb-2" id="pfKpi">
+  @foreach($kpi as $k => $v)
+    <div class="card tile" data-kpi="{{ $k }}" data-v="{{ $v }}"><span class="n {{ $v && in_array($k, ['overdue', 'cat-a']) ? 'text-danger' : '' }}">{{ $v }}</span><span class="lbl">{{ $KL[$k] }}</span></div>
+  @endforeach
+</div>
+@foreach($openEmergency as $em)
+  <div class="alert alert-{{ $em->status === 'contained' ? 'warning' : 'danger' }} d-flex align-items-center gap-3 py-2 mb-2" data-open-emergency="{{ $em->incident_code }}">
+    <i class="bi bi-broadcast fs-4"></i>
+    <div class="flex-grow-1"><b>{{ $em->is_drill ? 'تمرين' : 'حالة طارئة' }} {{ $em->getStatusLabel() }}:</b> {{ $em->incident_code }} — {{ $em->getTypeLabel() }} <span class="small text-muted">· منذ {{ $em->triggered_at->diffForHumans(null, true) }}</span></div>
+    @if($canEmergency)<a class="btn btn-light btn-sm" href="{{ route('emergency.incidents.live', $em) }}">التتبع</a>@else<span class="small">شاشتك من الزر الأحمر</span>@endif
+  </div>
+@endforeach
+<h3 class="sec-h mb-2"><i class="bi bi-clipboard-x"></i> بلاغات الفحص المفتوحة <span class="badge {{ $kpi['overdue'] ? 'text-bg-danger' : 'text-bg-dark' }}">{{ count($open) }}</span></h3>
 <div class="d-grid gap-2 mb-3" id="pfReports">
   @forelse($open as $r)
     @php($over = $R::overdueHours($r))
@@ -121,9 +141,8 @@
     <div class="card"><div class="card-body small text-muted py-2"><i class="bi bi-check-circle text-success"></i> لا بلاغات فحص مفتوحة.</div></div>
   @endforelse
 </div>
-
-{{-- بلاغات الشاغلين المفتوحة في المكان --}}
-<h2 class="sec-h"><i class="bi bi-megaphone-fill"></i> بلاغات الشاغلين المفتوحة <span class="badge text-bg-dark">{{ $incidents->count() }}</span></h2>
+<h3 class="sec-h mb-2"><i class="bi bi-megaphone-fill"></i> بلاغات الشاغلين المفتوحة <span class="badge text-bg-dark">{{ $incidents->count() }}</span>
+  @if($canIncidents)<a class="btn btn-o btn-sm ms-auto" href="{{ route('incidents.index') }}?place={{ $place->code }}">سجل بلاغات المكان</a>@endif</h3>
 <div class="d-grid gap-2 mb-3" id="pfIncidents">
   @forelse($incidents as $i)
     <div class="card"><div class="card-body py-2 d-flex flex-wrap align-items-center gap-2">
@@ -136,6 +155,22 @@
   @endforelse
 </div>
 
+{{-- ٦. الوحدات --}}
+<h2 class="sec-h" id="pfUnitsH"><span class="pf-n">٦</span><i class="bi bi-grid-3x3-gap"></i> الوحدات <span class="badge text-bg-dark">{{ $units->count() }}</span>
+  @if($canUnits)<a class="btn btn-o btn-sm ms-auto" href="{{ route('app.places.units.index', $place) }}">تعديل الوحدات</a>@endif</h2>
+@if($units->isEmpty())
+  <div class="card mb-3"><div class="card-body small text-muted py-2">لم تُدخل وحدات هذا المكان بعد.@if($canUnits) <a href="{{ route('app.places.units.index', $place) }}">أدخلها الآن</a>@endif</div></div>
+@else
+  <div class="d-flex flex-wrap gap-2 mb-3" id="pfUnits">
+    @foreach($units as $u)
+      <span class="border rounded px-2 py-1 bg-white small"@if($u->type === 'department') data-unit-chip="{{ $u->unit_code ?? $u->organization_unit_id }}"@endif><b>{{ $u->name }}</b> <span class="text-muted">{{ $L[$u->type] ?? $u->type }}{{ $u->floor ? ' · الدور '.$u->floor : '' }}{{ $u->location ? ' · '.$u->location : '' }}{{ $u->capacity ? ' · '.$u->capacity.' شخصاً' : '' }}{{ $u->operator ? ' · '.$u->operator : '' }}</span></span>
+    @endforeach
+  </div>
+@endif
+
+{{-- ٧. الفريق الأولي بهواتفه (وفي القاعات فرق الفعاليات) ورقم المركز --}}
+@php($tm = $PL['team'] ?? null)
+<h2 class="sec-h" id="pfTeamH"><span class="pf-n">٧</span><i class="bi bi-people-fill"></i> الفريق الأولي @if($tm)<span class="small text-muted fw-normal" data-ready="team">{{ $tm['v'] }}</span>@endif</h2>
 @php($UST = \App\Modules\Emergency\Services\PlaceProfile::UST)
 @php($ROLES = \App\Modules\Emergency\Services\PlaceProfile::TEAM)
 @php($TAG = ['ok' => 'st-ok', 'warn' => 'st-wait', 'bad' => 'text-bg-secondary'])
@@ -149,9 +184,9 @@
   {{-- ١٩-٥: القاعات — قاعدة ثابتة، وفريق يُكلَّف قبل كل فعالية (إدارة القاعات ترشّح ورئيس الأمن والسلامة يعتمد) --}}
   <div class="card mb-2"><div class="card-body py-2 small"><b>قاعدة القاعات</b>
     <div class="text-muted">المحاضر منسق ومسعف لقاعته (بطاقة ٦) · أفراد الأمن القريبون منقذ وإطفائي للقاعات (بطاقة ٥) — لا ترشيح أسماء لكل قاعة.<br>وفي الفعاليات الكبرى فريق يُكلَّف قبل كل فعالية: إدارة القاعات ترشّحه، ورئيس الأمن والسلامة يعتمده.</div></div></div>
-  <h2 class="sec-h" id="pfEvents"><i class="bi bi-calendar-event"></i> فرق الفعاليات <span class="badge text-bg-dark">{{ count($events['up']) }}</span>
+  <h3 class="sec-h mb-2" id="pfEvents"><i class="bi bi-calendar-event"></i> فرق الفعاليات <span class="badge text-bg-dark">{{ count($events['up']) }}</span>
     <span class="small text-muted fw-normal">القادمة{{ count($events['past']) ? ' · و'.count($events['past']).' منتهية' : '' }}</span>
-    @if($can['events'])<a class="btn btn-g btn-sm ms-auto" href="{{ route('app.places.team.event.edit', [$place, 'new']) }}">فعالية جديدة</a>@endif</h2>
+    @if($can['events'])<a class="btn btn-g btn-sm ms-auto" href="{{ route('app.places.team.event.edit', [$place, 'new']) }}">فعالية جديدة</a>@endif</h3>
   <div class="d-grid gap-2 mb-3">
     @forelse(array_merge($events['up'], $events['past']) as $r)
       @php($e = $r['e'])
@@ -181,8 +216,8 @@
   </div>
 @else
   {{-- ١٩-٥: الفريق الأولي — ترشيح مدير الإدارة ← اعتماد مدير الشؤون الإدارية والهندسية ← إحالة للموارد البشرية؛ فريق لكل ٢٥ موظفاً --}}
-  <h2 class="sec-h" id="pfTeams"><i class="bi bi-people-fill"></i> {{ count($teamUnits) > 1 ? 'الفرق الأولية بحسب الإدارة' : 'الفريق الأولي' }}
-    @if(count($teamUnits) > 1)<span class="badge text-bg-dark">{{ count($teamUnits) }}</span>@endif</h2>
+  <h3 class="sec-h mb-2" id="pfTeams"><i class="bi bi-people-fill"></i> {{ count($teamUnits) > 1 ? 'الفرق الأولية بحسب الإدارة' : 'الفريق الأولي' }}
+    @if(count($teamUnits) > 1)<span class="badge text-bg-dark">{{ count($teamUnits) }}</span>@endif</h3>
   <div class="d-grid gap-2 mb-3">
     @forelse($teamUnits as $row)
       @php($un = $row['un'])
@@ -238,4 +273,11 @@
     @endforelse
   </div>
 @endif
+
+{{-- ٨. أفعال المكان: طلب تصريح عمل هنا (المكان محدد) — لمن يملك طلب التصاريح؛ وإلا باهت باسم صاحبه --}}
+<h2 class="sec-h" id="pfPermit"><span class="pf-n">٨</span><i class="bi bi-file-earmark-check"></i> طلب تصريح عمل هنا</h2>
+<div class="mb-4">
+  @if($canPermit)<a class="btn btn-g" href="{{ route('permits.create') }}?place={{ $place->code }}" data-act="permit"><i class="bi bi-file-earmark-plus"></i> اطلب تصريح عمل في {{ $place->name }}</a>
+  @else<span class="btn btn-o pf-dim" data-act="permit" title="لمن يملك طلب التصاريح"><i class="bi bi-file-earmark-plus"></i> اطلب تصريح عمل هنا <span class="small">— لمركز السلامة ومنسق السلامة والمقاول</span></span>@endif
+</div>
 @endsection
