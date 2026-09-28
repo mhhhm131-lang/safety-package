@@ -109,7 +109,7 @@ class SosButtonTest extends TestCase
     /** الزر الأحمر على الجوال: «أستغيث» عادةً، و«ماذا أفعل» أثناء حالة مفتوحة تخصّه. */
     public function test_red_bar_switches_to_my_screen_during_an_open_incident(): void
     {
-        $this->actingAs($this->employee)->get('/app')->assertOk()->assertSee('أستغيث الآن', false);
+        $this->actingAs($this->employee)->get('/app')->assertOk()->assertSee('طوارئ الآن', false); // ٢٦-٣: اسم واحد
 
         app(EmergencyService::class)->triggerAlarm(
             EmergencyBuilding::main(), 'fire', $this->salama, 'high', false, 'اختبار', Place::idByCode('HZ-06')
@@ -118,9 +118,11 @@ class SosButtonTest extends TestCase
         $this->actingAs($this->employee)->get('/app')->assertOk()->assertSee('حالة طارئة — ماذا أفعل', false);
     }
 
-    /** القيادة تحتفظ بزرها: «فعّل حالة طارئة» لا يُزاحَم. */
-    public function test_commander_keeps_trigger_on_the_red_bar(): void
+    /** ٢٦-٣: القيادة زرها الأحمر «طوارئ الآن» نفسه، والتفعيل داخل صفحة الاستغاثة لا يُزاحَم. */
+    public function test_commander_keeps_trigger_inside_the_sos_page(): void
     {
-        $this->actingAs($this->salama)->get('/app')->assertOk()->assertSee('فعّل حالة طارئة', false);
+        $h = $this->actingAs($this->salama)->get('/app')->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('~id="sosBar"><a[^>]*data-intent="sos"[^>]*>.*?طوارئ الآن~s', $h); // الشريط «طوارئ الآن»؛ و«فعّل» يبقى زراً في أريد أن حتى ٢٦-٨
+        $this->actingAs($this->salama)->get('/app/emergency/sos')->assertOk()->assertSee('فعّل حالة طارئة في المبنى', false);
     }
 }

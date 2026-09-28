@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'أستغيث الآن')
+@section('title', 'طوارئ الآن')
 
 {{--
   ٢٢-٣ (د): الاستغاثة لكل حساب. كانت مبنية في الخلفية ولا تُرى إلا داخل لوحة مركز الطوارئ،
@@ -26,8 +26,15 @@
       </div>
     </div>
   @else
+    @php $mainB = \App\Modules\Emergency\Models\EmergencyBuilding::main(); @endphp
+    @if($mainB && \App\Core\Permissions\PermissionRegistry::hasPermission(auth()->user()->role(), 'emergency.trigger'))
+      {{-- ٢٦-٣: التفعيل انتقل من الشريط الأحمر إلى هنا لمن يملكه — زر أحمر واحد للجميع --}}
+      <a class="btn btn-danger btn-lg w-100 py-3 mb-3 d-flex align-items-center gap-3 text-start" href="{{ route('emergency.buildings.control', $mainB) }}{{ $myPlace ? '?place='.$myPlace->code : '' }}" data-intent="trigger">
+        <i class="bi bi-bell-fill fs-2"></i><span class="flex-grow-1"><span class="d-block fw-bold fs-5">فعّل حالة طارئة في المبنى</span><span class="d-block small opacity-75">تنبيه الفريق الأولي والقيادة والجهات</span></span><i class="bi bi-chevron-left"></i>
+      </a>
+    @endif
     <div class="mb-3">
-      <h1 class="h4 mb-1">أستغيث الآن</h1>
+      <h1 class="h4 mb-1">طوارئ الآن</h1>
       <p class="text-muted mb-0">
         اضغط ما ينطبق. تصل استغاثتك إلى مركز السلامة فوراً باسمك
         @if($myPlace)ومكانك ({{ $myPlace->name }})@endif.

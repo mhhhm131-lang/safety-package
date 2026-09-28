@@ -51,10 +51,10 @@ class ReportUnderVisionTest extends TestCase
 
         // تحت الرؤية: صفحة البلاغ العامة بأنواعها الثلاثة لأي أحد، وشريط الضيف يقود إليها
         $p = $this->get('/incident')->assertOk()->getContent();
-        foreach (['عادي', 'سري', 'عاجل'] as $t) $this->assertStringContainsString($t, $p);
+        foreach (['عادي', 'سري'] as $t) $this->assertStringContainsString($t, $p); // ٢٦-٣: «عاجل» صار الزر الأحمر
         $this->assertStringContainsString('href="'.url('/incident/normal').'"', $p);
         $this->assertStringContainsString('href="'.url('/incident/secret').'"', $p);
-        $this->get('/incident/track')->assertOk()->assertSee('data-intent="report"', false);
+        $this->get('/incident/track')->assertOk()->assertSee('data-intent="emergency-call"', false); // ٢٦-٣: زر الضيف = اتصال
         // وصاحب الحساب يستطيع البلاغ العادي من الصفحة العامة نفسها (المكان مقترح من حسابه)
         $this->actingAs($emp)->get('/incident/normal')->assertOk()->assertSee('HZ-06', false);
     }

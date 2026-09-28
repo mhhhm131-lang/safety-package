@@ -42,7 +42,8 @@
   }
 </style>
 </head>
-@php($showReportBar = !request()->routeIs('incident.landing') && !request()->routeIs('incident.form') && !request()->routeIs('incident.store'))
+{{-- ٢٦-٣ (قرار ٦٦): الزر الأحمر للضيف «طوارئ الآن» = اتصال بالمركز، في كل صفحة عامة عدا نموذج البلاغ نفسه (حتى لا يغطي الإرسال) --}}
+@php($showReportBar = !request()->routeIs('incident.form') && !request()->routeIs('incident.store'))
 <body class="{{ $showReportBar ? 'has-sos' : '' }}">
 @include('layouts._trial_banner')
 <div class="top d-flex align-items-center gap-2">
@@ -58,7 +59,7 @@
   <div class="foot">حزمة السلامة والصحة المهنية — معهد الإدارة العامة · <a href="/index.html">المنظومة</a> · <a href="/HZ-00-safety-center/reporting-channels.html">قنوات الإبلاغ الأخرى</a> · <a href="{{ route('incident.track') }}">تتبع بلاغ برمزه</a></div>
 </div>
 @if($showReportBar)
-<div class="sos-bar" id="sosBar"><a class="btn btn-red" href="{{ route('incident.landing') }}" data-intent="report"><i class="bi bi-megaphone-fill"></i> أبلّغ عن خطر</a></div>
+<div class="sos-bar" id="sosBar"><a class="btn btn-red" href="tel:{{ \App\Modules\Governance\Models\Place::CENTER_PHONE }}" data-intent="emergency-call"><i class="bi bi-telephone-fill"></i> طوارئ الآن</a></div>
 @endif
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 @stack('scripts')

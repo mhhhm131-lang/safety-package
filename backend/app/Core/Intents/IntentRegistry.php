@@ -77,7 +77,7 @@ class IntentRegistry
         $add($can('emergency.trigger') && $main, 'trigger', 'فعّل حالة طارئة', $main ? route('emergency.buildings.control', $main).($placeCode ? '?place='.$placeCode : '') : null, 'bi-bell-fill', 'الطوارئ', true, 'الفريق الأولي والقيادة يُنبَّهون فوراً — ومنها الإخلاء والإغلاق الأمني');
         // ٢٢-٣ (د): الاستغاثة لكل حساب مفعَّل — كانت للمستجيبين وحدهم وتفتح لوحة المركز ولا تُطلق شيئاً.
         // ٢٥-٣ (قرار ٦٥): «أستغيث الآن» تبقى نيةً لأن الشريط الأحمر الثابت يُبنى منها، وتُخفى من قائمة «أريد أن…» (_intents.blade.php) حتى لا تتكرر
-        $add((bool) $profile?->is_active, 'sos', 'أستغيث الآن', route('emergency.sos'), 'bi-exclamation-octagon-fill', 'الطوارئ', true, 'تصل مركز السلامة فوراً باسمك ومكانك');
+        $add((bool) $profile?->is_active, 'sos', 'طوارئ الآن', route('emergency.sos'), 'bi-exclamation-octagon-fill', 'الطوارئ', true, 'تصل مركز السلامة فوراً باسمك ومكانك'); // ٢٦-٣: اسم واحد للزر الأحمر
         // ٢٢-٤ (د): «وصلتُ» تفتح الفعل على شاشته لا لوحة المركز؛ وتسجيل وصول غيره يبقى في شاشة الحالة
         $add($can('emergency.respond'), 'arrived', 'وصلتُ إلى الموقع', route('emergency.me'), 'bi-check2-circle', 'الطوارئ', false, 'يُسجَّل وصولك فيراه المركز');
         $add($can('emergency.drill'), 'drill', 'أجدول تمريناً', route('emergency.drills.create'), 'bi-calendar-event', 'الطوارئ');

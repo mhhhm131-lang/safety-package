@@ -63,8 +63,8 @@ class HomeScreenTest extends TestCase
         $this->assertSame($order, array_values(array_filter($order, fn ($p) => $p !== false)));
         $sorted = $order; sort($sorted);
         $this->assertSame($sorted, $order, 'الأجزاء الخمسة بترتيبها');
-        // الزر الأحمر الثابت: مسؤول السلامة يملك «فعّل حالة طارئة»
-        $this->assertMatchesRegularExpression('~id="sosBar".*?data-intent="trigger"~s', $html);
+        // ٢٦-٣: الزر الأحمر واحد للجميع «طوارئ الآن» — والتفعيل داخل صفحة الاستغاثة لمن يملكه
+        $this->assertMatchesRegularExpression('~id="sosBar".*?data-intent="sos"~s', $html);
         $this->assertStringContainsString('<body class="has-sos">', $html);
     }
 
@@ -95,19 +95,21 @@ class HomeScreenTest extends TestCase
         $emp = $this->user('emp', 'employee');
         $html = $this->actingAs($emp)->get('/app')->assertOk()->getContent();
         $this->assertStringContainsString('id="sosBar"', $html);
-        $this->assertStringContainsString('أستغيث الآن', $html);
+        $this->assertStringContainsString('طوارئ الآن', $html);
         $this->assertStringContainsString('<body class="has-sos">', $html);
 
-        // القيادة تبقى على «فعّل حالة طارئة»، والزر يتبعها في كل شاشة لا الشاشة الأولى وحدها
+        // ٢٦-٣: الزر نفسه للقيادة، ويتبعها في كل شاشة لا الشاشة الأولى وحدها
         $salama = $this->user('salama', 'system_admin');
         $this->actingAs($salama)->get('/app/users')->assertOk()
             ->assertSee('id="sosBar"', false)
-            ->assertSee('فعّل حالة طارئة', false);
+            ->assertSee('طوارئ الآن', false);
     }
 
     public function test_guest_pages_carry_the_report_button_except_the_report_page_itself(): void
     {
-        $this->get('/incident')->assertOk()->assertDontSee('id="sosBar"', false);
-        $this->get('/incident/track')->assertOk()->assertSee('id="sosBar"', false)->assertSee('data-intent="report"', false);
+        // ٢٦-٣: الضيف زره «طوارئ الآن» = اتصال، في صفحة البلاغ والتتبع؛ ولا شريط فوق نموذج البلاغ نفسه
+        $this->get('/incident')->assertOk()->assertSee('id="sosBar"', false)->assertSee('data-intent="emergency-call"', false);
+        $this->get('/incident/track')->assertOk()->assertSee('id="sosBar"', false)->assertSee('data-intent="emergency-call"', false);
+        $this->get('/incident/normal')->assertOk()->assertDontSee('id="sosBar"', false);
     }
 }
