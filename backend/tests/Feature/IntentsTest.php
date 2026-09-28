@@ -29,7 +29,7 @@ class IntentsTest extends TestCase
 
     /** الإجراءات التي يبدؤها الإنسان بنفسه ← الصلاحية التي تشترطها ← مفتاح النية الذي يجب أن يظهر */
     private const INITIATING = [
-        'incident.create' => 'report', 'permit.create' => 'permit', 'risk.activate' => 'activate', 'form.send' => 'sendform',
+        'permit.create' => 'permit', 'risk.activate' => 'activate', 'form.send' => 'sendform',
         'emergency.trigger' => 'trigger', 'emergency.drill' => 'drill', 'worker.create' => 'worker', 'project.create' => 'project',
         'external_party.create' => 'party', 'report.view' => 'reports', 'system.settings' => 'settings', 'emergency.view' => 'center',
     ];

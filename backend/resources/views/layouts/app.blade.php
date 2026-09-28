@@ -211,7 +211,7 @@
         @endif
         @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'incident.list'))
           <a href="{{ route('incidents.index') }}" class="{{ request()->routeIs('incidents.index') || request()->routeIs('incidents.show') ? 'active' : '' }}"><i class="bi bi-megaphone"></i>سجل مركز السلامة</a>
-          <a href="{{ route('incident.landing') }}" target="_blank"><i class="bi bi-box-arrow-up-left"></i>صفحة البلاغ العامة</a>
+          {{-- ٢٦-٢: «صفحة البلاغ العامة» حُذفت من المزيد — البلاغ تحت الرؤية فقط (بكلمته) --}}
         @endif
         @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'emergency.view') || \App\Core\Permissions\PermissionRegistry::hasPermission($role, 'emergency.respond'))
           <a href="{{ route('emergency.plans.index') }}" class="{{ request()->routeIs('emergency.plans.*') ? 'active' : '' }}"><i class="bi bi-list-ol"></i>خطط الاستجابة</a>

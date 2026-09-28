@@ -56,7 +56,8 @@ class IntentRegistry
         $add((bool) $my, 'makani', 'مكاني', $my ? route('app.places.units.file', $my, false) : null, 'bi-geo-alt-fill', 'مكاني', true, $my ? $my->name.' — فريقك بهواتفهم ورقم المركز والخطتان' : null);
         // البلاغ
         // قرار المستخدم ٢٠٢٦-٠٩-١٣: زر واحد للجميع يفتح اختيار النوع (عادي/سري/عاجل) بميزة كل نوع له
-        $add(true, 'report', 'أبلّغ عن خطر', route('incident.landing'), 'bi-megaphone-fill', 'البلاغ', true, 'عادي لا يُغلق إلا بموافقتك · سري يخفي هويتك · عاجل اتصل بالمركز');
+        // ٢٦-٢ (قرار ٦٦، بكلمته «كل البلاغات تحت الرؤية… في الرؤية فقط»): لا زر بلاغ داخل الحساب — البلاغ بأنواعه من صفحة البلاغ العامة (الرؤية، QR، قنوات الإبلاغ)
+        $add(false, 'report', 'أبلّغ عن خطر', route('incident.landing'), 'bi-megaphone-fill', 'البلاغ', true, 'عادي لا يُغلق إلا بموافقتك · سري يخفي هويتك · عاجل اتصل بالمركز');
         // ٢٥-٣ (قرار ٦٥): «سجل مركز السلامة» دُمج في باب «مركز السلامة وإدارة الطوارئ» أدناه (قرار ٥٨: باب واحد)
         // الفني: مكانه
         $add($ui === 'tech' && $folder, 'inspect', 'أفحص مكاني', $folder ? '/'.$folder.'/inspection-form.html' : null, 'bi-clipboard-check', 'الفحص', true, $placeCode ? 'نموذج فحص '.$placeCode : null);

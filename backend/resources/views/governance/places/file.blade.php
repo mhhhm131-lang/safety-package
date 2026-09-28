@@ -36,7 +36,7 @@
 </p>
 <div class="d-flex flex-wrap gap-2 mb-3" id="pfActs">
   @if($ui)@foreach($forms as $f)<a class="btn btn-g btn-sm" href="/{{ $f['file'] }}"><i class="bi bi-clipboard-check"></i> {{ str_contains($f['key'], 'fire') ? 'فحص أنظمة الحريق' : (str_contains($f['key'], 'center') ? 'فحص الجاهزية' : 'نموذج الفحص') }}</a>@endforeach @endif
-  <a class="btn btn-o btn-sm" href="{{ route('incident.form', 'normal') }}?place={{ $place->code }}"><i class="bi bi-megaphone"></i> أبلغ عن خطر هنا</a>
+  {{-- ٢٦-٢: «أبلغ عن خطر هنا» حُذف — البلاغ من صفحة الرؤية فقط (بكلمته) --}}
   @if($canRisks)<a class="btn btn-o btn-sm" href="{{ route('risk.active.index') }}?place={{ $place->code }}">مخاطر المكان</a>@endif
   @if($canIncidents)<a class="btn btn-o btn-sm" href="{{ route('incidents.index') }}?place={{ $place->code }}">سجل بلاغات المكان</a>@endif
 </div>
