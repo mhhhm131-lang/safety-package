@@ -91,7 +91,9 @@
   .row-act{display:flex;gap:.75rem;padding:.5rem 0;border-bottom:1px solid #edf1ef;color:var(--ink);text-decoration:none;font-size:.95rem}
   .row-act:last-child{border-bottom:0}.row-act:hover{color:var(--g)}.row-act .when{color:var(--mut);min-width:3.5rem;font-size:.85rem}
   /* الجوال: نسخة واحدة تتشكل بحسب العرض — أرقام تُمرَّر، أزرار بعرض الشاشة، وزر أحمر ثابت أسفل الشاشة */
-  .sos-bar{display:none}
+  /* ٢٦-٣-ب: الزر الأحمر «طوارئ الآن» في كل شاشة على الحاسب أيضاً — زر ثابت في زاوية الشاشة؛ وعلى الجوال شريط بعرض الشاشة */
+  .sos-bar{display:block;position:fixed;bottom:18px;inset-inline-start:18px;z-index:1030}
+  .sos-bar .btn{height:52px;padding:0 22px;font-size:1.05rem;font-weight:900;border-radius:14px;display:flex;align-items:center;gap:.5rem;box-shadow:0 4px 14px rgba(198,40,40,.35)}
   @media (max-width:767.98px){
     #navSearch{order:9;flex:1 1 100%}#navSearch input{max-width:none!important}
     .topbar .ms-auto{display:none}

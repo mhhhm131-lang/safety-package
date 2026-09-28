@@ -33,7 +33,9 @@
   .badge-st{font-size:.85rem}
   /* المرحلة ١٣-٢ (قرار ٣٩): ذهبي المعهد تحت الشريط، وزر أحمر ثابت أسفل شاشة الجوال يفتح البلاغ من أي صفحة عامة غير صفحته */
   .top{border-bottom:3px solid #d9b25a}.top .bi-shield-check{color:#d9b25a}
-  .sos-bar{display:none}
+  /* ٢٦-٣-ب: الزر الأحمر «طوارئ الآن» في كل شاشة على الحاسب أيضاً — زر ثابت في زاوية الشاشة؛ وعلى الجوال شريط بعرض الشاشة */
+  .sos-bar{display:block;position:fixed;bottom:18px;inset-inline-start:18px;z-index:1030}
+  .sos-bar .btn{height:52px;padding:0 22px;font-size:1.05rem;font-weight:900;border-radius:14px;display:flex;align-items:center;gap:.5rem;box-shadow:0 4px 14px rgba(198,40,40,.35)}
   @media (max-width:767.98px){
     .sos-bar{display:block;position:fixed;bottom:0;inset-inline:0;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--line);z-index:1030}
     .sos-bar .btn{width:100%;height:56px;font-size:1.15rem;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:.5rem}
