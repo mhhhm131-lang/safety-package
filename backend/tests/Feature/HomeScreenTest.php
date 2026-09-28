@@ -51,7 +51,8 @@ class HomeScreenTest extends TestCase
         $this->assertMatchesRegularExpression('~data-tile="unack".*?<span class="n[^"]*">0</span>~s', $html);
         $this->assertMatchesRegularExpression('~data-tile="gap".*?لا بيانات~s', $html);
         // ٢ الأماكن التسعة مربعات تُضغط (٢٥-١)، والرسم «حال الآن» بستة أعمدة وبلاغ شاغل واحد مفتوح (٢٥-٢) — لا رسم شهري
-        $this->assertSame(9, preg_match_all('~class="pl-tile [a-z]+" href="[^"]+/file" data-place="HZ-~', $html));
+        $this->assertSame(9, preg_match_all('~class="pl-tile [a-z]+" href="[^"]+" data-place="HZ-~', $html)); // ٢٦-٧: مربع HZ-00 يفتح صفحة المركز لا ملفاً
+        $this->assertStringContainsString('href="'.route('emergency.dashboard').'" data-place="HZ-00"', $html);
         $this->assertStringContainsString('id="chart"', $html);
         $this->assertMatchesRegularExpression('~data-k="incidents" data-n="1"~', $html);
         $this->assertStringNotContainsString('id="trend"', $html);

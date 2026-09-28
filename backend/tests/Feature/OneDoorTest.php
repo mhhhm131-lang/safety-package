@@ -45,57 +45,51 @@ class OneDoorTest extends TestCase
         return $u;
     }
 
-    public function test_the_two_doors_became_one_with_the_chosen_name(): void
+    /** ٢٦-٧ (قرار ٦٦): الباب الواحد صار صفحة واحدة يفتحها مربع «مركز السلامة»؛ والقائمة بلا مجموعة طوارئ */
+    public function test_the_door_is_one_page_opened_by_the_center_tile(): void
     {
         $munawib = $this->user('munawib', 'system_staff', 'HZ-00');
         $html = $this->actingAs($munawib)->get('/app')->assertOk()->getContent();
-
         $head = fn (string $t) => '<div class="small text-muted px-2 mb-1">'.$t.'</div>';
-
-        $this->assertStringContainsString($head('مركز السلامة وإدارة الطوارئ'), $html, 'الباب الواحد باسمه غير موجود');
-        $this->assertStringNotContainsString($head('بلاغات الشاغلين'), $html, 'الباب القديم ما زال قائماً');
-        $this->assertStringNotContainsString($head('الطوارئ'), $html, 'الباب القديم ما زال قائماً');
-        // عناوين النوايا في «أريد أن…» تبقى موضوعية (الطوارئ، البلاغ…) — ليست أبواباً في القائمة
+        $this->assertStringNotContainsString($head('مركز السلامة وإدارة الطوارئ'), $html, 'مجموعة الطوارئ ما زالت في المزيد');
+        $this->assertStringNotContainsString('تنتظر التركيب', $html);
+        $this->assertStringContainsString('href="'.route('emergency.dashboard').'" data-place="HZ-00"', $html, 'مربع المركز لا يفتح صفحة المركز');
+        $this->assertStringContainsString('مهل التصعيد', $html); // إعداد يبقى في المزيد
     }
 
-    /** الترتيب داخله: ما يجري الآن ← البلاغات ← الخطط ← الفريق. */
-    public function test_order_inside_the_door_puts_the_live_work_first(): void
+    /** الترتيب داخل الصفحة: الآن ← الاستعداد ← السجلات والأجهزة ← المركز كمكان. */
+    public function test_order_inside_the_page_puts_the_live_work_first(): void
     {
         $munawib = $this->user('munawib', 'system_staff', 'HZ-00');
-        $this->actingAs($munawib)->get('/app')->assertOk()->assertSeeInOrder([
-            'مركز السلامة وإدارة الطوارئ',
-            'الحالات الطارئة',
-            'سجل مركز السلامة',
-            'خطط الاستجابة',
-            'الفريق الأولي',
-        ], false);
+        $this->actingAs($munawib)->get('/app/emergency')->assertOk()->assertSeeInOrder(['id="cNow"', 'id="cReady"', 'id="cRecords"', 'تنتظر التركيب', 'id="cPlace"'], false);
     }
 
-    /** لا يُخفى شيء (قرار ٦١): أبواب الأجهزة تبقى، وتحت عنوانها. */
-    public function test_nothing_is_hidden_and_device_screens_sit_under_their_own_heading(): void
+    /** لا يُخفى شيء (قرار ٦١): كل شاشات الطوارئ لها رابط في صفحة المركز، ومنها الأجهزة تحت عنوانها. */
+    public function test_nothing_is_hidden_every_emergency_screen_has_a_door_in_the_page(): void
     {
         $munawib = $this->user('munawib', 'system_staff', 'HZ-00');
-        $html = $this->actingAs($munawib)->get('/app')->assertOk()->getContent();
-
-        $this->assertStringContainsString('تنتظر التركيب', $html, 'عنوان ما ينتظر الأجهزة غير موجود');
-        foreach (self::DEVICE_SCREENS as $url) {
-            $this->assertStringContainsString('href="'.url($url).'"', $html, "الباب {$url} اختفى — والقرار ألّا يُخفى شيء");
+        $html = $this->actingAs($munawib)->get('/app/emergency')->assertOk()->getContent();
+        foreach (array_merge(self::DEVICE_SCREENS, ['/app/emergency/incidents', '/app/incidents', '/app/emergency/plans', '/app/emergency/teams', '/app/emergency/panic', '/app/emergency/aar', '/app/emergency/drills', '/app/emergency/equipment', '/app/emergency/contacts', '/app/emergency/visitors', '/app/emergency/analytics']) as $url) {
+            $this->assertStringContainsString('href="'.url($url), $html, "الباب {$url} بلا رابط في صفحة المركز");
         }
-        // وهي بعد العمل اليومي لا قبله
-        $this->actingAs($munawib)->get('/app')->assertSeeInOrder(['الحالات الطارئة', 'تنتظر التركيب'], false);
+        // الملفات الطبية للطبيب وحده (٢٢-٦ب): الباب ظاهر باهتاً باسم صاحبه، بلا رابط
+        $this->assertStringContainsString('data-door="الملفات الطبية"', $html);
+        $this->assertSame(9, substr_count($html, '<tr data-place="HZ-'), 'الاستعداد لكل مكان من التسعة');
     }
 
-    /** ولا صلاحية تتغير: كلٌّ يرى ما له. */
-    public function test_no_permission_changed(): void
+    /** ولا صلاحية تتغير: ما ليس للشخص يظهر باهتاً باسم صاحبه، والموظف بلا مربع مركز. */
+    public function test_no_permission_changed_and_what_is_not_yours_is_dimmed(): void
     {
         $fani = $this->user('fani', 'tech_electrical', 'HZ-02');
-        $html = $this->actingAs($fani)->get('/app')->assertOk()->getContent();
-
-        $this->assertStringContainsString('مركز السلامة وإدارة الطوارئ', $html);
+        $html = $this->actingAs($fani)->get('/app/emergency')->assertOk()->getContent();
+        $this->assertStringContainsString('<span class="btn btn-sm btn-o dim" data-door="الملفات الطبية"', $html, 'الملفات الطبية ليست للفني فتظهر باهتة بلا رابط');
+        $this->assertStringNotContainsString('href="'.url('/app/emergency/medical').'"', $html);
+        $this->assertStringContainsString('لطبيب العيادة', $html);
         $this->assertStringNotContainsString('href="'.url('/app/emergency/settings').'"', $html, 'الفني يرى مهل التصعيد');
 
         $employee = $this->user('emp', 'employee', 'HZ-06');
         $empHtml = $this->actingAs($employee)->get('/app')->assertOk()->getContent();
-        $this->assertStringNotContainsString('مركز السلامة وإدارة الطوارئ', $empHtml, 'الموظف صار يرى باب المركز');
+        $this->assertStringNotContainsString('data-place="HZ-00"', $empHtml, 'الموظف يرى مربع المركز خارج نطاقه');
+        $this->actingAs($employee)->get('/app/emergency')->assertForbidden();
     }
 }

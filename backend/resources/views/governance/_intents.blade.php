@@ -1,6 +1,6 @@
 {{-- المرحلة ١٢ (قرار ٣٥): «أريد أن…» — أزرار بلغة الناس مشتقة من الصلاحيات. $intents: Collection<Intent> --}}
 {{-- ٢٥-٣ (قرار ٦٥): «أستغيث الآن» شريط ثابت في كل الشاشات — لا تُعرض هنا مرة ثانية --}}
-@php $intents = $intents->where('key', '!=', 'sos'); @endphp
+@php $intents = $intents->whereNotIn('key', ['sos', 'trigger', 'center', 'arrived', 'drill', 'teams', 'medical', 'systems']); @endphp {{-- ٢٦-٧ (قرار ٦٦): الطوارئ كلها في صفحة المركز والزر الأحمر — لا تُعرض هنا؛ النوايا تبقى في السجل للشريط والاختبارات --}}
 @if($intents->isNotEmpty())
 <div class="mt-4" id="intents">
   <h2 class="sec-h sec-h-lg mb-2"><i class="bi bi-hand-index-thumb"></i> أريد أن…</h2>

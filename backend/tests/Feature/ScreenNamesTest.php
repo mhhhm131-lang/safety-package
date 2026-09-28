@@ -41,7 +41,9 @@ class ScreenNamesTest extends TestCase
             'resources/views/modules/emergency/teams/index.blade.php',
         ], ['فرق الطوارئ', "'الفرق الأولية'"], 'الفريق الأولي');
 
-        $this->assertStringContainsString('<i class="bi bi-people-fill"></i>الفريق الأولي</a>', $this->src('resources/views/layouts/app.blade.php'));
+        // ٢٦-٧: باب الشاشة انتقل من قائمة «المزيد» إلى صفحة المركز الواحدة، بالاسم نفسه
+        $this->assertStringContainsString("\$door('الفريق الأولي', route('emergency.teams.index')", $this->src('resources/views/modules/emergency/dashboard.blade.php'));
+        $this->assertStringNotContainsString('<i class="bi bi-people-fill"></i>الفريق الأولي</a>', $this->src('resources/views/layouts/app.blade.php'));
         $this->assertStringContainsString('>الفريق الأولي</a>', $this->src('resources/views/modules/emergency/teams/show.blade.php'));
         $this->assertStringContainsString("['الفريق الأولي', ", $this->src('app/Modules/Governance/Controllers/SettingsController.php'));
     }

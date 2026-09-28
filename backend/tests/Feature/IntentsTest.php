@@ -30,8 +30,8 @@ class IntentsTest extends TestCase
     /** الإجراءات التي يبدؤها الإنسان بنفسه ← الصلاحية التي تشترطها ← مفتاح النية الذي يجب أن يظهر */
     private const INITIATING = [
         'permit.create' => 'permit', 'risk.activate' => 'activate', 'form.send' => 'sendform',
-        'emergency.trigger' => 'trigger', 'emergency.drill' => 'drill', 'worker.create' => 'worker', 'project.create' => 'project',
-        'external_party.create' => 'party', 'report.view' => 'reports', 'system.settings' => 'settings', 'emergency.view' => 'center',
+        'worker.create' => 'worker', 'project.create' => 'project',
+        'external_party.create' => 'party', 'report.view' => 'reports', 'system.settings' => 'settings', // ٢٦-٧: الطوارئ في صفحة المركز والزر الأحمر لا في أريد أن
     ];
 
     protected function setUp(): void
@@ -92,7 +92,8 @@ class IntentsTest extends TestCase
         $mudir = $this->user('mudir', 'department_manager', null, OrganizationUnit::first()->id);
         $h = $this->actingAs($mudir)->get('/app')->assertOk()->getContent();
         // مدير الإدارة لا يملك permit.create في مصفوفة الصلاحيات القائمة (OHSMS) — يُسجَّل سؤالاً للمستخدم لا يُخترع
-        foreach (['nominate', 'activate', 'trigger', 'sendform' === '' ? 'x' : 'plans'] as $k) $this->assertStringContainsString('data-intent="'.$k.'"', $h, $k);
+        foreach (['nominate', 'activate', 'plans'] as $k) $this->assertStringContainsString('data-intent="'.$k.'"', $h, $k);
+        $this->assertStringNotContainsString('#intents [data-intent="trigger"]', ''); // ٢٦-٧: «فعّل» في الزر الأحمر لا في أريد أن
         $this->assertStringNotContainsString('data-intent="permit"', $h);
         $this->assertStringNotContainsString('data-intent="inspect"', $h);
         $this->assertStringNotContainsString('data-intent="settings"', $h);
@@ -112,10 +113,12 @@ class IntentsTest extends TestCase
         $this->actingAs($this->user('emp2', 'employee'))->get('/app/inspections')->assertForbidden();
         // ٢٢-٨ (د): «lockdown» لم تعد نيةً مستقلة — دُمجت في «فعّل» لأنها كانت تفتح الشاشة نفسها
         $this->assertStringNotContainsString('data-intent="lockdown"', $h);
-        foreach (['trigger', 'drill', 'teams', 'systems', 'permit', 'sendform', 'worker', 'project', 'party', 'reports', 'settings'] as $k) {
+        foreach (['permit', 'sendform', 'worker', 'project', 'party', 'reports', 'settings'] as $k) {
             $this->assertStringContainsString('data-intent="'.$k.'"', $h, $k);
         }
-        $this->assertStringContainsString('?place=HZ-00', $h); // التفعيل بمكانه محدداً
+        // ٢٦-٧: الطوارئ خرجت من «أريد أن» إلى صفحة المركز والزر الأحمر
+        foreach (['drill', 'teams', 'systems', 'center', 'arrived', 'medical'] as $k) $this->assertStringNotContainsString('data-intent="'.$k.'"', $h, $k);
+        $this->assertStringContainsString('?place=HZ-00', $this->actingAs($salama)->get('/app/emergency/sos')->getContent()); // التفعيل بمكانه محدداً — داخل الزر الأحمر
     }
 
     /** الضيف: نواياه على أول صفحة يراها؛ كتاب المعهد عام؛ «رأيت هذا؟ بلّغ» يفتح البلاغ والخطر محدد ويُرسل بلا تصنيف. */

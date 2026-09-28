@@ -59,27 +59,17 @@ class HomeStepThreeTest extends TestCase
         $this->assertStringNotContainsString('data-intent="places"', $h);
     }
 
-    public function test_safety_center_and_emergency_are_one_door_in_intents(): void
+    /** ٢٥-٣ ثم ٢٦-٧: الباب الواحد صار صفحة المركز يفتحها مربع «مركز السلامة» — لا نية في «أريد أن» */
+    public function test_safety_center_and_emergency_are_one_door_opened_by_the_center_tile(): void
     {
         $salama = $this->user('salama', 'system_admin');
         $h = $this->actingAs($salama)->get('/app')->assertOk()->getContent();
-        $this->assertStringNotContainsString('data-intent="incidents"', $h);
-        $this->assertStringNotContainsString('data-intent="emergency"', $h);
-        $this->assertMatchesRegularExpression('~data-intent="center"[^>]*>.*?مركز السلامة وإدارة الطوارئ~s', $h);
-        $this->assertStringContainsString('href="'.route('emergency.dashboard').'" data-intent="center"', $h);
-        // الباب الواحد: من لوحته يُفتح سجل بلاغات الشاغلين
+        foreach (['incidents', 'emergency', 'center'] as $k) $this->assertStringNotContainsString('data-intent="'.$k.'"', $h);
+        $this->assertStringContainsString('href="'.route('emergency.dashboard').'" data-place="HZ-00"', $h);
         $d = $this->actingAs($salama)->get(route('emergency.dashboard'))->assertOk()->getContent();
         $this->assertStringContainsString('مركز السلامة وإدارة الطوارئ', $d);
         $this->assertStringContainsString('href="'.route('incidents.index').'"', $d);
         $this->assertStringContainsString('سجل بلاغات الشاغلين', $d);
-        // الفني: يملك سجل البلاغات ولا يملك الطوارئ ← الباب نفسه يفتح له السجل
-        $fani = $this->user('fani', 'field_worker', 'HZ-06');
-        $h = $this->actingAs($fani)->get('/app')->assertOk()->getContent();
-        $this->assertStringContainsString('href="'.route('incidents.index').'" data-intent="center"', $h);
-        // الطبيب: لا سجل بلاغات (قرار ٥٥) لكن له الطوارئ ← اللوحة
-        $tabib = $this->user('tabib', 'clinic_doctor', 'HZ-06');
-        $h = $this->actingAs($tabib)->get('/app')->assertOk()->getContent();
-        $this->assertStringContainsString('href="'.route('emergency.dashboard').'" data-intent="center"', $h);
     }
 
     public function test_offices_place_file_lists_every_department_from_the_org_structure(): void

@@ -82,9 +82,24 @@ class EmergencyController extends Controller
             'unstaffed' => $p->unstaffedCards($teamsByPlace->get($p->place_id, collect()), $activeByRole),
         ])->all();
 
+        // ٢٦-٧ (قرار ٦٦): صفحة المركز الواحدة — الاستعداد لكل مكان (خطة الاستجابة وتمرينها من ملف المكان، المعدات التي تحتاج فحصاً)،
+        // وبلاغات الشاغلين المفتوحة، والمركز كمكان (نماذجه وبلاغات فحصه وفريقه)
+        $profiles = [];
+        foreach ($places as $pl) $profiles[$pl->code] = \App\Modules\Emergency\Services\PlaceProfile::get($pl->code)['plans'] ?? [];
+        $equipByPlace = \App\Modules\Emergency\Models\EmergencyEquipment::query()->needsInspection()->whereNotNull('place_id')
+            ->selectRaw('place_id, COUNT(*) as c')->groupBy('place_id')->pluck('c', 'place_id')->all();
+        $occupantOpen = \App\Modules\Incident\Models\Incident::whereNotIn('status', \App\Modules\Incident\Models\Incident::TERMINAL)->count();
+        $centerPlace = $places->firstWhere('code', 'HZ-00');
+        $R = \App\Modules\Store\Services\InspectionDocReader::class;
+        $centerTeams = $centerPlace ? $teamsByPlace->get($centerPlace->id, collect()) : collect();
+        $centerFile = [
+            'forms' => $R::formsOf('HZ-00'),
+            'open' => array_values(array_filter($R::reportsOf('HZ-00'), fn ($r) => !$R::isClosed($r))),
+            'members' => $centerTeams->flatMap(fn ($t) => $t->members->map(fn ($m) => ['role' => $m->role, 'name' => $m->name ?: $m->user?->name, 'phone' => $m->phone]))->values()->all(),
+        ];
         return view('modules.emergency.dashboard', compact(
             'stats', 'buildings', 'activeIncidents', 'recentIncidents', 'upcomingDrills', 'places', 'teamsByPlace', 'pendingCalls', 'mainBuilding', 'escalationRules', 'planReadiness',
-            'panicOpen', 'wearableOpen'
+            'panicOpen', 'wearableOpen', 'profiles', 'equipByPlace', 'occupantOpen', 'centerPlace', 'centerFile'
         ));
     }
 

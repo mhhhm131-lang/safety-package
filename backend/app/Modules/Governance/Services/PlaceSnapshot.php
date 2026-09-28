@@ -70,7 +70,8 @@ final class PlaceSnapshot
                 'permits'   => (int) ($permits[$p->id] ?? 0),
             ];
             foreach ($n as $k => $v) $total[$k] += $v;
-            $file = route('app.places.units.file', $p);
+            // ٢٦-٧: مربع «مركز السلامة» يفتح صفحة المركز الواحدة (فيها بنود المكان بأسفلها بالمعرّفات نفسها)
+            $file = $p->code === 'HZ-00' ? route('emergency.dashboard') : route('app.places.units.file', $p);
             $rows[$p->code] = ['code' => $p->code, 'id' => $p->id, 'name' => $p->name, 'file' => $file, 'n' => $n, 'links' => self::links($p->code, $file)];
         }
 

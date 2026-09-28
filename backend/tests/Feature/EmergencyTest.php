@@ -280,8 +280,9 @@ class EmergencyTest extends TestCase
         $r->assertSeeInOrder(['<div class="fs-4 fw-bold">1</div><div class="small text-muted">تنبيهات أساور مفتوحة'], false);
 
         // الشاشات الخمس تفتح لمن يملك emergency.view وتُرفض لمن لا يملكها؛ الروابط تظهر في كل صفحة من صفحات الوحدة لا في المركز وحده
+        // ٢٦-٧ (قرار ٦٦): أبواب الشاشات في صفحة المركز الواحدة لا في قائمة كل صفحة — كل شاشة تفتح لمن يملك emergency.view وتُرفض لمن لا يملكها
         foreach ($screens as $u) {
-            $this->actingAs($this->munawib)->get($u)->assertOk()->assertSee('href="'.url('/app/emergency/panic').'"', false);
+            $this->actingAs($this->munawib)->get($u)->assertOk();
             $this->actingAs($this->employee)->get($u)->assertForbidden();
         }
     }

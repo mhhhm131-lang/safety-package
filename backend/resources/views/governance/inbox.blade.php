@@ -48,7 +48,7 @@
       <div class="pl-grid" id="places">
         @foreach($placeTiles as $hz => $t)
           @if($p = $placeByCode[$hz] ?? null)
-          <a class="pl-tile {{ $t['cls'] }}" href="{{ route('app.places.units.file', $p) }}" data-place="{{ $hz }}" data-cls="{{ $t['cls'] }}" data-open="{{ $t['open'] }}" data-od="{{ $t['od'] }}" data-a="{{ $t['a'] }}"@if(count($placeTiles) > 1) data-filter="1"@endif>
+          <a class="pl-tile {{ $t['cls'] }}" href="{{ $hz === 'HZ-00' ? route('emergency.dashboard') : route('app.places.units.file', $p) }}" data-place="{{ $hz }}" data-cls="{{ $t['cls'] }}" data-open="{{ $t['open'] }}" data-od="{{ $t['od'] }}" data-a="{{ $t['a'] }}"@if(count($placeTiles) > 1) data-filter="1"@endif>
             <span class="small text-muted" dir="ltr">{{ $hz }}</span>
             <span class="nm">{{ $p->name }}</span>
             <span class="small st">
