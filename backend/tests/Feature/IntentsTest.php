@@ -137,7 +137,9 @@ class IntentsTest extends TestCase
         Risk::create(['risk_type' => 'reference', 'code' => 'FI-01-02', 'title' => 'مسودة لا تُعرض', 'description' => 'x', 'category_id' => $cat->id, 'sub_category_id' => $sub->id, 'severity' => 1, 'likelihood' => 1, 'status' => 'draft']);
 
         $h = $this->get('/incident')->assertOk()->getContent();
-        foreach (['report', 'track', 'hazards', 'plans', 'roles'] as $k) $this->assertStringContainsString('data-intent="'.$k.'"', $h, $k);
+        // ٢٦-٤ (قرار ٦٦): لا كتلة «أريد أن» في صفحة البلاغ — نوعان وتتبع، والمنظومة وقنوات الإبلاغ في الذيل
+        $this->assertStringNotContainsString('id="intents"', $h);
+        foreach ([url('/incident/normal'), url('/incident/secret'), route('incident.track'), '/index.html', 'reporting-channels.html'] as $u) $this->assertStringContainsString($u, $h, $u);
 
         $b = $this->get('/hazards')->assertOk();
         $b->assertSee('سلك مكشوف قرب مواد')->assertSee('أبعد المواد وأبلغ فوراً')->assertDontSee('مسودة لا تُعرض')->assertSee('رأيت هذا؟ بلّغ')

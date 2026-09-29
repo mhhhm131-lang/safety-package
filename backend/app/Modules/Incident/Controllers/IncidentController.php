@@ -38,9 +38,8 @@ class IncidentController extends Controller
 
     public function landing(Request $request)
     {
-        // المرحلة ١٢ (قرار ٣٥): نوايا الضيف على أول صفحة يراها
-        return view('modules.incidents.landing', ['places' => Place::orderBy('sort')->get(), 'place' => $request->query('place'),
-            'intents' => Auth::check() ? \App\Core\Intents\IntentRegistry::forUser(Auth::user()) : \App\Core\Intents\IntentRegistry::guest()]);
+        // المرحلة ١٢ (قرار ٣٥) ثم ٢٦-٤ (قرار ٦٦): كتلة «أريد أن…» خرجت من صفحة البلاغ — غرضها البلاغ وحده
+        return view('modules.incidents.landing', ['places' => Place::orderBy('sort')->get(), 'place' => $request->query('place')]);
     }
 
     public function form(Request $request, string $type)

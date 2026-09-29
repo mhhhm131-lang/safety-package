@@ -28,15 +28,5 @@
   <a class="btn btn-outline-success btn-sm" href="{{ route('incident.track') }}">تتبع بلاغ</a>
 </div>
 @include('modules.incidents._my_reports')
-{{-- المرحلة ١٢ (قرار ٣٥): «أريد أن…» للشاغل والزائر بلا دخول --}}
-@if(!empty($intents))
-<div class="card p-3 mt-3" id="intents">
-  <div class="fw-bold mb-2"><i class="bi bi-hand-index-thumb me-1"></i> أريد أن…</div>
-  <div class="d-flex flex-wrap gap-2">
-    @foreach($intents as $i)
-      <a class="btn btn-sm {{ $i->primary ? 'btn-g' : 'btn-outline-success' }}" href="{{ $i->url }}" data-intent="{{ $i->key }}" title="{{ $i->hint }}"><i class="bi {{ $i->icon }}"></i> {{ $i->label }}</a>
-    @endforeach
-  </div>
-</div>
-@endif
+{{-- ٢٦-٤ (قرار ٦٦): كتلة «أريد أن…» حُذفت من هنا — الصفحة غرضها البلاغ؛ ما كان فيها له بابه: المنظومة وقنوات الإبلاغ والتتبع في ذيل الصفحة، والزر الأحمر للاتصال --}}
 @endsection
