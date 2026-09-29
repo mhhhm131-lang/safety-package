@@ -89,7 +89,8 @@ class PlaceFileController extends Controller
             'risksTotal' => $canRisks ? \App\Modules\Risk\Models\Risk::where('risk_type', 'active')->where('place_id', $place->id)->whereNotIn('status', ['closed'])->count() : 0,
             'openEmergency' => \App\Modules\Emergency\Models\EmergencyIncident::open()->where('place_id', $place->id)->orderByDesc('triggered_at')->get(),
             'canEmergency' => PermissionRegistry::hasPermission($user->role(), 'emergency.view') || PermissionRegistry::hasPermission($user->role(), 'emergency.respond'),
-            'canPermit' => PermissionRegistry::hasPermission($user->role(), 'permit.create'),
+            // ٢٦-٦-ب: مسار طلب التصريح يشترط permit.list مع permit.create (الموظف يملك الأولى دون الثانية فكان الزر يفتح ٤٠٣) — الزر بشرط المسار نفسه
+            'canPermit' => PermissionRegistry::hasPermission($user->role(), 'permit.create') && PermissionRegistry::hasPermission($user->role(), 'permit.list'),
             'folder' => $folder,
             'ui' => $ui,
         ]);

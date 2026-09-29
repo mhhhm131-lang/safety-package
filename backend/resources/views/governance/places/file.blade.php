@@ -2,18 +2,29 @@
 @section('title', 'ملف '.$place->name)
 @section('content')
 {{-- المرحلة ١٩-١ (قرار ٤٨): ملف المكان — ما كان في dashboard.html#place= بالبيانات نفسها، داخل الخلفية. قراءة؛ التحرير في مواضعه.
-     ٢٦-٦ (قرار ٦٦، بكلمته «بقية الأماكن باستثناء المركز»): البنود الثمانية بالترتيب — خطة السلامة ← خطة الاستجابة ← نماذج الفحص ← مخاطر المكان
-     ← المفتوح الآن ← الوحدات ← الفريق الأولي ← طلب تصريح هنا. ما ليس للشخص يظهر باهتاً باسم صاحبه (لا «ليس لديك صلاحية» بعد ضغطة). --}}
+     ٢٦-٦ (قرار ٦٦): البنود بالترتيب — خطة السلامة ← خطة الاستجابة ← نماذج الفحص ← مخاطر المكان ← المفتوح الآن ← الفريق الأولي ← طلب تصريح هنا.
+     ما ليس للشخص يظهر باهتاً باسم صاحبه (لا «ليس لديك صلاحية» بعد ضغطة).
+     ٢٦-٦-ب (قرار ٦٨): شاشة واحدة — سطر الحال ← سطر الوحدات (مرشّح «أين بالضبط؟»، كان القسم ٦) ← سبعة أزرار في عمودين بترتيب ثابت،
+     كل زر يحمل حاله ولونه؛ الزر يفتح قسمه تحت الشبكة في مكانه؛ الخطتان تفتحان الخطة، و«طلب تصريح» هو الفعل. المحتوى والمعرّفات كما هي. --}}
 @php($R = \App\Modules\Store\Services\InspectionDocReader::class)
 @php($L = \App\Modules\Governance\Models\PlaceUnit::TYPE_LABELS)
 @php($ST = ['ok' => 'st-ok', 'late' => 'st-late', 'fault' => 'st-wait', 'none' => 'text-bg-secondary'])
 @php($PL = collect($plans)->keyBy('key'))
+@php($ins = $PL['insp'] ?? null)
+@php($tm = $PL['team'] ?? null)
+{{-- ٢٦-٦-ب: حال كل زر — رقم أو كلمة، ولون: ok أخضر · warn ذهبي · bad أحمر · none بلا لون · dim باهت لمن لا يملكه · act فعل.
+     الصيغة المختصرة للـphp وحدها في هذا الملف: كتلة php مغلقة (حتى داخل تعليق) تُلتقط من أول توجيه php في الملف فتُفسده --}}
+@php($openN = count($open) + $incidents->count() + $openEmergency->count())
+@php($btnForms = !count($systems) ? ['warn', 'لم تُفتح جولة بعد'] : ($sum['late'] ? ['bad', $sum['late'].' متأخر أو لم يُفحص'.($sum['fault'] ? ' · '.$sum['fault'].' عطل' : '')] : ($sum['fault'] ? ['bad', $sum['fault'].' فيه عطل مفتوح'] : ['ok', 'كلها فُحصت في موعدها'])))
+@php($btnRisks = !$canRisks ? ['dim', 'لمنسق السلامة ومديري الإدارات ومسؤول السلامة'] : ($risksTotal ? ['none', $risksTotal.' مفعّل'] : ['none', 'لا خطر مفعّل بعد']))
+@php($btnNow = $openN ? [($kpi['overdue'] || $openEmergency->isNotEmpty()) ? 'bad' : 'warn', $openN.' مفتوح'.($kpi['overdue'] ? ' · '.$kpi['overdue'].' متجاوز' : '').($openEmergency->isNotEmpty() ? ' · حالة طارئة' : '')] : ['ok', 'لا شيء مفتوح'])
+@php($btnTeam = [$tm['cls'] ?? 'none', $tm['v'] ?? '—'])
+@php($btnPermit = $canPermit ? ['act', 'اطلب تصريح عمل في '.$place->name] : ['dim', 'لمركز السلامة ومنسق السلامة والمقاول'])
+@php($manyUnits = $units->count() > 12)
+@php($unitTitle = fn ($u) => ($L[$u->type] ?? $u->type).($u->floor ? ' · الدور '.$u->floor : '').($u->location ? ' · '.$u->location : '').($u->capacity ? ' · '.$u->capacity.' شخصاً' : '').($u->operator ? ' · '.$u->operator : ''))
 <style>
   .pf-sys{display:grid;grid-template-columns:1.6fr 1fr 1fr auto auto;gap:6px 12px;align-items:center;padding:10px 12px;border:1px solid var(--bs-border-color);border-radius:10px;background:#fff}
   .pf-sys small{color:#6b7a74;display:block}
-  .pf-plan{display:block;text-decoration:none;color:inherit;border:1px solid var(--bs-border-color);border-inline-start:5px solid #adb5bd;border-radius:10px;padding:10px 12px;background:#fff;height:100%}
-  .pf-plan.ok{border-inline-start-color:#0f4c3a}.pf-plan.warn{border-inline-start-color:#d9b25a}.pf-plan.bad{border-inline-start-color:#c62828}
-  .pf-plan .v{font-weight:700}.pf-plan .d{font-size:.82rem;color:#6b7a74}
   /* ١٩-٥: الفريق — أربع بطاقات ومسار الخطوات الثلاث */
   .pf-team{border:1px solid var(--bs-border-color);border-inline-start:5px solid #adb5bd;border-radius:10px;padding:8px 10px;background:#fff}
   .pf-team.ok{border-inline-start-color:#0f4c3a}.pf-team.warn{border-inline-start-color:#d9b25a}.pf-team.bad{border-inline-start-color:#c62828}
@@ -22,9 +33,20 @@
   .pf-steps{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
   .pf-steps span{border:1px solid var(--bs-border-color);border-radius:999px;padding:2px 10px;color:#6b7a74}
   .pf-steps span.done{background:#e7f1ec;border-color:#0f4c3a;color:#0f4c3a}.pf-steps span.cur{border-color:#d9b25a;color:#7a5b00}
-  /* ٢٦-٦: القسم الباهت لمن لا يملكه */
+  /* ٢٦-٦: الباهت لمن لا يملكه */
   .pf-dim{opacity:.5}.pf-dim .btn,.pf-dim a{pointer-events:none}
   .pf-n{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--tint);color:var(--g);font-weight:900;font-size:.85rem;margin-inline-end:.35rem}
+  /* ٢٦-٦-ب: الشبكة وأزرارها بحالها، ورقاقات الوحدات */
+  .pf-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+  .pf-btn{display:block;width:100%;text-align:start;text-decoration:none;color:inherit;border:1px solid var(--bs-border-color);border-inline-start:5px solid #adb5bd;border-radius:10px;padding:8px 10px;background:#fff;min-height:64px;cursor:pointer;font:inherit}
+  .pf-btn[data-state=ok]{border-inline-start-color:#0f4c3a}.pf-btn[data-state=warn]{border-inline-start-color:#d9b25a}.pf-btn[data-state=bad]{border-inline-start-color:#c62828}
+  .pf-btn[data-state=dim]{opacity:.5;pointer-events:none}
+  .pf-btn[data-state=act]{background:var(--g);color:#fff;border-color:var(--g)}.pf-btn[data-state=act] .pf-n{background:#fff}
+  .pf-btn .t{font-weight:700}.pf-btn .s{font-size:.85rem;color:#6b7a74;margin-top:2px}
+  .pf-btn[data-state=bad] .s{color:#c62828;font-weight:700}.pf-btn[data-state=ok] .s{color:#0f4c3a}.pf-btn[data-state=act] .s{color:#e3ede8}
+  .pf-btn.open{background:var(--tint)}.pf-btn.wide{grid-column:1/-1}
+  .pf-chip{border:1px solid var(--bs-border-color);border-radius:999px;padding:3px 12px;background:#fff;color:inherit;font-size:.9rem}.pf-chip.on{background:var(--g);color:#fff;border-color:var(--g)}
+  .pf-sec{margin-top:.75rem}
   @media(max-width:700px){.pf-members{grid-template-columns:1fr 1fr}.pf-sys{grid-template-columns:1fr 1fr}.pf-sys .nm{grid-column:1/-1}
     /* الأرقام الأربعة مربعان في صفين على الجوال — كلها ظاهرة بلا تمرير أفقي */
     #pfKpi.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible;margin-inline:0;padding-inline:0;gap:.6rem}
@@ -35,26 +57,66 @@
   <a class="small" href="{{ route('app.home') }}#places">الأماكن</a><span class="text-muted">›</span>
   <h1 class="page-h m-0">{{ $place->name }}</h1><span class="small text-muted" dir="ltr">{{ $place->code }}</span>
 </div>
-<p class="small text-muted mb-3" id="pfSum" data-sum-ok="{{ $sum['ok'] }}" data-sum-late="{{ $sum['late'] }}" data-sum-fault="{{ $sum['fault'] }}">
+<p class="small text-muted mb-2" id="pfSum" data-sum-ok="{{ $sum['ok'] }}" data-sum-late="{{ $sum['late'] }}" data-sum-fault="{{ $sum['fault'] }}">
   @if(count($systems))
     <b>{{ $sum['ok'] }}</b> من {{ count($systems) }} نظاماً فُحص في موعده وسليم@if($sum['late']) · <b class="text-danger">{{ $sum['late'] }}</b> فحصه متأخر أو لم يُفحص@endif @if($sum['fault']) · <b style="color:#b8860b">{{ $sum['fault'] }}</b> فيه عطل مفتوح@endif
   @else لم تُفتح جولة لهذا المكان بعد @endif
 </p>
 
-{{-- ١ و٢. خطة السلامة (الاستباقية والتشغيلية) وخطة الاستجابة — البطاقة تفتح الخطة نفسها، وتواريخها تُحرَّر من هنا (١٩-٥) --}}
-<div class="row g-2 mb-2" id="pfPlans">
+{{-- سطر الوحدات (كان القسم ٦): السؤال الأول «أين بالضبط؟» — الافتراضي الكل؛ الاختيار يحصر بلاغات الفحص وبلاغات الشاغلين (والفريق في المكاتب) --}}
+<div class="d-flex flex-wrap align-items-center gap-2 mb-2" id="pfUnitsLine">
+  <span class="small text-muted">الوحدات <span class="badge text-bg-dark">{{ $units->count() }}</span></span>
+  @if($units->isEmpty())
+    <span class="small text-muted">لم تُدخل وحدات هذا المكان بعد.@if($canUnits) <a href="{{ route('app.places.units.index', $place) }}">أدخلها الآن</a>@endif</span>
+  @elseif($manyUnits)
+    <select class="form-select form-select-sm" id="pfUnitSelect" style="max-width:22rem" data-unit-filter>
+      <option value="" data-unit="">الكل</option>
+      @foreach($units as $u)<option value="{{ $u->name }}" data-unit="{{ $u->name }}"@if($u->type === 'department') data-unit-chip="{{ $u->unit_code ?? $u->organization_unit_id }}" data-unit-code="{{ $u->unit_code ?? '' }}"@endif>{{ $u->name }}{{ $u->floor ? ' · الدور '.$u->floor : '' }}{{ $u->location ? ' · '.$u->location : '' }}</option>@endforeach
+    </select>
+  @else
+    <div class="d-flex flex-wrap gap-1" id="pfUnits">
+      <button type="button" class="pf-chip on" data-unit="" data-unit-filter>الكل</button>
+      @foreach($units as $u)<button type="button" class="pf-chip" data-unit="{{ $u->name }}" data-unit-filter title="{{ $unitTitle($u) }}" @if($u->type === 'department') data-unit-chip="{{ $u->unit_code ?? $u->organization_unit_id }}" data-unit-code="{{ $u->unit_code ?? '' }}"@endif>{{ $u->name }}</button>@endforeach
+    </div>
+  @endif
+  @if($canUnits && $units->isNotEmpty())<a class="small ms-auto" href="{{ route('app.places.units.index', $place) }}">تعديل الوحدات</a>@endif
+</div>
+<div class="small text-muted mb-2" id="pfUnitInfo" hidden></div>
+
+{{-- الأزرار السبعة بترتيب ثابت: ١ ٢ ٣ ٤ ٥ ٧ ٨ --}}
+<div class="pf-grid mb-2" id="pfGrid">
   @foreach(['sa', 'ra'] as $k)
     @continue(!$PL->has($k))
     @php($p = $PL[$k])
-    <div class="col-12 col-lg-6" id="{{ $k === 'sa' ? 'pfPlanSafety' : 'pfPlanResponse' }}">
-      <a class="pf-plan {{ $p['cls'] }}" data-ready="{{ $p['key'] }}" href="{{ $p['url'] }}">
-        <div class="small text-muted"><span class="pf-n">{{ $k === 'sa' ? '١' : '٢' }}</span>{{ $p['label'] }}{{ $k === 'sa' ? ' — الاستباقية والتشغيلية' : '' }} <i class="bi bi-box-arrow-up-left"></i></div>
-        <div class="v">{{ $p['v'] }}</div><div class="d">{{ $p['d'] }}</div></a>
-    </div>
+    <a class="pf-btn" id="{{ $k === 'sa' ? 'pfPlanSafety' : 'pfPlanResponse' }}" data-sec="{{ $k }}" data-state="{{ $p['cls'] }}" data-ready="{{ $p['key'] }}" href="{{ $p['url'] }}">
+      <div class="t"><span class="pf-n">{{ $k === 'sa' ? '١' : '٢' }}</span>{{ $p['label'] }}{{ $k === 'sa' ? ' — الاستباقية والتشغيلية' : '' }} <i class="bi bi-box-arrow-up-left small"></i></div>
+      <div class="s">{{ $p['v'] }}<br>{{ $p['d'] }}</div>
+    </a>
   @endforeach
+  <button type="button" class="pf-btn" id="pfForms" data-sec="forms" data-state="{{ $btnForms[0] }}" aria-controls="pfSecForms" aria-expanded="false">
+    <div class="t"><span class="pf-n">٣</span><i class="bi bi-clipboard-check"></i> نماذج الفحص <span class="badge text-bg-dark">{{ count($systems) }}</span></div>
+    <div class="s">{{ $btnForms[1] }}</div>
+  </button>
+  <button type="button" class="pf-btn" id="pfRisks" data-sec="risks" data-state="{{ $btnRisks[0] }}" aria-controls="pfSecRisks" aria-expanded="false">
+    <div class="t"><span class="pf-n">٤</span><i class="bi bi-lightning-charge"></i> مخاطر المكان @if($canRisks)<span class="badge text-bg-dark">{{ $risksTotal }}</span>@endif</div>
+    <div class="s">{{ $btnRisks[1] }}</div>
+  </button>
+  <button type="button" class="pf-btn" id="pfNow" data-sec="now" data-state="{{ $btnNow[0] }}" aria-controls="pfSecNow" aria-expanded="false">
+    <div class="t"><span class="pf-n">٥</span><i class="bi bi-activity"></i> المفتوح الآن @if($openN)<span class="badge {{ $btnNow[0] === 'bad' ? 'text-bg-danger' : 'text-bg-dark' }}">{{ $openN }}</span>@endif</div>
+    <div class="s">{{ $btnNow[1] }}</div>
+  </button>
+  <button type="button" class="pf-btn" id="pfTeamH" data-sec="team" data-state="{{ $btnTeam[0] }}" aria-controls="pfSecTeam" aria-expanded="false">
+    <div class="t"><span class="pf-n">٧</span><i class="bi bi-people-fill"></i> الفريق الأولي</div>
+    <div class="s" data-ready="team">{{ $btnTeam[1] }}</div>
+  </button>
+  {{-- ٨. طلب تصريح عمل هنا (المكان محدد) — الزر هو الفعل؛ لمن يملك طلب التصاريح، وإلا باهت باسم صاحبه --}}
+  @if($canPermit)<a class="pf-btn wide" id="pfPermit" data-sec="permit" data-state="act" href="{{ route('permits.create') }}?place={{ $place->code }}" data-act="permit">
+    <div class="t"><span class="pf-n">٨</span><i class="bi bi-file-earmark-plus"></i> طلب تصريح عمل هنا</div><div class="s">{{ $btnPermit[1] }}</div></a>
+  @else<span class="pf-btn wide" id="pfPermit" data-sec="permit" data-state="dim" data-act="permit" title="لمن يملك طلب التصاريح">
+    <div class="t"><span class="pf-n">٨</span><i class="bi bi-file-earmark-plus"></i> طلب تصريح عمل هنا</div><div class="s">— {{ $btnPermit[1] }}</div></span>@endif
 </div>
 @if($can['plans'])
-  <details class="mb-3" id="pfPlansEdit"><summary class="small" style="cursor:pointer;color:#0f4c3a">تحرير الخطتين</summary>
+  <details class="mb-2" id="pfPlansEdit"><summary class="small" style="cursor:pointer;color:#0f4c3a">تحرير الخطتين</summary>
     <form method="post" action="{{ route('app.places.team.plans', $place) }}" class="card card-body mt-2">@csrf
       <div class="row g-2">
         <div class="col-6 col-md-3"><label class="form-label small">اعتماد خطة السلامة</label><input type="date" class="form-control form-control-sm" name="sa" value="{{ $pl['sa'] ?? '' }}"></div>
@@ -65,13 +127,11 @@
       <div class="mt-2"><button class="btn btn-g btn-sm">حفظ</button></div>
     </form>
   </details>
-@else
-  <div class="mb-3"></div>
 @endif
 
 {{-- ٣. نماذج الفحص الخاصة بالمكان: النموذج بضغطة، وكل نظام بآخر جولة وموعد القادمة --}}
-@php($ins = $PL['insp'] ?? null)
-<h2 class="sec-h" id="pfForms"><span class="pf-n">٣</span><i class="bi bi-clipboard-check"></i> نماذج الفحص <span class="badge text-bg-dark">{{ count($systems) }}</span>
+<section class="pf-sec" id="pfSecForms" hidden>
+<h2 class="sec-h"><span class="pf-n">٣</span><i class="bi bi-clipboard-check"></i> نماذج الفحص <span class="badge text-bg-dark">{{ count($systems) }}</span>
   @if($ins)<span class="small text-muted fw-normal" data-ready="insp">{{ $ins['v'] }}</span>@endif
   {{-- ٢٦-٨ (قرار ٦٧): «نماذج الفحص» كلها خرجت من «أريد أن» — بابها من داخل ملف المكان --}}
   @if($ui)<a class="btn btn-o btn-sm ms-auto" href="{{ route('app.inspections') }}">النماذج العشرة</a>@endif</h2>
@@ -95,9 +155,11 @@
     @endforeach
   </div>
 @endif
+</section>
 
 {{-- ٤. مخاطر المكان المفعّلة بمنسقها ومعالجها — لمن يملك السجل؛ وإلا باهت باسم صاحبه --}}
-<h2 class="sec-h {{ $canRisks ? '' : 'pf-dim' }}" id="pfRisks"><span class="pf-n">٤</span><i class="bi bi-lightning-charge"></i> مخاطر المكان
+<section class="pf-sec" id="pfSecRisks" hidden>
+<h2 class="sec-h {{ $canRisks ? '' : 'pf-dim' }}"><span class="pf-n">٤</span><i class="bi bi-lightning-charge"></i> مخاطر المكان
   @if($canRisks)<span class="badge text-bg-dark">{{ $risksTotal }}</span><a class="btn btn-o btn-sm ms-auto" href="{{ route('risk.active.index') }}?place={{ $place->code }}">السجل كاملاً</a>
   @else<span class="small text-muted fw-normal">— لمنسق السلامة ومديري الإدارات ومسؤول السلامة</span>@endif</h2>
 @if($canRisks)
@@ -114,9 +176,11 @@
 @else
   <div class="mb-3"></div>
 @endif
+</section>
 
 {{-- ٥. المفتوح الآن: الأرقام الأربعة، بلاغات الفحص ومتأخرها، بلاغات الشاغلين، الحالة الطارئة --}}
-<h2 class="sec-h" id="pfNow"><span class="pf-n">٥</span><i class="bi bi-activity"></i> المفتوح الآن</h2>
+<section class="pf-sec" id="pfSecNow" hidden>
+<h2 class="sec-h"><span class="pf-n">٥</span><i class="bi bi-activity"></i> المفتوح الآن</h2>
 @php($KL = ['open' => 'بلاغ فحص مفتوح', 'overdue' => 'متجاوز المهلة', 'cat-a' => 'فئة أ — حماية معطّلة', 'closed' => 'عطل أُصلح وأُغلق'])
 <div class="tiles mb-2" id="pfKpi">
   @foreach($kpi as $k => $v)
@@ -134,7 +198,7 @@
 <div class="d-grid gap-2 mb-3" id="pfReports">
   @forelse($open as $r)
     @php($over = $R::overdueHours($r))
-    <div class="card task {{ $over !== null && $over > 0 ? 'task-late' : '' }}"><div class="card-body py-2 d-flex flex-wrap align-items-center gap-2">
+    <div class="card task {{ $over !== null && $over > 0 ? 'task-late' : '' }}" data-unit="{{ $r['unit'] ?? '' }}"><div class="card-body py-2 d-flex flex-wrap align-items-center gap-2">
       <div class="flex-grow-1"><b>{{ $r['id'] ?? $r['row'] ?? '' }}</b> · {{ $r['sys'] ?? '' }}@if(!empty($r['unit'])) · {{ $r['unit'] }}@endif<div class="small">{{ $r['item'] ?? '' }}</div>
         <div class="small text-muted">@if($over !== null && $over > 0)<span class="badge st-late">متأخر</span> @endif المهلة: {{ $r['due'] ?? '—' }} · عند المستوى {{ $R::holder($r) }}</div></div>
       @if($ui)<a class="btn btn-o btn-sm" href="/{{ $r['_form']['file'] }}#open={{ rawurlencode((string) ($r['row'] ?? '')) }}">افتحه</a>@endif
@@ -147,7 +211,7 @@
   @if($canIncidents)<a class="btn btn-o btn-sm ms-auto" href="{{ route('incidents.index') }}?place={{ $place->code }}">سجل بلاغات المكان</a>@endif</h3>
 <div class="d-grid gap-2 mb-3" id="pfIncidents">
   @forelse($incidents as $i)
-    <div class="card"><div class="card-body py-2 d-flex flex-wrap align-items-center gap-2">
+    <div class="card" data-unit="{{ $i->placeUnit?->name ?? '' }}"><div class="card-body py-2 d-flex flex-wrap align-items-center gap-2">
       <div class="flex-grow-1"><b>{{ $i->code }}</b> · {{ $i->title }}@if($i->placeUnit) · {{ $i->placeUnit->type_label }} {{ $i->placeUnit->name }}@endif
         <div class="small text-muted">{{ $i->status_label }} · {{ $i->created_at?->diffForHumans() }}</div></div>
       @if($canIncidents)<a class="btn btn-o btn-sm" href="{{ route('incidents.show', $i) }}">افتحه</a>@endif
@@ -156,23 +220,11 @@
     <div class="card"><div class="card-body small text-muted py-2"><i class="bi bi-check-circle text-success"></i> لا بلاغات شاغلين مفتوحة.</div></div>
   @endforelse
 </div>
-
-{{-- ٦. الوحدات --}}
-<h2 class="sec-h" id="pfUnitsH"><span class="pf-n">٦</span><i class="bi bi-grid-3x3-gap"></i> الوحدات <span class="badge text-bg-dark">{{ $units->count() }}</span>
-  @if($canUnits)<a class="btn btn-o btn-sm ms-auto" href="{{ route('app.places.units.index', $place) }}">تعديل الوحدات</a>@endif</h2>
-@if($units->isEmpty())
-  <div class="card mb-3"><div class="card-body small text-muted py-2">لم تُدخل وحدات هذا المكان بعد.@if($canUnits) <a href="{{ route('app.places.units.index', $place) }}">أدخلها الآن</a>@endif</div></div>
-@else
-  <div class="d-flex flex-wrap gap-2 mb-3" id="pfUnits">
-    @foreach($units as $u)
-      <span class="border rounded px-2 py-1 bg-white small"@if($u->type === 'department') data-unit-chip="{{ $u->unit_code ?? $u->organization_unit_id }}"@endif><b>{{ $u->name }}</b> <span class="text-muted">{{ $L[$u->type] ?? $u->type }}{{ $u->floor ? ' · الدور '.$u->floor : '' }}{{ $u->location ? ' · '.$u->location : '' }}{{ $u->capacity ? ' · '.$u->capacity.' شخصاً' : '' }}{{ $u->operator ? ' · '.$u->operator : '' }}</span></span>
-    @endforeach
-  </div>
-@endif
+</section>
 
 {{-- ٧. الفريق الأولي بهواتفه (وفي القاعات فرق الفعاليات) ورقم المركز --}}
-@php($tm = $PL['team'] ?? null)
-<h2 class="sec-h" id="pfTeamH"><span class="pf-n">٧</span><i class="bi bi-people-fill"></i> الفريق الأولي @if($tm)<span class="small text-muted fw-normal" data-ready="team">{{ $tm['v'] }}</span>@endif</h2>
+<section class="pf-sec" id="pfSecTeam" hidden>
+<h2 class="sec-h"><span class="pf-n">٧</span><i class="bi bi-people-fill"></i> الفريق الأولي @if($tm)<span class="small text-muted fw-normal">{{ $tm['v'] }}</span>@endif</h2>
 @php($UST = \App\Modules\Emergency\Services\PlaceProfile::UST)
 @php($ROLES = \App\Modules\Emergency\Services\PlaceProfile::TEAM)
 @php($TAG = ['ok' => 'st-ok', 'warn' => 'st-wait', 'bad' => 'text-bg-secondary'])
@@ -234,14 +286,14 @@
             <form method="post" action="{{ route('app.places.team.staff', [$place, $un['uid']]) }}" class="d-flex gap-2 mt-1" style="max-width:280px">@csrf
               <input type="number" min="0" inputmode="numeric" class="form-control form-control-sm" name="staff" value="{{ $row['staff'] ?: '' }}" placeholder="عدد الموظفين في المكان"><button class="btn btn-g btn-sm">حفظ</button></form></details>
         @endif
-        @foreach($row['teams'] as $tm)
-          @php($t = $tm['t'])
-          @php($base = route('app.places.team.edit', [$place, $un['uid'], $tm['k']], false))
-          <div class="pf-team {{ $UST[$tm['st']][0] }} mt-2" data-team="{{ $un['uid'] }}:{{ $tm['k'] }}" data-st="{{ $tm['st'] }}">
+        @foreach($row['teams'] as $tmr)
+          @php($t = $tmr['t'])
+          @php($base = route('app.places.team.edit', [$place, $un['uid'], $tmr['k']], false))
+          <div class="pf-team {{ $UST[$tmr['st']][0] }} mt-2" data-team="{{ $un['uid'] }}:{{ $tmr['k'] }}" data-st="{{ $tmr['st'] }}">
             <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-              @if(count($row['teams']) > 1)<b class="small">الفريق {{ $tm['k'] + 1 }} من {{ count($row['teams']) }}</b>@if($tm['extra'])<span class="small text-muted">زائد عن المطلوب</span>@endif @endif
-              <span class="badge {{ $TAG[$UST[$tm['st']][0]] }}">{{ $UST[$tm['st']][1] }}</span>
-              @if($tm['named'] && $tm['named'] < 4)<span class="small" style="color:#b8860b">({{ ['', '١', '٢', '٣'][$tm['named']] }} من ٤)</span>@endif
+              @if(count($row['teams']) > 1)<b class="small">الفريق {{ $tmr['k'] + 1 }} من {{ count($row['teams']) }}</b>@if($tmr['extra'])<span class="small text-muted">زائد عن المطلوب</span>@endif @endif
+              <span class="badge {{ $TAG[$UST[$tmr['st']][0]] }}">{{ $UST[$tmr['st']][1] }}</span>
+              @if($tmr['named'] && $tmr['named'] < 4)<span class="small" style="color:#b8860b">({{ ['', '١', '٢', '٣'][$tmr['named']] }} من ٤)</span>@endif
             </div>
             <div class="pf-members">
               @foreach($ROLES as $i => $role)
@@ -260,11 +312,11 @@
               <span class="{{ !empty($t['appr']['date']) ? 'done' : (!empty($t['nom']['date']) ? 'cur' : '') }}">٢ اعتماد مدير الشؤون الإدارية والهندسية @if(!empty($t['appr']['date']))<small>{{ $t['appr']['date'] }}</small>@elseif(!empty($t['nom']['date']))<small>بانتظار الاعتماد</small>@endif</span>
               <span class="{{ !empty($t['hr']['date']) ? 'done' : (!empty($t['appr']['date']) ? 'cur' : '') }}">٣ إحالة للموارد البشرية @if(!empty($t['hr']['date']))<small>{{ $t['hr']['date'] }}</small>@elseif(!empty($t['appr']['date']))<small>بانتظار الإحالة</small>@endif</span>
             </div>
-            @if($tm['edit'] || $tm['approve'] || $tm['refer'])
+            @if($tmr['edit'] || $tmr['approve'] || $tmr['refer'])
               <div class="d-flex flex-wrap gap-2 mt-2">
-                @if($tm['approve'])<form method="post" action="{{ $base }}/approve" onsubmit="return confirm('اعتماد ترشيح الفريق الأولي؟')">@csrf<button class="btn btn-g btn-sm">اعتماد</button></form>@endif
-                @if($tm['refer'])<form method="post" action="{{ $base }}/refer" onsubmit="return confirm('تسجيل إحالة التكليف إلى إدارة الموارد البشرية بتاريخ اليوم؟')">@csrf<button class="btn btn-g btn-sm">تسجيل الإحالة</button></form>@endif
-                @if($tm['edit'])<a class="btn {{ $tm['st'] === 'none' ? 'btn-g' : 'btn-o' }} btn-sm" href="{{ $base }}">{{ $tm['edit'] }}</a>@endif
+                @if($tmr['approve'])<form method="post" action="{{ $base }}/approve" onsubmit="return confirm('اعتماد ترشيح الفريق الأولي؟')">@csrf<button class="btn btn-g btn-sm">اعتماد</button></form>@endif
+                @if($tmr['refer'])<form method="post" action="{{ $base }}/refer" onsubmit="return confirm('تسجيل إحالة التكليف إلى إدارة الموارد البشرية بتاريخ اليوم؟')">@csrf<button class="btn btn-g btn-sm">تسجيل الإحالة</button></form>@endif
+                @if($tmr['edit'])<a class="btn {{ $tmr['st'] === 'none' ? 'btn-g' : 'btn-o' }} btn-sm" href="{{ $base }}">{{ $tmr['edit'] }}</a>@endif
               </div>
             @endif
           </div>
@@ -275,11 +327,31 @@
     @endforelse
   </div>
 @endif
+</section>
 
-{{-- ٨. أفعال المكان: طلب تصريح عمل هنا (المكان محدد) — لمن يملك طلب التصاريح؛ وإلا باهت باسم صاحبه --}}
-<h2 class="sec-h" id="pfPermit"><span class="pf-n">٨</span><i class="bi bi-file-earmark-check"></i> طلب تصريح عمل هنا</h2>
-<div class="mb-4">
-  @if($canPermit)<a class="btn btn-g" href="{{ route('permits.create') }}?place={{ $place->code }}" data-act="permit"><i class="bi bi-file-earmark-plus"></i> اطلب تصريح عمل في {{ $place->name }}</a>
-  @else<span class="btn btn-o pf-dim" data-act="permit" title="لمن يملك طلب التصاريح"><i class="bi bi-file-earmark-plus"></i> اطلب تصريح عمل هنا <span class="small">— لمركز السلامة ومنسق السلامة والمقاول</span></span>@endif
-</div>
+<script>
+(function(){
+  // ٢٦-٦-ب: الزر يفتح قسمه في مكانه (ضغطة فتح، ضغطة إغلاق)، والرابط بمرساة داخل قسم (#pfReports, #pfSystems, #pfTeams…) يفتح قسمه وحده
+  var grid=document.getElementById('pfGrid'); if(!grid) return;
+  function toggle(b, open){ var sec=document.getElementById(b.getAttribute('aria-controls')); if(!sec) return false;
+    var o = (open===undefined) ? sec.hidden : open; sec.hidden=!o; b.classList.toggle('open', o); b.setAttribute('aria-expanded', o?'true':'false'); return o; }
+  grid.querySelectorAll('button.pf-btn[aria-controls]').forEach(function(b){ b.addEventListener('click', function(){
+    if(toggle(b)) document.getElementById(b.getAttribute('aria-controls')).scrollIntoView({behavior:'smooth', block:'start'}); }); });
+  function openHash(){ if(!location.hash || location.hash.length<2) return; var h=document.getElementById(location.hash.slice(1)); if(!h) return;
+    var sec=h.closest('.pf-sec'); if(sec){ var b=grid.querySelector('[aria-controls="'+sec.id+'"]'); if(b) toggle(b, true); h.scrollIntoView(); } }
+  openHash(); window.addEventListener('hashchange', openHash);
+  // سطر الوحدات: يحصر بلاغات الفحص وبلاغات الشاغلين (وفرق الإدارات في المكاتب)، ويعيد عدّ زر «المفتوح الآن»
+  var nowS=document.querySelector('#pfNow .s'), nowAll=nowS?nowS.textContent:'';
+  function applyUnit(name, code){
+    document.querySelectorAll('#pfReports [data-unit], #pfIncidents [data-unit]').forEach(function(el){ el.hidden = !!name && el.getAttribute('data-unit')!==name; });
+    document.querySelectorAll('[data-unit-team]').forEach(function(el){ el.hidden = !!code && el.getAttribute('data-unit-team')!==code; });
+    if(nowS){ if(!name) nowS.textContent=nowAll; else { var n=document.querySelectorAll('#pfReports [data-unit]:not([hidden]), #pfIncidents [data-unit]:not([hidden])').length; nowS.textContent = n ? n+' مفتوح في '+name : 'لا شيء مفتوح في '+name; } }
+    var info=document.getElementById('pfUnitInfo'); if(info){ var el=name ? document.querySelector('button[data-unit-filter][data-unit="'+name.replace(/"/g,'\\"')+'"]') : null; var t=el?(el.getAttribute('title')||''):''; info.hidden=!t; info.textContent=t; }
+  }
+  document.querySelectorAll('button[data-unit-filter]').forEach(function(c){ c.addEventListener('click', function(){
+    document.querySelectorAll('button[data-unit-filter]').forEach(function(x){ x.classList.remove('on'); }); c.classList.add('on');
+    applyUnit(c.getAttribute('data-unit')||'', c.getAttribute('data-unit-code')||''); }); });
+  var sel=document.getElementById('pfUnitSelect'); if(sel) sel.addEventListener('change', function(){ var o=sel.options[sel.selectedIndex]; applyUnit(o.value||'', o.getAttribute('data-unit-code')||''); });
+})();
+</script>
 @endsection

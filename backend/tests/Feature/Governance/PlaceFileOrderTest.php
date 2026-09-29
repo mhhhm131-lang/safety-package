@@ -16,9 +16,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * ٢٦-٦ (قرار ٦٦، بكلمته «بقية الأماكن باستثناء المركز»): ملف المكان بالبنود الثمانية بالترتيب —
- * خطة السلامة ← خطة الاستجابة ← نماذج الفحص ← مخاطر المكان ← المفتوح الآن ← الوحدات ← الفريق الأولي ← طلب تصريح هنا.
+ * ٢٦-٦ (قرار ٦٦، بكلمته «بقية الأماكن باستثناء المركز»): ملف المكان بالبنود بالترتيب —
+ * خطة السلامة ← خطة الاستجابة ← نماذج الفحص ← مخاطر المكان ← المفتوح الآن ← الفريق الأولي ← طلب تصريح هنا.
  * ما ليس للشخص يظهر باهتاً باسم صاحبه، لا رابطاً يفتح «ليس لديك صلاحية».
+ * ٢٦-٦-ب (قرار ٦٨): البنود أزرار في شبكة بالترتيب نفسه (القسم ٦ «الوحدات» صار سطر المرشّح فوق الشبكة)، والباهت = data-state="dim".
  */
 class PlaceFileOrderTest extends TestCase
 {
@@ -38,7 +39,7 @@ class PlaceFileOrderTest extends TestCase
         return $u;
     }
 
-    public function test_eight_sections_in_order_with_place_risks_and_permit_here(): void
+    public function test_sections_in_order_with_place_risks_and_permit_here(): void
     {
         $salama = $this->user('salama', 'system_admin');
         $mudir = $this->user('mudir', 'department_manager', 'HZ-06');
@@ -50,11 +51,13 @@ class PlaceFileOrderTest extends TestCase
             'severity' => 4, 'likelihood' => 3, 'risk_score' => 12, 'status' => 'active', 'place_id' => $park->id, 'assigned_coordinator_id' => $mudir->id, 'assigned_field_team_id' => $fani->id]);
 
         $h = $this->actingAs($salama)->get("/app/places/{$park->id}/file")->assertOk()->getContent();
-        $ids = ['id="pfPlanSafety"', 'id="pfPlanResponse"', 'id="pfForms"', 'id="pfRisks"', 'id="pfNow"', 'id="pfUnitsH"', 'id="pfTeamH"', 'id="pfPermit"'];
+        // ٢٦-٦-ب: سطر الوحدات ← الشبكة ← الأزرار بترتيبها ١ ٢ ٣ ٤ ٥ ٧ ٨ (لا ٦)
+        $ids = ['id="pfUnitsLine"', 'id="pfGrid"', 'id="pfPlanSafety"', 'id="pfPlanResponse"', 'id="pfForms"', 'id="pfRisks"', 'id="pfNow"', 'id="pfTeamH"', 'id="pfPermit"'];
         $pos = array_map(fn ($i) => strpos($h, $i), $ids);
         $this->assertNotContains(false, $pos, 'قسم ناقص');
         $sorted = $pos; sort($sorted);
-        $this->assertSame($sorted, $pos, 'الترتيب: الخطتان ← النماذج ← المخاطر ← المفتوح ← الوحدات ← الفريق ← التصريح');
+        $this->assertSame($sorted, $pos, 'الترتيب: الوحدات ← الخطتان ← النماذج ← المخاطر ← المفتوح ← الفريق ← التصريح');
+        $this->assertStringNotContainsString('id="pfUnitsH"', $h);
         // ١ خطة السلامة بطبقتيها تفتح الخطة نفسها، ٢ خطة الاستجابة بآخر تمرين
         $this->assertMatchesRegularExpression('~id="pfPlanSafety".*?href="/HZ-01-basement/safety-plan.html".*?الاستباقية والتشغيلية.*?معتمدة~s', $h);
         $this->assertMatchesRegularExpression('~id="pfPlanResponse".*?href="/HZ-01-basement/response-plan.html".*?آخر تمرين 2026-09-10~s', $h);
@@ -65,14 +68,14 @@ class PlaceFileOrderTest extends TestCase
         // ٨ طلب تصريح هنا بالمكان محدداً
         $this->assertStringContainsString('href="'.route('permits.create').'?place=HZ-01" data-act="permit"', $h);
 
-        // الفني: لا يملك سجل المخاطر ولا طلب التصاريح ← القسمان باهتان باسم صاحبهما، بلا رابط
+        // الفني: لا يملك سجل المخاطر ولا طلب التصاريح ← الزران باهتان باسم صاحبهما، بلا رابط
         $f = $this->actingAs($fani)->get("/app/places/{$park->id}/file")->assertOk()->getContent();
-        $this->assertStringContainsString('class="sec-h pf-dim" id="pfRisks"', $f);
+        $this->assertMatchesRegularExpression('~id="pfRisks"[^>]*data-state="dim"~', $f);
         $this->assertStringNotContainsString('data-risk="PH-01-01/PARK"', $f);
         $this->assertStringNotContainsString(route('risk.active.index').'?place=HZ-01', $f);
-        $this->assertStringContainsString('<span class="btn btn-o pf-dim" data-act="permit"', $f);
+        $this->assertMatchesRegularExpression('~id="pfPermit"[^>]*data-state="dim"[^>]*data-act="permit"~', $f);
         $this->assertStringNotContainsString(route('permits.create').'?place=HZ-01', $f);
-        // والفني يرى نموذج فحصه بضغطة، والأقسام الثمانية كلها ظاهرة له
+        // والفني يرى نموذج فحصه بضغطة، والأزرار كلها ظاهرة له
         $this->assertStringContainsString('href="/HZ-01-basement/inspection-form.html"', $f);
         foreach ($ids as $i) $this->assertStringContainsString($i, $f, $i);
     }
