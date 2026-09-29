@@ -71,7 +71,7 @@ class CoordinatorSplitTest extends TestCase
         $mudir = $this->user('mudir', 'department_manager', $unit->id);
         $salama = $this->user('salama', 'system_admin');
 
-        $this->assertTrue(IntentRegistry::forUser($mudir)->contains('key', 'my_coordinator'));
+        $this->assertTrue(IntentRegistry::forUser($mudir)->contains('key', 'my_accounts')); // ٢٦-٨: «منسق سلامة إدارتي» صار «حسابات إدارتي»
         $this->actingAs($mudir)->get('/app/users')->assertOk()->assertSee('منسق سلامة إدارتي');
 
         // لا يسجّل إلا منسق سلامة، ولوحدته فقط

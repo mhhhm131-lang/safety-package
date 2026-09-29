@@ -91,8 +91,9 @@ class PlaceUnitsTest extends TestCase
         // مسؤول السلامة يرى الكل ويعدّل الكل
         $this->actingAs($this->salama)->get("/app/places/{$this->offices->id}/units")->assertOk()->assertSee('data-dept="it"', false)->assertSee('data-dept="fin"', false);
         $this->actingAs($this->salama)->post("/app/places/{$this->offices->id}/units", ['type' => 'department', 'organization_unit_id' => $it->id, 'name' => 'x', 'floor' => '٢'])->assertSessionHas('success');
-        // نية «موقع إدارتي في مكانها» تفتح مكان إدارته
-        $this->actingAs($this->mudir)->get('/app')->assertOk()->assertSee('موقع إدارتي في مكانها')->assertSee('href="'.url("/app/places/{$this->offices->id}/units").'"', false);
+        // ٢٦-٨ (قرار ٦٧): نية «موقع إدارتي في مكانها» حُذفت — بابها الواحد ملف المكان (البند ٦) الذي يفتحه مربع المكان في الصفحة الأولى
+        $this->actingAs($this->mudir)->get('/app')->assertOk()->assertDontSee('موقع إدارتي في مكانها')->assertSee('data-place="HZ-06"', false);
+        $this->actingAs($this->mudir)->get("/app/places/{$this->offices->id}/file")->assertOk()->assertSee('href="'.url("/app/places/{$this->offices->id}/units").'"', false);
     }
 
     /** التعديل والإزالة: الإزالة تخفي ولا تحذف. */

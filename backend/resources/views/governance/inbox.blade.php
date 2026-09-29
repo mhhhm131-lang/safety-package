@@ -106,7 +106,7 @@
 @else
   {{-- قرار المستخدم ٢٠٢٦-٠٩-١٣: لا خلط — كل نوع في قسمه بأيقونته وعدّه. بلاغات الشاغلين ≠ بلاغات الفحص الفني --}}
   @php
-    $ICONS = ['بلاغات الشاغلين' => 'bi-megaphone-fill', 'بلاغات الفحص' => 'bi-clipboard-check', 'جولات الفحص' => 'bi-calendar-check', 'الطوارئ' => 'bi-broadcast', 'الفريق الأولي' => 'bi-people-fill', 'التصاريح' => 'bi-file-earmark-check', 'المخاطر' => 'bi-lightning-charge', 'النماذج' => 'bi-ui-checks', 'المقاولون' => 'bi-buildings', 'الحسابات' => 'bi-person-check'];
+    $ICONS = \App\Core\Inbox\InboxService::GROUPS; // ٢٦-٨ (قرار ٦٧): المجموعات العشر نفسها في «ما ينتظرك» و«أريد أن»
     $ORDER = array_keys($ICONS);
     $groups = $tasks->groupBy('module')->sortBy(fn ($g, $m) => array_search($m, $ORDER) === false ? 99 : array_search($m, $ORDER));
   @endphp

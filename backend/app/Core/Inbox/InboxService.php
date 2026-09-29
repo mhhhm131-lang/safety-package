@@ -11,6 +11,23 @@ use Illuminate\Support\Collection;
  */
 class InboxService
 {
+    /**
+     * ٢٦-٨ (قرار ٦٧): المجموعات العشر بترتيبها وأيقوناتها — واحدة لجانبي الشاشة: «ما ينتظرك» (ما يُراد مني) و«أريد أن» (ما أبدؤه).
+     * كل بطاقة (Task::module) وكل زر (Intent::group) ينتمي إلى واحدة منها.
+     */
+    public const GROUPS = [
+        'بلاغات الشاغلين' => 'bi-megaphone-fill',
+        'بلاغات الفحص'    => 'bi-clipboard-check',
+        'جولات الفحص'     => 'bi-calendar-check',
+        'الطوارئ'          => 'bi-broadcast',
+        'الفريق الأولي'    => 'bi-people-fill',
+        'التصاريح'         => 'bi-file-earmark-check',
+        'المخاطر'          => 'bi-lightning-charge',
+        'النماذج'          => 'bi-ui-checks',
+        'المقاولون'        => 'bi-buildings',
+        'الحسابات'         => 'bi-person-check',
+    ];
+
     /** المصادر بترتيب ثابت؛ كل مصدر يعيد استخدام استعلام وحدته القائم (BACKEND.md ٧-٢ «المرحلة ١١»). */
     public const SOURCES = [
         \App\Modules\Incident\Inbox\IncidentTasks::class,

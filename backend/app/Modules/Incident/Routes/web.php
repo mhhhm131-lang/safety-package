@@ -28,6 +28,8 @@ Route::middleware(['auth'])->prefix('app/incidents')->name('incidents.')->group(
         Route::get('/settings', [IncidentSettingsController::class, 'edit'])->name('settings');
         Route::post('/settings', [IncidentSettingsController::class, 'update'])->name('settings.update');
     });
+    // ٢٦-٨ (قرار ٦٧): «أتابع بلاغاتي» — لصاحب الحساب أياً كان دوره، بلا صلاحية سجل؛ بلاغاته هو (actor_id) وحدها
+    Route::get('/mine', [IncidentController::class, 'mine'])->name('mine');
     // بلا صلاحية قائمة: المبلّغ بحساب (موظف مثلاً) يرى بلاغه ويوافق على إغلاقه — الرؤية تحكمها VisibilityService
     Route::get('/{incident}', [IncidentController::class, 'show'])->name('show')->whereNumber('incident');
     Route::get('/{incident}/attachments/{attachment}', [IncidentController::class, 'attachment'])->name('attachment')->whereNumber('incident');

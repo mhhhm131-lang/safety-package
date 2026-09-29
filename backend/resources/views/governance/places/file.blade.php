@@ -72,7 +72,9 @@
 {{-- ٣. نماذج الفحص الخاصة بالمكان: النموذج بضغطة، وكل نظام بآخر جولة وموعد القادمة --}}
 @php($ins = $PL['insp'] ?? null)
 <h2 class="sec-h" id="pfForms"><span class="pf-n">٣</span><i class="bi bi-clipboard-check"></i> نماذج الفحص <span class="badge text-bg-dark">{{ count($systems) }}</span>
-  @if($ins)<span class="small text-muted fw-normal" data-ready="insp">{{ $ins['v'] }}</span>@endif</h2>
+  @if($ins)<span class="small text-muted fw-normal" data-ready="insp">{{ $ins['v'] }}</span>@endif
+  {{-- ٢٦-٨ (قرار ٦٧): «نماذج الفحص» كلها خرجت من «أريد أن» — بابها من داخل ملف المكان --}}
+  @if($ui)<a class="btn btn-o btn-sm ms-auto" href="{{ route('app.inspections') }}">النماذج العشرة</a>@endif</h2>
 <div class="d-flex flex-wrap gap-2 mb-2" id="pfActs">
   @if($ui)@foreach($forms as $f)<a class="btn btn-g btn-sm" href="/{{ $f['file'] }}"><i class="bi bi-clipboard-check"></i> {{ str_contains($f['key'], 'fire') ? 'فحص أنظمة الحريق' : (str_contains($f['key'], 'center') ? 'فحص الجاهزية' : 'نموذج الفحص') }}</a>@endforeach
   @else<span class="btn btn-o btn-sm pf-dim" title="لفني المكان ومدير المرافق ومسؤول السلامة"><i class="bi bi-clipboard-check"></i> نموذج الفحص <span class="small">— لفني المكان</span></span>@endif

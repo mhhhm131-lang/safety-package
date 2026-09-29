@@ -29,9 +29,11 @@ class IntentsTest extends TestCase
 
     /** الإجراءات التي يبدؤها الإنسان بنفسه ← الصلاحية التي تشترطها ← مفتاح النية الذي يجب أن يظهر */
     private const INITIATING = [
-        'permit.create' => 'permit', 'risk.activate' => 'activate', 'form.send' => 'sendform',
+        'risk.activate' => 'activate', 'form.send' => 'sendform',
         'worker.create' => 'worker', 'project.create' => 'project',
-        'external_party.create' => 'party', 'report.view' => 'reports', 'system.settings' => 'settings', // ٢٦-٧: الطوارئ في صفحة المركز والزر الأحمر لا في أريد أن
+        'external_party.create' => 'party', 'permit.list' => 'gate', 'competency.view' => 'competency',
+        // ٢٦-٧: الطوارئ في صفحة المركز والزر الأحمر لا في أريد أن
+        // ٢٦-٨ (قرار ٦٧): طلب التصريح من ملف المكان، والتقارير تحت الرسم، والإعدادات في المزيد — ليست هنا
     ];
 
     protected function setUp(): void
@@ -64,7 +66,6 @@ class IntentsTest extends TestCase
             $intents = IntentRegistry::forUser($u);
             foreach (self::INITIATING as $perm => $key) {
                 $needs = PermissionRegistry::hasPermission($role, $perm);
-                if ($perm === 'permit.create') $needs = $needs && PermissionRegistry::hasPermission($role, 'permit.list'); // المسار نفسه يشترطهما (خلل قائم للموظف)
                 if ($needs) {
                     $this->assertStringContainsString('data-intent="'.$key.'"', $html, "الدور {$role} يملك {$perm} ولا زر «{$key}» في شاشته الأولى");
                 } elseif (!in_array($key, ['report', 'center'], true)) { // ٢٥-٣: باب «مركز السلامة وإدارة الطوارئ» يظهر أيضاً لمن يملك incident.list وحده
@@ -92,7 +93,8 @@ class IntentsTest extends TestCase
         $mudir = $this->user('mudir', 'department_manager', null, OrganizationUnit::first()->id);
         $h = $this->actingAs($mudir)->get('/app')->assertOk()->getContent();
         // مدير الإدارة لا يملك permit.create في مصفوفة الصلاحيات القائمة (OHSMS) — يُسجَّل سؤالاً للمستخدم لا يُخترع
-        foreach (['nominate', 'activate', 'plans'] as $k) $this->assertStringContainsString('data-intent="'.$k.'"', $h, $k);
+        foreach (['activate', 'plans', 'my_accounts'] as $k) $this->assertStringContainsString('data-intent="'.$k.'"', $h, $k);
+        $this->assertStringNotContainsString('data-intent="nominate"', $h); // ٢٦-٨ (قرار ٦٧): الترشيح من ملف المكان (البند ٧) لا من أريد أن
         $this->assertStringNotContainsString('#intents [data-intent="trigger"]', ''); // ٢٦-٧: «فعّل» في الزر الأحمر لا في أريد أن
         $this->assertStringNotContainsString('data-intent="permit"', $h);
         $this->assertStringNotContainsString('data-intent="inspect"', $h);
@@ -101,7 +103,8 @@ class IntentsTest extends TestCase
         $salama = $this->user('salama', 'system_admin', 'HZ-00');
         $h = $this->actingAs($salama)->get('/app')->assertOk()->getContent();
         // قرار ٢٠٢٦-٠٩-١٣: «نماذج الفحص» لمن يملك اللوحة — العشرة بمكانها وبلاغاتها المفتوحة، وكل نموذج بضغطة
-        $this->assertStringContainsString('data-intent="forms"', $h);
+        // ٢٦-٨ (قرار ٦٧): الشاشة باقية وبابها من داخل ملف المكان (البند ٣)، لا زر في أريد أن
+        $this->assertStringNotContainsString('data-intent="forms"', $h);
         \App\Modules\Store\Models\InstituteDocument::create(['key' => 'ipa-office-form-v10', 'version' => 1, 'data' => json_encode(['reports' => [
             ['row' => 'o09', 'item' => 'إضاءة طوارئ معطلة', 'due' => '٢٤ ساعة', 'levels' => []]],
             // ١٩-٢: الشكل الحقيقي الذي يكتبه النموذج (`logRounds`: ROUNDS[k] = [{d,s,t,q,n,f,ok,no,na,tot}]) — كان هنا قائمة بحقل `date` لا ينتجها النموذج أبداً
@@ -113,9 +116,11 @@ class IntentsTest extends TestCase
         $this->actingAs($this->user('emp2', 'employee'))->get('/app/inspections')->assertForbidden();
         // ٢٢-٨ (د): «lockdown» لم تعد نيةً مستقلة — دُمجت في «فعّل» لأنها كانت تفتح الشاشة نفسها
         $this->assertStringNotContainsString('data-intent="lockdown"', $h);
-        foreach (['permit', 'sendform', 'worker', 'project', 'party', 'reports', 'settings'] as $k) {
+        foreach (['sendform', 'worker', 'project', 'party', 'gate', 'competency', 'book', 'activate', 'my_reports'] as $k) {
             $this->assertStringContainsString('data-intent="'.$k.'"', $h, $k);
         }
+        // ٢٦-٨ (قرار ٦٧): ما له باب آخر لا يتكرر هنا — طلب التصريح وسجله (ملف المكان والرسم)، التقارير (الرسم)، الإعدادات (المزيد)
+        foreach (['permit', 'permits', 'reports', 'settings', 'makani', 'units', 'nominate'] as $k) $this->assertStringNotContainsString('data-intent="'.$k.'"', $h, $k);
         // ٢٦-٧: الطوارئ خرجت من «أريد أن» إلى صفحة المركز والزر الأحمر
         foreach (['drill', 'teams', 'systems', 'center', 'arrived', 'medical'] as $k) $this->assertStringNotContainsString('data-intent="'.$k.'"', $h, $k);
         $this->assertStringContainsString('?place=HZ-00', $this->actingAs($salama)->get('/app/emergency/sos')->getContent()); // التفعيل بمكانه محدداً — داخل الزر الأحمر

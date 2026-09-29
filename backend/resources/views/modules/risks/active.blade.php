@@ -37,6 +37,10 @@
                     @endforeach
                 </select>
             </form>
+            {{-- ٢٦-٨ (قرار ٦٧): طابور الاعتماد خرج من «المزيد» — بابه من داخل السجل، وبنوده بطاقات في «ما ينتظرك» --}}
+            @if(\App\Core\Permissions\PermissionRegistry::hasPermission(auth()->user()->role(), 'risk.approve'))
+            <a href="{{ route('risk.approval.queue') }}" class="btn btn-outline-secondary btn-sm" id="approvalQueueLink"><i class="bi bi-check2-square"></i> اعتماد المخاطر</a>
+            @endif
             <a href="{{ route('risk.active.create') }}" class="btn btn-accent">
                 <i class="bi bi-plus-lg me-1"></i> إضافة خطر
             </a>

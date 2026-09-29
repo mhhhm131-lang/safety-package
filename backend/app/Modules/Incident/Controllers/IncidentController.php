@@ -193,6 +193,13 @@ class IncidentController extends Controller
         return view('modules.incidents.dashboard', ['counts' => $counts, 'incidents' => $incidents, 'places' => Place::orderBy('sort')->get()]);
     }
 
+    /** ٢٦-٨ (قرار ٦٧): «أتابع بلاغاتي» — بلاغات صاحب الحساب وحالة كل واحد؛ الرؤية بالمبلّغ نفسه (actor_id) لا بصلاحية السجل */
+    public function mine()
+    {
+        $incidents = Incident::where('actor_id', Auth::id())->with(['place', 'placeUnit'])->orderByDesc('id')->get();
+        return view('modules.incidents.mine', compact('incidents'));
+    }
+
     public function show(Incident $incident)
     {
         $user = Auth::user();

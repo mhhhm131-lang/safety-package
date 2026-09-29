@@ -49,7 +49,8 @@ class MakaniTest extends TestCase
 
         $h = $this->actingAs($emp)->get('/app')->assertOk()->getContent();
         // ٢٥-٣ (قرار ٦٥): سطر «مكاني» حُذف — مربع المكان في الصفحة الأولى يفتح الملف، وهاتف المركز في بطاقة الأماكن
-        $this->assertStringContainsString('data-intent="makani"', $h);
+        // ٢٦-٨ (قرار ٦٧): زر «مكاني» حُذف أيضاً — باب واحد: المربع
+        $this->assertStringNotContainsString('data-intent="makani"', $h);
         $this->assertStringNotContainsString('id="makaniLine"', $h);
         $this->assertStringContainsString('href="'.url('/app/places/'.$this->hub->id.'/file').'" data-place="HZ-06"', $h);
         $this->assertStringContainsString('المكاتب الإدارية', $h);

@@ -2,10 +2,10 @@
 
 namespace App\Core\Intents;
 
+use App\Core\Inbox\InboxService;
 use App\Core\Permissions\PermissionRegistry;
 use App\Models\User;
 use App\Modules\Emergency\Models\EmergencyBuilding;
-use App\Modules\Emergency\Models\EmergencyTeam;
 use App\Modules\Governance\Models\Place;
 use App\Modules\Governance\Models\UserProfile;
 use Illuminate\Support\Collection;
@@ -14,6 +14,12 @@ use Illuminate\Support\Collection;
  * المرحلة ١٢ (قرار ٣٥): سجل النوايا الواحد. كل نية: اسم بلغة الناس + شرط + شاشة.
  * الشرط صلاحية من PermissionRegistry، أو دور واجهة، أو مكان في ملف المستخدم، أو ضيف.
  * أزرار المستخدم = النوايا التي يحقق شرطها — الدور الجديد يحصل على أزراره وحده، بلا قائمة مكتوبة له.
+ *
+ * ٢٦-٨ (قرار ٦٧): محركان فقط — «ما ينتظرك» ما يُراد من الشخص، و«أريد أن» ما يبدؤه بنفسه، فعلاً كان أو قراءة.
+ * المجموعات هي المجموعات العشر نفسها في «ما ينتظرك» (InboxService::GROUPS) بترتيبها وأيقوناتها.
+ * القاعدة: كل ما أبدؤه له باب واحد. ما له باب في مكان آخر لا يتكرر هنا:
+ *   نماذج الفحص، طلب التصريح، الوحدات، ترشيح الفريق ← ملف المكان (البنود ٣، ٨، ٦، ٧) · سجل التصاريح والتقارير ← الرسم ·
+ *   الإعدادات ← المزيد · «مكاني» ← مربع المكان · البلاغ ← صفحة الرؤية (٢٦-٢) · الطوارئ ← الزر الأحمر وصفحة المركز (٢٦-٧).
  *
  * التعريف: [key, label, icon, group, primary, url|closure(User|null, UserProfile|null): ?string, condition: closure(role, profile, user): bool]
  */
@@ -39,93 +45,85 @@ class IntentRegistry
         $profile = UserProfile::where('user_id', $user->id)->first();
         $can = fn (string $p) => PermissionRegistry::hasPermission($role, $p);
         $ui = PermissionRegistry::uiRole($role);
+        $active = (bool) $profile?->is_active;
         $placeCode = $profile?->place_id ? Place::find($profile->place_id)?->code : null;
         $folder = $placeCode ? (Place::FOLDERS[$placeCode] ?? null) : null;
         $main = EmergencyBuilding::main();
-        $isTeamMember = EmergencyTeam::active()->whereHas('members', fn ($q) => $q->where('user_id', $user->id))->exists();
+        $G = array_keys(InboxService::GROUPS);
+        [$gIncidents, , $gRounds, $gEmergency, $gTeam, $gPermits, $gRisks, $gForms, $gContractors, $gAccounts] = $G;
         $out = collect();
         $add = function (bool $cond, string $key, string $label, ?string $url, string $icon, string $group, bool $primary = false, ?string $hint = null) use (&$out) {
             if ($cond && $url) $out->push(new Intent($key, $label, $url, $icon, $hint, $primary, $group));
         };
 
-        if ($user->isContractor()) {
-            $add(true, 'portal', 'بوابتي', route('contractor.home'), 'bi-building', 'المقاولون', true, 'طرفي ومشاريعي وعمالي ووثائقي');
-        }
-        // ١٩-٦ (قرار ٤٩): «مكاني» لكل حساب له مكان (ومنهم الموظف) — ملف مكانه بضغطة: فريقه بهواتفهم ورقم المركز وخطتاه
-        $my = $profile?->is_active ? $profile->myPlace() : null;
-        $add((bool) $my, 'makani', 'مكاني', $my ? route('app.places.units.file', $my, false) : null, 'bi-geo-alt-fill', 'مكاني', true, $my ? $my->name.' — فريقك بهواتفهم ورقم المركز والخطتان' : null);
-        // البلاغ
-        // قرار المستخدم ٢٠٢٦-٠٩-١٣: زر واحد للجميع يفتح اختيار النوع (عادي/سري/عاجل) بميزة كل نوع له
-        // ٢٦-٢ (قرار ٦٦، بكلمته «كل البلاغات تحت الرؤية… في الرؤية فقط»): لا زر بلاغ داخل الحساب — البلاغ بأنواعه من صفحة البلاغ العامة (الرؤية، QR، قنوات الإبلاغ)
-        $add(false, 'report', 'أبلّغ عن خطر', route('incident.landing'), 'bi-megaphone-fill', 'البلاغ', true, 'عادي لا يُغلق إلا بموافقتك · سري يخفي هويتك · عاجل اتصل بالمركز');
-        // ٢٥-٣ (قرار ٦٥): «سجل مركز السلامة» دُمج في باب «مركز السلامة وإدارة الطوارئ» أدناه (قرار ٥٨: باب واحد)
-        // الفني: مكانه
-        $add($ui === 'tech' && $folder, 'inspect', 'أفحص مكاني', $folder ? '/'.$folder.'/inspection-form.html' : null, 'bi-clipboard-check', 'الفحص', true, $placeCode ? 'نموذج فحص '.$placeCode : null);
-        $add((bool) $ui, 'forms', 'نماذج الفحص', route('app.inspections'), 'bi-clipboard-check', 'الفحص', $ui !== 'tech', 'النماذج العشرة: آخر جولة وبلاغاتها المفتوحة، وكل نموذج بضغطة');
+        // ── بلاغات الشاغلين ── البلاغ نفسه من صفحة الرؤية (٢٦-٢)؛ هنا المتابعة فقط
+        // ٢٦-٨ (قرار ٦٧): «أتابع بلاغاتي» — كان صاحب الحساب لا يجد بلاغاته إلا من الإشعار
+        $add($active, 'my_reports', 'أتابع بلاغاتي', route('incidents.mine'), 'bi-search', $gIncidents, false, 'بلاغاتك وحالة كل واحد');
+
         // ١٩-٧ (قرار ٤٨): نية «العمل اليومي» حُذفت — كل ما كان في اللوحة صار في «ما ينتظرك» و«الأماكن» وملف المكان
-        // الطوارئ
+        // ٢٥-٣ (قرار ٦٥): «سجل مركز السلامة» دُمج في باب «مركز السلامة وإدارة الطوارئ» (قرار ٥٨: باب واحد) — يفتحه مربع المركز منذ ٢٦-٧
+        // ── جولات الفحص ── الفني: نموذج مكانه بضغطة (نماذج الأماكن كلها من ملف كل مكان، البند ٣)
+        $add($ui === 'tech' && $folder, 'inspect', 'أفحص مكاني', $folder ? '/'.$folder.'/inspection-form.html' : null, 'bi-clipboard-check', $gRounds, true, $placeCode ? 'نموذج فحص '.$placeCode : null);
+
+        // ── الطوارئ ── (٢٦-٧: الشاشات كلها في صفحة المركز والزر الأحمر؛ ما يلي بعضه يُخفى من القائمة ويبقى في السجل للشريط)
         // ٢٢-٢ (د): حالة مفتوحة تخصّ صاحب الحساب ← شاشته أولاً وقبل كل شيء. لكل حساب، ومنه الموظف بلا صلاحية طوارئ.
-        $myCheckIn = $profile?->is_active
+        $myCheckIn = $active
             ? \App\Modules\Emergency\Models\EvacuationCheckIn::where('user_id', $user->id)
                 ->whereHas('incident', fn ($q) => $q->whereIn('status', ['active', 'contained']))->latest('id')->first()
             : null;
         $add((bool) $myCheckIn, 'my_emergency',
             $myCheckIn?->incident?->is_drill ? 'تمرين إخلاء — ماذا أفعل' : 'حالة طارئة — ماذا أفعل',
-            route('emergency.me'), 'bi-exclamation-octagon-fill', 'الطوارئ', true,
+            route('emergency.me'), 'bi-exclamation-octagon-fill', $gEmergency, true,
             $myCheckIn ? trim(($myCheckIn->incident->place?->name ?? '').' · أقرب مخرج ونقطة التجمع، وسجّل وصولك بزر') : null);
         // ٢٢-٨ (د): «إخلاء أو إغلاق» كانت نيةً ثانية تفتح الشاشة نفسها — دُمجت في «فعّل»، والوظيفة باقية في الشاشة
-        $add($can('emergency.trigger') && $main, 'trigger', 'فعّل حالة طارئة', $main ? route('emergency.buildings.control', $main).($placeCode ? '?place='.$placeCode : '') : null, 'bi-bell-fill', 'الطوارئ', true, 'الفريق الأولي والقيادة يُنبَّهون فوراً — ومنها الإخلاء والإغلاق الأمني');
-        // ٢٢-٣ (د): الاستغاثة لكل حساب مفعَّل — كانت للمستجيبين وحدهم وتفتح لوحة المركز ولا تُطلق شيئاً.
-        // ٢٥-٣ (قرار ٦٥): «أستغيث الآن» تبقى نيةً لأن الشريط الأحمر الثابت يُبنى منها، وتُخفى من قائمة «أريد أن…» (_intents.blade.php) حتى لا تتكرر
-        $add((bool) $profile?->is_active, 'sos', 'طوارئ الآن', route('emergency.sos'), 'bi-exclamation-octagon-fill', 'الطوارئ', true, 'تصل مركز السلامة فوراً باسمك ومكانك'); // ٢٦-٣: اسم واحد للزر الأحمر
-        // ٢٢-٤ (د): «وصلتُ» تفتح الفعل على شاشته لا لوحة المركز؛ وتسجيل وصول غيره يبقى في شاشة الحالة
-        $add($can('emergency.respond'), 'arrived', 'وصلتُ إلى الموقع', route('emergency.me'), 'bi-check2-circle', 'الطوارئ', false, 'يُسجَّل وصولك فيراه المركز');
-        $add($can('emergency.drill'), 'drill', 'أجدول تمريناً', route('emergency.drills.create'), 'bi-calendar-event', 'الطوارئ');
-        $add($can('emergency.teams'), 'teams', 'الفريق الأولي', route('emergency.teams.index'), 'bi-people-fill', 'الطوارئ');
-        // ٢٥-٣ (قرار ٦٥، وقرار ٥٨): باب واحد «مركز السلامة وإدارة الطوارئ» — لوحته لمن يملك الطوارئ، وسجل بلاغات الشاغلين لمن يملك السجل وحده
+        $add($can('emergency.trigger') && $main, 'trigger', 'فعّل حالة طارئة', $main ? route('emergency.buildings.control', $main).($placeCode ? '?place='.$placeCode : '') : null, 'bi-bell-fill', $gEmergency, true, 'الفريق الأولي والقيادة يُنبَّهون فوراً — ومنها الإخلاء والإغلاق الأمني');
+        // ٢٢-٣ (د) ثم ٢٥-٣ (قرار ٦٥): «طوارئ الآن» تبقى نيةً لأن الشريط الأحمر الثابت يُبنى منها، وتُخفى من القائمة
+        $add($active, 'sos', 'طوارئ الآن', route('emergency.sos'), 'bi-exclamation-octagon-fill', $gEmergency, true, 'تصل مركز السلامة فوراً باسمك ومكانك'); // ٢٦-٣: اسم واحد للزر الأحمر
+        $add($can('emergency.respond'), 'arrived', 'وصلتُ إلى الموقع', route('emergency.me'), 'bi-check2-circle', $gEmergency, false, 'يُسجَّل وصولك فيراه المركز');
+        $add($can('emergency.drill'), 'drill', 'أجدول تمريناً', route('emergency.drills.create'), 'bi-calendar-event', $gEmergency);
+        $add($can('emergency.teams'), 'teams', 'الفريق الأولي', route('emergency.teams.index'), 'bi-people-fill', $gEmergency);
+        // ٢٥-٣ (قرار ٦٥، وقرار ٥٨): باب واحد «مركز السلامة وإدارة الطوارئ» — يفتحه مربع المركز منذ ٢٦-٧
         $add($can('emergency.view') || $can('incident.list'), 'center', 'مركز السلامة وإدارة الطوارئ',
-            $can('emergency.view') ? route('emergency.dashboard') : route('incidents.index'), 'bi-broadcast', 'الطوارئ', false,
+            $can('emergency.view') ? route('emergency.dashboard') : route('incidents.index'), 'bi-broadcast', $gEmergency, false,
             $can('emergency.view') ? 'ما يجري الآن، والحالات، وسجل بلاغات الشاغلين' : 'سجل بلاغات الشاغلين');
-        // ٢٢-٦ب (قرار ٦٠): ملف الشخص الطبي — كان مبنياً بلا رابط يصله صاحبه؛ والطبيب وحده يرى ملفات الناس
-        $add((bool) $profile?->is_active, 'my_medical', 'ملفي الطبي', route('emergency.medical.my-profile'), 'bi-heart-pulse', 'مكاني', false, 'اختياري — لا يطّلع عليه إلا طبيب العيادة');
-        $add($can('medical.read'), 'medical', 'الملفات الطبية', route('emergency.medical.dashboard'), 'bi-file-medical', 'الطوارئ', true, 'للعيادة وحدها، وكل اطّلاع يُسجَّل');
-        $add($can('emergency.view') && in_array($role, ['facilities_manager', 'system_admin', 'system_staff'], true), 'systems', 'أنظمة المبنى', route('emergency.iot.dashboard'), 'bi-cpu', 'الطوارئ');
-        // الإدارة: الفريق والمخاطر
-        // ١٩-٥ (قرار ٤٨): الترشيح في ملف مكان الإدارة داخل الخلفية (كان يفتح اللوحة)
-        $nomPlace = ($ui === 'dept' && $profile?->organization_unit_id)
-            ? (\App\Modules\Governance\Models\OrganizationUnit::find($profile->organization_unit_id)?->place_id ?? Place::idByCode('HZ-06')) : null;
-        $add((bool) $nomPlace, 'nominate', 'أرشّح الفريق الأولي لإدارتي', $nomPlace ? route('app.places.units.file', $nomPlace, false).'#pfTeams' : null, 'bi-person-plus', 'إدارتي', true, 'منسق ومسعف ومنقذ وإطفائي من موظفيك');
-        // المرحلة ١٨-٣ (قرار ٤٧): وحدات الأماكن — مدير المرافق كل الأماكن، ومدير الإدارة إدارته في مكانها، ومسؤول السلامة الكل
-        $unitsUrl = ($ui === 'dept' && $profile?->organization_unit_id && ($ouPlace = \App\Modules\Governance\Models\OrganizationUnit::find($profile->organization_unit_id)?->place_id))
-            ? route('app.places.units.index', $ouPlace) : route('app.places.units.hub');
-        // ١٩-٤ (قرار ٤٨): «الأماكن» لكل أدوار الواجهة — الفسيفساء وملف كل مكان (ومنه وحداته)؛ ومدير الإدارة يبقى له «موقع إدارتي في مكانها»
-        $isCenter = in_array($role, ['system_admin', 'system_staff'], true);
-        // ٢٥-١/٢٥-٣ (قرار ٦٤/٦٥): نية «الأماكن» حُذفت — الأماكن في الصفحة الأولى لكل حساب
-        $add(false, 'places', 'الأماكن', route('app.places.units.hub'), 'bi-geo-alt', 'الفحص', false,
-            $role === 'facilities_manager' || $isCenter ? 'حالة كل مكان وملفه، ووحداته: القاعات والغرف والمستودعات' : 'حالة كل مكان وملفه: أنظمته وبلاغاته وفريقه وخطتاه');
-        $add($ui === 'dept' && !$isCenter && $profile?->organization_unit_id, 'units', 'موقع إدارتي في مكانها', $unitsUrl, 'bi-grid-3x3-gap', 'إدارتي', false, 'الدور والموقع');
-        $add($can('risk.activate'), 'activate', 'أفعّل خطراً لإدارتي', route('risk.reference.index'), 'bi-lightning-charge', 'إدارتي', false, 'من كتاب المعهد');
-        $add($can('risk.list'), 'book', 'السجل العام للمعهد', route('risk.reference.index'), 'bi-bookmark', 'إدارتي');
-        $add($can('form.send'), 'sendform', 'أرسل نموذجاً لموظفين', route('forms.index'), 'bi-send', 'إدارتي');
-        $add(true, 'myforms', 'أعبّئ نماذجي', route('forms.mine'), 'bi-inbox', 'النماذج');
-        // التصاريح والمقاولون
-        $add($can('permit.create') && $can('permit.list'), 'permit', 'أطلب تصريح عمل', route('permits.create'), 'bi-file-earmark-plus', 'التصاريح', false, 'أعمال ساخنة، ارتفاعات، حيز مغلق…');
-        $add($can('permit.list'), 'permits', 'سجل التصاريح', route('permits.index'), 'bi-file-earmark-check', 'التصاريح');
-        $add($can('worker.create'), 'worker', 'أسجّل عاملاً', route('workers.create'), 'bi-person-vcard', 'المقاولون');
-        $add($can('project.create'), 'project', 'مشروع جديد', route('projects.create'), 'bi-kanban', 'المقاولون');
-        $add($can('external_party.create'), 'party', 'طرف خارجي جديد', route('external-parties.create'), 'bi-buildings', 'المقاولون');
-        // التقارير والتوعية
-        $add($can('report.view'), 'reports', 'التقارير', route('reports.dashboard'), 'bi-clipboard-data', 'التقارير');
-        $add(true, 'hazards', 'أعرف أخطار مكاني', route('hazards.index'), 'bi-book', 'التوعية');
-        $add(true, 'plans', 'خطة مكاني', $folder ? '/'.$folder.'/index.html' : '/index.html', 'bi-map', 'التوعية');
+        $add($can('medical.read'), 'medical', 'الملفات الطبية', route('emergency.medical.dashboard'), 'bi-file-medical', $gEmergency, true, 'للعيادة وحدها، وكل اطّلاع يُسجَّل');
+        $add($can('emergency.view') && in_array($role, ['facilities_manager', 'system_admin', 'system_staff'], true), 'systems', 'أنظمة المبنى', route('emergency.iot.dashboard'), 'bi-cpu', $gEmergency);
+        // ما يبدؤه الشخص في الطوارئ بنفسه: خطة مكانه (٢٦-١٣ يوجّهها إلى خطتي ملفه)، وملفه الطبي (قرار ٦٠)
+        $add(true, 'plans', 'خطة مكاني', $folder ? '/'.$folder.'/index.html' : '/index.html', 'bi-map', $gEmergency);
+        $add($active, 'my_medical', 'ملفي الطبي', route('emergency.medical.my-profile'), 'bi-heart-pulse', $gEmergency, false, 'اختياري — لا يطّلع عليه إلا طبيب العيادة');
+
+        // ── الفريق الأولي ── الترشيح من ملف المكان (البند ٧)؛ هنا معرفة الدور والبطاقات
         // ١٩-٦ (قرار ٤٩): بطاقة الشخص مباشرة حين تكون له بطاقة واحدة، وإلا الفهرس
         $card = \App\Modules\Emergency\Support\RoleCards::forUser($user);
-        $add(true, 'roles', $card ? 'بطاقة دوري' : 'أعرف دوري', $card ? \App\Modules\Emergency\Support\RoleCards::url($card) : '/role-cards/index.html', 'bi-person-badge', 'التوعية', false,
+        $add(true, 'roles', $card ? 'بطاقة دوري' : 'أعرف دوري', $card ? \App\Modules\Emergency\Support\RoleCards::url($card) : '/role-cards/index.html', 'bi-person-badge', $gTeam, false,
             $card ? \App\Modules\Emergency\Support\RoleCards::CARDS[$card]['name'] : null);
-        $add($can('system.users.own') && !$can('system.users') && $role === 'facilities_manager', 'my_techs', 'فنيّي', route('app.users.index'), 'bi-person-gear', 'إدارتي', true, 'أسجل فنياً بتخصصه وتغطيته — يعمل بعد اعتماد مسؤول السلامة'); // ٢٠-٤
-        $add($can('system.users.own') && !$can('system.users') && $role !== 'facilities_manager', 'my_coordinator', 'منسق سلامة إدارتي', route('app.users.index'), 'bi-person-check', 'إدارتي', true, 'أرشّح منسق سلامة وحدتي — يعمل بعد اعتماد مسؤول السلامة'); // ٢١-١ (قرار ٥٣)
-        $add(true, 'roles_map', 'الأدوار والبطاقات', route('app.roles'), 'bi-diagram-2', 'التوعية', false, 'من يفعل ماذا: الأدوار الـ٢٧ وبطاقات السلامة الـ٢١ ومن يحملها'); // ٢٠-٦
-        $add($can('system.settings'), 'settings', 'الإعدادات', route('app.settings'), 'bi-sliders', 'الإعدادات');
+        $add(true, 'roles_map', 'الأدوار والبطاقات', route('app.roles'), 'bi-diagram-2', $gTeam, false, 'من يفعل ماذا: الأدوار الـ٢٧ وبطاقات السلامة الـ٢١ ومن يحملها'); // ٢٠-٦
+
+        // ── التصاريح ── الطلب من ملف المكان (البند ٨) والسجل من الرسم؛ هنا فحص الجاهزية عند البوابة
+        $add($can('permit.list'), 'gate', 'أتحقق من جاهزية عامل', route('permits.gate'), 'bi-person-check', $gPermits, false, 'قبل دخوله موقع العمل: وثائقه وتدريبه وفحصه الطبي');
+
+        // ── المخاطر ── «السجل العام» قراءة (الكتاب)، و«أفعّل خطراً» فعل من الكتاب إلى الإدارة — سؤالان مختلفان وإن فتحا الصفحة نفسها (قرار ٦٧-٥)
+        $add($can('risk.list'), 'book', 'السجل العام للمعهد', route('risk.reference.index'), 'bi-bookmark', $gRisks, false, 'كتاب أخطار المعهد كاملاً');
+        $add($can('risk.activate'), 'activate', 'أفعّل خطراً لإدارتي', route('risk.reference.index'), 'bi-lightning-charge', $gRisks, false, 'من كتاب المعهد');
+        $add(true, 'hazards', 'أعرف أخطار مكاني', route('hazards.index'), 'bi-book', $gRisks);
+
+        // ── النماذج ──
+        $add(true, 'myforms', 'أعبّئ نماذجي', route('forms.mine'), 'bi-inbox', $gForms);
+        $add($can('form.send'), 'sendform', 'أرسل نموذجاً لموظفين', route('forms.index'), 'bi-send', $gForms);
+
+        // ── المقاولون ──
+        if ($user->isContractor()) {
+            $add(true, 'portal', 'بوابتي', route('contractor.home'), 'bi-building', $gContractors, true, 'طرفي ومشاريعي وعمالي ووثائقي');
+        }
+        $add($can('worker.create'), 'worker', 'أسجّل عاملاً', route('workers.create'), 'bi-person-vcard', $gContractors);
+        $add($can('project.create'), 'project', 'مشروع جديد', route('projects.create'), 'bi-kanban', $gContractors);
+        $add($can('external_party.create'), 'party', 'طرف خارجي جديد', route('external-parties.create'), 'bi-buildings', $gContractors);
+        $add($can('competency.view'), 'competency', 'الكفاءات والمهن', route('competency.matrix'), 'bi-award', $gContractors, false, 'ما يلزم كل مهنة من شهادات وتدريب');
+
+        // ── الحسابات ── ٢٠-٤ و٢١-١ (قرار ٥٣): كانا زرين باسمين لشاشة واحدة — صارا «حسابات إدارتي» (٢٦-٨)
+        $add($can('system.users.own') && !$can('system.users'), 'my_accounts', 'حسابات إدارتي', route('app.users.index'), 'bi-person-gear', $gAccounts, true,
+            $role === 'facilities_manager' ? 'أسجل فنياً بتخصصه وتغطيته — يعمل بعد اعتماد مسؤول السلامة' : 'أرشّح منسق سلامة وحدتي — يعمل بعد اعتماد مسؤول السلامة');
+
         return $out;
     }
 }
