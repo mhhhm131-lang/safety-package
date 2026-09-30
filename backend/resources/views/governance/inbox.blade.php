@@ -19,6 +19,7 @@
 
 {{-- ٢٦-١٠ (قرار ٦٦ «أرقام واحدة»، بكلمته «ابدأ»): الأرقام الأربعة الكبيرة حُذفت — «ينتظرك» في عنوان قسمه وزر الشريط، وبلاغات الشاغلين والحالات في أعمدة الرسم،
      و«فجوة الاستجابة» أول صفحة التقارير (زرها تحت الرسم لمن يملكها) --}}
+{{-- ٢٦-١٤ (قبول ٢٦): مربع «مركز السلامة» يفتح صفحة المركز بضغطة للجميع ولا يرشّح الرسم — وعد الخطة «أي شيء في الطوارئ بضغطتين» كان ثلاثاً عند من له أماكن كثيرة --}}
 {{-- ٢. الأماكن (٢٥-١، قرار ٦٤) والرسم (٢٥-٢) — أولاً، ثم «ما ينتظرك» ثم «أريد أن…» (٢٦-١، قرار ٦٦ بكلمته): لكل حساب في نطاقه، لونه من حال الفحص؛ مكان واحد = المربع يفتح ملفه، أكثر = المربع يرشّح الرسم وزر «افتح ملف المكان» يفتحه --}}
 <div class="row g-3 mb-3">
   @if(!empty($placeTiles))
@@ -29,7 +30,7 @@
       <div class="pl-grid" id="places">
         @foreach($placeTiles as $hz => $t)
           @if($p = $placeByCode[$hz] ?? null)
-          <a class="pl-tile {{ $t['cls'] }}" href="{{ $hz === 'HZ-00' ? route('emergency.dashboard') : route('app.places.units.file', $p) }}" data-place="{{ $hz }}" data-cls="{{ $t['cls'] }}" data-open="{{ $t['open'] }}" data-od="{{ $t['od'] }}" data-a="{{ $t['a'] }}"@if(count($placeTiles) > 1) data-filter="1"@endif>
+          <a class="pl-tile {{ $t['cls'] }}" href="{{ $hz === 'HZ-00' ? route('emergency.dashboard') : route('app.places.units.file', $p) }}" data-place="{{ $hz }}" data-cls="{{ $t['cls'] }}" data-open="{{ $t['open'] }}" data-od="{{ $t['od'] }}" data-a="{{ $t['a'] }}"@if(count($placeTiles) > 1 && $hz !== 'HZ-00') data-filter="1"@endif>
             <span class="small text-muted" dir="ltr">{{ $hz }}</span>
             <span class="nm">{{ $p->name }}</span>
             <span class="small st">
@@ -203,7 +204,7 @@
 (function(){
   var el=document.getElementById('snapshot'),bars=document.getElementById('bars');if(!el||!bars)return;
   var D=JSON.parse(el.textContent),scope=document.getElementById('chartScope'),all=document.getElementById('chartAll'),file=document.getElementById('chartFile');
-  function draw(n,links,name,fileUrl,fileName){
+  function draw(n,links,name,fileUrl){
     var vals=Object.keys(n).map(function(k){return n[k]}),m=Math.max.apply(null,vals.concat([1]));
     bars.querySelectorAll('.bar').forEach(function(b){
       var k=b.dataset.k,v=n[k]||0;b.dataset.n=v;b.querySelector('.n').textContent=v;
@@ -212,15 +213,14 @@
       if(links[k])b.setAttribute('href',links[k]);else b.removeAttribute('href');
     });
     scope.textContent=name;
-    if(all)all.hidden=!fileUrl;if(file){file.hidden=!fileUrl;if(fileUrl){file.href=fileUrl;file.textContent=fileName||'افتح ملف المكان';}}
+    if(all)all.hidden=!fileUrl;if(file){file.hidden=!fileUrl;if(fileUrl)file.href=fileUrl;}
   }
   var base=scope.textContent;
   document.querySelectorAll('#places .pl-tile[data-filter]').forEach(function(t){
     t.addEventListener('click',function(e){
       e.preventDefault();var p=D.places[t.dataset.place];if(!p)return;
       document.querySelectorAll('#places .pl-tile.on').forEach(function(x){x.classList.remove('on')});t.classList.add('on');
-      /* ٢٦-١٢: مربع المركز يفتح صفحة المركز لا ملف مكان — الزر باسم ما يفتحه */
-      draw(p.n,p.links,p.name,p.file,p.code==='HZ-00'?'افتح صفحة المركز':null);
+      draw(p.n,p.links,p.name,p.file);
     });
   });
   if(all)all.addEventListener('click',function(){document.querySelectorAll('#places .pl-tile.on').forEach(function(x){x.classList.remove('on')});draw(D.total,D.links,base,null);});

@@ -99,9 +99,6 @@ class OneNamePerScreenTest extends TestCase
             $this->assertMatchesRegularExpression('~<a[^>]*href="'.preg_quote(route('emergency.dashboard'), '~').'"[^>]*>مركز السلامة وإدارة الطوارئ</a>~u', $this->page($url), $url);
         }
 
-        // مربع المركز في الصفحة الأولى يفتح صفحة المركز لا ملف مكان — زر الرسم باسم ما يفتحه
-        $this->assertStringContainsString("p.code==='HZ-00'?'افتح صفحة المركز':null", $this->page('/app'));
-
         // السجل العام للمعهد: الزر والشاشة وما يتفرع منها
         $this->assertStringContainsString('<title>السجل العام للمعهد — ', $this->page(route('risk.reference.index')));
         $this->assertStringContainsString('السجل العام للمعهد', $this->page(route('risk.reference.create')));

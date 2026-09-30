@@ -100,7 +100,8 @@ class HomeChartTest extends TestCase
         $this->assertStringContainsString(url('/app/places/'.Place::idByCode('HZ-01').'/file').'#pfReports', $json['places']['HZ-01']['links']['reports']);
         $this->assertStringContainsString('place=HZ-06', $json['places']['HZ-06']['links']['incidents']);
         // تسعة أماكن = المربع يرشّح الرسم (وزر «افتح ملف المكان» يفتح الملف)، ويبقى رابطه إلى الملف بلا سكربت
-        $this->assertSame(9, substr_count($html, 'data-filter="1"'));
+        // ٢٦-١٤: مربع المركز يفتح صفحته مباشرة ولا يرشّح — ثمانية ترشّح
+        $this->assertSame(8, substr_count($html, 'data-filter="1"'));
         $this->assertStringContainsString('id="chartAll"', $html);
         $this->assertStringContainsString('id="chartFile"', $html);
         // لا رسم شهري ولا «صورة المبنى» في الصفحة الأولى
