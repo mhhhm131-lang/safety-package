@@ -13,7 +13,7 @@
   <div class="col-md-4"><label class="form-label">السلامة (٠–١٠٠)</label><input type="number" name="safety_score" class="form-control" min="0" max="100" value="{{ old('safety_score') }}" required></div>
   <div class="col-md-4"><label class="form-label">الجودة (٠–١٠٠)</label><input type="number" name="quality_score" class="form-control" min="0" max="100" value="{{ old('quality_score') }}" required></div>
   <div class="col-md-4"><label class="form-label">الامتثال (٠–١٠٠)</label><input type="number" name="compliance_score" class="form-control" min="0" max="100" value="{{ old('compliance_score') }}" required></div>
-  <div class="col-md-6"><label class="form-label">المشروع (اختياري)</label><select name="project_id" class="form-select"><option value="">—</option>@foreach($projects as $pr)<option value="{{ $pr->id }}" @selected(old('project_id') == $pr->id)>{{ $pr->name }}</option>@endforeach</select></div>
+  <div class="col-md-6"><label class="form-label">المشروع (اختياري)</label><select name="project_id" class="form-select"><option value="">—</option>@foreach($projects as $pr)<option value="{{ $pr->id }}" @selected(old('project_id', request('project_id')) == $pr->id)>{{ $pr->name }}</option>@endforeach</select></div>
   <div class="col-12"><label class="form-label">ملاحظات</label><textarea name="notes" class="form-control" rows="3">{{ old('notes') }}</textarea></div>
   <div class="col-12 d-flex gap-2"><button class="btn btn-g">حفظ التقييم</button><a class="btn btn-outline-secondary" href="{{ route('external-parties.show', $externalParty) }}">إلغاء</a></div>
 </div></form>

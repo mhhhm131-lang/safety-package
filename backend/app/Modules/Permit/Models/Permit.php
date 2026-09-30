@@ -178,15 +178,23 @@ class Permit extends Model
      */
     public function requirementsSatisfied(): bool
     {
-        $open = $this->requirements()
+        return !$this->blockingRequirements()->exists();
+    }
+
+    /** ٢٧-ب: عدد البنود التي تمنع التفعيل — الاستعلام نفسه الذي يحرس التفعيل، ليذكره بطاقتا «فعّله» و«استوفِها» */
+    public function blockingRequirementsCount(): int
+    {
+        return $this->blockingRequirements()->count();
+    }
+
+    private function blockingRequirements(): HasMany
+    {
+        return $this->requirements()
             ->where('severity', PermitRequirement::SEVERITY_MANDATORY)
             ->whereNotIn('status', [PermitRequirement::STATUS_COMPLETED, PermitRequirement::STATUS_WAIVED])
             ->where(fn ($q) => $q
                 ->whereIn('phase', ['preventive'])
                 ->orWhereNull('phase')
-                ->orWhere('status', PermitRequirement::STATUS_FAILED))
-            ->exists();
-
-        return !$open;
+                ->orWhere('status', PermitRequirement::STATUS_FAILED));
     }
 }

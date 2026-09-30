@@ -23,6 +23,7 @@ class InboxCollapseTest extends TestCase
     {
         parent::setUp();
         $this->seed([PlacesSeeder::class, OrganizationUnitsSeeder::class, EmergencySeeder::class]);
+        $this->plansInSystem(); // كما على المنشور — وإلا عُدّت بطاقة «أماكن بلا خطة استجابة» (٢٧-ب)
     }
 
     private function user(string $username, string $role, ?string $placeCode = null): User

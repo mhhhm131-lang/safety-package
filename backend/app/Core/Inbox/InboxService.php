@@ -38,6 +38,7 @@ class InboxService
         \App\Modules\Emergency\Inbox\EmergencyCommandTasks::class, // ٢٧-أ (قرار ٦٧): ما يُراد من أصحاب القرار وقت الحالة — كان في الشاشة الحية وحدها
         \App\Modules\Emergency\Inbox\TeamGapTasks::class,
         \App\Modules\Governance\Inbox\AccountApprovalTasks::class, // ٢٠-٤-ب (قرار ٥٢): حساب ينتظر اعتماد مسؤول السلامة
+        \App\Modules\Governance\Inbox\ReadinessTasks::class, // ٢٧-ب (قرار ٦٧): الاستعداد قبل الحالة — فريق الفعالية، خطة المكان، منسق الإدارة
         \App\Modules\Project\Inbox\ContractorTasks::class,
         \App\Modules\Store\Inbox\InspectionReportTasks::class,
         \App\Modules\Store\Inbox\InspectionRoundTasks::class, // ١٩-٣: «مهامي» من العمل اليومي — الجولات المستحقة على دوري

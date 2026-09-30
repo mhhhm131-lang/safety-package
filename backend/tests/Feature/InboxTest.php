@@ -46,6 +46,7 @@ class InboxTest extends TestCase
     {
         parent::setUp();
         $this->seed([PlacesSeeder::class, OrganizationUnitsSeeder::class, AffectedGroupsSeeder::class]);
+        $this->plansInSystem(); // كما على المنشور — وإلا عُدّت بطاقة «أماكن بلا خطة استجابة» (٢٧-ب)
         $this->salama = $this->user('salama', 'system_admin');
         $this->fani = $this->user('fani', 'field_worker', 'HZ-06');
         $this->coord = $this->user('coord', 'safety_coordinator', 'HZ-06');
@@ -152,14 +153,25 @@ class InboxTest extends TestCase
         $cat = RiskCategory::create(['name' => 'الحريق والانفجار', 'abbreviation' => 'FI', 'created_at' => now()]);
         $sub = RiskSubCategory::create(['category_id' => $cat->id, 'name' => 'أعمال ساخنة', 'abbreviation' => 'HW']);
         $risk = app(RiskService::class)->createRisk(null, ['title' => 'لحام بلا تصريح', 'description' => 'x', 'category_id' => $cat->id, 'sub_category_id' => $sub->id, 'severity' => 4, 'likelihood' => 3], 'master');
-        $risk->update(['status' => 'pending_approval', 'organization_unit_id' => OrganizationUnit::first()->id]);
+        // قرار ٦٩ (٢٠٢٦-٠٩-٣٠): خطر الإدارة يعتمده مديرها، والسجل العام مسؤول السلامة وحده — كان: مسؤول السلامة والمناوب والإدارة العليا واللجنة لأي خطر
+        $risk->update(['risk_type' => 'active', 'status' => 'pending_approval', 'organization_unit_id' => OrganizationUnit::first()->id]);
 
-        $this->actingAs($this->idara)->get('/app')->assertOk()->assertSee('لحام بلا تصريح')->assertSee('ينتظر اعتمادك')->assertSee('action="'.url("/app/risk/{$risk->id}/approve").'"', false);
+        $this->actingAs($this->mudir)->get('/app')->assertOk()->assertSee('لحام بلا تصريح')->assertSee('ينتظر اعتمادك')->assertSee('action="'.url("/app/risk/{$risk->id}/approve").'"', false);
+        $this->assertSame(0, $this->pending($this->salama)); // خطر إدارة: ليس عند مسؤول السلامة
+        $this->assertSame(0, $this->pending($this->idara));  // الإدارة العليا ترى ولا تعتمد
+        $this->assertSame(0, $this->pending($this->fani));
+        $this->actingAs($this->idara)->post("/app/risk/{$risk->id}/approve")->assertForbidden();
+        $this->actingAs($this->mudir)->post("/app/risk/{$risk->id}/approve")->assertSessionHas('success');
+        $this->actingAs($this->mudir)->get('/app')->assertOk()->assertDontSee('ينتظر اعتمادك');
+
+        // السجل العام: مسؤول السلامة وحده
+        $general = app(RiskService::class)->createRisk(null, ['title' => 'انسكاب وقود المولد', 'description' => 'x', 'category_id' => $cat->id, 'sub_category_id' => $sub->id, 'severity' => 4, 'likelihood' => 2], 'reference');
+        $general->update(['status' => 'pending_approval']);
+        $this->actingAs($this->salama)->get('/app')->assertOk()->assertSee('انسكاب وقود المولد')->assertSee('ينتظر اعتمادك');
         $this->assertSame(1, $this->pending($this->salama));
-        $this->assertSame(0, $this->pending($this->fani));   // لا يملك risk.approve
-        $this->actingAs($this->mudir)->get('/app')->assertOk()->assertDontSee('ينتظر اعتمادك'); // مدير إدارة لا يعتمد (يرى اقتراح التفعيل فقط)
-        $this->actingAs($this->idara)->post("/app/risk/{$risk->id}/approve")->assertSessionHas('success');
-        $this->assertSame(0, $this->pending($this->idara));
+        $this->actingAs($this->mudir)->get('/app')->assertOk()->assertDontSee('انسكاب وقود المولد');
+        $this->actingAs($this->salama)->post("/app/risk/{$general->id}/approve")->assertSessionHas('success');
+        $this->assertSame(0, $this->pending($this->salama));
     }
 
     public function test_permit_awaiting_review_is_a_task_for_reviewers_and_final_approval_for_center(): void
@@ -182,8 +194,14 @@ class InboxTest extends TestCase
         $permit->update(['status' => Permit::STATUS_SAFETY_APPROVED]);
         $this->assertSame(0, $this->pending($this->coord));  // الاعتماد النهائي ليس للمنسق
         $this->actingAs($this->salama)->get('/app')->assertOk()->assertSee('ينتظر اعتمادك النهائي');
+        // ٢٧-ب (قرار ٦٧): المعتمد لا يسقط من «ما ينتظرك» — ينتظر التفعيل الميداني عند من يفعّل، ثم يختفي حين يُفعَّل
         $permit->update(['status' => Permit::STATUS_APPROVED]);
+        $this->assertSame(1, $this->pending($this->salama));
+        $this->actingAs($this->salama)->get('/app')->assertOk()->assertSee('فعّله ميدانياً')->assertSee('data-target="'.url("/app/permits/{$permit->id}/activate").'"', false);
+        $this->assertSame(1, $this->pending($this->coord)); // المنسق يفعّل
+        $permit->update(['status' => Permit::STATUS_ACTIVE]);
         $this->assertSame(0, $this->pending($this->salama));
+        $this->assertSame(0, $this->pending($this->coord));
     }
 
     /** ١١-٣: بلاغ فحص فني في نموذج المعهد بمستوى ١ مُصعَّد ← مهمة لمدير المرافق (fm) ومسؤول السلامة، لا للفني؛ الرابط يفتح النموذج على السطر. */
@@ -227,6 +245,10 @@ class InboxTest extends TestCase
         $this->actingAs($this->mudir)->get('/app')->assertOk()->assertSee('بلا مخاطر مفعّلة')->assertSee('ابدأ من السجل');
         $cat = RiskCategory::create(['name' => 'الحريق والانفجار', 'abbreviation' => 'FI', 'created_at' => now()]);
         Risk::create(['risk_type' => 'active', 'title' => 'حريق', 'description' => 'x', 'category_id' => $cat->id, 'organization_unit_id' => $unit->id, 'severity' => 3, 'likelihood' => 2, 'status' => 'active']);
+        // اقتراح التفعيل اختفى؛ وتبقى لمدير الإدارة بطاقة واحدة: إدارته بلا منسق سلامة (٢٧-ب)
+        $this->actingAs($this->mudir)->get('/app')->assertOk()->assertDontSee('بلا مخاطر مفعّلة')->assertSee('بلا منسق سلامة');
+        $this->assertSame(1, $this->pending($this->mudir));
+        $this->user('munassiq', 'safety_coordinator', null, $unit->id);
         $this->assertSame(0, $this->pending($this->mudir));
         $this->assertSame(0, $this->pending($this->salama)); // لا اقتراح لأدوار الإشراف العام
     }

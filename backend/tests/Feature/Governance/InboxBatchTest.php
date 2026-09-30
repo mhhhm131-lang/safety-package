@@ -32,6 +32,7 @@ class InboxBatchTest extends TestCase
     {
         parent::setUp();
         $this->seed([PlacesSeeder::class, OrganizationUnitsSeeder::class, AffectedGroupsSeeder::class, EmergencySeeder::class]);
+        $this->plansInSystem(); // كما على المنشور — وإلا عُدّت بطاقة «أماكن بلا خطة استجابة» (٢٧-ب)
         $this->salama = $this->user('salama', 'system_admin');
     }
 

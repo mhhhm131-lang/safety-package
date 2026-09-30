@@ -137,9 +137,11 @@ class UsersController extends Controller
         $changed = [];
         if ($old && $old->role !== $data['role']) $changed[] = 'الدور: '.PermissionRegistry::getRoleDisplayName($old->role).' ← '.PermissionRegistry::getRoleDisplayName($data['role']);
         if ($old && array_key_exists('building_id', $data) && $data['building_id'] !== null && (int) $data['building_id'] !== (int) $old->building_id) $changed[] = 'المبنى';
+        // ٢٧-ب: حساب أُعيد إلى من سجّله (return_note) — أي تصحيح له يعيده للاعتماد؛ كان لا يعود إلا بتغيير الدور أو المبنى أو التغطية فيبقى معاداً بلا مخرج
+        $wasReturned = $old && !$old->is_active && $old->return_note !== null && !$old->isPending();
         $newCov = collect($data['coverage'] ?? [])->map(fn ($v) => (int) $v)->sort()->values()->all();
         if ($old && $newCov !== $old->coverage->pluck('id')->sort()->values()->all()) $changed[] = 'التغطية';
-        DB::transaction(function () use ($data, $user, $changed) {
+        DB::transaction(function () use ($data, $user, $changed, $wasReturned) {
             $user->fill(['username' => $data['username'], 'name' => $data['name'], 'email' => $data['email'] ?? null, 'external_party_id' => $data['external_party_id'] ?? null]);
             if (!empty($data['password'])) {
                 $user->password = $data['password'];
@@ -150,7 +152,8 @@ class UsersController extends Controller
                 'building_id' => $data['building_id'] ?? $profile->building_id, 'job_title' => $data['job_title'] ?? null, 'role_card_no' => $data['role_card_no'] ?? null]); // ٢٠-١/٢٠-٢/٢٠-٦
             $profile->save();
             $profile->coverage()->sync($data['coverage'] ?? []);
-            $this->tail = $changed ? $this->afterWrite($profile, 'تغيير '.implode('، ', $changed)) : '';
+            $this->tail = $changed ? $this->afterWrite($profile, 'تغيير '.implode('، ', $changed))
+                : ($wasReturned ? $this->afterWrite($profile, 'صُحّح بعد الإعادة') : '');
         });
         return redirect()->route('app.users.index')->with('ok', "حُدّث الحساب {$user->username}".$this->tail);
     }

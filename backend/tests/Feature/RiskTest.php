@@ -85,14 +85,14 @@ class RiskTest extends TestCase
         foreach (['/app/risk/reference', '/app/risk/active', '/app/risk/approval/queue', '/app/risk/reference/create', '/app/risk/active/create'] as $p) {
             $this->actingAs($safety)->get($p)->assertOk();
         }
-        // مدير الإدارة: يرى ويفعّل، لا يعتمد ولا يعدّل الكتاب
+        // مدير الإدارة: يرى ويفعّل ويعتمد مخاطر إدارته (قرار ٦٩، ٢٠٢٦-٠٩-٣٠ — كان لا يعتمد)، ولا يعدّل الكتاب
         $this->actingAs($dept)->get('/app/risk/reference')->assertOk();
         $this->actingAs($dept)->get('/app/risk/active/create')->assertOk();
         $this->actingAs($dept)->get('/app/risk/reference/create')->assertForbidden();
-        $this->actingAs($dept)->get('/app/risk/approval/queue')->assertForbidden();
-        // الإدارة العليا: ترى وتعتمد، لا تنشئ
+        $this->actingAs($dept)->get('/app/risk/approval/queue')->assertOk();
+        // الإدارة العليا: ترى، ولا تعتمد (قرار ٦٩ — كانت تعتمد)، ولا تنشئ
         $this->actingAs($exec)->get('/app/risk/reference')->assertOk();
-        $this->actingAs($exec)->get('/app/risk/approval/queue')->assertOk();
+        $this->actingAs($exec)->get('/app/risk/approval/queue')->assertForbidden();
         $this->actingAs($exec)->get('/app/risk/reference/create')->assertForbidden();
         // الفني: لا مخاطر
         $this->actingAs($tech)->get('/app/risk/reference')->assertForbidden();
@@ -163,20 +163,22 @@ class RiskTest extends TestCase
         $this->actingAs($safety)->getJson('/app/risk/registry/tree/active/categories?place=HZ-01')->assertOk()->assertExactJson([]);
         $this->actingAs($safety)->get('/app/risk/active?place=HZ-06')->assertOk()->assertSee('كل الأماكن')->assertSee('categories?place=HZ-06', false);
 
-        // ٤) الاعتماد: خطر مرجعي جديد يُقدَّم ويُعتمد من الإدارة العليا (آلة الحالة + سجل الأحداث)
+        // ٤) الاعتماد: خطر مرجعي جديد يُقدَّم ويعتمده مسؤول السلامة وحده (قرار ٦٩ — كان: الإدارة العليا) (آلة الحالة + سجل الأحداث)
         $draft = app(RiskService::class)->createRisk($safety->id, ['title' => 'خطر جديد', 'description' => 'x', 'category_id' => $this->cat->id,
             'severity' => 2, 'likelihood' => 2], 'reference');
         $this->actingAs($safety)->get('/app/risk/reference')->assertOk()->assertSee("/app/risk/{$draft->id}/submit", false);
         $this->actingAs($safety)->post("/app/risk/{$draft->id}/submit")->assertRedirect();
         $this->actingAs($safety)->get('/app/risk/reference')->assertOk()->assertDontSee("/app/risk/{$draft->id}/submit", false);
         $this->assertSame('pending_approval', $draft->fresh()->status);
-        $this->assertDatabaseHas('app_notifications', ['user_id' => $exec->id, 'type' => 'risk.approve']);
+        $this->assertDatabaseHas('app_notifications', ['user_id' => $safety->id, 'type' => 'risk.approve']);
+        $this->assertDatabaseMissing('app_notifications', ['user_id' => $exec->id, 'type' => 'risk.approve']);
         $this->actingAs($hrMgr)->post("/app/risk/{$draft->id}/approve", ['note' => 'x'])->assertForbidden();
-        $this->actingAs($exec)->post("/app/risk/{$draft->id}/approve", ['note' => 'معتمد'])->assertRedirect();
+        $this->actingAs($exec)->post("/app/risk/{$draft->id}/approve", ['note' => 'x'])->assertForbidden();
+        $this->actingAs($safety)->post("/app/risk/{$draft->id}/approve", ['note' => 'معتمد'])->assertRedirect();
         $this->assertSame('approved', $draft->fresh()->status);
         $this->assertSame(['created', 'submitted', 'approved'], RiskEvent::where('risk_id', $draft->id)->orderBy('id')->pluck('action')->all());
         // انتقال غير مسموح: من approved إلى approved
-        $this->actingAs($exec)->post("/app/risk/{$draft->id}/approve", ['note' => 'x'])->assertSessionHas('error');
+        $this->actingAs($safety)->post("/app/risk/{$draft->id}/approve", ['note' => 'x'])->assertSessionHas('error');
     }
 
     public function test_tree_endpoints_and_ajax(): void

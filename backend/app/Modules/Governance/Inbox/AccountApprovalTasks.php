@@ -17,8 +17,19 @@ class AccountApprovalTasks implements TaskSource
 {
     public function tasksFor(User $user): Collection
     {
-        if (!PermissionRegistry::hasPermission($user->role(), 'system.users.approve')) return collect();
-        return UserProfile::whereNotNull('pending_since')->with(['user', 'pendingBy'])->orderBy('pending_since')->get()
+        // ٢٧-ب (قرار ٦٧): حساب أعاده مسؤول السلامة ← يصل من سجّله بسبب الإعادة؛ تصحيحه يعيده للاعتماد
+        $returned = UserProfile::where('pending_by_id', $user->id)->whereNull('pending_since')->whereNotNull('return_note')->where('is_active', false)
+            ->with('user')->get()->toBase()->filter(fn (UserProfile $p) => $p->user)
+            ->map(fn (UserProfile $p) => new Task(
+                key: 'account:'.$p->user_id.':returned',
+                module: 'الحسابات',
+                question: 'الحساب «'.$p->user->name.'» ('.PermissionRegistry::getRoleDisplayName($p->role).') أُعيد إليك: '.$p->return_note.' — صحّحه وأعد تقديمه',
+                primary: ['label' => 'صحّحه', 'url' => route('app.users.edit', $p->user_id, false)],
+                detailsUrl: route('app.users.edit', $p->user_id, false),
+                createdAt: $p->updated_at,
+            ))->values();
+        if (!PermissionRegistry::hasPermission($user->role(), 'system.users.approve')) return $returned;
+        return $returned->merge(UserProfile::whereNotNull('pending_since')->with(['user', 'pendingBy'])->orderBy('pending_since')->get()
             ->filter(fn (UserProfile $p) => $p->user)
             ->map(fn (UserProfile $p) => new Task(
                 key: 'account:'.$p->user_id,
@@ -31,6 +42,6 @@ class AccountApprovalTasks implements TaskSource
                 place: $p->building?->name,
                 detailsUrl: route('app.users.edit', $p->user_id, false),
                 createdAt: $p->pending_since,
-            ))->values();
+            ))->values());
     }
 }

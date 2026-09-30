@@ -179,13 +179,11 @@ class RiskService
                 'actor_id' => $userId,
             ]);
 
-            $this->notificationService->notifyRoles(
-                ['system_admin', 'system_staff', 'top_management', 'safety_committee'],
-                'risk.approve',
-                'خطر بانتظار الاعتماد',
-                "الخطر «{$risk->title}» قُدّم للاعتماد.",
-                '/app/risk/approval/queue',
-            );
+            // قرار ٦٩: التنبيه يصل من يعتمد هذا الخطر — مدير وحدته، أو مسؤول السلامة للعام
+            foreach (\App\Modules\Risk\Support\RiskApproval::approverIds($risk) as $approverId) {
+                $this->notificationService->create($approverId, 'risk.approve', 'خطر بانتظار اعتمادك',
+                    "الخطر «{$risk->title}» قُدّم للاعتماد.", '/app/risk/approval/queue');
+            }
 
             return $risk->fresh();
         });

@@ -152,7 +152,8 @@ class PermissionRegistry
         'risk.create'  => ['system_admin', 'system_staff', 'safety_coordinator', 'consultant_office'],
         // إضافة معهدية: مدير الإدارة/الفرع/القسم يفعّل من السجل العام في سجل وحدته ويسمّي المسؤول (BACKEND.md ٥-٥)
         'risk.activate' => ['system_admin', 'system_staff', 'safety_coordinator', 'branch_manager', 'department_manager', 'section_manager', 'security_safety_head', 'admin_eng_manager', 'facilities_manager'],
-        'risk.approve' => ['system_admin', 'system_staff', 'top_management', 'safety_committee'],
+        // قرار ٦٩ (٢٠٢٦-٠٩-٣٠): خطر الإدارة يعتمده مدير وحدته، والسجل العام مسؤول السلامة وحده — أيّ خطر لأيّهم في `Risk\Support\RiskApproval`
+        'risk.approve' => ['system_admin', 'branch_manager', 'department_manager', 'section_manager'],
 
         // التصاريح (Hub)
         'permit.list'           => ['system_admin', 'system_staff', 'safety_committee', 'safety_coordinator',

@@ -212,19 +212,22 @@ class RiskControllerTest extends TestCase
         $this->get(route('risk.approval.queue'))->assertForbidden();
     }
 
-    public function test_safety_committee_can_view_approval_queue(): void
+    /** قرار ٦٩ (٢٠٢٦-٠٩-٣٠): اللجنة ترى المخاطر ولا تعتمدها؛ الطابور لمدير الإدارة (مخاطر إدارته) ولمسؤول السلامة (العام) */
+    public function test_safety_committee_sees_risks_but_has_no_approval_queue(): void
     {
         $this->actingAsRole('safety_committee');
+        $this->get(route('risk.approval.queue'))->assertForbidden();
+        $this->actingAsRole('department_manager', 'hr');
         $this->get(route('risk.approval.queue'))->assertOk();
     }
 
     public function test_approve_transitions_pending_risk_to_approved(): void
     {
         $coordinator = $this->actingAsRole('safety_coordinator');
-        $risk = $this->makeActiveRisk($coordinator->id, ['status' => 'pending_approval']);
+        $risk = $this->makeActiveRisk($coordinator->id, ['status' => 'pending_approval', 'organization_unit_id' => $this->orgUnit('hr')->id]);
 
-        // switch to a role that can approve
-        $this->actingAsRole('safety_committee');
+        // قرار ٦٩: خطر الإدارة يعتمده مديرها
+        $this->actingAsRole('department_manager', 'hr');
         $this->post(route('risk.approve', $risk), ['notes' => 'موافقة']);
 
         $risk->refresh();
@@ -234,9 +237,9 @@ class RiskControllerTest extends TestCase
     public function test_reject_transitions_pending_risk_to_rejected(): void
     {
         $creator = $this->actingAsRole('safety_coordinator');
-        $risk = $this->makeActiveRisk($creator->id, ['status' => 'pending_approval']);
+        $risk = $this->makeActiveRisk($creator->id, ['status' => 'pending_approval', 'organization_unit_id' => $this->orgUnit('hr')->id]);
 
-        $this->actingAsRole('safety_committee');
+        $this->actingAsRole('department_manager', 'hr'); // قرار ٦٩
         $this->post(route('risk.reject', $risk), ['notes' => 'تقييم غير كافٍ']);
 
         $risk->refresh();
@@ -246,9 +249,9 @@ class RiskControllerTest extends TestCase
     public function test_request_modification_requires_notes(): void
     {
         $creator = $this->actingAsRole('safety_coordinator');
-        $risk = $this->makeActiveRisk($creator->id, ['status' => 'pending_approval']);
+        $risk = $this->makeActiveRisk($creator->id, ['status' => 'pending_approval', 'organization_unit_id' => $this->orgUnit('hr')->id]);
 
-        $this->actingAsRole('safety_committee');
+        $this->actingAsRole('department_manager', 'hr'); // قرار ٦٩
         $this->post(route('risk.requestModification', $risk), [])
             ->assertSessionHasErrors('notes');
     }
@@ -256,9 +259,9 @@ class RiskControllerTest extends TestCase
     public function test_request_modification_returns_to_draft(): void
     {
         $creator = $this->actingAsRole('safety_coordinator');
-        $risk = $this->makeActiveRisk($creator->id, ['status' => 'pending_approval']);
+        $risk = $this->makeActiveRisk($creator->id, ['status' => 'pending_approval', 'organization_unit_id' => $this->orgUnit('hr')->id]);
 
-        $this->actingAsRole('safety_committee');
+        $this->actingAsRole('department_manager', 'hr'); // قرار ٦٩
         $this->post(route('risk.requestModification', $risk), [
             'notes' => 'يرجى إضافة المزيد من الإجراءات الوقائية',
         ]);

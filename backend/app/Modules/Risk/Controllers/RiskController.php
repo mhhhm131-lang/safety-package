@@ -14,6 +14,7 @@ use App\Modules\Risk\Models\RiskCause;
 use App\Modules\Risk\Models\RiskNote;
 use App\Modules\Risk\Models\RiskSubCategory;
 use App\Modules\Risk\Services\RiskService;
+use App\Modules\Risk\Support\RiskApproval;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -26,6 +27,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class RiskController extends Controller
 {
     use AppliesOrgUnitScope;
+
+    /** قرار ٦٩ */
+    private const NOT_APPROVER = 'خطر الإدارة يعتمده مديرها، والسجل العام يعتمده مسؤول السلامة.';
 
     public function __construct(protected RiskService $riskService) {}
 
@@ -268,14 +272,25 @@ class RiskController extends Controller
 
     public function approvalQueue()
     {
+        // قرار ٦٩: الطابور ما يعتمده هذا الشخص — مدير الوحدة مخاطر وحدته وما تحتها، ومسؤول السلامة العام وما بلا وحدة
         $query = Risk::where('status', 'pending_approval')->with(['category', 'subCategory', 'createdBy']);
-        $this->scopeToUserOrgUnit($query);
+        $profile = $this->userProfile();
+        if ($profile && $profile->role === RiskApproval::GENERAL_APPROVER) {
+            $query->where(fn ($q) => $q->where('risk_type', '!=', 'active')->orWhereNull('organization_unit_id'));
+        } else {
+            $allowed = $profile?->organization_unit_id ? OrganizationUnit::descendantIdsOf($profile->organization_unit_id) : [];
+            $query->where('risk_type', 'active')->whereIn('organization_unit_id', $allowed);
+        }
         $risks = $query->latest()->paginate(25);
         return view('modules.risks.approval', compact('risks'));
     }
 
     public function submit(Risk $risk)
     {
+        // قرار ٦٩: يرفع الخطر من يملك الإنشاء (المنسق والمركز)، أو مدير الإدارة مسودته هو في نطاقه — كان المسار يرفضه فتبقى مسودته بلا مخرج
+        $can = fn (string $p) => \App\Core\Permissions\PermissionRegistry::hasPermission(Auth::user()->role(), $p);
+        abort_unless($can('risk.create') || ($can('risk.activate') && (int) $risk->created_by_id === (int) Auth::id()), 403, 'رفع الخطر لمن كتبه أو لمنسق السلامة.');
+        $this->authorizeScope($risk);
         try {
             $this->riskService->submitForApproval($risk, Auth::id());
             return redirect()->back()->with('success', 'قُدّم الخطر للاعتماد.');
@@ -286,6 +301,7 @@ class RiskController extends Controller
 
     public function approve(Request $request, Risk $risk)
     {
+        abort_unless(RiskApproval::canApprove(Auth::user(), $risk), 403, self::NOT_APPROVER);
         $request->validate(['note' => ['nullable', 'string', 'max:5000'], 'notes' => ['nullable', 'string', 'max:5000']]);
         try {
             $this->riskService->approve($risk, Auth::id(), $request->input('note', $request->input('notes')));
@@ -297,6 +313,7 @@ class RiskController extends Controller
 
     public function reject(Request $request, Risk $risk)
     {
+        abort_unless(RiskApproval::canApprove(Auth::user(), $risk), 403, self::NOT_APPROVER);
         $request->validate(['note' => ['nullable', 'string', 'max:5000'], 'notes' => ['nullable', 'string', 'max:5000']]);
         try {
             $this->riskService->reject($risk, Auth::id(), $request->input('note', $request->input('notes')));
@@ -308,6 +325,7 @@ class RiskController extends Controller
 
     public function requestModification(Request $request, Risk $risk)
     {
+        abort_unless(RiskApproval::canApprove(Auth::user(), $risk), 403, self::NOT_APPROVER);
         $validated = $request->validate(['notes' => ['required', 'string', 'max:5000']]);
         try {
             $this->riskService->reject($risk, Auth::id(), $validated['notes']);
@@ -321,6 +339,12 @@ class RiskController extends Controller
     public function changeStatus(Request $request, Risk $risk)
     {
         $validated = $request->validate(['status' => ['required', 'string'], 'note' => ['nullable', 'string', 'max:5000']]);
+        // قرار ٦٩: من لا يملك الإنشاء (مدير الإدارة) يعيد خطره المرفوض إلى المسودة فقط — لا حالة أخرى من هذا الباب
+        if (!\App\Core\Permissions\PermissionRegistry::hasPermission(Auth::user()->role(), 'risk.create')) {
+            abort_unless(\App\Core\Permissions\PermissionRegistry::hasPermission(Auth::user()->role(), 'risk.activate')
+                && (int) $risk->created_by_id === (int) Auth::id() && $risk->status === 'rejected' && $validated['status'] === 'draft', 403, 'تغيير الحالة لمن يملك إنشاء المخاطر.');
+        }
+        $this->authorizeScope($risk);
         try {
             $this->riskService->changeStatus($risk, Auth::id(), $validated['status'], $validated['note'] ?? null);
             return redirect()->back()->with('success', 'حُدّثت حالة الخطر.');
@@ -522,6 +546,7 @@ class RiskController extends Controller
     public function toReference(int $risk, \App\Modules\Risk\Services\RiskCopyService $copy)
     {
         $risk = Risk::findOrFail($risk);
+        abort_unless(Auth::user()->role() === RiskApproval::GENERAL_APPROVER, 403, 'إضافة خطر إلى السجل العام قرار مسؤول السلامة.'); // قرار ٦٩
         if ($risk->risk_type !== 'active') return redirect()->route('risk.show', $risk->id)->with('error', 'هذا ليس خطراً فعلياً.');
         if ($risk->parent_reference_id) return redirect()->route('risk.show', $risk->id)->with('success', 'هذا الخطر موجود في السجل العام أصلاً.');
         $ref = $copy->activeToReference($risk, Auth::id());

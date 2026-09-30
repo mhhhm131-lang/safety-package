@@ -37,7 +37,7 @@ class RiskPolicy
 
     public function approve(User $user, Risk $risk): bool
     {
-        return PermissionRegistry::hasPermission($user->role(), 'risk.approve');
+        return \App\Modules\Risk\Support\RiskApproval::canApprove($user, $risk); // قرار ٦٩
     }
 
     public function delete(User $user, Risk $risk): bool

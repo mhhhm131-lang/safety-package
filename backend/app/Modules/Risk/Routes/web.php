@@ -23,6 +23,9 @@ Route::middleware(['web', 'auth'])->prefix('app/risk')->name('risk.')->group(fun
         Route::get('/{risk}/detail', [RiskController::class, 'show'])->name('show')->whereNumber('risk');
         Route::get('/{risk}/details', [RiskController::class, 'details'])->name('details')->whereNumber('risk');
         Route::post('/{risk}/notes', [RiskController::class, 'addNote'])->name('notes.store')->whereNumber('risk');
+        // قرار ٦٩: الرفع وإعادة المرفوض للمسودة — لمن يملك الإنشاء، أو لصاحب الخطر ممن يملك سجل إدارته (الحارس في المتحكم)
+        Route::post('/{risk}/submit', [RiskController::class, 'submit'])->name('submit');
+        Route::post('/{risk}/change-status', [RiskController::class, 'changeStatus'])->name('changeStatus');
 
         // AJAX
         Route::get('/ajax/subcategories', [RiskController::class, 'ajaxSubcategories'])->name('ajax.subcategories');
@@ -49,8 +52,6 @@ Route::middleware(['web', 'auth'])->prefix('app/risk')->name('risk.')->group(fun
         Route::get('/create', [RiskController::class, 'create'])->name('create');
         Route::post('/create', [RiskController::class, 'store'])->name('store');
         Route::post('/{risk}/delete', [RiskController::class, 'destroy'])->name('destroy');
-        Route::post('/{risk}/submit', [RiskController::class, 'submit'])->name('submit');
-        Route::post('/{risk}/change-status', [RiskController::class, 'changeStatus'])->name('changeStatus');
 
         Route::post('/taxonomy/subcategory', [RiskTaxonomyController::class, 'storeSubcategory'])->name('taxonomy.subcategory.store');
         Route::post('/taxonomy/cause', [RiskTaxonomyController::class, 'storeCause'])->name('taxonomy.cause.store');

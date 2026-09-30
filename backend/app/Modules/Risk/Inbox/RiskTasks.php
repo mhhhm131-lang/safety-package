@@ -9,9 +9,13 @@ use App\Models\User;
 use App\Modules\Governance\Models\OrganizationUnit;
 use App\Modules\Governance\Models\UserProfile;
 use App\Modules\Risk\Models\Risk;
+use App\Modules\Risk\Support\RiskApproval;
 use Illuminate\Support\Collection;
 
-/** طابور اعتماد المخاطر (RiskController::approvalQueue) بصيغة مهام: خطر بانتظار الاعتماد ← «اعتمد» / «التفاصيل». */
+/**
+ * طابور اعتماد المخاطر (RiskController::approvalQueue) بصيغة مهام: خطر بانتظار الاعتماد ← «اعتمد» / «التفاصيل».
+ * قرار ٦٩ (٢٠٢٦-٠٩-٣٠): خطر الإدارة يعتمده مديرها، والسجل العام مسؤول السلامة وحده — `RiskApproval::canApprove`.
+ */
 class RiskTasks implements TaskSource
 {
     /** نطاق AppliesOrgUnitScope نفسه: أدوار الإشراف العام ترى الكل؛ غيرها وحدته وما تحتها + بلا وحدة. */
@@ -35,25 +39,44 @@ class RiskTasks implements TaskSource
                 detailsUrl: route('risk.reference.index'),
             ));
         }
-        if (!PermissionRegistry::hasPermission($profile->role, 'risk.approve')) return $out;
-
-        $q = Risk::where('status', 'pending_approval')->with('organizationUnit');
-        if (!in_array($profile->role, self::GLOBAL, true)) {
-            if (!$profile->organization_unit_id) {
-                $q->whereNull('organization_unit_id');
-            } else {
-                $allowed = OrganizationUnit::descendantIdsOf($profile->organization_unit_id);
-                $q->where(fn ($w) => $w->whereNull('organization_unit_id')->orWhereIn('organization_unit_id', $allowed));
+        // ٢٧-ب (قرار ٦٧): خطر كتبه ولم يكتمل طريقه — مسودة لم تُقدَّم ← «قدّمه»؛ مرفوض ← «أعده للتعديل» بسبب الرفض.
+        // لمن يملك الرفع: من يملك الإنشاء (المنسق والمركز)، ومدير الإدارة لخطره هو (قرار ٦٩ — الحارس نفسه في RiskController::submit).
+        if (PermissionRegistry::hasPermission($profile->role, 'risk.create') || PermissionRegistry::hasPermission($profile->role, 'risk.activate')) {
+            foreach (Risk::where('created_by_id', $user->id)->whereIn('status', ['draft', 'rejected'])->get() as $r) {
+                $edit = $r->risk_type === 'reference' ? route('risk.reference.edit', $r)
+                    : (PermissionRegistry::hasPermission($profile->role, 'risk.activate') ? route('risk.active.edit', $r) : route('risk.show', $r));
+                if ($r->status === 'draft') {
+                    $out->push(new Task(
+                        key: "risk:{$r->id}:draft", module: 'المخاطر',
+                        question: 'خطر «'.$r->title.'» مسودة لم تُقدَّم — قدّمه للاعتماد',
+                        primary: ['label' => 'قدّمه', 'url' => route('risk.submit', $r), 'method' => 'POST'],
+                        secondary: ['label' => 'عدّله', 'url' => $edit],
+                        detailsUrl: route('risk.show', $r), createdAt: $r->updated_at,
+                    ));
+                } else {
+                    $out->push(new Task(
+                        key: "risk:{$r->id}:rejected", module: 'المخاطر',
+                        question: 'خطر «'.$r->title.'» رُفض'.($r->approval_notes ? ': '.mb_substr((string) $r->approval_notes, 0, 80) : '').' — أعده للتعديل ثم قدّمه',
+                        primary: ['label' => 'أعده للتعديل', 'url' => route('risk.changeStatus', ['risk' => $r, 'status' => 'draft']), 'method' => 'POST'],
+                        secondary: ['label' => 'التفاصيل', 'url' => route('risk.show', $r)],
+                        detailsUrl: route('risk.show', $r), createdAt: $r->updated_at,
+                    ));
+                }
             }
         }
-        return $out->merge($q->get()->map(fn (Risk $r) => new Task(
+        if (!PermissionRegistry::hasPermission($profile->role, 'risk.approve')) return $out;
+
+        // قرار ٦٩: البطاقة لمن يعتمد هذا الخطر — مدير وحدته (أو ما فوقها)، ومسؤول السلامة للسجل العام وما بلا وحدة
+        $pending = Risk::where('status', 'pending_approval')->with('organizationUnit')->get()->toBase()
+            ->filter(fn (Risk $r) => RiskApproval::canApprove($user, $r));
+        return $out->merge($pending->map(fn (Risk $r) => new Task(
             key: "risk:{$r->id}:approve",
             module: 'المخاطر',
-            question: 'خطر «'.$r->title.'»'.($r->organizationUnit ? ' لإدارة '.$r->organizationUnit->name : '').' ينتظر اعتمادك',
+            question: 'خطر «'.$r->title.'»'.($r->organizationUnit ? ' في «'.$r->organizationUnit->name.'»' : '').' ينتظر اعتمادك',
             primary: ['label' => 'اعتمد', 'url' => route('risk.approve', $r), 'method' => 'POST'],
             secondary: ['label' => 'التفاصيل', 'url' => route('risk.show', $r)],
             detailsUrl: route('risk.show', $r),
             createdAt: $r->created_at,
-        )));
+        ))->values());
     }
 }

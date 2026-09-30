@@ -6,7 +6,9 @@ use App\Core\Inbox\Task;
 use App\Core\Inbox\TaskSource;
 use App\Core\Permissions\PermissionRegistry;
 use App\Models\User;
+use App\Modules\Project\Models\ExternalParty;
 use App\Modules\Project\Models\ExternalPartyDocument;
+use App\Modules\Project\Models\ExternalPartyEvaluation;
 use App\Modules\Project\Models\ProjectContractor;
 use App\Modules\Worker\Models\Worker;
 use App\Modules\Worker\Services\WorkerService;
@@ -33,6 +35,45 @@ class ContractorTasks implements TaskSource
                     question: 'عامل «'.$w->full_name.'»'.($w->externalParty ? ' من '.$w->externalParty->name : '').' مقدَّم للاعتماد',
                     primary: ['label' => 'راجعه', 'url' => route('workers.show', $w)],
                     detailsUrl: route('workers.approval-queue'), createdAt: $w->updated_at ?? $w->created_at,
+                ));
+            }
+        }
+        // ٢٧-ب (قرار ٦٧): عامل في التعريف أو التدريب — الخطوة التالية بيد من يعتمد العمال (WorkerService::APPROVAL_TRANSITIONS)
+        if (PermissionRegistry::hasPermission($role, 'worker.approve')) {
+            foreach (Worker::whereIn('status', ['induction', 'training'])->with('externalParty')->get() as $w) {
+                $induction = $w->status === 'induction';
+                $out->push(new Task(
+                    key: "worker:{$w->id}:{$w->status}", module: 'المقاولون',
+                    question: 'عامل «'.$w->full_name.'»'.($w->externalParty ? ' من '.$w->externalParty->name : '')
+                        .($induction ? ' في التعريف — سجّل إتمام تعريفه' : ' في التدريب — اعتمده حين يتم تدريبه'),
+                    primary: ['label' => 'افتحه', 'url' => route('workers.show', $w)],
+                    detailsUrl: route('workers.show', $w), createdAt: $w->updated_at ?? $w->created_at,
+                ));
+            }
+        }
+        // ٢٧-ب: طرف خارجي «قيد التسجيل» — يُكمَل تسجيله ويُفعَّل
+        if (PermissionRegistry::hasPermission($role, 'external_party.edit')) {
+            foreach (ExternalParty::where('status', 'pending')->get() as $party) {
+                $out->push(new Task(
+                    key: "party:{$party->id}:pending", module: 'المقاولون',
+                    question: 'الطرف «'.$party->name.'» قيد التسجيل — أكمل تسجيله',
+                    primary: ['label' => 'أكمله', 'url' => route('external-parties.edit', $party)],
+                    detailsUrl: route('external-parties.show', $party), createdAt: $party->created_at,
+                ));
+            }
+        }
+        // ٢٧-ب: مشروع اكتمل ولم يُقيَّم طرفه عليه
+        if (PermissionRegistry::hasPermission($role, 'external_party.evaluate')) {
+            $done = ProjectContractor::whereHas('project', fn ($q) => $q->where('status', 'completed'))->with(['project', 'externalParty'])->get();
+            $evaluated = ExternalPartyEvaluation::whereNotNull('project_id')->get(['external_party_id', 'project_id'])
+                ->map(fn ($e) => $e->external_party_id.':'.$e->project_id)->flip();
+            foreach ($done as $pc) {
+                if (!$pc->externalParty || !$pc->project || $evaluated->has($pc->external_party_id.':'.$pc->project_id)) continue;
+                $out->push(new Task(
+                    key: "party:{$pc->external_party_id}:eval:{$pc->project_id}", module: 'المقاولون',
+                    question: 'اكتمل مشروع «'.$pc->project->name.'» — قيّم «'.$pc->externalParty->name.'» عليه',
+                    primary: ['label' => 'قيّمه', 'url' => route('external-parties.evaluation.create', ['externalParty' => $pc->external_party_id, 'project_id' => $pc->project_id])],
+                    detailsUrl: route('external-parties.show', $pc->external_party_id), createdAt: $pc->project->updated_at,
                 ));
             }
         }

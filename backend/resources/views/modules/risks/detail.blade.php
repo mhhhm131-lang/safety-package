@@ -12,7 +12,7 @@
                     <h5 class="mb-0 fw-bold" style="color: var(--text-main);">{{ $risk->title }}</h5>
                     <div class="d-flex align-items-center gap-2">
                     {{-- المرحلة ١٨-٢: خطر فعلي أُضيف جديداً في مكان ← مسؤول السلامة يقرر إضافته إلى السجل العام --}}
-                    @if($risk->risk_type === 'active' && !$risk->parent_reference_id && \App\Core\Permissions\PermissionRegistry::hasPermission(auth()->user()->role(), 'risk.approve'))
+                    @if($risk->risk_type === 'active' && !$risk->parent_reference_id && auth()->user()->role() === \App\Modules\Risk\Support\RiskApproval::GENERAL_APPROVER)
                         <form method="post" action="{{ route('risk.toReference', $risk->id) }}" class="m-0">@csrf
                             <button class="btn btn-sm btn-outline-primary" title="ينسخه إلى السجل العام ليستفيد منه باقي الأماكن"><i class="bi bi-bookmark-plus me-1"></i> أضفه إلى السجل العام</button>
                         </form>

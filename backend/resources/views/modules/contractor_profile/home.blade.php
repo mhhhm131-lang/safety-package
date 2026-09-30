@@ -8,6 +8,20 @@
 </div>
 <div class="alert alert-info py-2 small">ما تراه هنا بيانات طرفكم فقط: المشاريع وحالة التأهيل، العمال، المستندات، والتصاريح.</div>
 
+{{-- ٢٧-ب (قرار ٦٧): حساب المقاول يفتح على بوابته لا على الرئيسية — ما ينتظره يُعرض هنا ببطاقته وزره (جسم البطاقة نفسه) --}}
+@if($tasks->isNotEmpty())
+<h2 class="sec-h sec-h-lg mb-2"><i class="bi bi-inbox-fill"></i> ما ينتظرك <span class="badge text-bg-dark" id="inboxCount">{{ $tasks->count() }}</span></h2>
+<div class="d-grid gap-2 mb-3" id="inboxList">
+  @foreach($tasks as $t)
+  <div class="card task {{ $t->isOverdue ? 'task-late' : '' }}" data-task="{{ $t->key }}">
+    <div class="card-body py-3 d-flex flex-wrap align-items-center gap-3">
+      @include('governance._task_body', ['t' => $t, 'label' => $t->question])
+    </div>
+  </div>
+  @endforeach
+</div>
+@endif
+
 {{-- التصاريح (المرحلة ٦-ب): ما ينتظر رفع أدلة منكم أولاً --}}
 <div class="card mb-3">
   <div class="card-header d-flex align-items-center">

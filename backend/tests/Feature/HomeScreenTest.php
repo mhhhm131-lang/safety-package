@@ -27,6 +27,7 @@ class HomeScreenTest extends TestCase
         parent::setUp();
         // المبنى الرئيسي لازم لنية «فعّل حالة طارئة» (كما على المنشور)
         $this->seed([PlacesSeeder::class, OrganizationUnitsSeeder::class, AffectedGroupsSeeder::class, EmergencySeeder::class]);
+        $this->plansInSystem(); // كما على المنشور — وإلا عُدّت بطاقة «أماكن بلا خطة استجابة» (٢٧-ب)
     }
 
     private function user(string $username, string $role, ?string $placeCode = null): User

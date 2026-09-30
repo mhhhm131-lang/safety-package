@@ -36,6 +36,7 @@ class FewerPressesTest extends TestCase
     {
         parent::setUp();
         $this->seed([PlacesSeeder::class, OrganizationUnitsSeeder::class, AffectedGroupsSeeder::class]);
+        $this->plansInSystem(); // كما على المنشور — وإلا عُدّت بطاقة «أماكن بلا خطة استجابة» (٢٧-ب)
         $this->salama = $this->user('salama', 'system_admin');
         $this->fani = $this->user('fani', 'field_worker', 'HZ-06');
         $this->coord = $this->user('coord', 'safety_coordinator', 'HZ-06');
