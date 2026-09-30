@@ -199,7 +199,12 @@ class InboxTest extends TestCase
         $this->assertSame(1, $this->pending($this->salama));
         $this->actingAs($this->salama)->get('/app')->assertOk()->assertSee('فعّله ميدانياً')->assertSee('data-target="'.url("/app/permits/{$permit->id}/activate").'"', false);
         $this->assertSame(1, $this->pending($this->coord)); // المنسق يفعّل
+        // ٢٧-ج (قرار ٦٧): حين يُفعَّل تختفي «فعّله»، وتبقى للنشط بطاقة واحدة ما دامت نهايته خلال سبعة أيام: «أغلقه حين ينتهي العمل»؛ تختفي بإغلاقه
         $permit->update(['status' => Permit::STATUS_ACTIVE]);
+        $this->actingAs($this->salama)->get('/app')->assertOk()->assertDontSee('فعّله ميدانياً')->assertSee('أغلقه حين ينتهي العمل');
+        $this->assertSame(1, $this->pending($this->salama));
+        $this->assertSame(1, $this->pending($this->coord));
+        $permit->update(['status' => Permit::STATUS_COMPLETED, 'metadata' => ['evaluation' => ['overall_rating' => 4]]]);
         $this->assertSame(0, $this->pending($this->salama));
         $this->assertSame(0, $this->pending($this->coord));
     }
