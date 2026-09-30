@@ -120,17 +120,35 @@
       $sosIntent = $allIntents->first(fn ($i) => $i->key === $k);
       if ($sosIntent) break;
   }
+  /* ٢٦-٩ (قرار ٦٦): «المزيد» للإعدادات فقط — ما يُضبط مرة. من لا إعداد له لا زر عنده ولا قائمة.
+     كل سطر: [الاسم، الأيقونة، الرابط، نمط المسار الفعّال] */
+  $moreRole = auth()->user()->role();
+  $moreCan = fn (string $p) => \App\Core\Permissions\PermissionRegistry::hasPermission($moreRole, $p);
+  $moreLinks = array_values(array_filter([
+      $moreCan('system.settings') ? ['الإعدادات', 'bi-sliders', route('app.settings'), 'app.settings'] : null,
+      $moreCan('system.users') ? ['المستخدمون', 'bi-people', route('app.users.index'), 'app.users.*'] : null,
+      $moreCan('system.org') ? ['الهيكل التنظيمي', 'bi-diagram-3', route('app.org.index'), 'app.org.*'] : null,
+      $moreCan('system.settings') ? ['الأماكن', 'bi-geo-alt', route('app.places.index'), 'app.places.*'] : null,
+      $moreCan('system.audit') ? ['سجل التدقيق', 'bi-journal-text', route('app.audit'), 'app.audit'] : null,
+      $moreCan('system.settings') ? ['البريد', 'bi-envelope-at', route('app.mail.index'), 'app.mail.*'] : null,
+      $moreCan('system.settings') ? ['الإغلاق والتسليم', 'bi-box-seam', route('app.closeout.index'), 'app.closeout.*'] : null,
+      $moreCan('system.settings') ? ['مهل البلاغات', 'bi-clock', route('incidents.settings'), 'incidents.settings'] : null,
+      $moreCan('emergency.manage') ? ['مهل التصعيد', 'bi-clock-history', route('emergency.settings'), 'emergency.settings'] : null,
+  ]));
 @endphp
 <body class="{{ $sosIntent ? 'has-sos' : '' }}">
 @include('layouts._trial_banner')
 {{-- المرحلة ١١-٤ (قرار ٣٤): ثلاثة أبواب في الشريط — ما ينتظرك · بحث · المزيد. القائمة كلها خلف «المزيد» ولا تتكدس فوق المحتوى --}}
+{{-- ٢٦-٩ (قرار ٦٦): «المزيد» للإعدادات فقط، ويظهر لمن له إعداد --}}
 <nav class="topbar px-3 py-2 d-flex align-items-center gap-2 flex-wrap">
   <a class="brand" href="{{ route('app.home') }}"><i class="bi bi-shield-check"></i> <span class="d-none d-sm-inline">منظومة السلامة</span></a>
   <a class="btn btn-sm {{ request()->routeIs('app.home') ? 'btn-light' : 'btn-outline-light' }}" href="{{ route('app.home') }}" id="navInbox"><i class="bi bi-inbox-fill"></i> ما ينتظرك <span class="badge text-bg-danger" id="inboxN" hidden>0</span></a>
   <form method="get" action="{{ route('app.search') }}" class="m-0 d-flex" role="search" id="navSearch">
     <input name="q" class="form-control form-control-sm" placeholder="بحث…" value="{{ request()->routeIs('app.search') ? request('q') : '' }}" style="max-width:180px" aria-label="بحث">
   </form>
+  @if($moreLinks)
   <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="offcanvas" data-bs-target="#moreNav" id="navMore"><i class="bi bi-list"></i> المزيد</button>
+  @endif
   <span class="ms-auto"></span>
   <a class="bell" href="{{ route('app.notifications.index') }}" title="الإشعارات"><i class="bi bi-bell fs-5"></i><span class="n" id="bellN" hidden>0</span></a>
   <span class="small d-none d-md-inline">{{ auth()->user()->name }} <span class="text-white-50">· {{ auth()->user()->roleName() }}</span></span>
@@ -139,104 +157,21 @@
 
 <div class="container-fluid">
   <div class="row">
+    @if($moreLinks)
     <aside class="offcanvas offcanvas-end side" tabindex="-1" id="moreNav" aria-labelledby="moreNavTitle">
       <div class="offcanvas-header"><h5 class="offcanvas-title" id="moreNavTitle">المزيد</h5><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="إغلاق"></button></div>
       <div class="offcanvas-body py-2">
-      @php($role = auth()->user()->role())
-      @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'system.settings'))
-        <a href="{{ route('app.settings') }}" class="{{ request()->routeIs('app.settings') ? 'active' : '' }}"><i class="bi bi-sliders"></i>الإعدادات</a>
-        <hr>
-      @endif
-      <div class="small text-muted px-2 mb-1">السجلات</div>
+      @foreach($moreLinks as [$moreLabel, $moreIcon, $moreUrl, $morePattern])
+        <a href="{{ $moreUrl }}" class="{{ request()->routeIs($morePattern) ? 'active' : '' }}"><i class="bi {{ $moreIcon }}"></i>{{ $moreLabel }}</a>
+      @endforeach
       {{-- ١٩-٧ (قرار ٤٨) ثم ٢٥-١ (قرار ٦٤): «الأماكن وملفاتها» خرجت من القائمة — الأماكن في الصفحة الأولى لكل حساب --}}
-      @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'system.users'))
-        <a href="{{ route('app.users.index') }}" class="{{ request()->routeIs('app.users.*') ? 'active' : '' }}"><i class="bi bi-people"></i>المستخدمون</a>
-      @endif
-      @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'system.org'))
-        <a href="{{ route('app.org.index') }}" class="{{ request()->routeIs('app.org.*') ? 'active' : '' }}"><i class="bi bi-diagram-3"></i>الهيكل التنظيمي</a>
-      @endif
-      @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'system.settings'))
-        <a href="{{ route('app.places.index') }}" class="{{ request()->routeIs('app.places.*') ? 'active' : '' }}"><i class="bi bi-geo-alt"></i>الأماكن</a>
-      @endif
-      @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'system.audit'))
-        <a href="{{ route('app.audit') }}" class="{{ request()->routeIs('app.audit') ? 'active' : '' }}"><i class="bi bi-journal-text"></i>سجل التدقيق</a>
-      @endif
-      @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'system.settings'))
-        <a href="{{ route('app.mail.index') }}" class="{{ request()->routeIs('app.mail.*') ? 'active' : '' }}"><i class="bi bi-envelope-at"></i>البريد</a>
-        <a href="{{ route('app.closeout.index') }}" class="{{ request()->routeIs('app.closeout.*') ? 'active' : '' }}"><i class="bi bi-box-seam"></i>الإغلاق والتسليم</a>
-      @endif
-        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'system.settings'))
-          <a href="{{ route('incidents.settings') }}" class="{{ request()->routeIs('incidents.settings') ? 'active' : '' }}"><i class="bi bi-clock"></i>مهل البلاغات</a>
-        @endif
-        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'emergency.manage'))
-          <a href="{{ route('emergency.settings') }}" class="{{ request()->routeIs('emergency.settings') ? 'active' : '' }}"><i class="bi bi-clock-history"></i>مهل التصعيد</a>
-        @endif
-      <a href="{{ route('app.notifications.index') }}" class="{{ request()->routeIs('app.notifications.*') ? 'active' : '' }}"><i class="bi bi-bell"></i>الإشعارات</a>
-      @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'report.view'))
-        <a href="{{ route('reports.dashboard') }}" class="{{ request()->routeIs('reports.*') ? 'active' : '' }}"><i class="bi bi-clipboard-data"></i>التقارير</a>
-      @endif
-      @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'risk.list'))
-        <hr>
-        <div class="small text-muted px-2 mb-1">المخاطر</div>
-        {{-- قرار ٢١: طبقة واحدة — «كتاب المخاطر» (master) أُخفي؛ السجل العام هو كتاب المعهد --}}
-        <a href="{{ route('risk.reference.index') }}" class="{{ request()->routeIs('risk.reference.*') ? 'active' : '' }}"><i class="bi bi-bookmark"></i>السجل العام للمعهد</a>
-        <a href="{{ route('risk.active.index') }}" class="{{ request()->routeIs('risk.active.*') || request()->routeIs('risk.index') ? 'active' : '' }}"><i class="bi bi-lightning-charge"></i>مخاطر الإدارات والأماكن</a>
-        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'risk.approve'))
-          <a href="{{ route('risk.approval.queue') }}" class="{{ request()->routeIs('risk.approval.*') ? 'active' : '' }}"><i class="bi bi-check2-square"></i>اعتماد المخاطر</a>
-        @endif
-      @endif
-      <hr>
-      <div class="small text-muted px-2 mb-1">النماذج</div>
-      <a href="{{ route('forms.mine') }}" class="{{ request()->routeIs('forms.mine') || request()->routeIs('forms.fill') || request()->routeIs('forms.submitted') ? 'active' : '' }}"><i class="bi bi-inbox"></i>نماذجي</a>
-      @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'form.list'))
-        <a href="{{ route('forms.index') }}" class="{{ request()->routeIs('forms.index') || request()->routeIs('forms.show') || request()->routeIs('forms.edit') || request()->routeIs('forms.create') || request()->routeIs('forms.tracking') || request()->routeIs('forms.results') || request()->routeIs('forms.send') ? 'active' : '' }}"><i class="bi bi-ui-checks"></i>النماذج الرقمية</a>
-        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'form.create'))
-          <a href="{{ route('forms.generate') }}" class="{{ request()->routeIs('forms.generate') ? 'active' : '' }}"><i class="bi bi-magic"></i>توليد من المخاطر</a>
-        @endif
-      @endif
-      @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'permit.list'))
-        <hr>
-        <div class="small text-muted px-2 mb-1">التصاريح</div>
-        <a href="{{ route('permits.index') }}" class="{{ request()->routeIs('permits.index') || request()->routeIs('permits.show') || request()->routeIs('permits.create') || request()->routeIs('permits.review') || request()->routeIs('permits.edit') || request()->routeIs('permits.activate') || request()->routeIs('permits.evaluate') ? 'active' : '' }}"><i class="bi bi-file-earmark-check"></i>سجل التصاريح</a>
-        <a href="{{ route('permits.queue') }}" class="{{ request()->routeIs('permits.queue') ? 'active' : '' }}"><i class="bi bi-inbox"></i>طابور الإجراء</a>
-        <a href="{{ route('permits.dashboard') }}" class="{{ request()->routeIs('permits.dashboard') || request()->routeIs('permits.report') ? 'active' : '' }}"><i class="bi bi-speedometer2"></i>لوحة التصاريح</a>
-        <a href="{{ route('permits.gate') }}" class="{{ request()->routeIs('permits.gate') || request()->routeIs('permits.gate.logs') ? 'active' : '' }}"><i class="bi bi-person-check"></i>جاهزية العامل</a>
-        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'epc.manage'))
-          <a href="{{ route('equipment.index') }}" class="{{ request()->routeIs('equipment.*') ? 'active' : '' }}"><i class="bi bi-truck"></i>المعدات</a>
-        @endif
-        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'permit.zones'))
-          <a href="{{ route('permits.settings') }}" class="{{ request()->routeIs('permits.settings') ? 'active' : '' }}"><i class="bi bi-sliders"></i>السعة والتعارض</a>
-        @endif
-      @endif
-      {{-- ٢٦-٧ (قرار ٦٦): مجموعتا «مركز السلامة وإدارة الطوارئ» و«تنتظر التركيب» (٢٠ رابطاً) انتقلتا إلى صفحة المركز الواحدة — يفتحها مربع «مركز السلامة» والبحث. بقي هنا المهلتان لأنهما إعداد --}}
-      @if(auth()->user()->isContractor())
-        <hr>
-        <div class="small text-muted px-2 mb-1">بوابة المقاول</div>
-        <a href="{{ route('contractor.home') }}" class="{{ request()->routeIs('contractor.home') ? 'active' : '' }}"><i class="bi bi-building"></i>بوابتنا</a>
-      @endif
-      @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'project.list') || \App\Core\Permissions\PermissionRegistry::hasPermission($role, 'worker.list'))
-        <hr>
-        <div class="small text-muted px-2 mb-1">المقاولون</div>
-        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'project.list'))
-          <a href="{{ route('projects.index') }}" class="{{ request()->routeIs('projects.*') ? 'active' : '' }}"><i class="bi bi-kanban"></i>المشاريع</a>
-        @endif
-        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'external_party.list'))
-          <a href="{{ route('external-parties.index') }}" class="{{ request()->routeIs('external-parties.*') ? 'active' : '' }}"><i class="bi bi-buildings"></i>الأطراف الخارجية</a>
-        @endif
-        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'worker.list'))
-          <a href="{{ route('workers.index') }}" class="{{ request()->routeIs('workers.*') ? 'active' : '' }}"><i class="bi bi-person-badge"></i>العمال</a>
-        @endif
-        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'competency.view'))
-          <a href="{{ route('competency.matrix') }}" class="{{ request()->routeIs('competency.*') ? 'active' : '' }}"><i class="bi bi-award"></i>الكفاءات والمهن</a>
-        @endif
-        @if(\App\Core\Permissions\PermissionRegistry::hasPermission($role, 'integration.manage'))
-          <a href="{{ route('settings.contractor-channels') }}" class="{{ request()->routeIs('settings.contractor-channels') ? 'active' : '' }}"><i class="bi bi-shield-check"></i>قنوات التحقق</a>
-        @endif
-      @endif
-      <hr>
-      <a href="/index.html"><i class="bi bi-folder2-open"></i>الوثائق (المنظومة)</a>
+      {{-- ٢٦-٧ (قرار ٦٦): الطوارئ (٢٠ رابطاً) في صفحة المركز الواحدة؛ بقيت هنا المهلتان لأنهما إعداد --}}
+      {{-- ٢٦-٩ (قرار ٦٦): ما ليس إعداداً خرج من هنا وله بابه — الإشعارات (الجرس)، التقارير (الصفحة الأولى)، السجلات والنماذج والمقاولون («أريد أن»)،
+           سجل التصاريح (عمود الرسم) ولوحته وطابوره ومعداته وسعته (من داخله)، مخاطر الإدارات والأماكن (ملف المكان) واعتمادها (من داخلها)،
+           قنوات التحقق (صفحة الإعدادات وملف المقاول)، الوثائق («خطة مكاني» وصفحة الدخول) --}}
       </div>
     </aside>
+    @endif
     <main class="col-12 py-3" style="max-width:1100px;margin:0 auto">
       {{-- ٢٢-٢ (د): حالة مفتوحة تخصّ صاحب الحساب — شريط ظاهر في كل صفحة حتى يجدها بلا بحث --}}
       @if($myEmergency && !request()->routeIs('emergency.me'))

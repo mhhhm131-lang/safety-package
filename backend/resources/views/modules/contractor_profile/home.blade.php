@@ -109,4 +109,7 @@
     </div>
   </div>
 </div>
+{{-- ٢٦-٩ (قرار ٦٦): حساب المقاول يفتح على بوابته لا على الصفحة الأولى — «أريد أن» هنا حتى لا يضيع ما خرج من «المزيد».
+     البوابة نفسها وسجل التصاريح وقائمة العمال وتسجيل العامل لها أزرارها أعلاه فلا تتكرر --}}
+@include('governance._intents', ['intents' => \App\Core\Intents\IntentRegistry::forUser($me)->reject(fn ($i) => in_array($i->key, ['portal', 'permits_log', 'workers_log', 'worker'], true))->values()])
 @endsection

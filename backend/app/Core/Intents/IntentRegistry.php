@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Modules\Emergency\Models\EmergencyBuilding;
 use App\Modules\Governance\Models\Place;
 use App\Modules\Governance\Models\UserProfile;
+use App\Modules\Governance\Services\ScopeService;
 use Illuminate\Support\Collection;
 
 /**
@@ -20,6 +21,8 @@ use Illuminate\Support\Collection;
  * القاعدة: كل ما أبدؤه له باب واحد. ما له باب في مكان آخر لا يتكرر هنا:
  *   نماذج الفحص، طلب التصريح، الوحدات، ترشيح الفريق ← ملف المكان (البنود ٣، ٨، ٦، ٧) · سجل التصاريح والتقارير ← الرسم ·
  *   الإعدادات ← المزيد · «مكاني» ← مربع المكان · البلاغ ← صفحة الرؤية (٢٦-٢) · الطوارئ ← الزر الأحمر وصفحة المركز (٢٦-٧).
+ * ٢٦-٩ (قرار ٦٦): «المزيد» للإعدادات فقط — السجلات التي خرجت منه ولا باب لها في مكان أو رسم تُقرأ من هنا
+ *   (المشاريع، الأطراف الخارجية، العمال، النماذج الرقمية)؛ ومن لا مكان في نطاقه يأخذ سجل التصاريح ومخاطر الإدارات هنا.
  *
  * التعريف: [key, label, icon, group, primary, url|closure(User|null, UserProfile|null): ?string, condition: closure(role, profile, user): bool]
  */
@@ -49,6 +52,12 @@ class IntentRegistry
         $placeCode = $profile?->place_id ? Place::find($profile->place_id)?->code : null;
         $folder = $placeCode ? (Place::FOLDERS[$placeCode] ?? null) : null;
         $main = EmergencyBuilding::main();
+        // ٢٦-٩: من لا مكان في نطاقه لا مربعات عنده ولا رسم — فما بابه المكان أو الرسم يأخذ زراً هنا حتى لا يُخفى عنه (قرار ٦١)
+        $noPlace = false;
+        if ($can('permit.list') || $can('risk.list')) { // النطاق يُحسب لمن يعنيه وحده — السجل يُبنى في كل صفحة
+            $scope = ScopeService::forUser($user);
+            $noPlace = !$scope->isAll() && $scope->places()->isEmpty();
+        }
         $G = array_keys(InboxService::GROUPS);
         [$gIncidents, , $gRounds, $gEmergency, $gTeam, $gPermits, $gRisks, $gForms, $gContractors, $gAccounts] = $G;
         $out = collect();
@@ -100,21 +109,30 @@ class IntentRegistry
         $add(true, 'roles_map', 'الأدوار والبطاقات', route('app.roles'), 'bi-diagram-2', $gTeam, false, 'من يفعل ماذا: الأدوار الـ٢٧ وبطاقات السلامة الـ٢١ ومن يحملها'); // ٢٠-٦
 
         // ── التصاريح ── الطلب من ملف المكان (البند ٨) والسجل من الرسم؛ هنا فحص الجاهزية عند البوابة
+        $add($can('permit.list') && $noPlace, 'permits_log', 'سجل التصاريح', route('permits.index'), 'bi-file-earmark-check', $gPermits); // لمن له مكان: عمود الرسم
         $add($can('permit.list'), 'gate', 'أتحقق من جاهزية عامل', route('permits.gate'), 'bi-person-check', $gPermits, false, 'قبل دخوله موقع العمل: وثائقه وتدريبه وفحصه الطبي');
 
         // ── المخاطر ── «السجل العام» قراءة (الكتاب)، و«أفعّل خطراً» فعل من الكتاب إلى الإدارة — سؤالان مختلفان وإن فتحا الصفحة نفسها (قرار ٦٧-٥)
         $add($can('risk.list'), 'book', 'السجل العام للمعهد', route('risk.reference.index'), 'bi-bookmark', $gRisks, false, 'كتاب أخطار المعهد كاملاً');
         $add($can('risk.activate'), 'activate', 'أفعّل خطراً لإدارتي', route('risk.reference.index'), 'bi-lightning-charge', $gRisks, false, 'من كتاب المعهد');
+        $add($can('risk.list') && $noPlace, 'risks_log', 'مخاطر الإدارات والأماكن', route('risk.active.index'), 'bi-lightning-charge', $gRisks); // لمن له مكان: ملف المكان، البند ٤
         $add(true, 'hazards', 'أعرف أخطار مكاني', route('hazards.index'), 'bi-book', $gRisks);
 
         // ── النماذج ──
         $add(true, 'myforms', 'أعبّئ نماذجي', route('forms.mine'), 'bi-inbox', $gForms);
+        // ٢٦-٩: السجل خرج من «المزيد» — قراءته سؤال، والإرسال فعل (قرار ٦٧-٥)؛ من يقرأ ولا يرسل (المديرون واللجنة) بابه هذا
+        $add($can('form.list'), 'forms_log', 'النماذج الرقمية', route('forms.index'), 'bi-ui-checks', $gForms, false, 'ما أُرسل، ومن عبّأ، والنتائج');
         $add($can('form.send'), 'sendform', 'أرسل نموذجاً لموظفين', route('forms.index'), 'bi-send', $gForms);
 
         // ── المقاولون ──
         if ($user->isContractor()) {
             $add(true, 'portal', 'بوابتي', route('contractor.home'), 'bi-building', $gContractors, true, 'طرفي ومشاريعي وعمالي ووثائقي');
         }
+        // ٢٦-٩ (قرار ٦٦، ولا يُخفى شيء ٦١): السجلات الثلاثة خرجت من «المزيد» — قراءتها باب لكل من يملكها (المديرون واللجنة يقرؤون ولا ينشئون)،
+        // والإنشاء زره لمن يملكه؛ السجل قراءة والإنشاء فعل (قرار ٦٧-٥)
+        $add($can('project.list'), 'projects_log', 'المشاريع', route('projects.index'), 'bi-list-task', $gContractors, false, 'سجل المشاريع ومقاوليها');
+        $add($can('external_party.list'), 'parties_log', 'الأطراف الخارجية', route('external-parties.index'), 'bi-list-ul', $gContractors, false, 'سجل المقاولين والموردين وتأهيلهم');
+        $add($can('worker.list'), 'workers_log', 'العمال', route('workers.index'), 'bi-people', $gContractors, false, 'سجل العمال ووثائقهم');
         $add($can('worker.create'), 'worker', 'أسجّل عاملاً', route('workers.create'), 'bi-person-vcard', $gContractors);
         $add($can('project.create'), 'project', 'مشروع جديد', route('projects.create'), 'bi-kanban', $gContractors);
         $add($can('external_party.create'), 'party', 'طرف خارجي جديد', route('external-parties.create'), 'bi-buildings', $gContractors);

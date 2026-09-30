@@ -111,6 +111,9 @@ class ReferenceSingleLayerTest extends TestCase
         $html = $this->actingAs($admin)->get(route('risk.reference.index'))->assertOk()->getContent();
 
         $this->assertStringNotContainsString('>كتاب المخاطر<', $html);
-        $this->assertStringContainsString('السجل العام للمعهد', $html);
+        // ٢٦-٩ (قرار ٦٦): «المزيد» للإعدادات فقط — باب السجل العام زرّه في «أريد أن» باسمه، ولا باب لـ«كتاب المخاطر»
+        $home = $this->actingAs($admin)->get('/app')->assertOk()->getContent();
+        $this->assertStringNotContainsString('>كتاب المخاطر<', $home);
+        $this->assertMatchesRegularExpression('~href="'.preg_quote(route('risk.reference.index'), '~').'" data-intent="book"[^>]*>.*?السجل العام للمعهد~s', $home);
     }
 }
