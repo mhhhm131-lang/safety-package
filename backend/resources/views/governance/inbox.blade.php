@@ -17,27 +17,8 @@
   </div>
 @endif
 
-@if($overview)
-  @php
-    $rg = $overview['response'];
-  @endphp
-  {{-- ١. الأرقام الكبيرة — كل رقم يفتح مصدره --}}
-  <div class="tiles mb-3" id="tiles">
-    <a class="card tile" href="#inboxList" data-tile="waiting"><span class="lbl">ينتظرك الآن</span><span class="n">{{ $overview['waiting'] }}</span><span class="lbl">{{ $overview['waiting'] ? 'قرارات تحتاجك' : 'لا شيء يحتاجك' }}</span></a>
-    <a class="card tile" href="{{ route('incidents.index') }}" data-tile="pending"><span class="lbl">بلاغات شاغلين قبل استلام الفني</span><span class="n">{{ $rg['incident']['pending'] }}</span><span class="lbl">{{ $rg['incident']['pending'] ? 'بانتظار فني' : 'كلها استُلمت' }}</span></a>
-    <a class="card tile" href="{{ route('emergency.incidents.index') }}" data-tile="unack"><span class="lbl">حالات طارئة بلا إقرار</span><span class="n {{ $rg['emergency']['unacknowledged_open'] ? 'text-danger' : '' }}">{{ $rg['emergency']['unacknowledged_open'] }}</span><span class="lbl">{{ $rg['emergency']['unacknowledged_open'] ? 'يحتاج إقراراً الآن' : 'لا شيء معلّق' }}</span></a>
-    <a class="card tile" href="{{ route('reports.dashboard') }}" data-tile="gap">
-      <span class="lbl">فجوة الاستجابة</span>
-      @if($rg['incident']['avg_minutes'] === null)
-        <span class="n text-muted" style="font-size:1.4rem">لا بيانات</span><span class="lbl">لا بلاغ استُلم هذا الشهر</span>
-      @else
-        <span class="n">{{ $rg['incident']['avg_minutes'] }} <small>دقيقة</small></span><span class="lbl">من البلاغ إلى استلام الفني · {{ $rg['incident']['count'] }} {{ $rg['incident']['count'] === 1 ? 'بلاغ' : 'بلاغات' }}</span>
-      @endif
-    </a>
-  </div>
-
-@endif
-
+{{-- ٢٦-١٠ (قرار ٦٦ «أرقام واحدة»، بكلمته «ابدأ»): الأرقام الأربعة الكبيرة حُذفت — «ينتظرك» في عنوان قسمه وزر الشريط، وبلاغات الشاغلين والحالات في أعمدة الرسم،
+     و«فجوة الاستجابة» أول صفحة التقارير (زرها تحت الرسم لمن يملكها) --}}
 {{-- ٢. الأماكن (٢٥-١، قرار ٦٤) والرسم (٢٥-٢) — أولاً، ثم «ما ينتظرك» ثم «أريد أن…» (٢٦-١، قرار ٦٦ بكلمته): لكل حساب في نطاقه، لونه من حال الفحص؛ مكان واحد = المربع يفتح ملفه، أكثر = المربع يرشّح الرسم وزر «افتح ملف المكان» يفتحه --}}
 <div class="row g-3 mb-3">
   @if(!empty($placeTiles))
@@ -90,11 +71,16 @@
         @endforeach
       </div>
       <p class="small text-muted mt-2 mb-0">{{ count($placeTiles) > 1 ? 'اضغط مكاناً فيتغيّر الرسم له وحده، واضغط عموداً لقائمته.' : 'اضغط عموداً لقائمته.' }}</p>
+      @if($canReports)<div class="mt-2"><a class="btn btn-o btn-sm" id="reportsDoor" href="{{ route('reports.dashboard') }}" title="فجوة الاستجابة والمؤشرات والسجلات"><i class="bi bi-clipboard-data"></i> التقارير</a></div>@endif
     </div></div>
     <script type="application/json" id="snapshot">{!! json_encode(['places' => $snapshot['places'], 'total' => $snapshot['total'], 'links' => $snapshot['links'], 'keys' => array_map(fn ($v) => $v[1], $S::KEYS)], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}</script>
   </div>
   @endif
 </div>
+{{-- ٢٦-١٠: من يملك التقارير ولا مكان في نطاقه لا رسم عنده — زره هنا حتى لا يُخفى عنه (قرار ٦١) --}}
+@if($canReports && empty($placeTiles))
+  <div class="mb-3"><a class="btn btn-o btn-sm" id="reportsDoor" href="{{ route('reports.dashboard') }}" title="فجوة الاستجابة والمؤشرات والسجلات"><i class="bi bi-clipboard-data"></i> التقارير</a></div>
+@endif
 
 {{-- ٣. ما ينتظرك --}}
 @if($tasks->isEmpty())

@@ -45,11 +45,13 @@ class HomeScreenTest extends TestCase
 
         $html = $this->actingAs($salama)->get('/app')->assertOk()->getContent();
 
-        // ١ الأرقام: ينتظرك ١ (تصنيف البلاغ)، قبل الاستلام ١، بلا إقرار ٠، الفجوة «لا بيانات» لا صفر
-        $this->assertMatchesRegularExpression('~data-tile="waiting".*?<span class="n">1</span>~s', $html);
-        $this->assertMatchesRegularExpression('~data-tile="pending".*?<span class="n">1</span>~s', $html);
-        $this->assertMatchesRegularExpression('~data-tile="unack".*?<span class="n[^"]*">0</span>~s', $html);
-        $this->assertMatchesRegularExpression('~data-tile="gap".*?لا بيانات~s', $html);
+        // ١ الأرقام (٢٦-١٠، قرار ٦٦ «أرقام واحدة»): لا أرقام كبيرة — ينتظرك ١ في عنوان قسمه، والحالات الطارئة ٠ في عمودها، والفجوة في التقارير «لا بيانات» لا صفر
+        $this->assertStringNotContainsString('id="tiles"', $html);
+        $this->assertStringNotContainsString('data-tile=', $html);
+        $this->assertMatchesRegularExpression('~id="inboxCount">1<~', $html);
+        $this->assertMatchesRegularExpression('~data-k="emergency" data-n="0"~', $html);
+        $this->assertMatchesRegularExpression('~id="reportsDoor" href="'.preg_quote(route('reports.dashboard'), '~').'"~', $html);
+        $this->assertMatchesRegularExpression('~data-kpi="incident_avg">\s*لا بيانات~u', $this->actingAs($salama)->get(route('reports.dashboard'))->assertOk()->getContent());
         // ٢ الأماكن التسعة مربعات تُضغط (٢٥-١)، والرسم «حال الآن» بستة أعمدة وبلاغ شاغل واحد مفتوح (٢٥-٢) — لا رسم شهري
         $this->assertSame(9, preg_match_all('~class="pl-tile [a-z]+" href="[^"]+" data-place="HZ-~', $html)); // ٢٦-٧: مربع HZ-00 يفتح صفحة المركز لا ملفاً
         $this->assertStringContainsString('href="'.route('emergency.dashboard').'" data-place="HZ-00"', $html);
@@ -60,7 +62,7 @@ class HomeScreenTest extends TestCase
         $this->assertStringContainsString($i->code, $html);
         $this->assertStringContainsString('دخول مسؤول السلامة', $html);
         // ٢٦-١ (قرار ٦٦): الأماكن ← الرسم ← ما ينتظرك ← أريد أن…
-        $order = [strpos($html, 'id="tiles"'), strpos($html, 'id="places"'), strpos($html, 'id="chart"'), strpos($html, 'id="inboxList"'), strpos($html, 'id="intents"'), strpos($html, 'id="recent"')];
+        $order = [strpos($html, 'id="places"'), strpos($html, 'id="chart"'), strpos($html, 'id="inboxList"'), strpos($html, 'id="intents"'), strpos($html, 'id="recent"')];
         $this->assertSame($order, array_values(array_filter($order, fn ($p) => $p !== false)));
         $sorted = $order; sort($sorted);
         $this->assertSame($sorted, $order, 'الأجزاء الخمسة بترتيبها');
@@ -69,7 +71,7 @@ class HomeScreenTest extends TestCase
         $this->assertStringContainsString('<body class="has-sos">', $html);
     }
 
-    /** ٢٥-١ (قرار ٦٤): كان «الفني بلا أرقام»؛ صار يرى مكانه مربعاً يُضغط ورسم حاله (٢٥-٢)، وتبقى الأرقام الكبيرة لمن يملك report.view */
+    /** ٢٥-١ (قرار ٦٤): كان «الفني بلا أرقام»؛ صار يرى مكانه مربعاً يُضغط ورسم حاله (٢٥-٢)، والأرقام الكبيرة حُذفت للجميع (٢٦-١٠) */
     public function test_technician_sees_his_place_without_report_numbers_and_keeps_tasks_intents_and_sos(): void
     {
         $fani = $this->user('fani', 'field_worker', 'HZ-06');

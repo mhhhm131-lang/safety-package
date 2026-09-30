@@ -106,15 +106,17 @@ class EmergencyAcceptanceFixesTest extends TestCase
 
     // ── ٢٢-١٣: ما يُرى أولاً صادق ──
 
-    /** بطاقة الصفحة الأولى: حالة منتهية بلا إقرار لا «تحتاج إقراراً الآن»، ومؤشر التقرير يبقى يعدّها. */
+    /** الصفحة الأولى للحال الآن: حالة منتهية لا تبقى في عمود «حالات طارئة»، ومؤشر التقرير «بلا إقرار» يبقى يعدّها. */
     public function test_unacknowledged_tile_counts_open_cases_only_and_the_report_keeps_history(): void
     {
         $incident = $this->trigger();
         $home = fn () => $this->actingAs($this->salama)->get(route('app.home'))->assertOk()->getContent();
-        $this->assertMatchesRegularExpression('/data-tile="unack".*?text-danger">1<.*?يحتاج إقراراً الآن/su', $home());
+        // ٢٦-١٠ (قرار ٦٦): المربع الكبير حُذف — «الآن» في عمود الرسم «حالات طارئة» (أحمر ما دامت مفتوحة)، والتاريخ في التقرير
+        $this->assertStringNotContainsString('data-tile=', $home());
+        $this->assertMatchesRegularExpression('/class="bar\s+warn" data-k="emergency" data-n="1"/su', $home());
 
         app(EmergencyService::class)->endIncident($incident->fresh(), $this->salama, 'انتهى');
-        $this->assertMatchesRegularExpression('/data-tile="unack"[^>]*>.*?"n ">0<.*?لا شيء معلّق/su', $home());
+        $this->assertMatchesRegularExpression('/class="bar zero\s*" data-k="emergency" data-n="0"/su', $home());
 
         $report = $this->actingAs($this->salama)->get(route('reports.dashboard'))->assertOk()->getContent();
         $this->assertMatchesRegularExpression('/data-kpi="emergency_unack">1</u', $report);

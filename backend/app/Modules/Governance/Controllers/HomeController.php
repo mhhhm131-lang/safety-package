@@ -10,8 +10,6 @@ use App\Modules\Governance\Models\AppNotification;
 use App\Modules\Governance\Models\AuditLog;
 use App\Modules\Governance\Models\Place;
 use App\Modules\Governance\Models\Setting;
-use App\Modules\Report\Services\DashboardService;
-use App\Modules\Report\Services\ReportScope;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -22,10 +20,12 @@ use Illuminate\View\View;
  * المرحلة ١٣-٢ (قرار ٣٩): الشاشة الأولى خمسة أجزاء بالترتيب — أرقام كبيرة (لمن يملك `report.view`)،
  * رسم وخريطة، ما ينتظرك، أريد أن…، آخر الإجراءات. لا منطق جديد: الأرقام من `DashboardService` كما تحسبها
  * لوحة التقارير، والإجراءات من سجل التدقيق أو إشعارات المستخدم.
+ *
+ * ٢٦-١٠ (قرار ٦٦): الأرقام الكبيرة حُذفت — الأجزاء: الأماكن والرسم، ما ينتظرك، أريد أن…، آخر الإجراءات.
  */
 class HomeController extends Controller
 {
-    public function index(Request $request, InboxService $inbox, DashboardService $dashboard): View|\Illuminate\Http\RedirectResponse
+    public function index(Request $request, InboxService $inbox): View|\Illuminate\Http\RedirectResponse
     {
         $user = $request->user();
         // المرحلة ٦: حساب الطرف الخارجي يفتح بوابته مباشرة
@@ -35,15 +35,9 @@ class HomeController extends Controller
         $role = $user->role();
         $tasks = $inbox->forUser($user);
 
-        $overview = null;
-        if (PermissionRegistry::hasPermission($role, 'report.view')) {
-            // الشهر الجاري كما في لوحة التقارير (لا رقم مخترع). ٢٥-٢: الرسم الشهري وشبكة الشهر خرجا من هنا إلى لوحة التقارير
-            $month = ReportScope::fromRequest(null, null, null, $user->id);
-            $overview = [
-                'waiting'  => $tasks->count(),
-                'response' => $dashboard->responseGap($month),
-            ];
-        }
+        // ٢٦-١٠ (قرار ٦٦ «أرقام واحدة»): الأرقام الأربعة الكبيرة حُذفت من هنا — الرسم «حال الآن» وحده، و«فجوة الاستجابة» في لوحة التقارير؛
+        // زر «التقارير» تحت الرسم لمن يملك report.view
+        $canReports = PermissionRegistry::hasPermission($role, 'report.view');
 
         // آخر الإجراءات: سجل التدقيق لمن يملكه، وإلا آخر إشعارات المستخدم نفسه
         if (PermissionRegistry::hasPermission($role, 'system.audit')) {
@@ -89,7 +83,7 @@ class HomeController extends Controller
             'makani' => ($p = $user->profile) && $p->is_active ? $p->myPlace() : null, // ١٩-٦ (قرار ٤٩)
             'tasks' => $tasks,
             'intents' => IntentRegistry::forUser($user),
-            'overview' => $overview,
+            'canReports' => $canReports,
             'recent' => $recent,
             'deadlinesUnset' => $deadlinesUnset,
         ]);
