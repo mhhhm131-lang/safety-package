@@ -36,7 +36,8 @@
   </div>
 </div>
 
-<div class="row g-2 mb-3">
+{{-- ٢٧-أ: بطاقة «لم يسجّل وصوله / مفقود» في «ما ينتظرك» تفتح الشاشة على الحصر --}}
+<div class="row g-2 mb-3" id="muster">
   @foreach([['الإجمالي', 'total', ''], ['آمنون', 'safe', 'success'], ['قيد الإخلاء', 'evacuating', 'warning'], ['مفقودون', 'missing', 'danger'], ['مصابون', 'injured', 'danger'], ['يحتاجون مساعدة', 'needs_help', 'info']] as [$l, $k, $c])
     <div class="col-4 col-md-2"><div class="card text-center h-100 {{ $c ? 'border-'.$c : '' }}"><div class="card-body py-2"><div class="fs-4 fw-bold {{ $c ? 'text-'.$c : '' }}" id="stat-{{ str_replace('_', '-', $k) }}">{{ $stats[$k] }}</div><div class="small text-muted">{{ $l }}</div></div></div></div>
   @endforeach
@@ -316,6 +317,8 @@
 <script>
 (function(){
   const incidentId={{ $incident->id }}, open={{ $open ? 'true' : 'false' }}, csrf=document.querySelector('meta[name=csrf-token]').content;
+  // ٢٧-أ: بطاقة «أنهِها» تفتح الشاشة ونافذة الإنهاء معاً (#endModal) — النافذة تنبّه بمن لم يصل وطلبات المساعدة قبل إعلان الأمان
+  if(location.hash==='#endModal'){const m=document.getElementById('endModal');if(m&&window.bootstrap)new bootstrap.Modal(m).show();}
   const start=new Date('{{ $incident->triggered_at->toIso8601String() }}'), dur=document.getElementById('duration');
   @if($open)
   setInterval(()=>{const d=Math.floor((Date.now()-start)/1000);dur.textContent=[Math.floor(d/3600),Math.floor(d%3600/60),d%60].map(x=>String(x).padStart(2,'0')).join(':')},1000);

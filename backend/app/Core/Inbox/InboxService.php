@@ -35,6 +35,7 @@ class InboxService
         \App\Modules\Risk\Inbox\RiskTasks::class,
         \App\Modules\Permit\Inbox\PermitTasks::class,
         \App\Modules\Emergency\Inbox\EmergencyTasks::class,
+        \App\Modules\Emergency\Inbox\EmergencyCommandTasks::class, // ٢٧-أ (قرار ٦٧): ما يُراد من أصحاب القرار وقت الحالة — كان في الشاشة الحية وحدها
         \App\Modules\Emergency\Inbox\TeamGapTasks::class,
         \App\Modules\Governance\Inbox\AccountApprovalTasks::class, // ٢٠-٤-ب (قرار ٥٢): حساب ينتظر اعتماد مسؤول السلامة
         \App\Modules\Project\Inbox\ContractorTasks::class,
