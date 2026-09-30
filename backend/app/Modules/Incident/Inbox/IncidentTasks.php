@@ -35,9 +35,13 @@ class IncidentTasks implements TaskSource
         $place = $i->place ? $i->place->code.' '.$i->place->name : null;
         // ١٨-٣ (ج): الوحدة داخل المكان في نص البطاقة — «في القاعات · قاعة ٣١٢» فيذهب الفني إلى النقطة
         $where = $place ? ' في '.$place.($i->placeUnit ? ' · '.$i->placeUnit->type_label.' '.$i->placeUnit->name : '') : '';
-        $mk = fn (string $who, string $q, array $primary, ?array $secondary = null) => new Task(
+        // ٢٦-١١ (قرار ٦٦): بطاقات المركز والمنسق واللجنة لا عنوان فيها — لا يميّزها في المكان الواحد إلا الرقم، فتُدمج (Batch)؛
+        // البند داخل الدفعة برقمه ووحدته وعنوانه. بطاقات الفني والمبلّغ تبقى مفردة
+        $item = $i->code.($i->placeUnit ? ' · '.$i->placeUnit->type_label.' '.$i->placeUnit->name : '').' — '.\Illuminate\Support\Str::limit((string) $i->title, 70);
+        $mk = fn (string $who, string $q, array $primary, ?array $secondary = null, ?string $batch = null) => new Task(
             key: "incident:{$i->id}:{$who}", module: 'بلاغات الشاغلين', question: $q, primary: $primary, secondary: $secondary,
-            dueAt: $i->deadline_at, isOverdue: $i->isOverdue(), place: $place, detailsUrl: $show, createdAt: $i->created_at);
+            dueAt: $i->deadline_at, isOverdue: $i->isOverdue(), place: $place, detailsUrl: $show, createdAt: $i->created_at,
+            batch: $batch, item: $batch ? $item : null);
 
         // الفني المعيَّن: فتح = استلام (١١-١ ب)؛ ثم «عولج» بصورة
         if ($i->incident_field_team_id === $user->id) {
@@ -51,29 +55,29 @@ class IncidentTasks implements TaskSource
         }
         // المنسق المعيَّن
         if ($i->incident_coordinator_id === $user->id && $i->status === 'escalated_to_coord') {
-            return $mk('coord', 'بلاغ '.$i->code.$where.': صُعّد إليك — تتولّى المعالجة؟', ['label' => 'أتولّى', 'url' => route('incidents.resolveEscalation', $i), 'method' => 'POST'], ['label' => 'صعّد للجنة', 'url' => $show.'?do=escalate-manager']);
+            return $mk('coord', 'بلاغ '.$i->code.$where.': صُعّد إليك — تتولّى المعالجة؟', ['label' => 'أتولّى', 'url' => route('incidents.resolveEscalation', $i), 'method' => 'POST'], ['label' => 'صعّد للجنة', 'url' => $show.'?do=escalate-manager'], 'incident.coord');
         }
         // اللجنة (وحتى تشكيلها مسؤول السلامة)
         if ($isCommittee && $i->status === 'escalated_to_manager') {
-            return $mk('committee', 'بلاغ '.$i->code.$where.': صُعّد للجنة — تتولّى المعالجة؟', ['label' => 'أتولّى', 'url' => route('incidents.resolveEscalation', $i), 'method' => 'POST'], ['label' => 'التفاصيل', 'url' => $show]);
+            return $mk('committee', 'بلاغ '.$i->code.$where.': صُعّد للجنة — تتولّى المعالجة؟', ['label' => 'أتولّى', 'url' => route('incidents.resolveEscalation', $i), 'method' => 'POST'], ['label' => 'التفاصيل', 'url' => $show], 'incident.committee');
         }
         // المركز
         if ($isCenter) {
-            if (in_array($i->status, ['new', 'received'], true)) return $mk('center', 'بلاغ '.$i->code.$where.': لا فني للمكان — أحِله', ['label' => 'أحِله', 'url' => $show]);
-            if ($i->status === 'referred') return $mk('center', 'بلاغ '.$i->code.$where.': عند المنسق بلا فني — حوّله', ['label' => 'حوّله', 'url' => $show]);
+            if (in_array($i->status, ['new', 'received'], true)) return $mk('center', 'بلاغ '.$i->code.$where.': لا فني للمكان — أحِله', ['label' => 'أحِله', 'url' => $show], null, 'incident.refer');
+            if ($i->status === 'referred') return $mk('center', 'بلاغ '.$i->code.$where.': عند المنسق بلا فني — حوّله', ['label' => 'حوّله', 'url' => $show], null, 'incident.forward');
             if ($i->status === 'resolved') {
                 // قواعد الإغلاق القائمة (IncidentClosureService::close): مبلّغ بحساب ← موافقته أولاً؛ وإلا ← تحقق شخص غير المنفّذ
                 $needsReporter = $i->needsReporterApproval();
                 if ($needsReporter && !$i->reporter_approved_closure) {
                     if ($i->pending_closure) return null; // بانتظار المبلّغ — مهمته هو
-                    return $mk('center', 'بلاغ '.$i->code.$where.': عولج — اطلب موافقة المبلّغ على الإغلاق', ['label' => 'اطلب موافقته', 'url' => route('incidents.close', $i), 'method' => 'POST'], ['label' => 'رفض — أعِده', 'url' => $show.'?do=reject']);
+                    return $mk('center', 'بلاغ '.$i->code.$where.': عولج — اطلب موافقة المبلّغ على الإغلاق', ['label' => 'اطلب موافقته', 'url' => route('incidents.close', $i), 'method' => 'POST'], ['label' => 'رفض — أعِده', 'url' => $show.'?do=reject'], 'incident.ask');
                 }
                 if (!$needsReporter && !$i->coord_verified_at) {
-                    return $mk('center', 'بلاغ '.$i->code.$where.': عولج — تحقق ميدانياً قبل الإغلاق', ['label' => 'تحققتُ ميدانياً', 'url' => route('incidents.verify', $i), 'method' => 'POST'], ['label' => 'رفض — أعِده', 'url' => $show.'?do=reject']);
+                    return $mk('center', 'بلاغ '.$i->code.$where.': عولج — تحقق ميدانياً قبل الإغلاق', ['label' => 'تحققتُ ميدانياً', 'url' => route('incidents.verify', $i), 'method' => 'POST'], ['label' => 'رفض — أعِده', 'url' => $show.'?do=reject'], 'incident.verify');
                 }
-                return $mk('center', 'بلاغ '.$i->code.$where.': عولج — أغلقه؟', ['label' => 'أغلق', 'url' => route('incidents.close', $i), 'method' => 'POST'], ['label' => 'رفض — أعِده', 'url' => $show.'?do=reject']);
+                return $mk('center', 'بلاغ '.$i->code.$where.': عولج — أغلقه؟', ['label' => 'أغلق', 'url' => route('incidents.close', $i), 'method' => 'POST'], ['label' => 'رفض — أعِده', 'url' => $show.'?do=reject'], 'incident.close');
             }
-            if (!$i->risk_id) return $mk('center', 'بلاغ '.$i->code.$where.': لم يُصنَّف بعد — صنّف الخطر', ['label' => 'صنّف', 'url' => $show]);
+            if (!$i->risk_id) return $mk('center', 'بلاغ '.$i->code.$where.': لم يُصنَّف بعد — صنّف الخطر', ['label' => 'صنّف', 'url' => $show], null, 'incident.classify');
         }
         return null;
     }

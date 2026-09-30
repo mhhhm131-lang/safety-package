@@ -26,6 +26,9 @@ final class Task
         public readonly ?string $place = null,
         public readonly ?string $detailsUrl = null,
         public readonly ?CarbonInterface $createdAt = null,
+        /** ٢٦-١١: نوع الدفعة (Batch::KINDS) حين لا يميّز البطاقة عن أخواتها في المكان إلا الرقم؛ و`item` اسم البند داخل الدفعة */
+        public readonly ?string $batch = null,
+        public readonly ?string $item = null,
     ) {}
 
     public function primaryMethod(): string

@@ -88,6 +88,9 @@
   .grp-h .grp-caret{transition:transform .2s;color:var(--mut)}.grp-h:not(.collapsed) .grp-caret{transform:rotate(180deg)}
   #inboxList .collapse>.d-grid{border:1px solid var(--line);border-top:0;border-radius:0 0 10px 10px;padding:.6rem;background:#fbfcfb}
   .task-actions{display:flex;gap:.5rem;flex-wrap:wrap}
+  /* ٢٦-١١: الدفعة — بطاقة واحدة للمتطابق، وبنودها أسطر تحتها تُفتح بزرها */
+  .batch-row{padding:.6rem 1rem;border-top:1px solid var(--line);background:#fbfcfb}.batch-row:last-child{border-radius:0 0 10px 10px}
+  .task-actions .btn[data-bs-toggle="collapse"] .bi-chevron-down{display:inline-block;transition:transform .2s}.task-actions .btn[data-bs-toggle="collapse"]:not(.collapsed) .bi-chevron-down{transform:rotate(180deg)}
   .row-act{display:flex;gap:.75rem;padding:.5rem 0;border-bottom:1px solid #edf1ef;color:var(--ink);text-decoration:none;font-size:.95rem}
   .row-act:last-child{border-bottom:0}.row-act:hover{color:var(--g)}.row-act .when{color:var(--mut);min-width:3.5rem;font-size:.85rem}
   /* الجوال: نسخة واحدة تتشكل بحسب العرض — أرقام تُمرَّر، أزرار بعرض الشاشة، وزر أحمر ثابت أسفل الشاشة */

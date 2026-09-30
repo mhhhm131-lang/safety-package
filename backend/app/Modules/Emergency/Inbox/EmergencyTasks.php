@@ -98,6 +98,8 @@ class EmergencyTasks implements TaskSource
                     primary: ['label' => 'اكتبه', 'url' => route('emergency.incidents.aar', $inc), 'method' => 'POST'],
                     secondary: ['label' => 'تقرير الحالة', 'url' => route('emergency.incidents.report', $inc)],
                     place: $inc->place?->name, detailsUrl: route('emergency.incidents.report', $inc), createdAt: $inc->ended_at,
+                    // ٢٦-١١: لا يميّزها في المكان إلا الرقم — تُدمج، والبند برقمه ونوعه وتاريخ انتهائه
+                    batch: 'emergency.aar', item: $inc->incident_code.' — '.$inc->getTypeLabel().($inc->ended_at ? ' · انتهت '.$inc->ended_at->format('Y-m-d') : ''),
                 ));
             }
         }

@@ -105,33 +105,34 @@
       <button class="grp-h collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#grp-{{ $loop->index }}" aria-expanded="false" aria-controls="grp-{{ $loop->index }}"><span class="grp-ic {{ $od ? 'late' : '' }}"><i class="bi {{ $ICONS[$module] ?? 'bi-folder2' }}"></i><span class="grp-n">{{ $items->count() }}</span></span> <span class="grp-nm">{{ $module }}</span>@if($od)<span class="grp-od" title="{{ $od }} متأخر">{{ $od }} متأخر</span>@endif <i class="bi bi-chevron-down small ms-auto grp-caret"></i></button>
       <div class="collapse" id="grp-{{ $loop->index }}">
       <div class="d-grid gap-2">
-    @foreach($items as $t)
+    {{-- ٢٦-١١ (قرار ٦٦): المتطابقة — السؤال نفسه عن المكان نفسه ولا يميّزها إلا الرقم — بطاقة واحدة بعددها، زرها يفتح بنودها في مكانها؛ كل بند بزره كما كان، والعدّادات تعدّ الأشياء --}}
+    @foreach(\App\Core\Inbox\Batch::group($items) as $e)
+      @if(isset($e['task']))
+      @php $t = $e['task']; @endphp
       <div class="card task {{ $t->isOverdue ? 'task-late' : '' }}" data-task="{{ $t->key }}">
         <div class="card-body py-3 d-flex flex-wrap align-items-center gap-3">
-          <div class="flex-grow-1" style="min-width:220px">
-            <div class="fw-bold">{{ $t->question }}</div>
-            <div class="small text-muted mt-1">
-              @if($t->isOverdue)<span class="badge st-late">متأخر</span>
-              @elseif($t->dueAt)<span class="badge st-wait">المهلة {{ $t->dueAt->format('m/d H:i') }}</span>@endif
-              @if($t->createdAt) · {{ $t->createdAt->diffForHumans() }}@endif
-            </div>
-          </div>
-          <div class="task-actions">
-            @if($t->primaryMethod() === 'POST')
-              <form method="post" action="{{ $t->primary['url'] }}" class="m-0">@csrf<button class="btn btn-g">{{ $t->primary['label'] }}</button></form>
-            @else
-              <a class="btn btn-g" href="{{ route('app.inbox.open', ['url' => $t->primary['url']]) }}" data-target="{{ $t->primary['url'] }}">{{ $t->primary['label'] }}</a>
-            @endif
-            @if($t->secondary)
-              @if($t->secondaryMethod() === 'POST')
-                <form method="post" action="{{ $t->secondary['url'] }}" class="m-0">@csrf<button class="btn btn-o">{{ $t->secondary['label'] }}</button></form>
-              @else
-                <a class="btn btn-o" href="{{ $t->secondary['url'] }}">{{ $t->secondary['label'] }}</a>
-              @endif
-            @endif
-          </div>
+          @include('governance._task_body', ['t' => $t, 'label' => $t->question])
         </div>
       </div>
+      @else
+      @php $bid = 'batch-'.$loop->parent->index.'-'.$loop->index; @endphp
+      <div class="card task {{ $e['late'] ? 'task-late' : '' }}" data-batch="{{ $e['batch'] }}" data-n="{{ count($e['tasks']) }}" data-od="{{ $e['late'] }}">
+        <div class="card-body py-3 d-flex flex-wrap align-items-center gap-3">
+          <div class="flex-grow-1" style="min-width:220px">
+            <div class="fw-bold">{{ $e['question'] }}</div>
+            @if($e['late'])<div class="small text-muted mt-1"><span class="badge st-late">{{ $e['late'] }} متأخر</span></div>@endif
+          </div>
+          <div class="task-actions"><button class="btn btn-g collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#{{ $bid }}" aria-expanded="false" aria-controls="{{ $bid }}">{{ $e['open'] }} <i class="bi bi-chevron-down small"></i></button></div>
+        </div>
+        <div class="collapse" id="{{ $bid }}">
+          @foreach($e['tasks'] as $t)
+          <div class="batch-row d-flex flex-wrap align-items-center gap-3" data-task="{{ $t->key }}">
+            @include('governance._task_body', ['t' => $t, 'label' => $t->item ?? $t->question])
+          </div>
+          @endforeach
+        </div>
+      </div>
+      @endif
     @endforeach
       </div>
       </div>
