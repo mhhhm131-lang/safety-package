@@ -8,7 +8,7 @@
   @media print{ .side,.topbar,.no-print{display:none!important} main{width:100%!important} .qr-card{margin-bottom:10mm} }
 </style>
 <div class="d-flex align-items-center gap-2 mb-3 no-print">
-  <h1 class="h4 m-0">رموز QR لبلاغ الشاغل</h1>
+  <h1 class="h4 m-0">رموز QR للأماكن</h1>
   <span class="small text-muted">مسح الرمز يفتح صفحة البلاغ والمكان محدد مسبقاً. يُطبع ويُلصق عند مدخل المكان.</span>
   <button class="btn btn-sm btn-g ms-auto" onclick="window.print()"><i class="bi bi-printer"></i> طباعة</button>
 </div>

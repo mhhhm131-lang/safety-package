@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('page_title', 'تمارين الإخلاء')
+@section('page_title', 'التمارين')
 
 @section('content')
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0" style="color: var(--text-main);">
-            <i class="bi bi-calendar-event me-2"></i>تمارين الإخلاء
+            <i class="bi bi-calendar-event me-2"></i>التمارين
         </h4>
         <div>
             <a href="{{ route('emergency.dashboard') }}" class="btn btn-outline-secondary me-2">

@@ -13,7 +13,7 @@
   <div class="ms-auto d-flex gap-2">
     <a href="{{ route('permits.report') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-file-earmark-bar-graph"></i> التقرير الشهري</a>
     @if(\App\Core\Permissions\PermissionRegistry::hasPermission(auth()->user()->role(), 'permit.zones'))
-      <a href="{{ route('permits.settings') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-sliders"></i> السعة والتعارض</a>
+      <a href="{{ route('permits.settings') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-sliders"></i> سعة الأماكن وتعارض التصاريح</a>
     @endif
     <a href="{{ route('permits.index') }}" class="btn btn-sm btn-g">كل التصاريح</a>
   </div>

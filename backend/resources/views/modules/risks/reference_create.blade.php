@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('page_title', 'إضافة خطر — السجل المرجعي')
+@section('page_title', 'إضافة خطر — السجل العام للمعهد')
 
 @php
     use App\Modules\Risk\Models\RiskPhase;
@@ -16,8 +16,8 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h4 class="mb-1" style="color:var(--text-main);"><i class="bi bi-bookmark-plus me-2" style="color:var(--accent);"></i>إضافة خطر في السجل المرجعي</h4>
-            <small style="color:var(--text-muted);">السجل المرجعي للمؤسسة — يُغذّي الإدارات والفروع والأقسام</small>
+            <h4 class="mb-1" style="color:var(--text-main);"><i class="bi bi-bookmark-plus me-2" style="color:var(--accent);"></i>إضافة خطر في السجل العام للمعهد</h4>
+            <small style="color:var(--text-muted);">السجل العام للمعهد — يُغذّي الإدارات والفروع والأقسام</small>
         </div>
         <a href="{{ route('risk.reference.index') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-right me-1"></i> رجوع</a>
     </div>
@@ -322,7 +322,7 @@
         </div>
 
         <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary btn-lg px-5"><i class="bi bi-check-lg me-2"></i>حفظ في السجل المرجعي</button>
+            <button type="submit" class="btn btn-primary btn-lg px-5"><i class="bi bi-check-lg me-2"></i>حفظ في السجل العام للمعهد</button>
             <a href="{{ route('risk.reference.index') }}" class="btn btn-outline-secondary btn-lg px-4">إلغاء</a>
         </div>
     </form>

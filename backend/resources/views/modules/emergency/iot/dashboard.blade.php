@@ -24,7 +24,7 @@
             <button class="btn btn-outline-secondary" onclick="refreshAllSystems()">
                 <i class="bi bi-arrow-clockwise"></i>
             </button>
-            <a class="btn btn-outline-secondary" href="{{ route('emergency.dashboard') }}">مركز الطوارئ</a>
+            <a class="btn btn-outline-secondary" href="{{ route('emergency.dashboard') }}">مركز السلامة وإدارة الطوارئ</a>
         </div>
     </div>
 

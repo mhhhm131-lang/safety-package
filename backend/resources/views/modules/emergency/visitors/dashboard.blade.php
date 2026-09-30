@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'إدارة الزوار')
+@section('title', 'الزوار')
 
 @section('content')
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">
-            <i class="bi bi-person-badge me-2"></i>إدارة الزوار
+            <i class="bi bi-person-badge me-2"></i>الزوار
         </h1>
         <div>
             <a href="{{ route('emergency.visitors.kiosk') }}" class="btn btn-primary" target="_blank">

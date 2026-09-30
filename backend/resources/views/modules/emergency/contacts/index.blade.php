@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('page_title', 'جهات الاتصال للطوارئ')
+@section('page_title', 'جهات الاتصال')
 
 @section('content')
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0" style="color: var(--text-main);">
-            <i class="bi bi-telephone me-2"></i>جهات الاتصال للطوارئ
+            <i class="bi bi-telephone me-2"></i>جهات الاتصال
         </h4>
         <div>
             <a href="{{ route('emergency.contacts.create') }}" class="btn btn-accent me-2">

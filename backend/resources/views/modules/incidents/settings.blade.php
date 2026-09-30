@@ -1,7 +1,7 @@
 @extends('layouts.app')
-@section('page_title', 'مهل بلاغ الشاغل')
+@section('page_title', 'مهل بلاغات الشاغلين')
 @section('content')
-<h1 class="h4 mb-1">مهل بلاغ الشاغل</h1>
+<h1 class="h4 mb-1">مهل بلاغات الشاغلين</h1>
 <div class="small text-muted mb-3">المهلة بالساعات من وقت الإرسال حتى «استلمه الفني»، وتُعاد عند الإحالة. الفارغ = لا مهلة ولا تصعيد آلي (BACKEND.md ٥-٢-ب ج — بلا قيم افتراضية). عند التجاوز: إشعار لمسؤول السلامة والمناوب وتصعيد للجنة السلامة (وحتى تشكيلها لمسؤول السلامة)، ويُقيَّد في الخط الزمني.</div>
 <form method="post" action="{{ route('incidents.settings.update') }}" class="card p-3" style="max-width:520px">
   @csrf

@@ -23,9 +23,9 @@ class SettingsController extends Controller
                 $can('emergency.teams') ? ['الفريق الأولي', 'الفريق الأولي من ملف المكان والفرق اليدوية', route('emergency.teams.index')] : null,
             ]))],
             ['title' => 'الأماكن والمبنى', 'items' => array_values(array_filter([
-                ['الأماكن التسعة', 'الأسماء والرموز ورموز QR للبلاغ', route('app.places.index')],
-                ['رموز QR للطباعة', 'ملصق لكل مكان: امسح وأبلغ', route('app.places.qr')],
-                $can('emergency.view') ? ['المبنى', 'الطوابق والمخارج ونقاط التجمع', route('emergency.buildings.index')] : null,
+                ['الأماكن', 'الأسماء والرموز ورموز QR للبلاغ', route('app.places.index')],
+                ['رموز QR للأماكن', 'ملصق لكل مكان: امسح وأبلغ', route('app.places.qr')],
+                $can('emergency.view') ? ['المباني', 'الطوابق والمخارج ونقاط التجمع', route('emergency.buildings.index')] : null,
                 $can('emergency.view') ? ['جهات الاتصال', 'أرقام الطوارئ الرسمية والداخلية', route('emergency.contacts.index')] : null,
                 $can('emergency.equipment') ? ['معدات الطوارئ', 'الطفايات والمعدات ودورية فحصها', route('emergency.equipment.index')] : null,
             ]))],
@@ -42,7 +42,7 @@ class SettingsController extends Controller
                 ['البريد', 'حال خادم البريد ورسالة اختبار', route('app.mail.index')],
             ]))],
             ['title' => 'النماذج والمحتوى', 'items' => array_values(array_filter([
-                $can('form.create') ? ['نموذج رقمي جديد', 'إقرار أو استبيان أو توعية', route('forms.create')] : null,
+                $can('form.create') ? ['نموذج جديد', 'إقرار أو استبيان أو توعية', route('forms.create')] : null,
                 $can('form.create') ? ['توليد نموذج من المخاطر', 'من كتاب المعهد', route('forms.generate')] : null,
                 $can('risk.list') ? ['السجل العام للمعهد', 'كتاب المخاطر ٨/٤٩/١٧٧', route('risk.reference.index')] : null,
                 $can('emergency.view') ? ['خطط الاستجابة', 'مزامَنة من وثائق الأماكن الثمانية', route('emergency.plans.index')] : null,

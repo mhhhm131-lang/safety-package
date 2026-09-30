@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('page_title', 'السجل المرجعي العام')
+@section('page_title', 'السجل العام للمعهد')
 
 @section('content')
 <div class="container-fluid" id="ref-registry-app">
@@ -10,7 +10,7 @@
         <div>
             <h4 class="mb-1" style="color: var(--text-main);">
                 <i class="bi bi-bookmark me-2" style="color: var(--accent);"></i>
-                السجل المرجعي العام
+                السجل العام للمعهد
             </h4>
             <p class="mb-0" style="color: var(--text-muted); font-size: 0.85rem;">
                 تصفّح هرمي: فئة رئيسية → اختر الفرعيات → اختر خطر → تفاصيل

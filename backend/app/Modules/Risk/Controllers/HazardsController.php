@@ -20,7 +20,16 @@ class HazardsController extends Controller
     {
         $q = trim((string) $request->query('q', ''));
         $place = (string) $request->query('place', '');
+        // ٢٦-١٣ (قرار ٦٦): بمكان محدد تُعرض أخطاره — ما فعّلته إداراته من الكتاب (لا المسودات ولا المغلق) — والكتاب كله بضغطة (`all=1`).
+        // مكان بلا أخطار مسجّلة: يُقال ذلك ويُعرض الكتاب كله. لا تفاصيل داخلية: العنوان وما يقي منه فقط كما في الكتاب.
+        $placeModel = $place !== '' ? Place::where('code', $place)->first() : null;
+        $placeRefIds = $placeModel
+            ? Risk::where('risk_type', 'active')->where('place_id', $placeModel->id)->whereNotNull('parent_reference_id')
+                ->whereNotIn('status', ['draft', 'pending_approval', 'rejected', 'closed'])->pluck('parent_reference_id')->unique()->values()
+            : collect();
+        $mine = $placeRefIds->isNotEmpty() && !$request->boolean('all');
         $risks = Risk::where('risk_type', 'reference')->whereIn('status', ['approved', 'active'])
+            ->when($mine, fn ($w) => $w->whereIn('id', $placeRefIds))
             ->with(['category:id,name', 'subCategory:id,name,category_id', 'phases' => fn ($p) => $p->where('phase', RiskPhase::PHASE_OPERATIONAL)])
             ->when($q !== '', fn ($w) => $w->where(fn ($x) => $x->where('title', 'like', "%$q%")->orWhere('code', 'like', "%$q%")->orWhere('description', 'like', "%$q%")))
             ->orderBy('code')->get();
@@ -29,6 +38,7 @@ class HazardsController extends Controller
         return view('modules.risks.hazards', [
             'tree' => $tree, 'q' => $q, 'place' => $place, 'total' => $risks->count(), 'categories' => $categories,
             'places' => Place::orderBy('sort')->get(['code', 'name']),
+            'placeModel' => $placeModel, 'mine' => $mine, 'placeCount' => $placeRefIds->count(),
         ]);
     }
 }

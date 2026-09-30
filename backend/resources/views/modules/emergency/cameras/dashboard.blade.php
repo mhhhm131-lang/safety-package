@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'كاميرات المراقبة')
+@section('title', 'الكاميرات')
 
 @section('content')
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">
-            <i class="bi bi-camera-video me-2"></i>كاميرات المراقبة
+            <i class="bi bi-camera-video me-2"></i>الكاميرات
         </h1>
         <a href="{{ route('emergency.iot.cameras.create') }}" class="btn btn-primary">
             <i class="bi bi-plus-lg me-1"></i>إضافة كاميرا

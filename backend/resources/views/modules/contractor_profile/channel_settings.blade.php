@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('page_title', 'إعدادات قنوات بيانات المقاولين')
+@section('page_title', 'قنوات التحقق من المقاولين')
 
 @section('content')
 <div class="container-fluid">
 
     <div class="d-flex justify-content-between align-items-start mb-3">
         <div>
-            <h4 class="fw-bold mb-1" style="color: var(--text-main);">قنوات بيانات المقاولين</h4>
+            <h4 class="fw-bold mb-1" style="color: var(--text-main);">قنوات التحقق من المقاولين</h4>
             <p class="text-muted small mb-0">
                 حدّد القنوات التي يستعملها المعهد للتحقق من بيانات المقاولين. رفع المستندات ورابط التعبئة بلا إعداد؛ اعتماد والتأمينات تحتاجان مفاتيح فعلية ولا تعمل بلا مفاتيح (لا محاكاة). الفحوص المرتبطة بقناة معطّلة تُمنح درجتها كاملة.
             </p>

@@ -1,11 +1,11 @@
 @extends('layouts.app')
-@section('page_title', 'تحليلات الطوارئ')
+@section('page_title', 'مؤشرات الطوارئ')
 @section('content')
 <div class="container-fluid">
     {{-- Header --}}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h4 style="color: var(--text-main);">تحليلات الطوارئ</h4>
+            <h4 style="color: var(--text-main);">مؤشرات الطوارئ</h4>
             <small style="color: var(--text-muted);">
                 {{ $from->format('Y-m-d') }} إلى {{ $to->format('Y-m-d') }}
             </small>

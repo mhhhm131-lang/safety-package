@@ -45,6 +45,7 @@
   .pf-btn .t{font-weight:700}.pf-btn .s{font-size:.85rem;color:#6b7a74;margin-top:2px}
   .pf-btn[data-state=bad] .s{color:#c62828;font-weight:700}.pf-btn[data-state=ok] .s{color:#0f4c3a}.pf-btn[data-state=act] .s{color:#e3ede8}
   .pf-btn.open{background:var(--tint)}.pf-btn.wide{grid-column:1/-1}
+  .pf-grid.hl-plans #pfPlanSafety,.pf-grid.hl-plans #pfPlanResponse{outline:3px solid var(--gold);outline-offset:1px}
   .pf-chip{border:1px solid var(--bs-border-color);border-radius:999px;padding:3px 12px;background:#fff;color:inherit;font-size:.9rem}.pf-chip.on{background:var(--g);color:#fff;border-color:var(--g)}
   .pf-sec{margin-top:.75rem}
   @media(max-width:700px){.pf-members{grid-template-columns:1fr 1fr}.pf-sys{grid-template-columns:1fr 1fr}.pf-sys .nm{grid-column:1/-1}
@@ -337,7 +338,8 @@
     var o = (open===undefined) ? sec.hidden : open; sec.hidden=!o; b.classList.toggle('open', o); b.setAttribute('aria-expanded', o?'true':'false'); return o; }
   grid.querySelectorAll('button.pf-btn[aria-controls]').forEach(function(b){ b.addEventListener('click', function(){
     if(toggle(b)) document.getElementById(b.getAttribute('aria-controls')).scrollIntoView({behavior:'smooth', block:'start'}); }); });
-  function openHash(){ if(!location.hash || location.hash.length<2) return; var h=document.getElementById(location.hash.slice(1)); if(!h) return;
+  // ٢٦-١٣: «خطة مكاني» تفتح الملف بمرساة #plans — الخطتان أول الأزرار فتُبرزان
+  function openHash(){ grid.classList.toggle('hl-plans', location.hash==='#plans'); if(!location.hash || location.hash.length<2) return; var h=document.getElementById(location.hash.slice(1)); if(!h) return;
     var sec=h.closest('.pf-sec'); if(sec){ var b=grid.querySelector('[aria-controls="'+sec.id+'"]'); if(b) toggle(b, true); h.scrollIntoView(); } }
   openHash(); window.addEventListener('hashchange', openHash);
   // سطر الوحدات: يحصر بلاغات الفحص وبلاغات الشاغلين (وفرق الإدارات في المكاتب)، ويعيد عدّ زر «المفتوح الآن»

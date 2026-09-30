@@ -1,9 +1,9 @@
 @extends('layouts.app')
-@section('page_title', 'سعة الأماكن وقواعد التعارض')
+@section('page_title', 'سعة الأماكن وتعارض التصاريح')
 @section('content')
 
 <div class="d-flex align-items-center gap-2 mb-3">
-  <h1 class="h4 m-0"><i class="bi bi-sliders"></i> سعة الأماكن وقواعد التعارض</h1>
+  <h1 class="h4 m-0"><i class="bi bi-sliders"></i> سعة الأماكن وتعارض التصاريح</h1>
   <a href="{{ route('permits.dashboard') }}" class="btn btn-sm btn-outline-secondary ms-auto">اللوحة</a>
 </div>
 

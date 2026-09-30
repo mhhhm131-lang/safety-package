@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'الأجهزة القابلة للارتداء')
+@section('title', 'الأساور')
 
 @section('content')
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">
-            <i class="bi bi-smartwatch me-2"></i>الأجهزة القابلة للارتداء
+            <i class="bi bi-smartwatch me-2"></i>الأساور
         </h1>
         <a href="{{ route('emergency.iot.wearables.alerts') }}" class="btn btn-outline-danger">
             <i class="bi bi-bell me-1"></i>سجل التنبيهات

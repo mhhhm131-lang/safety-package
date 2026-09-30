@@ -142,7 +142,7 @@
                         <input type="text" name="legal_reference" class="form-control"
                                placeholder="مثال: ISO 45001:2018 §6.1.2 — نظام العمل المادة 121"
                                value="{{ old('legal_reference', $risk->legal_reference) }}">
-                        <small style="color:var(--text-muted);">موروث من السجل المرجعي — عدّله إن كان النطاق يستدعي مرجعاً مختلفاً</small>
+                        <small style="color:var(--text-muted);">موروث من السجل العام للمعهد — عدّله إن كان النطاق يستدعي مرجعاً مختلفاً</small>
                     </div>
                 </div>
             </div>
@@ -152,7 +152,7 @@
         <div class="card mb-3" style="background:var(--bg-card);border:1px solid var(--border-color);">
             <div class="card-header" style="background:transparent;border-bottom:1px solid var(--border-color);">
                 <h6 class="mb-0 fw-bold" style="color:var(--accent);"><i class="bi bi-layers me-2"></i>مراحل الخطر عند التفعيل</h6>
-                <small style="color:var(--text-muted);">البيانات منسوخة من السجل المرجعي — عدّل ما يناسب سياق هذا التفعيل.</small>
+                <small style="color:var(--text-muted);">البيانات منسوخة من السجل العام للمعهد — عدّل ما يناسب سياق هذا التفعيل.</small>
             </div>
             <div class="card-body">
                 <ul class="nav nav-tabs mb-3" role="tablist">

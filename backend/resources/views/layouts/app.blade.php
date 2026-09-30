@@ -135,8 +135,8 @@
       $moreCan('system.audit') ? ['سجل التدقيق', 'bi-journal-text', route('app.audit'), 'app.audit'] : null,
       $moreCan('system.settings') ? ['البريد', 'bi-envelope-at', route('app.mail.index'), 'app.mail.*'] : null,
       $moreCan('system.settings') ? ['الإغلاق والتسليم', 'bi-box-seam', route('app.closeout.index'), 'app.closeout.*'] : null,
-      $moreCan('system.settings') ? ['مهل البلاغات', 'bi-clock', route('incidents.settings'), 'incidents.settings'] : null,
-      $moreCan('emergency.manage') ? ['مهل التصعيد', 'bi-clock-history', route('emergency.settings'), 'emergency.settings'] : null,
+      $moreCan('system.settings') ? ['مهل بلاغات الشاغلين', 'bi-clock', route('incidents.settings'), 'incidents.settings'] : null,
+      $moreCan('emergency.manage') ? ['مهل التصعيد الآلي في الطوارئ', 'bi-clock-history', route('emergency.settings'), 'emergency.settings'] : null,
   ]));
 @endphp
 <body class="{{ $sosIntent ? 'has-sos' : '' }}">

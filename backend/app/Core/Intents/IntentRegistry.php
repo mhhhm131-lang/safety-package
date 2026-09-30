@@ -51,6 +51,8 @@ class IntentRegistry
         $active = (bool) $profile?->is_active;
         $placeCode = $profile?->place_id ? Place::find($profile->place_id)?->code : null;
         $folder = $placeCode ? (Place::FOLDERS[$placeCode] ?? null) : null;
+        // ٢٦-١٣ (قرار ٦٦ «الزر يفي بوعده»): «مكاني» لزرّي التوعية = مكان الحساب وإلا مكان إدارته (UserProfile::myPlace) — أغلب الموظفين مكانهم من إدارتهم
+        $myPlace = $active ? $profile?->myPlace() : null;
         $main = EmergencyBuilding::main();
         // ٢٦-٩: من لا مكان في نطاقه لا مربعات عنده ولا رسم — فما بابه المكان أو الرسم يأخذ زراً هنا حتى لا يُخفى عنه (قرار ٦١)
         $noPlace = false;
@@ -94,11 +96,13 @@ class IntentRegistry
         // ٢٥-٣ (قرار ٦٥، وقرار ٥٨): باب واحد «مركز السلامة وإدارة الطوارئ» — يفتحه مربع المركز منذ ٢٦-٧
         $add($can('emergency.view') || $can('incident.list'), 'center', 'مركز السلامة وإدارة الطوارئ',
             $can('emergency.view') ? route('emergency.dashboard') : route('incidents.index'), 'bi-broadcast', $gEmergency, false,
-            $can('emergency.view') ? 'ما يجري الآن، والحالات، وسجل بلاغات الشاغلين' : 'سجل بلاغات الشاغلين');
+            $can('emergency.view') ? 'الحالات الآن، والاستعداد، وسجل بلاغات الشاغلين' : 'سجل بلاغات الشاغلين');
         $add($can('medical.read'), 'medical', 'الملفات الطبية', route('emergency.medical.dashboard'), 'bi-file-medical', $gEmergency, true, 'للعيادة وحدها، وكل اطّلاع يُسجَّل');
         $add($can('emergency.view') && in_array($role, ['facilities_manager', 'system_admin', 'system_staff'], true), 'systems', 'أنظمة المبنى', route('emergency.iot.dashboard'), 'bi-cpu', $gEmergency);
-        // ما يبدؤه الشخص في الطوارئ بنفسه: خطة مكانه (٢٦-١٣ يوجّهها إلى خطتي ملفه)، وملفه الطبي (قرار ٦٠)
-        $add(true, 'plans', 'خطة مكاني', $folder ? '/'.$folder.'/index.html' : '/index.html', 'bi-map', $gEmergency);
+        // ما يبدؤه الشخص في الطوارئ بنفسه: خطة مكانه، وملفه الطبي (قرار ٦٠)
+        // ٢٦-١٣: «خطة مكاني» تفتح ملف مكانه وخطتاه أول ما فيه (المرساة تبرزهما) — كانت تفتح فهرس وثائق المكان؛ من لا مكان واحد له: فهرس الوثائق
+        $add(true, 'plans', 'خطة مكاني', $myPlace ? route('app.places.units.file', $myPlace).'#plans' : '/index.html', 'bi-map', $gEmergency, false,
+            $myPlace ? 'خطة السلامة وخطة الاستجابة لـ'.$myPlace->name : 'خطط الأماكن التسعة');
         $add($active, 'my_medical', 'ملفي الطبي', route('emergency.medical.my-profile'), 'bi-heart-pulse', $gEmergency, false, 'اختياري — لا يطّلع عليه إلا طبيب العيادة');
 
         // ── الفريق الأولي ── الترشيح من ملف المكان (البند ٧)؛ هنا معرفة الدور والبطاقات
@@ -116,7 +120,8 @@ class IntentRegistry
         $add($can('risk.list'), 'book', 'السجل العام للمعهد', route('risk.reference.index'), 'bi-bookmark', $gRisks, false, 'كتاب أخطار المعهد كاملاً');
         $add($can('risk.activate'), 'activate', 'أفعّل خطراً لإدارتي', route('risk.reference.index'), 'bi-lightning-charge', $gRisks, false, 'من كتاب المعهد');
         $add($can('risk.list') && $noPlace, 'risks_log', 'مخاطر الإدارات والأماكن', route('risk.active.index'), 'bi-lightning-charge', $gRisks); // لمن له مكان: ملف المكان، البند ٤
-        $add(true, 'hazards', 'أعرف أخطار مكاني', route('hazards.index'), 'bi-book', $gRisks);
+        // ٢٦-١٣: بمكانه — الصفحة تعرض أخطار مكانه من كتاب المعهد، والكتاب كله بضغطة منها
+        $add(true, 'hazards', 'أعرف أخطار مكاني', route('hazards.index', $myPlace ? ['place' => $myPlace->code] : []), 'bi-book', $gRisks);
 
         // ── النماذج ──
         $add(true, 'myforms', 'أعبّئ نماذجي', route('forms.mine'), 'bi-inbox', $gForms);

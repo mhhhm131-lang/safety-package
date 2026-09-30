@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('page_title', 'مصفوفة الكفاءة')
+@section('page_title', 'الكفاءات والمهن')
 
 @section('content')
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h5 class="fw-bold mb-0" style="color: var(--text-main);">مصفوفة الكفاءة</h5>
+        <h5 class="fw-bold mb-0" style="color: var(--text-main);">الكفاءات والمهن</h5>
         <div class="d-flex gap-2">
             <button class="btn btn-primary" id="saveMatrix">
                 <i class="bi bi-check-circle me-1"></i> حفظ التغييرات

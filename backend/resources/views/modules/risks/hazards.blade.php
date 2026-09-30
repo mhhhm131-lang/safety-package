@@ -11,6 +11,20 @@
     <div class="col-md-2 d-grid"><button class="btn btn-g">ابحث</button></div>
   </form>
 </div>
+{{-- ٢٦-١٣ (قرار ٦٦): «أعرف أخطار مكاني» يفي بوعده — بمكان محدد تُعرض أخطاره أولاً، والكتاب كله بضغطة --}}
+@if($placeModel && $mine)
+  <div class="alert alert-success py-2 d-flex flex-wrap align-items-center gap-2" id="placeHazards" data-place="{{ $placeModel->code }}" data-n="{{ $placeCount }}">
+    <span class="flex-grow-1"><b>أخطار {{ $placeModel->name }}</b> — {{ $placeCount }} مما سجّلته إداراته من كتاب المعهد.</span>
+    <a class="btn btn-sm btn-o" href="{{ route('hazards.index', ['place' => $placeModel->code, 'all' => 1]) }}">كتاب المعهد كله</a>
+  </div>
+@elseif($placeModel && !$placeCount)
+  <div class="alert alert-warning py-2" id="placeHazardsNone" data-place="{{ $placeModel->code }}">لم تُسجَّل أخطار لـ{{ $placeModel->name }} بعد — هذا كتاب المعهد كله.</div>
+@elseif($placeModel)
+  <div class="alert alert-light border py-2 d-flex flex-wrap align-items-center gap-2" id="placeHazardsAll" data-place="{{ $placeModel->code }}">
+    <span class="flex-grow-1">كتاب المعهد كله.</span>
+    <a class="btn btn-sm btn-o" href="{{ route('hazards.index', ['place' => $placeModel->code]) }}">أخطار {{ $placeModel->name }} ({{ $placeCount }})</a>
+  </div>
+@endif
 @forelse($tree as $cat => $subs)
   <div class="card mb-3" data-category="{{ $cat }}">
     <div class="card-header fw-bold">{{ $cat }} <span class="badge text-bg-light border">{{ $subs->flatten(1)->count() }}</span></div>

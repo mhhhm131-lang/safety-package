@@ -63,7 +63,7 @@ class IncidentTasks implements TaskSource
         }
         // المركز
         if ($isCenter) {
-            if (in_array($i->status, ['new', 'received'], true)) return $mk('center', 'بلاغ '.$i->code.$where.': لا فني للمكان — أحِله', ['label' => 'أحِله', 'url' => $show], null, 'incident.refer');
+            if (in_array($i->status, ['new', 'received'], true)) return $mk('center', 'بلاغ '.$i->code.$where.': لا فني للمكان — أحله', ['label' => 'أحله', 'url' => $show], null, 'incident.refer');
             if ($i->status === 'referred') return $mk('center', 'بلاغ '.$i->code.$where.': عند المنسق بلا فني — حوّله', ['label' => 'حوّله', 'url' => $show], null, 'incident.forward');
             if ($i->status === 'resolved') {
                 // قواعد الإغلاق القائمة (IncidentClosureService::close): مبلّغ بحساب ← موافقته أولاً؛ وإلا ← تحقق شخص غير المنفّذ

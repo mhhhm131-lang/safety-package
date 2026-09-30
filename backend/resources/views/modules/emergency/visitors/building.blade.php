@@ -8,7 +8,7 @@
         <div>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-1">
-                    <li class="breadcrumb-item"><a href="{{ route('emergency.visitors.dashboard') }}">إدارة الزوار</a></li>
+                    <li class="breadcrumb-item"><a href="{{ route('emergency.visitors.dashboard') }}">الزوار</a></li>
                     <li class="breadcrumb-item active">{{ $building->name }}</li>
                 </ol>
             </nav>

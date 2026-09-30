@@ -114,13 +114,13 @@ class InboxTest extends TestCase
         $this->actingAs($this->salama)->get('/app')->assertOk()->assertDontSee('data-task="incident:'.$i->id.':', false);
     }
 
-    /** بلاغ بلا فني للمكان: المركز يرى «أحِله»؛ ومبلّغ بحساب يرى «هل عولج فعلاً؟» بزر POST. */
+    /** بلاغ بلا فني للمكان: المركز يرى «أحله» (٢٦-١٢: بلا كسرة تُقرأ نقطة)؛ ومبلّغ بحساب يرى «هل عولج فعلاً؟» بزر POST. */
     public function test_center_refer_task_and_reporter_closure_task(): void
     {
         $this->actingAs($this->emp)->post('/incident/normal', ['description' => 'رائحة احتراق في المخزن', 'place_id' => Place::idByCode('HZ-08')]);
         $i = Incident::first();
         $this->assertSame('received', $i->status); // لا فني لـ HZ-08
-        $this->actingAs($this->salama)->get('/app')->assertOk()->assertSee('لا فني للمكان — أحِله');
+        $this->actingAs($this->salama)->get('/app')->assertOk()->assertSee('لا فني للمكان — أحله');
         $this->assertSame(0, $this->pending($this->emp));
         $this->actingAs($this->salama)->post("/app/incidents/{$i->id}/refer", ['field_worker_id' => $this->fani->id])->assertSessionHas('success');
         $this->actingAs($this->fani)->get("/app/incidents/{$i->id}");

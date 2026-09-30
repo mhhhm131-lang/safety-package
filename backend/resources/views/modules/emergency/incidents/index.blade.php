@@ -1,11 +1,11 @@
 @extends('layouts.app')
-@section('page_title', 'الحالات الطارئة')
+@section('page_title', 'سجل الحالات الطارئة')
 @section('content')
 @php($I = \App\Modules\Emergency\Models\EmergencyIncident::class)
 <div class="d-flex align-items-center gap-2 flex-wrap mb-3">
   <h1 class="h4 m-0"><i class="bi bi-broadcast"></i> الحالات الطارئة</h1>
   <span class="small text-muted">كل ما فُعّل: حقيقي وتمرين وإغلاق أمني</span>
-  <a class="btn btn-sm btn-outline-secondary ms-auto" href="{{ route('emergency.dashboard') }}">مركز الطوارئ</a>
+  <a class="btn btn-sm btn-outline-secondary ms-auto" href="{{ route('emergency.dashboard') }}">مركز السلامة وإدارة الطوارئ</a>
 </div>
 <form method="get" class="card p-2 mb-3"><div class="row g-2 align-items-end">
   <div class="col-md-2"><label class="form-label small mb-0">الحالة</label><select name="status" class="form-select form-select-sm"><option value="">الكل</option>@foreach($I::STATUS_LABELS as $k => $v)<option value="{{ $k }}" @selected(request('status') === $k)>{{ $v }}</option>@endforeach</select></div>

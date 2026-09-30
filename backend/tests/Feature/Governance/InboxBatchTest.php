@@ -76,7 +76,7 @@ class InboxBatchTest extends TestCase
         $this->assertStringContainsString('<div class="collapse" id="'.$m[1].'"', $sec);
         // كل بند برقمه وعنوانه وزره كما كان
         foreach ([$a, $b] as $i) {
-            $this->assertMatchesRegularExpression('~<div class="batch-row[^"]*" data-task="incident:'.$i->id.':center">.*?'.preg_quote($i->code, '~').'.*?'.preg_quote(mb_substr($i->title, 0, 20), '~').'.*?>أحِله</a>~su', $sec);
+            $this->assertMatchesRegularExpression('~<div class="batch-row[^"]*" data-task="incident:'.$i->id.':center">.*?'.preg_quote($i->code, '~').'.*?'.preg_quote(mb_substr($i->title, 0, 20), '~').'.*?>أحله</a>~su', $sec);
             $this->assertStringContainsString(rawurlencode(route('incidents.show', $i)), $sec);
         }
         // العدّادات تعدّ الأشياء لا البطاقات
@@ -95,7 +95,7 @@ class InboxBatchTest extends TestCase
         $this->assertSame(2, substr_count($sec, 'class="card task '), 'دفعة القبو + بطاقة المكاتب');
         $this->assertSame(1, substr_count($sec, 'data-batch='));
         // بطاقة المكان الآخر كما كانت: سؤالها وزرها
-        $this->assertMatchesRegularExpression('~<div class="card task[^"]*" data-task="incident:'.$lone->id.':center">.*?لا فني للمكان — أحِله~su', $sec);
+        $this->assertMatchesRegularExpression('~<div class="card task[^"]*" data-task="incident:'.$lone->id.':center">.*?لا فني للمكان — أحله~su', $sec);
         $this->assertStringNotContainsString('HZ-06 المكاتب الإدارية: لا فني للمكان<', $sec);
     }
 

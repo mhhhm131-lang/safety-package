@@ -1,11 +1,11 @@
 @extends('layouts.app')
-@section('page_title', 'مهل التصعيد الآلي')
+@section('page_title', 'مهل التصعيد الآلي في الطوارئ')
 @section('content')
 <div class="d-flex align-items-center gap-2 mb-3">
-  <h1 class="h4 m-0"><i class="bi bi-clock-history"></i> مهل التصعيد الآلي للحالات الطارئة</h1>
-  <a class="btn btn-sm btn-outline-secondary ms-auto" href="{{ route('emergency.dashboard') }}">مركز الطوارئ</a>
+  <h1 class="h4 m-0"><i class="bi bi-clock-history"></i> مهل التصعيد الآلي في الطوارئ</h1>
+  <a class="btn btn-sm btn-outline-secondary ms-auto" href="{{ route('emergency.dashboard') }}">مركز السلامة وإدارة الطوارئ</a>
 </div>
-<div class="alert alert-info py-2 small">بلا قيم افتراضية (كما مهل بلاغ الشاغل): القاعدة لا تعمل حتى تُدخل مهلتها. المؤقت في الخادم كل دقيقة. للاسترشاد فقط: مهل OHSMS كانت ٢ / ٥ / ٥ / ٣٠ دقيقة.</div>
+<div class="alert alert-info py-2 small">بلا قيم افتراضية (كما مهل بلاغات الشاغلين): القاعدة لا تعمل حتى تُدخل مهلتها. المؤقت في الخادم كل دقيقة. للاسترشاد فقط: مهل OHSMS كانت ٢ / ٥ / ٥ / ٣٠ دقيقة.</div>
 <form method="post" action="{{ route('emergency.settings.update') }}" class="card"><div class="card-body">@csrf
   <table class="table table-sm align-middle">
     <thead><tr><th>القاعدة</th><th style="width:220px">المهلة بالدقائق</th><th>يُصعَّد إلى</th></tr></thead>
