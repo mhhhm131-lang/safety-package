@@ -23,6 +23,18 @@ final class RiskApproval
 
     public const GENERAL_APPROVER = 'system_admin';
 
+    /**
+     * قرار ٧٠: من يرى سجل الإدارات كله. منسق السلامة ليس منهم — نطاقه نطاق مديره: وحدته وما تحتها
+     * (كان في المخاطر دوراً عاماً موروثاً من OHSMS فيرى كل الإدارات ويفعّل لأيها أو «عام»).
+     */
+    public const REGISTER_WIDE = ['system_admin', 'system_staff', 'top_management', 'safety_committee'];
+
+    /** قرار ٧٠: من يعتمد الخطر إن فعّله بنفسه صار نشطاً فوراً؛ غيره ينتظر المعتمد. $unitId فارغ = نطاق المعهد كله */
+    public static function activatesDirectly(User $user, ?int $unitId): bool
+    {
+        return self::canApprove($user, new Risk(['risk_type' => 'active', 'organization_unit_id' => $unitId]));
+    }
+
     /** خطر عام: السجل العام، أو فعلي بلا وحدة (نطاق المعهد كله) */
     public static function isGeneral(Risk $risk): bool
     {

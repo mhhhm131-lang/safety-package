@@ -179,14 +179,19 @@ class RiskService
                 'actor_id' => $userId,
             ]);
 
-            // قرار ٦٩: التنبيه يصل من يعتمد هذا الخطر — مدير وحدته، أو مسؤول السلامة للعام
-            foreach (\App\Modules\Risk\Support\RiskApproval::approverIds($risk) as $approverId) {
-                $this->notificationService->create($approverId, 'risk.approve', 'خطر بانتظار اعتمادك',
-                    "الخطر «{$risk->title}» قُدّم للاعتماد.", '/app/risk/approval/queue');
-            }
+            $this->notifyApprovers($risk);
 
             return $risk->fresh();
         });
+    }
+
+    /** قرار ٦٩: التنبيه يصل من يعتمد هذا الخطر — مدير وحدته (أو ما فوقها)، أو مسؤول السلامة للعام */
+    private function notifyApprovers(Risk $risk): void
+    {
+        foreach (\App\Modules\Risk\Support\RiskApproval::approverIds($risk) as $approverId) {
+            $this->notificationService->create($approverId, 'risk.approve', 'خطر بانتظار اعتمادك',
+                "الخطر «{$risk->title}» قُدّم للاعتماد.", '/app/risk/approval/queue');
+        }
     }
 
     /**
@@ -198,9 +203,11 @@ class RiskService
 
         return DB::transaction(function () use ($risk, $userId, $notes) {
             $fromStatus = $risk->status;
+            // قرار ٧٠: خطر فُعّل من السجل العام وانتظر معتمده ← ضغطة الاعتماد نفسها تجعله نشطاً، لا «معتمد» ينتظر خطوة ثانية بلا صاحب
+            $toStatus = $risk->risk_type === 'active' && $risk->events()->where('action', 'activated')->exists() ? 'active' : 'approved';
 
             $risk->update([
-                'status' => 'approved',
+                'status' => $toStatus,
                 'approved_by_id' => $userId,
                 'approved_at' => now(),
                 'approval_notes' => $notes,
@@ -210,7 +217,7 @@ class RiskService
                 'risk_id' => $risk->id,
                 'action' => 'approved',
                 'from_status' => $fromStatus,
-                'to_status' => 'approved',
+                'to_status' => $toStatus,
                 'note' => $notes,
                 'actor_id' => $userId,
             ]);
@@ -304,10 +311,13 @@ class RiskService
      * their reference register. Runtime overrides (scope, severity
      * tweaks, assignments) are layered on top. Phase-level overrides
      * from the activation form are then applied via persistAllPhases.
+     *
+     * قرار ٧٠: `$awaitApproval` — من لا يعتمد هذا الخطر (المنسق لوحدته، مسؤول السلامة والمناوب لإدارة، المناوب للعام)
+     * يفعّله «بانتظار الاعتماد» ويُنبَّه معتمده؛ والمعتمد نفسه والبذر نشط فوراً. الحكم في `RiskApproval::activatesDirectly`.
      */
-    public function activateFromReference(Risk $referenceRisk, ?int $userId, array $data): Risk
+    public function activateFromReference(Risk $referenceRisk, ?int $userId, array $data, bool $awaitApproval = false): Risk
     {
-        return DB::transaction(function () use ($referenceRisk, $userId, $data) {
+        return DB::transaction(function () use ($referenceRisk, $userId, $data, $awaitApproval) {
             $severity = $data['severity'] ?? $referenceRisk->severity;
             $likelihood = $data['likelihood'] ?? $referenceRisk->likelihood;
 
@@ -327,6 +337,9 @@ class RiskService
                 'notes'                    => $data['notes'] ?? null,
                 'legal_reference'          => $data['legal_reference'] ?? null,
             ], fn ($v) => $v !== null && $v !== '');
+            if ($awaitApproval) {
+                $overrides['status'] = 'pending_approval';
+            }
 
             $activeRisk = app(RiskCopyService::class)
                 ->referenceToActive($referenceRisk, $userId, $overrides);
@@ -338,10 +351,15 @@ class RiskService
             RiskEvent::create([
                 'risk_id'    => $activeRisk->id,
                 'action'     => 'activated',
-                'to_status'  => 'active',
-                'note'       => 'فُعّل من السجل العام ' . ($referenceRisk->code ?: '#'.$referenceRisk->id),
+                'to_status'  => $activeRisk->status,
+                'note'       => 'فُعّل من السجل العام ' . ($referenceRisk->code ?: '#'.$referenceRisk->id)
+                    . ($awaitApproval ? ' — ينتظر اعتماد معتمده ليصير نشطاً' : ''),
                 'actor_id'   => $userId,
             ]);
+
+            if ($awaitApproval) {
+                $this->notifyApprovers($activeRisk);
+            }
 
             return $activeRisk;
         });

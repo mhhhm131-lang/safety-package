@@ -45,6 +45,14 @@ class Risk extends Model
         'active' => 'نشط', 'in_progress' => 'قيد المعالجة', 'escalated' => 'مصعّد', 'closed' => 'مغلق',
     ];
 
+    /** قرار ٧٠: ما لم يُعتمد لا يعمل — المسودة وبانتظار الاعتماد والمرفوض (والمغلق) لا توجّه بلاغاً ولا تُعدّ مفعّلة */
+    public const NOT_IN_EFFECT = ['draft', 'pending_approval', 'rejected', 'closed'];
+
+    public function scopeInEffect($query)
+    {
+        return $query->whereNotIn('status', self::NOT_IN_EFFECT);
+    }
+
     protected static function booted(): void
     {
         static::creating(function (Risk $risk) {

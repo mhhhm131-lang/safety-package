@@ -61,22 +61,7 @@
             </div>
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label" style="color:var(--text-main);">نوع النطاق <span class="text-danger">*</span></label>
-                        <select name="scope_type" id="scopeType" class="form-select" required onchange="document.getElementById('orgUnitDiv').style.display=this.value==='org_unit'?'block':'none'">
-                            <option value="general" @selected(old('scope_type') === 'general')>عام — المؤسسة بالكامل</option>
-                            <option value="org_unit" @selected(old('scope_type') === 'org_unit')>وحدة تنظيمية محددة</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6" id="orgUnitDiv" style="display:{{ old('scope_type') === 'org_unit' ? 'block' : 'none' }};">
-                        <label class="form-label" style="color:var(--text-main);">الوحدة التنظيمية</label>
-                        <select name="organization_unit_id" class="form-select">
-                            <option value="">اختر...</option>
-                            @foreach($orgUnits as $unit)
-                                <option value="{{ $unit->id }}" @selected(old('organization_unit_id') == $unit->id)>{{ $unit->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+                    @include('modules.risks.partials._scope', ['col' => 'col-md-6', 'scopeLabel' => 'نوع النطاق', 'scopeDefault' => null, 'unitDefault' => null, 'scopeRequired' => true])
                     <div class="col-md-6">
                         <label class="form-label" style="color:var(--text-main);">المكان (المعهد)</label>
                         <select name="place_id" class="form-select">

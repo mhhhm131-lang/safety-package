@@ -18,8 +18,8 @@ use Illuminate\Support\Collection;
  */
 class RiskTasks implements TaskSource
 {
-    /** نطاق AppliesOrgUnitScope نفسه: أدوار الإشراف العام ترى الكل؛ غيرها وحدته وما تحتها + بلا وحدة. */
-    private const GLOBAL = ['system_admin', 'system_staff', 'top_management', 'safety_committee', 'safety_coordinator'];
+    /** نطاق سجل الإدارات نفسه: أدوار السجل كله ترى الكل؛ غيرها — المدير ومنسق السلامة (قرار ٧٠) — وحدته وما تحتها + بلا وحدة. */
+    private const GLOBAL = RiskApproval::REGISTER_WIDE;
 
     public function tasksFor(User $user): Collection
     {
@@ -28,6 +28,7 @@ class RiskTasks implements TaskSource
         $out = collect();
 
         // ١١-٣: اقتراح النظام — مدير إدارة يملك التفعيل وإدارته بلا مخاطر مفعّلة ← يبدأ من كتاب المعهد (لا تُفعَّل شيء عنه)
+        // قرار ٧٠: ومنسق سلامتها مثله — الوحدة تأخذ من السجل العام عبر منسقها
         if ($profile->organization_unit_id && PermissionRegistry::hasPermission($profile->role, 'risk.activate')
             && !in_array($profile->role, self::GLOBAL, true)
             && !Risk::where('risk_type', 'active')->where('organization_unit_id', $profile->organization_unit_id)->exists()) {

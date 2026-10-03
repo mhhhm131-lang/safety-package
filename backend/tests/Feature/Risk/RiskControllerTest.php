@@ -128,10 +128,12 @@ class RiskControllerTest extends TestCase
 
     public function test_store_creates_risk_with_calculated_score(): void
     {
-        $user = $this->actingAsRole('safety_coordinator');
+        // قرار ٧٠: منسق السلامة يكتب لوحدته — حسابه مربوط بها والخطر يُكتب لها
+        $user = $this->actingAsRole('safety_coordinator', 'hr');
         $this->post(route('risk.store'), $this->validPayload([
             'severity' => 4,
             'likelihood' => 3,
+            'scope_type' => 'org_unit', 'organization_unit_id' => $this->orgUnit('hr')->id,
         ]))->assertRedirect(route('risk.active.index'));
 
         $risk = Risk::latest('id')->first();
@@ -147,8 +149,8 @@ class RiskControllerTest extends TestCase
         // Causes + actions are phase-level — the basic /risk/create form
         // creates the risk scaffold, and the three phase rows are
         // auto-created so the coordinator can fill them from the detail page.
-        $this->actingAsRole('safety_coordinator');
-        $this->post(route('risk.store'), $this->validPayload(['phases' => []]))->assertRedirect();
+        $this->actingAsRole('safety_coordinator', 'hr'); // قرار ٧٠: لوحدته
+        $this->post(route('risk.store'), $this->validPayload(['phases' => [], 'scope_type' => 'org_unit', 'organization_unit_id' => $this->orgUnit('hr')->id]))->assertRedirect();
 
         $risk = Risk::latest('id')->first();
         $this->assertSame(3, $risk->phases()->count());

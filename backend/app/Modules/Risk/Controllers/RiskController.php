@@ -31,7 +31,10 @@ class RiskController extends Controller
     /** قرار ٦٩ */
     private const NOT_APPROVER = 'خطر الإدارة يعتمده مديرها، والسجل العام يعتمده مسؤول السلامة.';
 
-    public function __construct(protected RiskService $riskService) {}
+    public function __construct(protected RiskService $riskService)
+    {
+        $this->globalScopeRoles = RiskApproval::REGISTER_WIDE; // قرار ٧٠: منسق السلامة نطاقه نطاق مديره
+    }
 
     // ── السجل الفعلي (active) ──
 
@@ -93,6 +96,9 @@ class RiskController extends Controller
         $validated = $request->validate(array_merge($this->referenceValidationRules(), $this->activeExtraRules()), $this->assignMessages());
         $reference = $this->referenceFor($validated);
         if ($reference === false) return redirect()->back()->withInput()->withErrors(['parent_reference_id' => 'الخطر المرجعي المختار ليس تحت هذه الفئة الفرعية.']);
+        // قرار ٧٠: الباب الثاني للفعل نفسه بالنطاق نفسه — المدير ومنسق السلامة يكتبان لوحدتهما وما تحتها فقط
+        $validated = $this->withinUnitScope($validated);
+        if (is_string($validated)) return redirect()->back()->withInput()->with('error', $validated);
         try {
             $validated['title'] = trim((string) ($validated['title'] ?? '')) ?: ($reference?->title ?: $this->deriveTitle($validated['risk_type_category_id'] ?? null, $validated['sub_category_id'] ?? null));
             $validated['description'] = trim((string) ($validated['description'] ?? '')) ?: ($reference?->description ?: $validated['title']);
@@ -126,6 +132,11 @@ class RiskController extends Controller
         $risk = Risk::findOrFail($risk);
         $this->authorizeScope($risk);
         $validated = $request->validate(array_merge($this->referenceValidationRules(), $this->activeExtraRules()), $this->assignMessages());
+        // قرار ٧٠: يبقى الخطر حيث هو، أو يُنقل إلى وحدة في نطاق صاحب الحساب — لا إلى وحدة غيره
+        if ((int) ($validated['organization_unit_id'] ?? 0) !== (int) $risk->organization_unit_id) {
+            $validated = $this->withinUnitScope($validated);
+            if (is_string($validated)) return redirect()->back()->withInput()->with('error', $validated);
+        }
         $reference = $this->referenceFor($validated);
         if ($reference === false) return redirect()->back()->withInput()->withErrors(['parent_reference_id' => 'الخطر المرجعي المختار ليس تحت هذه الفئة الفرعية.']);
         try {
@@ -160,6 +171,7 @@ class RiskController extends Controller
 
     public function destroy(Risk $risk)
     {
+        $this->authorizeScope($risk);
         if ($risk->status !== 'draft') {
             return redirect()->route('risk.active.index')->with('error', 'لا يُحذف إلا خطر في حالة مسودة.');
         }
@@ -245,27 +257,33 @@ class RiskController extends Controller
             'description' => ['nullable', 'string', 'max:10000'],
             'contact_channel' => ['nullable', 'string', 'max:200'],
             'scope_type' => ['required', 'string', 'in:general,org_unit'],
-            'organization_unit_id' => ['nullable', 'integer', 'exists:organization_units,id'],
+            'organization_unit_id' => ['nullable', 'required_if:scope_type,org_unit', 'integer', 'exists:organization_units,id'],
             'place_id' => ['nullable', 'integer', 'exists:places,id'],
             'severity' => ['required', 'integer', 'min:1', 'max:5'],
             'likelihood' => ['required', 'integer', 'min:1', 'max:5'],
             'legal_reference' => ['nullable', 'string', 'max:500'],
-        ], $this->activeExtraRules(), $this->phaseRules()), $this->assignMessages());
-        // مدير الإدارة يفعّل لوحدته فقط
-        $profile = $this->userProfile();
-        if ($profile && !$this->isGlobalScopeRole()) {
-            $allowed = OrganizationUnit::descendantIdsOf($profile->organization_unit_id);
-            if (($validated['scope_type'] ?? '') !== 'org_unit' || !in_array((int) ($validated['organization_unit_id'] ?? 0), $allowed, true)) {
-                return redirect()->back()->withInput()->with('error', 'يمكنك تفعيل الخطر لإدارتك أو أقسامها فقط.');
-            }
-        }
+        ], $this->activeExtraRules(), $this->phaseRules()), $this->assignMessages() + ['organization_unit_id.required_if' => 'اختر الوحدة التنظيمية التي يُفعَّل لها الخطر.']);
+        // المدير ومنسق السلامة يفعّلان لوحدتهما وما تحتها فقط (قرار ٧٠)
+        $validated = $this->withinUnitScope($validated);
+        if (is_string($validated)) return redirect()->back()->withInput()->with('error', $validated);
         try {
             $reference = Risk::findOrFail($risk);
-            $this->riskService->activateFromReference($reference, Auth::id(), $validated);
-            return redirect()->route('risk.active.index')->with('success', 'فُعّل الخطر في سجل الإدارة بمراحله الثلاث.');
+            // قرار ٧٠: من يعتمد هذا الخطر إن فعّله بنفسه صار نشطاً؛ غيره ينتظر المعتمد
+            $unitId = !empty($validated['organization_unit_id']) ? (int) $validated['organization_unit_id'] : null;
+            $await = !RiskApproval::activatesDirectly(Auth::user(), $unitId);
+            $active = $this->riskService->activateFromReference($reference, Auth::id(), $validated, $await);
+            return redirect()->route('risk.active.index')->with('success', $await ? $this->awaitingMessage($active) : 'فُعّل الخطر في سجل الإدارة بمراحله الثلاث.');
         } catch (\Throwable $e) {
             return redirect()->back()->withInput()->with('error', 'حدث خطأ: '.$e->getMessage());
         }
+    }
+
+    /** قرار ٧٠: ما يقال لمن فعّل وليس هو المعتمد — من ينتظر؛ وإن لم يكن للمعتمد حساب قيل ذلك، لا صمت */
+    private function awaitingMessage(Risk $risk): string
+    {
+        $who = RiskApproval::isGeneral($risk) ? 'مسؤول السلامة' : 'مدير «'.($risk->organizationUnit?->name ?? 'الوحدة').'»';
+        $msg = 'فُعّل الخطر وأُرسل إلى '.$who.' ليعتمده — يصير نشطاً باعتماده.';
+        return RiskApproval::approverIds($risk) ? $msg : $msg.' تنبيه: لا حساب مفعّلاً لمن يعتمده — أبلغ مسؤول السلامة.';
     }
 
     // ── الاعتماد ──
@@ -339,6 +357,8 @@ class RiskController extends Controller
     public function changeStatus(Request $request, Risk $risk)
     {
         $validated = $request->validate(['status' => ['required', 'string'], 'note' => ['nullable', 'string', 'max:5000']]);
+        // قرار ٧٠: الاعتماد والرفض لمن يعتمد هذا الخطر وحده — لا يُعتمد خطر بتغيير حالته من هذا الباب
+        abort_if(in_array($validated['status'], ['approved', 'rejected'], true) && !RiskApproval::canApprove(Auth::user(), $risk), 403, self::NOT_APPROVER);
         // قرار ٦٩: من لا يملك الإنشاء (مدير الإدارة) يعيد خطره المرفوض إلى المسودة فقط — لا حالة أخرى من هذا الباب
         if (!\App\Core\Permissions\PermissionRegistry::hasPermission(Auth::user()->role(), 'risk.create')) {
             abort_unless(\App\Core\Permissions\PermissionRegistry::hasPermission(Auth::user()->role(), 'risk.activate')
@@ -429,7 +449,11 @@ class RiskController extends Controller
 
     private function formData(): array
     {
+        $scopeIds = $this->scopeUnitIds();
         return [
+            // قرار ٧٠: خانة النطاق — null لأدوار السجل كله (عام أو أي وحدة)؛ ولغيرهم وحدته وما تحتها، ووحدته مختارة سلفاً
+            'scopeUnits' => $scopeIds === null ? null : OrganizationUnit::whereIn('id', $scopeIds)->where('is_active', true)->orderBy('order')->get(),
+            'myUnitId' => $this->userProfile()?->organization_unit_id,
             'categories' => RiskCategory::where('is_active', true)->with('subCategories')->orderBy('name')->get(),
             'orgUnits' => OrganizationUnit::where('is_active', true)->orderBy('order')->get(),
             'places' => Place::orderBy('sort')->get(),
@@ -439,7 +463,31 @@ class RiskController extends Controller
         ];
     }
 
-    /** الخطر الفعلي خارج نطاق وحدة المستخدم لا يُفتح (المدير يرى إدارته وما تحتها). */
+    /** قرار ٧٠: وحدات نطاق صاحب الحساب في سجل الإدارات — null لأدوار السجل كله، وإلا وحدته وما تحتها (فارغ إن لم يُربط حسابه بوحدة) */
+    private function scopeUnitIds(): ?array
+    {
+        if ($this->isGlobalScopeRole()) return null;
+        return OrganizationUnit::descendantIdsOf($this->userProfile()?->organization_unit_id);
+    }
+
+    /**
+     * قرار ٧٠: المدير ومنسق السلامة يكتبان ويفعّلان لوحدتهما وما تحتها فقط — لا «عام» ولا وحدة غيرهما.
+     * يعيد المدخلات بنطاقها الصحيح، أو نص الرفض.
+     */
+    private function withinUnitScope(array $validated): array|string
+    {
+        $allowed = $this->scopeUnitIds();
+        if ($allowed === null) {
+            if (($validated['scope_type'] ?? null) === 'general') $validated['organization_unit_id'] = null; // «عام» بلا وحدة: معتمده مسؤول السلامة
+            return $validated;
+        }
+        if (!$allowed) return 'حسابك غير مربوط بوحدة تنظيمية — اطلب من مسؤول السلامة ربطه بوحدتك لتفعّل لها.';
+        if (!in_array((int) ($validated['organization_unit_id'] ?? 0), $allowed, true)) return 'يمكنك تفعيل الخطر لإدارتك أو أقسامها فقط.';
+        $validated['scope_type'] = 'org_unit';
+        return $validated;
+    }
+
+    /** الخطر الفعلي خارج نطاق وحدة المستخدم لا يُفتح (المدير ومنسق السلامة يريان وحدتهما وما تحتها). */
     private function authorizeScope(Risk $risk): void
     {
         if ($this->isGlobalScopeRole()) return;

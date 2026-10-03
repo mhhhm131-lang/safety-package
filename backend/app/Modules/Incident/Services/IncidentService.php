@@ -547,7 +547,8 @@ class IncidentService
         $routingRisk = $risk->risk_type === 'active' ? $risk : null;
         if (!$routingRisk && $unitId) {
             foreach ($this->unitAndAncestors($unitId) as $uid) {
-                $q = Risk::where('risk_type', 'active')->where('parent_reference_id', $risk->id)->where('organization_unit_id', $uid);
+                // قرار ٧٠: ما لم يُعتمد لا يوجّه — خطر فعّله المنسق وينتظر مديره (أو مسودة أو مرفوض) يبقى بلاغه في المركز
+                $q = Risk::where('risk_type', 'active')->inEffect()->where('parent_reference_id', $risk->id)->where('organization_unit_id', $uid);
                 // خطر الإدارة في هذا المكان أولاً، ثم خطرها بلا مكان، ثم أي خطر لها
                 $routingRisk = (clone $q)->where('place_id', $placeId)->orderByDesc('id')->first()
                     ?? (clone $q)->whereNull('place_id')->orderByDesc('id')->first()

@@ -18,6 +18,11 @@ class RiskTreeController extends Controller
 {
     use AppliesOrgUnitScope;
 
+    public function __construct()
+    {
+        $this->globalScopeRoles = \App\Modules\Risk\Support\RiskApproval::REGISTER_WIDE; // قرار ٧٠: منسق السلامة نطاقه نطاق مديره
+    }
+
     // ── السجل العام (reference) وسجل الإدارة (active) ──
 
     public function registryCategories(string $type): JsonResponse
