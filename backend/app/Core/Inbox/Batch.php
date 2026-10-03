@@ -24,6 +24,15 @@ final class Batch
         'incident.committee' => ['بلاغ', 'بلاغان', 'بلاغات', 'بلاغاً', 'صُعّد للجنة — بانتظار من يتولّى المعالجة'],
         'emergency.aar'      => ['حالة', 'حالتان', 'حالات', 'حالة', 'لا تقرير بعد الانتهاء'],
         'equipment.inspect'  => ['معدة', 'معدتان', 'معدات', 'معدة', 'حان فحصها الدوري'], // ٢٧-ج
+        'risk.approve'       => ['خطر', 'خطران', 'أخطار', 'خطراً', 'بانتظار اعتمادك'],     // قرار ٧١
+    ];
+
+    /**
+     * قرار ٧١: دفعة لها فعل واحد على بنودها كلها — النوع ← [اسم المسار، نمط مفتاح البند لاستخراج رقمه، نص الزر للاثنين، نصه للأكثر].
+     * الزر يرسل أرقام البنود؛ والمسار يفحص كل بند بصلاحيته كما يفحصه زره المفرد.
+     */
+    public const ALL = [
+        'risk.approve' => ['risk.approve.bulk', '/^risk:(\d+):approve$/', 'اعتمدهما', 'اعتمدها كلها'],
     ];
 
     /**
@@ -53,6 +62,7 @@ final class Batch
                 'question' => self::question($t->batch, $n, $t->place),
                 'late' => count(array_filter($list, fn (Task $x) => $x->isOverdue)),
                 'open' => $n === 2 ? 'اعرضهما' : 'اعرضها',
+                'all' => self::all($t->batch, $list),
             ];
         }
         return $out;
@@ -64,6 +74,21 @@ final class Batch
         [, $two, $few, $many, $what] = self::KINDS[$kind];
         $count = $n === 2 ? $two : ($n <= 10 ? $n.' '.$few : $n.' '.$many);
         return $count.($place ? ' في '.$place : '').': '.$what;
+    }
+
+    /**
+     * @param Task[] $list
+     * @return array{label:string,url:string,ids:int[]}|null
+     */
+    private static function all(string $kind, array $list): ?array
+    {
+        if (!isset(self::ALL[$kind])) return null;
+        [$route, $pattern, $two, $many] = self::ALL[$kind];
+        $ids = [];
+        foreach ($list as $t) {
+            if (preg_match($pattern, $t->key, $m)) $ids[] = (int) $m[1];
+        }
+        return count($ids) === count($list) ? ['label' => count($ids) === 2 ? $two : $many, 'url' => route($route), 'ids' => $ids] : null;
     }
 
     private static function keyOf(Task $t): string

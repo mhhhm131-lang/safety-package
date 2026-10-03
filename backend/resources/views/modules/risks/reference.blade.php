@@ -26,6 +26,17 @@
         </div>
     </div>
 
+    {{-- قرار ٧١: تفعيل المحدَّد دفعةً — «حدّد الكل» أو فئة أو فرعية أو خطر بعينه، ثم «فعّل المحدَّد» لوحدة واحدة بمعالج واحد --}}
+    @if(!empty($bulk))
+    <div class="card mb-3 tree-panel" id="bulkBar">
+        <div class="card-body py-2 d-flex flex-wrap align-items-center gap-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="bulkAll"><i class="bi bi-check2-all"></i> حدّد الكل <span class="badge bg-secondary">{{ count($bulk['map']) }}</span></button>
+            <span class="small flex-grow-1" style="color:var(--text-muted);min-width:180px;">حدّد الكل، أو فئة، أو فرعية، أو خطراً بعينه — ثم فعّله لوحدتك دفعةً واحدة.</span>
+            <button type="button" class="btn btn-success btn-sm" id="bulkGo" disabled data-bs-toggle="modal" data-bs-target="#bulkModal"><i class="bi bi-lightning-fill"></i> فعّل المحدَّد <span class="badge bg-light text-dark" id="bulkCount">0</span></button>
+        </div>
+    </div>
+    @endif
+
     {{-- ══════════════ Tree View ══════════════ --}}
     <div id="ref-tree-view">
         <div class="row g-3">
@@ -71,6 +82,9 @@
                     <div class="card-header py-2 d-flex align-items-center gap-2">
                         <strong class="flex-grow-1"><i class="bi bi-3-circle me-1 text-accent"></i> المخاطر</strong>
                         <span class="badge bg-danger" id="ref-risk-count">0</span>
+                        @if(!empty($bulk))
+                        <button class="btn btn-sm btn-link text-muted p-0" id="ref-risk-select-all" type="button" style="font-size:.72rem;" onclick="refToggleSelectAllRisks()" title="حدّد كل المخاطر المعروضة"><i class="bi bi-check-all"></i> حدّد المعروض</button>
+                        @endif
                     </div>
                     <div class="card-body p-2" style="max-height:500px; overflow-y:auto;">
                         <div id="ref-risks-tree">
@@ -131,6 +145,57 @@
     </div>
 </div>
 
+{{-- قرار ٧١: نافذة الدفعة — خانتان: الوحدة والمعالج. منسق الخطر منسق سلامة الوحدة تلقائياً (وللنطاق العام يُسمّى) --}}
+@if(!empty($bulk))
+<div class="modal fade" id="bulkModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" style="background:var(--bg-card);border:1px solid var(--border-color);">
+            <div class="modal-header" style="border-bottom:1px solid var(--border-color);">
+                <h5 class="modal-title" style="color:var(--text-main);"><i class="bi bi-lightning-fill me-1" style="color:#10b981;"></i> تفعيل <span id="bulkN">0</span> من السجل العام</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body">
+                <div id="bulkForm" class="row g-3">
+                    @include('modules.risks.partials._scope', ['scopeUnits' => $bulk['scopeUnits'], 'myUnitId' => $bulk['myUnitId'], 'orgUnits' => $bulk['orgUnits'],
+                        'col' => 'col-12', 'scopeLabel' => 'النطاق', 'scopeDefault' => null, 'unitDefault' => null])
+                    <div class="col-12">
+                        <label class="form-label" style="color:var(--text-main);">المعالج المختص (فني أو إداري) <span class="text-danger">*</span></label>
+                        <select name="assigned_field_team_id" id="bulkHandler" class="form-select">
+                            <option value="">— اختر —</option>
+                            @foreach($bulk['users'] as $u)
+                                <option value="{{ $u->id }}">{{ $u->name }}</option>
+                            @endforeach
+                        </select>
+                        <small style="color:var(--text-muted);">شخص واحد للدفعة كلها — إليه يُحوَّل بلاغ الشاغل. لمعالج مختلف حدّد فئته وحدها وفعّلها به.</small>
+                    </div>
+                    @if($bulk['scopeUnits'] === null)
+                    <div class="col-12" id="bulkCoordDiv">
+                        <label class="form-label" style="color:var(--text-main);">منسق السلامة <span class="text-danger" id="bulkCoordStar">*</span></label>
+                        <select name="assigned_coordinator_id" id="bulkCoord" class="form-select">
+                            <option value="">— منسق سلامة الوحدة تلقائياً —</option>
+                            @foreach($bulk['users'] as $u)
+                                <option value="{{ $u->id }}">{{ $u->name }}</option>
+                            @endforeach
+                        </select>
+                        <small style="color:var(--text-muted);">للنطاق «عام» يُسمّى المنسق؛ ولوحدة محددة يُترك فيكون منسق سلامتها.</small>
+                    </div>
+                    @else
+                    <div class="col-12"><small style="color:var(--text-muted);"><i class="bi bi-person-check"></i> منسق الأخطار: منسق سلامة الوحدة تلقائياً. الشدة والاحتمال والإجراءات تُنسخ من السجل العام وتُعدَّل بعدها لكل خطر.</small></div>
+                    @endif
+                </div>
+                <div id="bulkProgress" class="small mt-3" style="color:var(--text-muted);display:none;"></div>
+                <div id="bulkResult" class="alert mt-3 mb-0" style="display:none;"></div>
+            </div>
+            <div class="modal-footer" style="border-top:1px solid var(--border-color);">
+                <a href="{{ route('risk.active.index') }}" class="btn btn-outline-secondary" id="bulkOpenActive" style="display:none;">افتح السجل الفعلي</a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="bulkCancel">إلغاء</button>
+                <button type="button" class="btn btn-success" id="bulkSubmit"><i class="bi bi-lightning-fill me-1"></i> فعّل</button>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
 {{-- ══ CSS (نفس الكتاب تماماً) ══ --}}
 <style>
     .tree-panel { background: var(--bg-card); border: 1px solid var(--border-color); }
@@ -186,6 +251,12 @@
     const state            = { categoryId: null };
     const selectedSubCatIds = new Set();
     const selectedRiskIds   = new Set();
+    // قرار ٧١: ما يُفعَّل دفعةً — [رقم الخطر، فئته] للمعتمد في السجل العام؛ null لمن لا يملك التفعيل
+    const BULK_MAP  = {!! json_encode($bulk['map'] ?? null) !!};
+    const BULK_URL  = `{{ route('risk.activate.bulk') }}`;
+    const BULK_PART = 25; // أخطار في كل طلب — الدفعة الكبيرة تُرسل أجزاءً
+    let bulkAll     = false;
+    const bulkCats  = new Set();
     const riskDetailCache   = new Map();
     let activePops          = [];
 
@@ -248,7 +319,16 @@
                 const item = document.createElement('div');
                 item.className = 'cat-nav-item';
                 item.dataset.id = cat.id;
-                item.textContent = cat.name;
+                if (BULK_MAP) {
+                    item.innerHTML = `<input type="checkbox" class="form-check-input cat-bulk-cb" value="${cat.id}" title="حدّد الفئة كلها" style="cursor:pointer;margin-inline-end:.45rem;"><span></span>`;
+                    item.querySelector('span').textContent = cat.name;
+                    const cb = item.querySelector('.cat-bulk-cb');
+                    cb.checked = bulkAll || bulkCats.has(cat.id); cb.disabled = bulkAll;
+                    cb.addEventListener('click', e => e.stopPropagation());
+                    cb.addEventListener('change', () => { if (cb.checked) bulkCats.add(cat.id); else bulkCats.delete(cat.id); markViaGroup(); refreshBulk(); });
+                } else {
+                    item.textContent = cat.name;
+                }
                 item.addEventListener('click', () => selectCategory(cat.id, item));
                 container.appendChild(item);
             });
@@ -322,6 +402,7 @@
         document.querySelectorAll('.risk-cb').forEach(cb => cb.checked = false);
         document.querySelectorAll('.risk-item.selected').forEach(n => n.classList.remove('selected'));
         hideDetailPanel();
+        refreshBulk();
         const ids = [...selectedSubCatIds];
         if (!ids.length) {
             el('ref-risks-tree').innerHTML = '<div class="text-muted small text-center py-4">اختر فئة فرعية لعرض المخاطر</div>';
@@ -356,15 +437,141 @@
                 if (e.target.checked) { selectedRiskIds.add(id); item.classList.add('selected'); }
                 else { selectedRiskIds.delete(id); item.classList.remove('selected'); }
                 refreshDetailPanel();
+                refreshBulk();
             });
             item.addEventListener('click', ev => {
                 if (ev.target.classList.contains('risk-cb')) return;
                 const cb = item.querySelector('.risk-cb');
+                if (cb.disabled) return; // محدَّد ضمن فئته أو «الكل»
                 cb.checked = !cb.checked;
                 cb.dispatchEvent(new Event('change'));
             });
             container.appendChild(item);
         });
+        markViaGroup();
+    }
+
+    // ── قرار ٧١: التحديد للتفعيل دفعةً ──
+    /** المعروض المحدَّد ضمن «الكل» أو ضمن فئته يظهر محدَّداً ولا يُلغى من هنا */
+    function markViaGroup() {
+        if (!BULK_MAP) return;
+        const via = bulkAll || bulkCats.has(state.categoryId);
+        document.querySelectorAll('#ref-risks-tree .risk-item').forEach(item => {
+            const cb = item.querySelector('.risk-cb');
+            const id = parseInt(cb.value);
+            cb.disabled = via;
+            cb.checked = via || selectedRiskIds.has(id);
+            item.classList.toggle('selected', cb.checked);
+        });
+    }
+    function bulkIds() {
+        if (!BULK_MAP) return [];
+        const s = new Set();
+        BULK_MAP.forEach(x => { if (bulkAll || bulkCats.has(x[1])) s.add(x[0]); });
+        selectedRiskIds.forEach(id => s.add(id));
+        return [...s];
+    }
+    function refreshBulk() {
+        if (!BULK_MAP) return;
+        const n = bulkIds().length;
+        el('bulkCount').textContent = n;
+        el('bulkGo').disabled = !n;
+        el('bulkAll').classList.toggle('btn-secondary', bulkAll);
+        el('bulkAll').classList.toggle('btn-outline-secondary', !bulkAll);
+        el('bulkAll').setAttribute('aria-pressed', bulkAll ? 'true' : 'false');
+    }
+    window.refToggleSelectAllRisks = function() {
+        const cbs = [...document.querySelectorAll('#ref-risks-tree .risk-cb')].filter(cb => !cb.disabled);
+        if (!cbs.length) return;
+        const anyUnchecked = cbs.some(cb => !cb.checked);
+        cbs.forEach(cb => {
+            const id = parseInt(cb.value);
+            cb.checked = anyUnchecked;
+            cb.closest('.risk-item').classList.toggle('selected', anyUnchecked);
+            if (anyUnchecked) selectedRiskIds.add(id); else selectedRiskIds.delete(id);
+        });
+        refreshDetailPanel();
+        refreshBulk();
+    };
+    function initBulk() {
+        if (!BULK_MAP) return;
+        el('bulkAll').addEventListener('click', () => {
+            bulkAll = !bulkAll;
+            document.querySelectorAll('.cat-bulk-cb').forEach(cb => { cb.disabled = bulkAll; cb.checked = bulkAll || bulkCats.has(parseInt(cb.value)); });
+            markViaGroup();
+            refreshBulk();
+        });
+        const modal = el('bulkModal');
+        const scope = modal.querySelector('[name=scope_type]');
+        const coordStar = el('bulkCoordStar');
+        const syncCoord = () => { if (coordStar) coordStar.style.display = scope && scope.value === 'general' ? '' : 'none'; };
+        if (scope && scope.tagName === 'SELECT') scope.addEventListener('change', syncCoord);
+        modal.addEventListener('show.bs.modal', () => {
+            el('bulkN').textContent = bulkIds().length;
+            el('bulkForm').style.display = ''; el('bulkSubmit').style.display = ''; el('bulkSubmit').disabled = false;
+            el('bulkProgress').style.display = 'none'; el('bulkResult').style.display = 'none'; el('bulkOpenActive').style.display = 'none';
+            el('bulkCancel').textContent = 'إلغاء';
+            syncCoord();
+        });
+        el('bulkSubmit').addEventListener('click', bulkSubmit);
+    }
+    function bulkFail(msg) {
+        const r = el('bulkResult');
+        r.className = 'alert alert-danger mt-3 mb-0'; r.textContent = msg; r.style.display = '';
+        el('bulkSubmit').disabled = false;
+    }
+    async function bulkSubmit() {
+        const modal = el('bulkModal');
+        const ids = bulkIds();
+        const scopeEl = modal.querySelector('[name=scope_type]');
+        const unitEl = modal.querySelector('[name=organization_unit_id]');
+        const scope = scopeEl ? scopeEl.value : 'org_unit';
+        const handler = el('bulkHandler').value;
+        const coord = el('bulkCoord') ? el('bulkCoord').value : '';
+        if (!ids.length) return bulkFail('حدّد خطراً واحداً على الأقل.');
+        if (scope === 'org_unit' && !(unitEl && unitEl.value)) return bulkFail('اختر الوحدة التنظيمية.');
+        if (!handler) return bulkFail('سمِّ المعالج المختص — إليه يُحوَّل بلاغ الشاغل.');
+        el('bulkSubmit').disabled = true;
+        el('bulkResult').style.display = 'none';
+        const prog = el('bulkProgress');
+        prog.style.display = '';
+        const token = document.querySelector('meta[name=csrf-token]').getAttribute('content');
+        const total = { created: 0, existing: 0, unapproved: 0, awaiting: null };
+        for (let i = 0; i < ids.length; i += BULK_PART) {
+            const part = ids.slice(i, i + BULK_PART);
+            const last = i + BULK_PART >= ids.length;
+            prog.textContent = `جارٍ التفعيل… ${Math.min(i + part.length, ids.length)} من ${ids.length}`;
+            let res, data;
+            try {
+                res = await fetch(BULK_URL, { method: 'POST', credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': token, 'X-Requested-With': 'XMLHttpRequest' },
+                    body: JSON.stringify({ risk_ids: part, scope_type: scope, organization_unit_id: scope === 'org_unit' ? unitEl.value : null,
+                        assigned_field_team_id: handler, assigned_coordinator_id: coord || null, hold_notify: !last, created_before: total.created }) });
+                data = await res.json();
+            } catch (e) {
+                prog.style.display = 'none';
+                return bulkFail('تعذّر الاتصال — فُعّل حتى الآن ' + total.created + '. أعد المحاولة: ما فُعّل يُتخطّى.');
+            }
+            if (!res.ok) {
+                prog.style.display = 'none';
+                const first = data && data.errors ? Object.values(data.errors)[0][0] : null;
+                return bulkFail((first || (data && data.message) || 'تعذّر التفعيل.') + (total.created ? ' (فُعّل قبلها ' + total.created + ')' : ''));
+            }
+            total.created += data.created; total.existing += data.existing; total.unapproved += data.unapproved;
+            if (data.created && data.awaiting_message) total.awaiting = data.awaiting_message;
+        }
+        prog.style.display = 'none';
+        const skipped = total.existing + total.unapproved;
+        let msg = 'فُعّل ' + total.created + (skipped ? ' وتُخطّي ' + skipped : '') + '.';
+        if (total.existing) msg += ' موجود في سجل الوحدة: ' + total.existing + '.';
+        if (total.unapproved) msg += ' غير معتمد في السجل العام: ' + total.unapproved + '.';
+        if (total.created && total.awaiting) msg += ' ' + total.awaiting;
+        const r = el('bulkResult');
+        r.className = 'alert ' + (total.created ? 'alert-success' : 'alert-warning') + ' mt-3 mb-0';
+        r.textContent = msg; r.style.display = '';
+        r.dataset.created = total.created; r.dataset.existing = total.existing; r.dataset.unapproved = total.unapproved;
+        el('bulkForm').style.display = 'none'; el('bulkSubmit').style.display = 'none';
+        el('bulkOpenActive').style.display = ''; el('bulkCancel').textContent = 'إغلاق';
     }
 
     // ── Detail Panel ──
@@ -375,6 +582,13 @@
         const header = el('ref-detail-panel-header');
         const body   = el('ref-detail-panel-body');
         panel.style.display = '';
+        // قرار ٧١: تحديد كثير للتفعيل دفعةً لا يحمّل تفاصيل كل خطر — التفاصيل حتى ستة
+        if (ids.length > 6) {
+            activePops.forEach(p => { try { p.dispose(); } catch(_){} }); activePops = [];
+            header.innerHTML = `<span class="badge bg-success fs-6 me-2">${ids.length}</span><span class="fw-semibold flex-grow-1">الأخطار المحددة — التفاصيل تُعرض حتى ستة أخطار</span>`;
+            body.innerHTML = '';
+            return;
+        }
         header.innerHTML = '<div class="d-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm"></div><span class="small text-muted">جاري التحميل...</span></div>';
         body.innerHTML = '';
         await Promise.all(ids.map(async id => {
@@ -670,7 +884,7 @@
         },
     };
 
-    document.addEventListener('DOMContentLoaded', () => loadCategories());
+    document.addEventListener('DOMContentLoaded', () => { initBulk(); loadCategories(); });
 })();
 </script>
 @endsection

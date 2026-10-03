@@ -190,7 +190,20 @@ class RiskController extends Controller
         $this->applyFilters($query, $request);
         $risks = $query->latest()->paginate(25);
         $categories = RiskCategory::where('is_active', true)->orderBy('name')->get();
-        return view('modules.risks.reference', compact('risks', 'categories'));
+        // قرار ٧١: لمن يملك التفعيل — ما يُفعَّل دفعةً (المعتمد في السجل العام بفئته وفرعيته)، وخانتا النافذة
+        $bulk = null;
+        if (\App\Core\Permissions\PermissionRegistry::hasPermission(Auth::user()->role(), 'risk.activate')) {
+            $scopeIds = $this->scopeUnitIds();
+            $bulk = [
+                'map' => Risk::where('risk_type', 'reference')->whereIn('status', ['approved', 'active'])->orderBy('id')
+                    ->get(['id', 'category_id'])->map(fn (Risk $r) => [$r->id, $r->category_id])->all(),
+                'scopeUnits' => $scopeIds === null ? null : OrganizationUnit::whereIn('id', $scopeIds)->where('is_active', true)->orderBy('order')->get(),
+                'myUnitId' => $this->userProfile()?->organization_unit_id,
+                'orgUnits' => OrganizationUnit::where('is_active', true)->orderBy('order')->get(),
+                'users' => User::whereHas('profile', fn ($q) => $q->where('is_active', true))->orderBy('name')->get(['id', 'name']),
+            ];
+        }
+        return view('modules.risks.reference', compact('risks', 'categories', 'bulk'));
     }
 
     public function referenceCreate()
@@ -278,11 +291,83 @@ class RiskController extends Controller
         }
     }
 
+    /**
+     * قرار ٧١: تفعيل المحدَّد من السجل العام دفعةً — وحدة واحدة ومعالج واحد، ومنسقها منسق سلامة الوحدة تلقائياً.
+     * النطاق والاعتماد كالتفعيل المفرد (قرار ٧٠). يعيد JSON لنافذة الشاشة (ترسل على دفعات)، أو يعود برسالة.
+     */
+    public function activateBulk(Request $request)
+    {
+        $validated = $request->validate([
+            'risk_ids' => ['required', 'array', 'min:1', 'max:500'],
+            'risk_ids.*' => ['integer'],
+            'scope_type' => ['required', 'string', 'in:general,org_unit'],
+            'organization_unit_id' => ['nullable', 'required_if:scope_type,org_unit', 'integer', 'exists:organization_units,id'],
+            'assigned_field_team_id' => ['required', 'integer', 'exists:users,id'],
+            'assigned_coordinator_id' => ['nullable', 'integer', 'exists:users,id'],
+            // الشاشة ترسل الدفعة الكبيرة أجزاءً: التنبيه يُمسك حتى الجزء الأخير ويحمل المجموع
+            'hold_notify' => ['nullable', 'boolean'],
+            'created_before' => ['nullable', 'integer', 'min:0', 'max:100000'],
+        ], $this->assignMessages() + ['organization_unit_id.required_if' => 'اختر الوحدة التنظيمية التي تُفعَّل لها الأخطار.', 'risk_ids.required' => 'حدّد خطراً واحداً على الأقل.']);
+        $refuse = fn (string $msg) => $request->expectsJson() ? response()->json(['message' => $msg], 422) : redirect()->back()->with('error', $msg);
+
+        $validated = $this->withinUnitScope($validated);
+        if (is_string($validated)) return $refuse($validated);
+        $unitId = !empty($validated['organization_unit_id']) ? (int) $validated['organization_unit_id'] : null;
+        $coordinator = $validated['assigned_coordinator_id'] ?? $this->unitCoordinatorId($unitId);
+        if (!$coordinator) {
+            return $refuse($unitId ? 'لا منسق سلامة لهذه الوحدة — رشّح منسقاً لها أولاً، ثم فعّل.' : 'سمِّ منسق السلامة للأخطار العامة للمعهد كله.');
+        }
+
+        $await = !RiskApproval::activatesDirectly(Auth::user(), $unitId);
+        try {
+            $result = $this->riskService->activateManyFromReference($validated['risk_ids'], Auth::id(), [
+                'scope_type' => $validated['scope_type'], 'organization_unit_id' => $unitId,
+                'assigned_coordinator_id' => (int) $coordinator, 'assigned_field_team_id' => (int) $validated['assigned_field_team_id'],
+            ], $await);
+        } catch (\Throwable $e) {
+            return $refuse('حدث خطأ: '.$e->getMessage());
+        }
+
+        $n = count($result['created']);
+        // قرار ٧٠: المعتمد يُنبَّه مرة واحدة للدفعة كلها بعددها
+        $total = $n + (int) ($validated['created_before'] ?? 0);
+        if ($await && $total > 0 && !$request->boolean('hold_notify')) {
+            $this->riskService->notifyActivationAwaiting($total === 1 && $n === 1 ? $result['created'][0]
+                : new Risk(['risk_type' => 'active', 'organization_unit_id' => $unitId]), $total);
+        }
+        $skipped = $result['existing'] + $result['unapproved'];
+        $msg = 'فُعّل '.$n.($skipped ? ' وتُخطّي '.$skipped : '').'.';
+        if ($result['existing']) $msg .= ' موجود في سجل الوحدة: '.$result['existing'].'.';
+        if ($result['unapproved']) $msg .= ' غير معتمد في السجل العام: '.$result['unapproved'].'.';
+        if ($n && $await) $msg .= ' '.$this->awaitingMessage($result['created'][0], true);
+        $payload = ['created' => $n, 'existing' => $result['existing'], 'unapproved' => $result['unapproved'], 'awaiting' => $n > 0 && $await, 'message' => $msg,
+            'awaiting_message' => $await ? $this->awaitingMessage($result['created'][0] ?? new Risk(['risk_type' => 'active', 'organization_unit_id' => $unitId]), true) : null];
+
+        return $request->expectsJson() ? response()->json($payload) : redirect()->route('risk.active.index')->with('success', $msg);
+    }
+
+    /**
+     * قرار ٧١: منسق الخطر في الدفعة منسق سلامة الوحدة — صاحب الحساب إن كان هو منسقها، وإلا منسق الوحدة نفسها، وإلا أقرب منسق فوقها.
+     * بلا وحدة (نطاق المعهد كله) لا منسق تلقائياً.
+     */
+    private function unitCoordinatorId(?int $unitId): ?int
+    {
+        if (!$unitId) return null;
+        $me = $this->userProfile();
+        if ($me && $me->role === 'safety_coordinator' && $me->is_active) return (int) $me->user_id;
+        for ($u = OrganizationUnit::find($unitId), $n = 0; $u && $n < 10; $u = $u->parent_id ? OrganizationUnit::find($u->parent_id) : null, $n++) {
+            $id = \App\Modules\Governance\Models\UserProfile::where('role', 'safety_coordinator')->where('is_active', true)
+                ->where('organization_unit_id', $u->id)->orderBy('id')->value('user_id');
+            if ($id) return (int) $id;
+        }
+        return null;
+    }
+
     /** قرار ٧٠: ما يقال لمن فعّل وليس هو المعتمد — من ينتظر؛ وإن لم يكن للمعتمد حساب قيل ذلك، لا صمت */
-    private function awaitingMessage(Risk $risk): string
+    private function awaitingMessage(Risk $risk, bool $many = false): string
     {
         $who = RiskApproval::isGeneral($risk) ? 'مسؤول السلامة' : 'مدير «'.($risk->organizationUnit?->name ?? 'الوحدة').'»';
-        $msg = 'فُعّل الخطر وأُرسل إلى '.$who.' ليعتمده — يصير نشطاً باعتماده.';
+        $msg = $many ? 'أُرسلت إلى '.$who.' ليعتمدها — تصير نشطة باعتماده.' : 'فُعّل الخطر وأُرسل إلى '.$who.' ليعتمده — يصير نشطاً باعتماده.';
         return RiskApproval::approverIds($risk) ? $msg : $msg.' تنبيه: لا حساب مفعّلاً لمن يعتمده — أبلغ مسؤول السلامة.';
     }
 
@@ -327,6 +412,23 @@ class RiskController extends Controller
         } catch (\Throwable $e) {
             return redirect()->back()->with('error', 'تعذّر الاعتماد: '.$e->getMessage());
         }
+    }
+
+    /** قرار ٧١: «اعتمدها كلها» من بطاقة الدفعة — يعتمد مما ينتظر ما يملك هذا الحساب اعتماده، ويترك غيره كما هو */
+    public function approveBulk(Request $request)
+    {
+        $validated = $request->validate(['ids' => ['required', 'array', 'min:1', 'max:500'], 'ids.*' => ['integer']]);
+        $n = 0;
+        foreach (Risk::whereIn('id', $validated['ids'])->where('status', 'pending_approval')->orderBy('id')->get() as $risk) {
+            if (!RiskApproval::canApprove(Auth::user(), $risk)) continue;
+            try {
+                $this->riskService->approve($risk, Auth::id(), null);
+                $n++;
+            } catch (\Throwable $e) {
+                // خطر تغيّرت حالته بين العرض والضغطة يُترك؛ الباقي يُعتمد
+            }
+        }
+        return redirect()->back()->with($n ? 'success' : 'error', $n ? 'اعتُمدت الأخطار: '.$n.'.' : 'لا خطر مما ينتظر تملك اعتماده.');
     }
 
     public function reject(Request $request, Risk $risk)

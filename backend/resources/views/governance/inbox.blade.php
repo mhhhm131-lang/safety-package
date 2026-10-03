@@ -123,7 +123,16 @@
             <div class="fw-bold">{{ $e['question'] }}</div>
             @if($e['late'])<div class="small text-muted mt-1"><span class="badge st-late">{{ $e['late'] }} متأخر</span></div>@endif
           </div>
-          <div class="task-actions"><button class="btn btn-g collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#{{ $bid }}" aria-expanded="false" aria-controls="{{ $bid }}">{{ $e['open'] }} <i class="bi bi-chevron-down small"></i></button></div>
+          <div class="task-actions">
+            {{-- قرار ٧١: دفعة لها فعل واحد على بنودها كلها («اعتمدها كلها») — ثم «اعرضها» لمن يريد واحداً واحداً --}}
+            @if(!empty($e['all']))
+            <form method="post" action="{{ $e['all']['url'] }}" class="m-0" data-all="{{ $e['batch'] }}">@csrf
+              @foreach($e['all']['ids'] as $id)<input type="hidden" name="ids[]" value="{{ $id }}">@endforeach
+              <button class="btn btn-g">{{ $e['all']['label'] }}</button>
+            </form>
+            @endif
+            <button class="btn {{ empty($e['all']) ? 'btn-g' : 'btn-o' }} collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#{{ $bid }}" aria-expanded="false" aria-controls="{{ $bid }}">{{ $e['open'] }} <i class="bi bi-chevron-down small"></i></button>
+          </div>
         </div>
         <div class="collapse" id="{{ $bid }}">
           @foreach($e['tasks'] as $t)

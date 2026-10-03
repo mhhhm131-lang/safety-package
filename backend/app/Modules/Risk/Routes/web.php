@@ -67,11 +67,15 @@ Route::middleware(['web', 'auth'])->prefix('app/risk')->name('risk.')->group(fun
         Route::post('/{risk}/update', [RiskController::class, 'update'])->name('update')->whereNumber('risk');
         Route::get('/{risk}/activate', [RiskController::class, 'activateForm'])->name('activate.form')->whereNumber('risk');
         Route::post('/{risk}/activate', [RiskController::class, 'activate'])->name('activate')->whereNumber('risk');
+        // قرار ٧١: تفعيل المحدَّد من السجل العام دفعةً
+        Route::post('/reference/activate-bulk', [RiskController::class, 'activateBulk'])->name('activate.bulk');
     });
 
     Route::middleware('permission:risk.approve')->group(function () {
         Route::get('/approval/queue', [RiskController::class, 'approvalQueue'])->name('approval.queue');
         Route::post('/{risk}/approve', [RiskController::class, 'approve'])->name('approve');
+        // قرار ٧١: «اعتمدها كلها» — ما يملك اعتماده مما ينتظر
+        Route::post('/approve-bulk', [RiskController::class, 'approveBulk'])->name('approve.bulk');
         // المرحلة ١٨-٢: خطر فعلي جديد ← السجل العام بقرار مسؤول السلامة
         Route::post('/{risk}/to-reference', [RiskController::class, 'toReference'])->name('toReference')->whereNumber('risk');
         Route::post('/{risk}/reject', [RiskController::class, 'reject'])->name('reject');

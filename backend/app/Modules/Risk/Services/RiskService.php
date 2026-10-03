@@ -185,10 +185,16 @@ class RiskService
         });
     }
 
-    /** قرار ٦٩: التنبيه يصل من يعتمد هذا الخطر — مدير وحدته (أو ما فوقها)، أو مسؤول السلامة للعام */
-    private function notifyApprovers(Risk $risk): void
+    /** قرار ٦٩: التنبيه يصل من يعتمد هذا الخطر — مدير وحدته (أو ما فوقها)، أو مسؤول السلامة للعام. قرار ٧١: الدفعة تنبيه واحد بعددها */
+    private function notifyApprovers(Risk $risk, int $count = 1): void
     {
         foreach (\App\Modules\Risk\Support\RiskApproval::approverIds($risk) as $approverId) {
+            if ($count > 1) {
+                $where = $risk->organizationUnit ? ' في «'.$risk->organizationUnit->name.'»' : '';
+                $this->notificationService->create($approverId, 'risk.approve', 'أخطار بانتظار اعتمادك',
+                    "فُعّلت {$count} أخطار من السجل العام{$where} وتنتظر اعتمادك.", '/app/risk/approval/queue');
+                continue;
+            }
             $this->notificationService->create($approverId, 'risk.approve', 'خطر بانتظار اعتمادك',
                 "الخطر «{$risk->title}» قُدّم للاعتماد.", '/app/risk/approval/queue');
         }
@@ -315,9 +321,9 @@ class RiskService
      * قرار ٧٠: `$awaitApproval` — من لا يعتمد هذا الخطر (المنسق لوحدته، مسؤول السلامة والمناوب لإدارة، المناوب للعام)
      * يفعّله «بانتظار الاعتماد» ويُنبَّه معتمده؛ والمعتمد نفسه والبذر نشط فوراً. الحكم في `RiskApproval::activatesDirectly`.
      */
-    public function activateFromReference(Risk $referenceRisk, ?int $userId, array $data, bool $awaitApproval = false): Risk
+    public function activateFromReference(Risk $referenceRisk, ?int $userId, array $data, bool $awaitApproval = false, bool $notify = true): Risk
     {
-        return DB::transaction(function () use ($referenceRisk, $userId, $data, $awaitApproval) {
+        return DB::transaction(function () use ($referenceRisk, $userId, $data, $awaitApproval, $notify) {
             $severity = $data['severity'] ?? $referenceRisk->severity;
             $likelihood = $data['likelihood'] ?? $referenceRisk->likelihood;
 
@@ -357,12 +363,48 @@ class RiskService
                 'actor_id'   => $userId,
             ]);
 
-            if ($awaitApproval) {
+            if ($awaitApproval && $notify) {
                 $this->notifyApprovers($activeRisk);
             }
 
             return $activeRisk;
         });
+    }
+
+    /**
+     * قرار ٧١: تفعيل دفعة من السجل العام لوحدة واحدة (أو للمعهد كله) بمنسق ومعالج واحدين.
+     * يُتخطّى ما ليس معتمداً في السجل العام، وما هو موجود أصلاً في سجل الوحدة (ولو ينتظر الاعتماد) — لا تكرار.
+     * الشدة والاحتمال والمراحل تُنسخ كما هي. تنبيه المعتمد (قرار ٧٠) على المستدعي: `notifyActivationAwaiting` مرة واحدة بالعدد.
+     *
+     * @param array<int> $referenceIds
+     * @return array{created: Risk[], existing: int, unapproved: int}
+     */
+    public function activateManyFromReference(array $referenceIds, ?int $userId, array $data, bool $awaitApproval = false): array
+    {
+        $ids = array_values(array_unique(array_map('intval', $referenceIds)));
+        $refs = Risk::where('risk_type', 'reference')->whereIn('id', $ids)->whereIn('status', ['approved', 'active'])->orderBy('id')->get();
+        $unitId = !empty($data['organization_unit_id']) ? (int) $data['organization_unit_id'] : null;
+
+        return DB::transaction(function () use ($refs, $ids, $userId, $data, $unitId, $awaitApproval) {
+            $created = [];
+            $existing = 0;
+            foreach ($refs as $ref) {
+                $there = Risk::where('risk_type', 'active')->where('parent_reference_id', $ref->id)->whereNotIn('status', ['rejected', 'closed'])
+                    ->when($unitId, fn ($q) => $q->where('organization_unit_id', $unitId), fn ($q) => $q->whereNull('organization_unit_id'))->exists();
+                if ($there) {
+                    $existing++;
+                    continue;
+                }
+                $created[] = $this->activateFromReference($ref, $userId, $data, $awaitApproval, false);
+            }
+            return ['created' => $created, 'existing' => $existing, 'unapproved' => count($ids) - $refs->count()];
+        });
+    }
+
+    /** قرار ٧١: تنبيه معتمد الدفعة مرة واحدة بعددها (خطر واحد: تنبيهه المفرد باسمه) */
+    public function notifyActivationAwaiting(Risk $risk, int $count): void
+    {
+        $this->notifyApprovers($risk, $count);
     }
 
 }

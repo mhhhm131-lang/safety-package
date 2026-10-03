@@ -78,6 +78,10 @@ class RiskTasks implements TaskSource
             secondary: ['label' => 'التفاصيل', 'url' => route('risk.show', $r)],
             detailsUrl: route('risk.show', $r),
             createdAt: $r->created_at,
+            // قرار ٧١: ما ينتظر الاعتماد في الوحدة نفسها بطاقة واحدة بعددها و«اعتمدها كلها»؛ كل بند باسمه وزره تحتها
+            place: $r->organizationUnit ? '«'.$r->organizationUnit->name.'»' : ($r->risk_type === 'active' ? 'نطاق المعهد كله' : 'السجل العام'),
+            batch: 'risk.approve',
+            item: $r->title,
         ))->values());
     }
 }
