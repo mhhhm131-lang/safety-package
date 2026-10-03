@@ -14,8 +14,8 @@ class RiskStateMachine extends StateMachine
             ],
             'pending_approval' => [
                 // قرار ٦٩: مسؤول السلامة للعام، ومديرو الوحدات لمخاطر وحداتهم (التفصيل في RiskApproval::canApprove)
-                'approved' => ['system_admin', 'branch_manager', 'department_manager', 'section_manager'],
-                'rejected' => ['system_admin', 'branch_manager', 'department_manager', 'section_manager'],
+                'approved' => ['system_admin', ...\App\Modules\Risk\Support\RiskApproval::UNIT_MANAGERS],
+                'rejected' => ['system_admin', ...\App\Modules\Risk\Support\RiskApproval::UNIT_MANAGERS],
             ],
             'rejected' => [
                 'draft' => ['any'],

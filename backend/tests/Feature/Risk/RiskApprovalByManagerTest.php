@@ -80,6 +80,66 @@ class RiskApprovalByManagerTest extends TestCase
         $this->assertNull($this->card($this->mudir, $key));
     }
 
+    /**
+     * تتمة قرار ٦٩ (٢٠٢٦-١٠-٠٣ بكلمته «هم مدراء إدارات وأقسام ولهم دور في النظام» ثم «نعم موافق»):
+     * مدير الشؤون الإدارية والهندسية، ومدير المرافق والصيانة، ورئيس الأمن والسلامة مديرون — كلٌّ يعتمد مخاطر وحدته بحسابه نفسه.
+     * كُشف من أول تجربة له على المنشور: الاختبارات كانت تجرّب «مدير إدارة» وحده.
+     *
+     * @dataProvider specialManagers
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('specialManagers')]
+    public function test_institute_special_managers_approve_the_risks_of_their_unit(string $role): void
+    {
+        $adm = $this->orgUnit('adm-eng');
+        $manager = $this->makeUser($role, 'adm-eng');
+        $unlinked = $this->makeUser($role);            // الدور نفسه بلا وحدة: لا يعتمد شيئاً
+        $coord = $this->makeUser('safety_coordinator', 'adm-eng');
+        $r = $this->makeRisk(['title' => 'تماس كهربائي في غرفة المولد', 'created_by_id' => $coord->id, 'organization_unit_id' => $adm->id, 'status' => 'draft']);
+        $elsewhere = $this->draft($this->coord);       // خطر الموارد البشرية
+        $this->actingAs($coord)->post(route('risk.submit', $r))->assertRedirect();
+        $this->actingAs($this->coord)->post(route('risk.submit', $elsewhere))->assertRedirect();
+
+        // البطاقة والتنبيه والطابور عنده، لخطر وحدته وحده
+        $key = "risk:{$r->id}:approve";
+        $this->assertNotNull($this->card($manager, $key), "{$role}: لم تصله بطاقة اعتماد خطر وحدته");
+        $this->assertNull($this->card($manager, "risk:{$elsewhere->id}:approve"), "{$role}: وصلته بطاقة خطر إدارة أخرى");
+        $this->assertNull($this->card($unlinked, $key), "{$role} بلا وحدة: وصلته بطاقة");
+        $this->assertDatabaseHas('app_notifications', ['user_id' => $manager->id, 'type' => 'risk.approve']);
+        $this->actingAs($manager)->get(route('risk.approval.queue'))->assertOk()->assertSee($r->title)->assertDontSee($elsewhere->title);
+        $this->actingAs($manager)->get('/app')->assertOk()->assertSee('data-task="'.$key.'"', false);
+
+        // لا يعتمد خطر إدارة أخرى، وغير المربوط بوحدة لا يعتمد
+        $this->actingAs($manager)->post(route('risk.approve', $elsewhere))->assertForbidden();
+        $this->actingAs($unlinked)->post(route('risk.approve', $r))->assertForbidden();
+        $this->actingAs($this->salama)->post(route('risk.approve', $r))->assertForbidden(); // خطر إدارة: ليس لمسؤول السلامة
+
+        $this->actingAs($manager)->post($this->card($manager, $key)->primary['url'])->assertRedirect();
+        $this->assertSame('approved', $r->fresh()->status);
+        $this->assertSame($manager->id, $r->fresh()->approved_by_id);
+        $this->assertNull($this->card($manager, $key));
+
+        // ويرفض بسبب فيعود لكاتبه
+        $second = $this->makeRisk(['title' => 'تسرّب في غرفة المضخات', 'created_by_id' => $coord->id, 'organization_unit_id' => $adm->id, 'status' => 'draft']);
+        $this->actingAs($coord)->post(route('risk.submit', $second))->assertRedirect();
+        $this->actingAs($manager)->post(route('risk.reject', $second), ['note' => 'ينقصه إجراء التحكم'])->assertRedirect();
+        $this->assertSame('rejected', $second->fresh()->status);
+        $this->assertNotNull($this->card($coord, "risk:{$second->id}:rejected"));
+    }
+
+    /** قائمة واحدة: من يملك صلاحية الاعتماد = مسؤول السلامة + مديرو الوحدات — حتى لا تفترق القائمتان كما افترقتا */
+    public function test_approval_permission_and_unit_managers_are_the_same_list(): void
+    {
+        $this->assertEqualsCanonicalizing(
+            [\App\Modules\Risk\Support\RiskApproval::GENERAL_APPROVER, ...\App\Modules\Risk\Support\RiskApproval::UNIT_MANAGERS],
+            \App\Core\Permissions\PermissionRegistry::PERMISSIONS['risk.approve'],
+        );
+    }
+
+    public static function specialManagers(): array
+    {
+        return ['مدير الشؤون الإدارية والهندسية' => ['admin_eng_manager'], 'مدير المرافق والصيانة' => ['facilities_manager'], 'رئيس الأمن والسلامة' => ['security_safety_head']];
+    }
+
     public function test_manager_approves_risks_of_units_under_him_and_not_above_him(): void
     {
         $section = OrganizationUnit::create(['name' => 'قسم التوظيف', 'code' => 'hr-rec', 'unit_type' => 'section', 'parent_id' => $this->hr->id, 'is_active' => true]);
