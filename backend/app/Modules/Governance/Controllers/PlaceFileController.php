@@ -74,6 +74,10 @@ class PlaceFileController extends Controller
         $plans[] = ['key' => 'team', 'url' => null] + ($events ? $events['card'] : $teamCard);
 
         $ui = PermissionRegistry::uiRole($user->role());
+        // مخاطر المكان المفعّلة كما يراها صاحب الحساب: خطر الوحدة التي تشغل المكان منها ولو لم يُكتب عليه مكان (Risk::scopeOfPlace)،
+        // وكلٌّ يرى ما يراه في السجل الفعلي — مدير القسم ومنسقه مخاطر قسمهما لا مخاطر كل الإدارات (RiskApproval::visibleTo)
+        $placeRisks = fn () => \App\Modules\Risk\Support\RiskApproval::visibleTo(
+            \App\Modules\Risk\Models\Risk::where('risk_type', 'active')->ofPlace($place->id)->inEffect(), $user->profile);
         return view('governance.places.file', [
             'place' => $place, 'forms' => R::formsOf($hz), 'systems' => $systems, 'open' => $open, 'kpi' => $kpi, 'sum' => $sum, 'plans' => $plans,
             'units' => $this->units($place),
@@ -85,9 +89,8 @@ class PlaceFileController extends Controller
             'canRisks' => $canRisks = PermissionRegistry::hasPermission($user->role(), 'risk.list'),
             // ٢٦-٦ (قرار ٦٦): البنود الثمانية — مخاطر المكان بمنسقها ومعالجها (لمن يملك السجل)، والحالة الطارئة المفتوحة، وطلب التصريح هنا
             // قرار ٧٠: «مفعّل» = معتمد يعمل — ما ينتظر الاعتماد والمسودة والمرفوض ليس مفعّلاً بعد
-            'risks' => $canRisks ? \App\Modules\Risk\Models\Risk::where('risk_type', 'active')->where('place_id', $place->id)->inEffect()
-                ->with('assignedCoordinator', 'assignedFieldTeam')->orderByDesc('risk_score')->limit(12)->get() : collect(),
-            'risksTotal' => $canRisks ? \App\Modules\Risk\Models\Risk::where('risk_type', 'active')->where('place_id', $place->id)->inEffect()->count() : 0,
+            'risks' => $canRisks ? $placeRisks()->with('assignedCoordinator', 'assignedFieldTeam')->orderByDesc('risk_score')->orderBy('id')->limit(12)->get() : collect(),
+            'risksTotal' => $canRisks ? $placeRisks()->count() : 0,
             'openEmergency' => \App\Modules\Emergency\Models\EmergencyIncident::open()->where('place_id', $place->id)->orderByDesc('triggered_at')->get(),
             'canEmergency' => PermissionRegistry::hasPermission($user->role(), 'emergency.view') || PermissionRegistry::hasPermission($user->role(), 'emergency.respond'),
             // ٢٦-٦-ب: مسار طلب التصريح يشترط permit.list مع permit.create (الموظف يملك الأولى دون الثانية فكان الزر يفتح ٤٠٣) — الزر بشرط المسار نفسه

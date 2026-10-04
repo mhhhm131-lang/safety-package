@@ -29,6 +29,17 @@ final class RiskApproval
      */
     public const REGISTER_WIDE = ['system_admin', 'system_staff', 'top_management', 'safety_committee'];
 
+    /**
+     * قرار ٧٠: ما يراه صاحب الحساب من سجل الإدارات — أدوار السجل كله ترى الكل؛ وغيرها وحدته وما تحتها وما بلا وحدة.
+     * القاعدة نفسها التي يطبّقها `AppliesOrgUnitScope` في متحكم المخاطر، لمن يعرض المخاطر خارجه (ملف المكان).
+     */
+    public static function visibleTo($query, ?UserProfile $profile)
+    {
+        if ($profile && in_array($profile->role, self::REGISTER_WIDE, true)) return $query;
+        $allowed = $profile?->organization_unit_id ? OrganizationUnit::descendantIdsOf($profile->organization_unit_id) : [];
+        return $query->where(fn ($q) => $q->whereNull('organization_unit_id')->orWhereIn('organization_unit_id', $allowed));
+    }
+
     /** قرار ٧٠: من يعتمد الخطر إن فعّله بنفسه صار نشطاً فوراً؛ غيره ينتظر المعتمد. $unitId فارغ = نطاق المعهد كله */
     public static function activatesDirectly(User $user, ?int $unitId): bool
     {

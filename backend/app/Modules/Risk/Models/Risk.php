@@ -53,6 +53,19 @@ class Risk extends Model
         return $query->whereNotIn('status', self::NOT_IN_EFFECT);
     }
 
+    /**
+     * مخاطر مكان: ما كُتب عليه المكان، أو خطر وحدة تشغل هذا المكان ولم يُكتب عليه مكان.
+     * التفعيل لوحدة يكتب الوحدة ولا يسأل عن المكان — فالبحث بخانة المكان وحدها كان يُخفي سجل الوحدة عن ملف مكانها
+     * (كُشف على المنشور ٢٠٢٦-١٠-٠٤: ١٥١ خطراً لقسم في المكاتب الإدارية وملف المكان يقول «٠»).
+     */
+    public function scopeOfPlace($query, ?int $placeId)
+    {
+        if (!$placeId) return $query->whereRaw('1 = 0');
+        return $query->where(fn ($q) => $q->where('risks.place_id', $placeId)
+            ->orWhere(fn ($w) => $w->whereNull('risks.place_id')
+                ->whereIn('risks.organization_unit_id', OrganizationUnit::where('place_id', $placeId)->select('id'))));
+    }
+
     protected static function booted(): void
     {
         static::creating(function (Risk $risk) {

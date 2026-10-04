@@ -51,7 +51,7 @@ class RiskController extends Controller
         ]);
         $this->scopeToUserOrgUnit($query);
         if ($place = $request->input('place')) {
-            $query->whereHas('place', fn ($q) => $q->where('code', $place));
+            $query->ofPlace(Place::idByCode((string) $place)); // مخاطر المكان: ما كُتب عليه، وخطر الوحدة التي تشغله
         }
         $this->applyFilters($query, $request);
         $risks = $query->latest()->paginate(25);

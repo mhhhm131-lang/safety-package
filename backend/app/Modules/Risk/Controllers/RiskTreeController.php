@@ -69,7 +69,7 @@ class RiskTreeController extends Controller
     private function scopeToPlace($q): void
     {
         if ($code = request()->query('place')) {
-            $q->whereHas('place', fn ($p) => $p->where('code', $code));
+            $q->ofPlace(\App\Modules\Governance\Models\Place::idByCode((string) $code)); // مخاطر المكان: ما كُتب عليه، وخطر الوحدة التي تشغله
         }
         if ($unit = request()->query('unit')) {
             $u = \App\Modules\Governance\Models\OrganizationUnit::where('code', $unit)->orWhere('id', (int) $unit)->first();
