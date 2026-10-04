@@ -4,7 +4,8 @@ databases:
   - name: ipa-safety-db
     databaseName: ipa_safety
     user: ipa_safety
-    plan: free
+    # مدفوعة منذ ٢٠٢٦-١٠-٠٤ (قرار ٧٣): المجانية تنتهي بعد ٣٠ يوماً وتُحذف. الخادم أدناه يبقى مجانياً.
+    plan: 0.1c-256mb
 
 services:
   - type: web
