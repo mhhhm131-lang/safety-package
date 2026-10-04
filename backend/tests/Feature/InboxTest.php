@@ -79,7 +79,7 @@ class InboxTest extends TestCase
     /** بلاغ شاغل: يظهر للفني المعيَّن (افتحه) ← بعد الفتح (عولج؟) ← بعد «عولج» يختفي عنده ويظهر للمركز (أغلق؟) ← بعد الإغلاق يختفي. */
     public function test_incident_tasks_move_from_technician_to_center_and_vanish(): void
     {
-        $this->post('/incident/normal', ['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')])->assertRedirect();
+        $this->legacyReport(['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')]);
         $i = Incident::first();
         $this->assertSame('received', $i->status); // ٢١-٤: بلا خطر يبقى في المركز
         $i = app(\App\Modules\Incident\Services\IncidentService::class)->referToField($i, $this->salama->id, $this->fani->id); // ٢١-٤ (قرار ٥٤): لا قفز آلي إلى فني المكان — المركز يحيل
@@ -118,7 +118,7 @@ class InboxTest extends TestCase
     /** بلاغ بلا فني للمكان: المركز يرى «أحله» (٢٦-١٢: بلا كسرة تُقرأ نقطة)؛ ومبلّغ بحساب يرى «هل عولج فعلاً؟» بزر POST. */
     public function test_center_refer_task_and_reporter_closure_task(): void
     {
-        $this->actingAs($this->emp)->post('/incident/normal', ['description' => 'رائحة احتراق في المخزن', 'place_id' => Place::idByCode('HZ-08')]);
+        $this->legacyReport(['description' => 'رائحة احتراق في المخزن', 'place_id' => Place::idByCode('HZ-08')], 'normal', $this->emp->id);
         $i = Incident::first();
         $this->assertSame('received', $i->status); // لا فني لـ HZ-08
         $this->actingAs($this->salama)->get('/app')->assertOk()->assertSee('لا فني للمكان — أحله');
@@ -261,7 +261,7 @@ class InboxTest extends TestCase
     /** ١١-٥: فتح المهمة من الصندوق يعلّم إشعارها مقروءاً ويحوّل إليها؛ الروابط الخارجية تُرفض. */
     public function test_opening_a_task_marks_its_notification_read_and_redirects(): void
     {
-        $this->post('/incident/normal', ['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')]);
+        $this->legacyReport(['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')]);
         $i = Incident::first();
         app(\App\Modules\Incident\Services\IncidentService::class)->referToField($i, $this->salama->id, $this->fani->id); // ٢١-٤ (قرار ٥٤): لا قفز آلي إلى فني المكان — المركز يحيل
         $this->assertDatabaseHas('app_notifications', ['user_id' => $this->fani->id, 'type' => 'incident.forwarded', 'is_read' => false]);
@@ -275,7 +275,7 @@ class InboxTest extends TestCase
     /** قرار المستخدم ٢٠٢٦-٠٩-١٣: بلاغات الشاغلين وبلاغات الفحص قسمان منفصلان بأيقونتين، لا يختلطان. */
     public function test_inbox_separates_occupant_reports_from_inspection_reports(): void
     {
-        $this->post('/incident/normal', ['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')]);
+        $this->legacyReport(['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')]);
         app(\App\Modules\Incident\Services\IncidentService::class)->referToField(Incident::first(), $this->salama->id, $this->fani->id); // ٢١-٤ (قرار ٥٤): لا قفز آلي إلى فني المكان — المركز يحيل
         $stamp = now()->subHour()->format('Y/m/d').' — '.now()->subHour()->format('H:i');
         \App\Modules\Store\Models\InstituteDocument::create(['key' => 'ipa-office-form-v10', 'version' => 1, 'data' => json_encode(['reports' => [

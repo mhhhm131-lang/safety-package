@@ -42,8 +42,8 @@ class ReportWithLessTest extends TestCase
 
     public function test_place_comes_from_the_code_then_from_the_account_then_from_the_device(): void
     {
-        // ضيف بلا رمز: لا مكان محدد، والصفحة تعرف كيف تقرأ آخر مكان من الجهاز
-        $h = $this->get('/incident/normal')->assertOk()->getContent();
+        // ضيف بلا رمز: لا مكان محدد، والصفحة تعرف كيف تقرأ آخر مكان من الجهاز (قرار ٧٢: نموذج الضيف هو السري)
+        $h = $this->get('/incident/secret')->assertOk()->getContent();
         $this->assertNull($this->selectedPlace($h));
         $this->assertStringContainsString('ipa-last-place', $h);
 
@@ -55,7 +55,7 @@ class ReportWithLessTest extends TestCase
 
     public function test_tracking_code_is_kept_on_the_device_and_offered_back(): void
     {
-        $this->post('/incident/normal', ['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')])->assertRedirect();
+        $this->legacyReport(['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')]);
         $i = Incident::first();
         $h = $this->get('/incident/success?code='.$i->secret_tracking_code)->assertOk()->getContent();
         $this->assertStringContainsString('ipa-my-reports', $h);           // يُحفظ الرمز في المتصفح
@@ -71,7 +71,7 @@ class ReportWithLessTest extends TestCase
     {
         $salama = $this->user('salama', 'system_admin');
         $fani = $this->user('fani', 'tech_electrical');
-        $this->post('/incident/normal', ['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')])->assertRedirect();
+        $this->legacyReport(['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')]);
         $i = Incident::first();
         app(IncidentService::class)->referToField($i, $salama->id, $fani->id);
         $i->update(['resolution_summary' => 'بُدّل البلاط']);

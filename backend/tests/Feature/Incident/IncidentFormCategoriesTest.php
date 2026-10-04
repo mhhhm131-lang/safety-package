@@ -26,9 +26,11 @@ class IncidentFormCategoriesTest extends TestCase
     {
         RiskCategory::create(['name' => 'فئة عامة للاختبار', 'is_active' => true, 'created_at' => now()]);
 
-        $this->get('/incident/normal')
+        // قرار ٧٢: الضيف نموذجه السري (العادي بحساب) — والفئات فيه كما في العادي
+        $this->get('/incident/secret')
             ->assertOk()
             ->assertSee('فئة عامة للاختبار', false);
+        $this->get('/incident/normal')->assertRedirect();
     }
 
     public function test_normal_form_shows_global_categories_for_authenticated_tenant_user(): void

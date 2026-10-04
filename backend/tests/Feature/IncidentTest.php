@@ -152,8 +152,8 @@ class IncidentTest extends TestCase
     public function test_normal_report_without_field_worker_waits_for_center_then_links_to_inspection_form(): void
     {
         // القبو: لا فني ولا منسق مسجّلان للمكان → يتوقف عند «وصل المركز»
-        $this->post('/incident/normal', ['description' => 'طفاية حريق مفقودة عند المدخل', 'place_id' => $this->placeId('HZ-02'),
-            'risk_id' => $this->reference->id, 'reporter_name' => 'سعد', 'reporter_phone' => '0500000000'])->assertRedirect();
+        $this->legacyReport(['description' => 'طفاية حريق مفقودة عند المدخل', 'place_id' => $this->placeId('HZ-02'),
+            'risk_id' => $this->reference->id, 'reporter_name' => 'سعد', 'reporter_phone' => '0500000000']);
         $incident = Incident::first();
         $this->assertSame('received', $incident->status);
         $this->assertNull($incident->incident_field_team_id);
@@ -220,7 +220,7 @@ class IncidentTest extends TestCase
     {
         $emp = $this->user('emp', 'employee');
         // إغلاق بملاحظة (لا يحتاج فنياً) — إضافة معهدية
-        $this->post('/incident/normal', ['description' => 'باب الطوارئ يصدر صريراً', 'place_id' => $this->placeId('HZ-02'), 'risk_id' => $this->reference->id]);
+        $this->legacyReport(['description' => 'باب الطوارئ يصدر صريراً', 'place_id' => $this->placeId('HZ-02'), 'risk_id' => $this->reference->id]);
         $a = Incident::latest('id')->first();
         $this->actingAs($this->salama)->post("/app/incidents/{$a->id}/close-with-note", ['note' => 'زُيّت الباب في الجولة اليومية'])->assertSessionHas('success');
         $this->assertSame('closed', $a->fresh()->status);
@@ -248,20 +248,26 @@ class IncidentTest extends TestCase
         $this->assertSame('closed', $b->fresh()->status);
     }
 
-    /** المرحلة ١١-١ (أ، قرار ٣٤): الخطر اختياري للشاغل — التوجيه بالمكان وحده، والمركز يصنّف من صفحة البلاغ. */
-    public function test_normal_report_without_risk_routes_by_place_and_center_classifies(): void
+    /**
+     * قرار ٧٢ (يلغي «الخطر اختياري للشاغل» من قرار ٣٤): النموذج لا يرسل بلاغاً بلا خطر.
+     * وما أُرسل قبله بلا خطر قائم: يبقى في المركز والمركز يصنّفه من صفحة البلاغ.
+     */
+    public function test_report_needs_a_risk_and_an_old_report_without_one_is_classified_by_the_center(): void
     {
-        $this->post('/incident/normal', ['description' => 'بلاط مكسور قرب المصعد', 'place_id' => $this->placeId('HZ-06')])->assertRedirect()->assertSessionHasNoErrors();
+        $this->actingAs($this->user('emp', 'employee'))->post('/incident/normal', ['description' => 'بلاط مكسور قرب المصعد', 'place_id' => $this->placeId('HZ-06')])->assertSessionHasErrors('risk_id');
+        auth()->logout();
+        $this->assertSame(0, Incident::count());
+        $this->legacyReport(['description' => 'بلاط مكسور قرب المصعد', 'place_id' => $this->placeId('HZ-06')]);
         $i = Incident::first();
         $this->assertNotNull($i, 'البلاغ بلا خطر لم يُنشأ');
         $this->assertNull($i->risk_id);
         $this->assertNull($i->incident_field_team_id); // ٢١-٤ (قرار ٥٤، يعدّل شق التوجيه في قرار ٣٤): بلا خطر لا قفز إلى فني المكان
         $this->assertSame('received', $i->status);     // في المركز حتى يصنّفه
         $this->assertStringStartsWith('بلاط مكسور قرب المصعد', $i->title); // العنوان من الوصف حين لا خطر
-        // الصفحة العامة: قوائم التصنيف الثلاث ليست إلزامية
-        $html = $this->get('/incident/normal')->assertOk()->getContent();
-        $this->assertDoesNotMatchRegularExpression('/id="riskId"[^>]*required/', $html);
-        $this->assertDoesNotMatchRegularExpression('/id="riskCat"[^>]*required/', $html);
+        // النموذج: قوائم الخطر الثلاث إلزامية (في السري بلا دخول كما في العادي)
+        $html = $this->get('/incident/secret')->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('/id="riskId"[^>]*required/', $html);
+        $this->assertMatchesRegularExpression('/id="riskCat"[^>]*required/', $html);
         // المركز يرى أن البلاغ لم يُصنَّف ويصنّفه بزر الربط القائم
         $this->actingAs($this->salama)->get("/app/incidents/{$i->id}")->assertOk()->assertSee('لم يُصنَّف بعد');
         $this->actingAs($this->salama)->post("/app/incidents/{$i->id}/link-risk", ['risk_id' => $this->reference->id])->assertSessionHas('success');
@@ -296,12 +302,14 @@ class IncidentTest extends TestCase
         $this->actingAs($this->user('emp2', 'employee'))->get('/app/incidents')->assertForbidden();
         auth()->logout();
         $this->get('/app/incidents')->assertRedirect('/login');
-        $this->get('/incident/normal')->assertOk()->assertSee('name="risk_id"', false)->assertSee('HZ-06');
+        $this->get('/incident/normal')->assertRedirect(route('login', ['next' => '/incident/normal'])); // قرار ٧٢: العادي بحساب
+        $this->get('/incident/secret')->assertOk()->assertSee('name="risk_id"', false)->assertSee('HZ-06');
         $this->get('/incident?place=HZ-06')->assertOk()->assertSee('?place=HZ-06', false);
         $this->get('/incident/api/risks?sub_category_id='.$this->reference->sub_category_id)->assertOk()->assertJsonPath('0.id', $this->reference->id)->assertJsonPath('0.corrective_action', 'فصل التيار وعزل السلك فوراً');
-        // ١١-١ (أ، قرار ٣٤): الخطر اختياري في الأنواع الثلاثة — كان إلزامياً في العادي
-        $this->post('/incident/normal', ['description' => 'بلا خطر مختار', 'place_id' => $this->placeId('HZ-06')])->assertRedirect()->assertSessionHasNoErrors();
-        $this->post('/incident/secret', ['description' => 'بلاغ سري بلا تصنيف', 'place_id' => $this->placeId('HZ-06')])->assertRedirect();
+        // قرار ٧٢: الخطر إلزامي في العادي والسري — وما أُرسل قبله بلا خطر قائم يصنّفه المركز
+        $this->post('/incident/secret', ['description' => 'بلاغ سري بلا تصنيف', 'place_id' => $this->placeId('HZ-06')])->assertSessionHasErrors('risk_id');
+        $this->legacyReport(['description' => 'بلا خطر مختار', 'place_id' => $this->placeId('HZ-06')]);
+        $this->legacyReport(['description' => 'بلاغ سري بلا تصنيف', 'place_id' => $this->placeId('HZ-06')], 'secret');
         $s = Incident::latest('id')->first();
         $this->assertNull($s->risk_id);
         $this->assertSame('received', $s->status); // ٢١-٤ (قرار ٥٤): بلا خطر يبقى في المركز حتى يصنّفه — لا قفز إلى فني المكان
@@ -309,7 +317,7 @@ class IncidentTest extends TestCase
         InstituteDocument::create(['key' => 'ipa-place', 'version' => 1, 'data' => json_encode(['HZ-01' => ['units' => ['_' => ['dept' => 'adm-eng']]]])]);
         app(RiskService::class)->activateFromReference($this->reference, null, ['scope_type' => 'org_unit', 'organization_unit_id' => OrganizationUnit::where('code', 'adm-eng')->value('id'),
             'place_id' => $this->placeId('HZ-01'), 'assigned_field_team_id' => $this->fani2->id]);
-        $this->post('/incident/normal', ['description' => 'إنارة الطوارئ مطفأة في المواقف', 'place_id' => $this->placeId('HZ-01'), 'risk_id' => $this->reference->id]);
+        $this->legacyReport(['description' => 'إنارة الطوارئ مطفأة في المواقف', 'place_id' => $this->placeId('HZ-01'), 'risk_id' => $this->reference->id]);
         $n = Incident::latest('id')->first();
         $this->assertNull($n->incident_coordinator_id);
         $this->assertSame($this->fani2->id, $n->incident_field_team_id);
@@ -323,7 +331,7 @@ class IncidentTest extends TestCase
 
     public function test_deadlines_are_off_until_set_then_overdue_is_marked_and_escalated(): void
     {
-        $this->post('/incident/normal', ['description' => 'بلا مهلة', 'place_id' => $this->placeId('HZ-02'), 'risk_id' => $this->reference->id]);
+        $this->legacyReport(['description' => 'بلا مهلة', 'place_id' => $this->placeId('HZ-02'), 'risk_id' => $this->reference->id]);
         $this->assertNull(Incident::first()->deadline_at);
         $this->artisan('incidents:check-deadlines')->expectsOutputToContain('overdue marked: 0');
 
@@ -333,7 +341,7 @@ class IncidentTest extends TestCase
         $this->assertSame(2.0, Setting::deadlineHours('normal'));
         $this->assertNull(Setting::deadlineHours('secret'));
 
-        $this->post('/incident/normal', ['description' => 'بمهلة ساعتين', 'place_id' => $this->placeId('HZ-02'), 'risk_id' => $this->reference->id]);
+        $this->legacyReport(['description' => 'بمهلة ساعتين', 'place_id' => $this->placeId('HZ-02'), 'risk_id' => $this->reference->id]);
         $i = Incident::latest('id')->first();
         $this->assertSame('received', $i->status);
         $this->assertEqualsWithDelta(now()->addHours(2)->timestamp, $i->deadline_at->timestamp, 5);

@@ -45,7 +45,7 @@ class InboxBatchTest extends TestCase
 
     private function report(string $text, string $hz): Incident
     {
-        $this->post('/incident/normal', ['description' => $text, 'place_id' => Place::idByCode($hz)])->assertRedirect();
+        $this->legacyReport(['description' => $text, 'place_id' => Place::idByCode($hz)]);
         return Incident::latest('id')->firstOrFail();
     }
 

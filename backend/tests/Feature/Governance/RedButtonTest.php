@@ -70,6 +70,6 @@ class RedButtonTest extends TestCase
         // وفي التتبع كذلك
         $this->get('/incident/track')->assertOk()->assertSee('data-intent="emergency-call"', false)->assertSee('href="tel:'.Place::CENTER_PHONE.'"', false);
         // نموذج البلاغ نفسه بلا شريط حتى لا يغطي زر الإرسال
-        $this->get('/incident/normal')->assertOk()->assertDontSee('id="sosBar"', false);
+        $this->get('/incident/secret')->assertOk()->assertDontSee('id="sosBar"', false); // قرار ٧٢: العادي بحساب — نموذج الضيف هو السري
     }
 }

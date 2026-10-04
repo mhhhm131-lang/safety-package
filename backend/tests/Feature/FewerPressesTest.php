@@ -58,8 +58,7 @@ class FewerPressesTest extends TestCase
     /** بلاغ في HZ-06 يصل الفني ويُعالَج بصورة؛ يعيد البلاغ في حالة «عولج». */
     private function resolvedIncident(?User $reporter): Incident
     {
-        $req = $reporter ? $this->actingAs($reporter) : $this;
-        $req->post('/incident/normal', ['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')])->assertRedirect();
+        $this->legacyReport(['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')], 'normal', $reporter?->id);
         auth()->logout();
         $i = Incident::first();
         app(\App\Modules\Incident\Services\IncidentService::class)->referToField($i, $this->salama->id, $this->fani->id, $this->coord->id); // ٢١-٤ (قرار ٥٤): لا قفز آلي إلى فني المكان — المركز يحيل ويسمّي المنسق
@@ -108,7 +107,7 @@ class FewerPressesTest extends TestCase
     /** (ج) «عولج» و«تعذّر — صعّد» يفتحان صفحة البلاغ والنافذة مفتوحة؛ و(و) لا زر «بدء المعالجة». */
     public function test_field_inbox_buttons_open_the_modal_and_no_dead_begin_button(): void
     {
-        $this->post('/incident/normal', ['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')]);
+        $this->legacyReport(['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')]);
         $i = Incident::first();
         app(\App\Modules\Incident\Services\IncidentService::class)->referToField($i, $this->salama->id, $this->fani->id); // ٢١-٤ (قرار ٥٤): لا قفز آلي إلى فني المكان — المركز يحيل
         $this->actingAs($this->fani)->get("/app/incidents/{$i->id}")->assertOk()->assertDontSee('بدء المعالجة')->assertDontSee('begin-work');

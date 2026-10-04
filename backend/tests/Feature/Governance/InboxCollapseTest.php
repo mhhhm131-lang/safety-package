@@ -37,7 +37,7 @@ class InboxCollapseTest extends TestCase
     {
         $salama = $this->user('salama', 'system_admin');
         // مهمة واحدة: مطويّة أيضاً — لا فتح تلقائي (بكلمته)
-        $this->post('/incident/normal', ['description' => 'بلاط مكسور ١', 'place_id' => Place::idByCode('HZ-06')])->assertRedirect();
+        $this->legacyReport(['description' => 'بلاط مكسور ١', 'place_id' => Place::idByCode('HZ-06')]);
         $h = $this->actingAs($salama)->get('/app')->assertOk()->getContent();
         $this->assertStringNotContainsString('id="inboxSummary"', $h); // سطر العدّادات حُذف (تكرار)
         $this->assertMatchesRegularExpression('~<section data-module="بلاغات الشاغلين" data-n="1" data-od="0">\s*<button class="grp-h collapsed"[^>]*data-bs-toggle="collapse"[^>]*>.*?<span class="grp-ic "><i class="bi bi-megaphone-fill"></i><span class="grp-n">1</span></span>.*?class="collapse" id="grp-0"~s', $h);
@@ -45,7 +45,7 @@ class InboxCollapseTest extends TestCase
         $this->assertStringNotContainsString('<span class="grp-od"', $h); // لا متأخر ← لا علامة حمراء
 
         // أربع مهام: السطر نفسه بالعدد ٤، والبطاقات كلها في الصفحة (لا يُحذف شيء)
-        foreach ([2, 3, 4] as $i) $this->post('/incident/normal', ['description' => "بلاط مكسور $i", 'place_id' => Place::idByCode('HZ-06')])->assertRedirect();
+        foreach ([2, 3, 4] as $i) $this->legacyReport(['description' => "بلاط مكسور $i", 'place_id' => Place::idByCode('HZ-06')]);
         $h = $this->actingAs($salama)->get('/app')->assertOk()->getContent();
         $this->assertMatchesRegularExpression('~data-module="بلاغات الشاغلين" data-n="4" data-od="0"~', $h);
         $this->assertStringContainsString('<span class="grp-n">4</span>', $h);

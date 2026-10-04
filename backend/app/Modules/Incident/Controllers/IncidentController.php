@@ -45,8 +45,13 @@ class IncidentController extends Controller
     public function form(Request $request, string $type)
     {
         abort_unless(in_array($type, ['normal', 'urgent', 'secret'], true), 404);
-        // المرحلة ١٢-٢: قادم من كتاب المعهد بخطر محدد (?risk=) — لا يُسأل عنه ثانية
-        $presetRisk = ($rid = (int) $request->query('risk', 0)) ? Risk::where('id', $rid)->where('risk_type', 'reference')->first() : null;
+        // قرار ٧٢: العادي بحساب — المبلّغ معروف ولا يُغلق البلاغ إلا بموافقته؛ يعود إلى النموذج نفسه بعد الدخول. السري بلا دخول
+        if ($type === 'normal' && !Auth::check()) {
+            return redirect()->route('login', ['next' => $request->getRequestUri()]);
+        }
+        // المرحلة ١٢-٢: قادم من كتاب المعهد بخطر محدد (?risk=) — لا يُسأل عنه ثانية؛ قرار ٧٢: وما اختاره قبل خطأ في خانة أخرى يبقى مختاراً
+        $rid = (int) ($request->query('risk') ?: old('risk_id', 0));
+        $presetRisk = $rid ? Risk::where('id', $rid)->where('risk_type', 'reference')->first() : null;
         return view('modules.incidents.form', [
             'type' => $type,
             'places' => Place::orderBy('sort')->get(),
@@ -61,11 +66,15 @@ class IncidentController extends Controller
     public function store(Request $request, string $type)
     {
         abort_unless(in_array($type, ['normal', 'urgent', 'secret'], true), 404);
+        if ($type === 'normal' && !Auth::check()) { // قرار ٧٢: العادي بحساب
+            return redirect()->route('login', ['next' => route('incident.form', 'normal', false)]);
+        }
         $validated = $request->validate([
             'title' => ['nullable', 'string', 'max:200'],
             'description' => ['required', 'string', 'min:5', 'max:5000'],
-            // المرحلة ١١-١ (أ، قرار ٣٤): التصنيف عمل المركز لا الشاغل — الخطر اختياري في الأنواع الثلاثة، والتوجيه بالمكان
-            'risk_id' => ['nullable', 'integer', 'exists:risks,id'],
+            // قرار ٧٢ (يلغي «الخطر اختياري» من قرار ٣٤): العادي والسري لا يُرسلان بلا خطر — منه الإجراء والمنسق والمعالج.
+            // «العاجل» بلا باب منذ ٢٦-٣ (الزر الأحمر مكانه) ويبقى مساره القديم كما هو
+            'risk_id' => [$type === 'urgent' ? 'nullable' : 'required', 'integer', 'exists:risks,id'],
             'place_id' => ['required', 'integer', 'exists:places,id'], // المكان إلزامي: عليه يقوم التوجيه إلى فني المكان
             // ١٨-٣ (ج): الوحدة اختيارية ويجب أن تكون من المكان نفسه
             'place_unit_id' => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('place_units', 'id')->where('place_id', (int) $request->input('place_id'))->where('is_active', true)],
@@ -76,6 +85,7 @@ class IncidentController extends Controller
             'photo' => ['nullable', 'string', 'max:4500000'],
         ], [
             'description.required' => 'اكتب ما رأيته قبل الإرسال.',
+            'risk_id.required' => 'اختر الخطر — منه يُعرف الإجراء ومن يعالج البلاغ.',
             'place_id.required' => 'اختر المكان — منه يُعرف من يعالج البلاغ.',
         ]);
 

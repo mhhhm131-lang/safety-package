@@ -85,7 +85,7 @@ class TechRolesTest extends TestCase
         $munawib = User::create(['username' => 'mn', 'name' => 'المناوب', 'password' => '1234']);
         UserProfile::create(['user_id' => $munawib->id, 'role' => 'system_staff', 'is_active' => true]);
 
-        $this->post('/incident/normal', ['description' => 'مصعد عالق بين الدورين', 'place_id' => Place::idByCode('HZ-06')])->assertRedirect();
+        $this->legacyReport(['description' => 'مصعد عالق بين الدورين', 'place_id' => Place::idByCode('HZ-06')]);
         $i = Incident::first();
         // الإحالة إلى فني بالتخصص تُقبل كما كانت تُقبل للفني المنفّذ، ويظهر في قائمة الفنيين
         $this->actingAs($munawib)->get("/app/incidents/{$i->id}")->assertOk()->assertSee('فني المصاعد');

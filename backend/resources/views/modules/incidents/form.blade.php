@@ -12,12 +12,38 @@
   @elseif($type === 'secret')
     <div class="alert alert-secondary py-2 small"><b>هويتك مخفية تماماً.</b> لا اسم ولا هاتف ولا حساب. تستفيد منه المنظمة ولا يمنحك حق المطالبة. يصلك رمز تتبع بعد الإرسال — احفظه، فهو الطريقة الوحيدة لمتابعة بلاغك.</div>
   @else
-    <div class="text-muted small mb-2">لا يتطلب تسجيل دخول. يصل مركز السلامة ويُحال إلى فني المكان، <b>ولا يُغلق إلا بموافقتك</b> (من حسابك أو برمز التتبع).</div>
+    <div class="text-muted small mb-2">يُرسل باسمك من حسابك. يصل مركز السلامة ومعالج الخطر، <b>ولا يُغلق إلا بموافقتك</b>.</div>
   @endif
 
   <form method="post" action="{{ route('incident.store', $type) }}" id="incForm">
     @csrf
     <div class="row g-3">
+      {{-- قرار ٧٢ (٢٠٢٦-١٠-٠٤): الخطر أول النموذج وإلزامي في العادي والسري — به يعمل البلاغ وإجراءاته كما خُطط: الإجراء والمنسق والمعالج --}}
+      @if(!empty($presetRisk))
+      {{-- المرحلة ١٢-٢: جاء من كتاب المعهد (أو اختاره قبل خطأ في خانة أخرى) — الخطر محدد ولا يُسأل عنه ثانية --}}
+      <div class="col-12">
+        <label class="form-label fw-bold">الخطر <span class="text-danger">*</span></label>
+        <div class="p-2 rounded d-flex align-items-center gap-2 flex-wrap" style="background:#eef5f1;border:1px solid var(--line)" id="presetRisk">
+          <input type="hidden" name="risk_id" value="{{ $presetRisk->id }}">
+          <i class="bi bi-shield-exclamation"></i> <span><b>{{ $presetRisk->title }}</b> <span class="text-muted small">({{ $presetRisk->code }})</span></span>
+          <a class="small ms-auto" href="{{ route('incident.form', $type) }}{{ $preset ? '?place='.$preset : '' }}">ليس هذا؟ اختر خطراً آخر</a>
+        </div>
+      </div>
+      @elseif($type !== 'urgent')
+      <div class="col-12" id="riskFirst">
+        <label class="form-label fw-bold" for="riskCat">ما الخطر؟ <span class="text-danger">*</span></label>
+        <div class="row g-2">
+          <div class="col-md-4"><select id="riskCat" class="form-select" required>
+            <option value="">١. الفئة الرئيسية</option>
+            @foreach($riskCategories as $c)<option value="{{ $c->id }}">{{ $c->name }}</option>@endforeach
+          </select></div>
+          <div class="col-md-4"><select id="riskSub" class="form-select" required disabled><option value="">٢. الفئة الفرعية</option></select></div>
+          <div class="col-md-4"><select id="riskId" name="risk_id" class="form-select" required disabled><option value="">٣. الخطر</option></select></div>
+        </div>
+        <div class="form-text">من سجل المعهد — منه يُعرف الإجراء ومن يعالج البلاغ.</div>
+        <div id="riskHint" class="small mt-2 text-muted" hidden></div>
+      </div>
+      @endif
       <div class="col-md-6">
         <label class="form-label fw-bold">المكان <span class="text-danger">*</span></label>
         <select name="place_id" class="form-select" required>
@@ -59,17 +85,8 @@
         <div class="col-12"><label class="form-label">سبب طلب السرية (اختياري)</label><input name="secrecy_reason" class="form-control" value="{{ old('secrecy_reason') }}" maxlength="1000"></div>
       @endif
 
-      {{-- المرحلة ١١-١ (أ، قرار ٣٤): التصنيف عمل المركز لا الشاغل — القوائم الثلاث اختيارية ومطوية --}}
-      @if(!empty($presetRisk))
-      {{-- المرحلة ١٢-٢: جاء من كتاب المعهد — الخطر محدد ولا يُسأل عنه --}}
-      <div class="col-12">
-        <div class="p-2 rounded d-flex align-items-center gap-2 flex-wrap" style="background:#eef5f1;border:1px solid var(--line)" id="presetRisk">
-          <input type="hidden" name="risk_id" value="{{ $presetRisk->id }}">
-          <i class="bi bi-shield-exclamation"></i> <span>الخطر: <b>{{ $presetRisk->title }}</b> <span class="text-muted small">({{ $presetRisk->code }})</span></span>
-          <a class="small ms-auto" href="{{ route('incident.form', $type) }}{{ $preset ? '?place='.$preset : '' }}">ليس هذا؟ أرسل بلا تصنيف</a>
-        </div>
-      </div>
-      @else
+      {{-- «العاجل» بلا باب منذ ٢٦-٣ (الزر الأحمر مكانه): نموذجه القديم يبقى كما كان — الخطر اختياري ومطوي (المرحلة ١١-١ أ) --}}
+      @if($type === 'urgent' && empty($presetRisk))
       <div class="col-12">
         <details class="p-2 rounded" style="background:#eef5f1;border:1px solid var(--line)">
           <summary class="small text-muted"><i class="bi bi-shield-exclamation me-1"></i> تعرف نوع الخطر من سجل المعهد؟ حدّده هنا (اختياري — مركز السلامة يصنّف)</summary>

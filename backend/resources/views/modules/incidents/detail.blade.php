@@ -74,7 +74,7 @@
             <button class="btn btn-sm btn-outline-secondary">حفظ</button></form></details>
       @endif
     @else
-      <div class="text-muted small">لم يُصنَّف بعد — {{ $incident->isSecret() ? 'بلاغ سري بلا تصنيف' : 'الشاغل لا يصنّف' }}؛ يصنّفه المركز من السجل العام.</div>
+      <div class="text-muted small">لم يُصنَّف بعد — {{ $incident->isSecret() ? 'بلاغ سري بلا تصنيف' : 'أُرسل قبل أن يصير الخطر إلزامياً' }}؛ يصنّفه المركز من السجل العام.</div>
       @if($isCenter && !$terminal)
         <form method="post" action="{{ route('incidents.linkRisk', $incident) }}" class="d-flex gap-2 mt-2">@csrf
           <select name="risk_id" class="form-select form-select-sm" required><option value="">اختر من السجل العام…</option>@foreach($referenceRisks as $r)<option value="{{ $r->id }}">{{ $r->code }} — {{ $r->title }}</option>@endforeach</select>

@@ -40,7 +40,7 @@ class HomeScreenTest extends TestCase
     public function test_safety_officer_sees_the_five_parts_in_order_with_honest_numbers(): void
     {
         $salama = $this->user('salama', 'system_admin');
-        $this->post('/incident/normal', ['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')])->assertRedirect();
+        $this->legacyReport(['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')]);
         $i = Incident::first();
         AuditLog::create(['user_id' => $salama->id, 'action' => 'login', 'model_name' => 'User', 'description' => 'دخول مسؤول السلامة', 'created_at' => now()]);
 
@@ -114,6 +114,6 @@ class HomeScreenTest extends TestCase
         // ٢٦-٣: الضيف زره «طوارئ الآن» = اتصال، في صفحة البلاغ والتتبع؛ ولا شريط فوق نموذج البلاغ نفسه
         $this->get('/incident')->assertOk()->assertSee('id="sosBar"', false)->assertSee('data-intent="emergency-call"', false);
         $this->get('/incident/track')->assertOk()->assertSee('id="sosBar"', false)->assertSee('data-intent="emergency-call"', false);
-        $this->get('/incident/normal')->assertOk()->assertDontSee('id="sosBar"', false);
+        $this->get('/incident/secret')->assertOk()->assertDontSee('id="sosBar"', false); // قرار ٧٢: العادي بحساب — نموذج الضيف هو السري
     }
 }

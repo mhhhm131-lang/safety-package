@@ -4,15 +4,15 @@
 @php($q = $place ? '?place='.e($place) : '')
 <div class="card p-4 mb-3">
   <div class="card-h mb-1"><i class="bi bi-megaphone-fill me-1" style="color:var(--red)"></i> رأيت خطراً؟ أبلغ مركز السلامة الآن</div>
-  <div class="text-muted small mb-3">لأي موظف أو متدرب أو زائر — بلا تسجيل دخول. يُقيَّد برقم ووقت في سجل بلاغات الشاغلين، وتتابعه برمز.
+  <div class="text-muted small mb-3">يُقيَّد برقم ووقت في سجل بلاغات الشاغلين. العادي بحسابك، والسري يخفي هويتك.
     @if($place) <span class="badge text-bg-success">المكان: {{ $places->firstWhere('code', $place)?->name ?? $place }}</span>@endif
   </div>
   {{-- قرار المستخدم ٢٠٢٦-٠٩-١٣: اختر نوع البلاغ بميزته لك، لا بمصطلحاتنا --}}
   <div class="row g-3">
     <div class="col-md-4"><a class="type-card" href="{{ route('incident.form', 'normal') }}{{ $q }}" data-type="normal">
       <div class="t"><i class="bi bi-flag-fill me-1" style="color:var(--g)"></i>عادي</div>
-      <div class="small mt-1 fw-bold" style="color:var(--g)">لا يُغلق إلا بموافقتك.</div>
-      <div class="small mt-1">ملاحظة سلامة تحتاج معالجة: طفاية مفقودة، مخرج مسدود، سلك مكشوف، بلاط مكسور، رائحة غريبة. تتابعه برمز، وتُسأل في النهاية: هل عولج فعلاً؟</div>
+      <div class="small mt-1 fw-bold" style="color:var(--g)">بحسابك — لا يُغلق إلا بموافقتك.</div>
+      <div class="small mt-1">ملاحظة سلامة تحتاج معالجة: طفاية مفقودة، مخرج مسدود، سلك مكشوف، بلاط مكسور، رائحة غريبة. تتابعه من حسابك، وتُسأل في النهاية: هل عولج فعلاً؟</div>
     </a></div>
     <div class="col-md-6"><a class="type-card secret" href="{{ route('incident.form', 'secret') }}{{ $q }}" data-type="secret">
       <div class="t"><i class="bi bi-incognito me-1"></i>سري</div>

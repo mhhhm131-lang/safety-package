@@ -32,7 +32,7 @@ class IntentRegistry
     public static function guest(): Collection
     {
         return collect([
-            new Intent('report', 'أبلّغ عن خطر', route('incident.landing'), 'bi-megaphone-fill', 'بلا تسجيل دخول، يُقيَّد برقم ووقت', true, 'البلاغ'),
+            new Intent('report', 'أبلّغ عن خطر', route('incident.landing'), 'bi-megaphone-fill', 'عادي بحسابك، أو سري يخفي هويتك', true, 'البلاغ'), // قرار ٧٢
             new Intent('track', 'أتابع بلاغي', route('incident.track'), 'bi-search', 'برمز التتبع', false, 'البلاغ'),
             new Intent('hazards', 'أعرف أخطار مكاني', route('hazards.index'), 'bi-book', 'كتاب المعهد: ما هو الخطر وماذا تفعل', false, 'التوعية'),
             new Intent('plans', 'أقرأ خطة مكاني', '/index.html', 'bi-map', 'خطط السلامة والاستجابة للأماكن التسعة', false, 'التوعية'),

@@ -61,8 +61,8 @@ class HomeChartTest extends TestCase
         $salama = $this->user('salama', 'system_admin');
         $emp = $this->user('emp', 'employee', 'HZ-06');
         // بلاغ شاغل مفتوح في المكاتب، وآخر مغلق لا يُعدّ
-        $this->post('/incident/normal', ['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')])->assertRedirect();
-        $this->post('/incident/normal', ['description' => 'مغلق', 'place_id' => Place::idByCode('HZ-01')])->assertRedirect();
+        $this->legacyReport(['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')]);
+        $this->legacyReport(['description' => 'مغلق', 'place_id' => Place::idByCode('HZ-01')]);
         \App\Modules\Incident\Models\Incident::where('description', 'مغلق')->update(['status' => 'closed']);
 
         $all = PlaceSnapshot::forUser($salama);
@@ -81,7 +81,7 @@ class HomeChartTest extends TestCase
     public function test_home_chart_has_six_clickable_columns_and_place_data_for_filtering(): void
     {
         $salama = $this->user('salama', 'system_admin');
-        $this->post('/incident/normal', ['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')])->assertRedirect();
+        $this->legacyReport(['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')]);
         $html = $this->actingAs($salama)->get('/app')->assertOk()->getContent();
 
         // الرسم حال الآن للمبنى كله: ستة أعمدة بأرقامها، كل عمود رابط إلى قائمته

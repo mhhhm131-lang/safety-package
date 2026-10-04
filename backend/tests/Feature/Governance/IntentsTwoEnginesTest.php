@@ -125,8 +125,8 @@ class IntentsTwoEnginesTest extends TestCase
         $unit = OrganizationUnit::first();
         $emp = $this->user('emp', 'employee', 'HZ-06', $unit->id);
         $other = $this->user('emp2', 'employee', 'HZ-06', $unit->id);
-        $this->actingAs($emp)->post('/incident/normal', ['description' => 'بلاط مكسور عند المدخل', 'place_id' => Place::idByCode('HZ-06')])->assertRedirect();
-        $this->actingAs($other)->post('/incident/normal', ['description' => 'تسرب ماء في الدور الثاني', 'place_id' => Place::idByCode('HZ-06')])->assertRedirect();
+        $this->legacyReport(['description' => 'بلاط مكسور عند المدخل', 'place_id' => Place::idByCode('HZ-06')], 'normal', $emp->id);
+        $this->legacyReport(['description' => 'تسرب ماء في الدور الثاني', 'place_id' => Place::idByCode('HZ-06')], 'normal', $other->id);
         $mine = Incident::where('actor_id', $emp->id)->firstOrFail();
         $his = Incident::where('actor_id', $other->id)->firstOrFail();
 

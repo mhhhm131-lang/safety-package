@@ -26,25 +26,27 @@ class IncidentControllerTest extends TestCase
     // الصفحات العامة (بلا دخول)
     // ===========================================================
 
-    public function test_normal_form_renders_publicly(): void
+    /** قرار ٧٢: العادي بحساب — الضيف يُحوَّل إلى الدخول؛ وصاحب الحساب يرى النموذج وخانة الخطر فيه */
+    public function test_normal_form_renders_for_an_account_and_sends_the_guest_to_login(): void
     {
+        $this->get('/incident/normal')->assertRedirect(route('login', ['next' => '/incident/normal']));
+        $this->actingAsRole('employee');
         $this->get('/incident/normal')->assertOk()->assertSee('name="risk_id"', false);
     }
 
     public function test_normal_store_requires_title_and_description(): void
     {
-        // المعهد: العنوان اختياري (يُشتق من الخطر أو الوصف والمكان)؛ الإلزامي: الوصف والمكان. الخطر اختياري (١١-١ أ، قرار ٣٤)
+        // المعهد: العنوان اختياري (يُشتق من الخطر أو الوصف والمكان)؛ الإلزامي: الوصف والمكان — والخطر (قرار ٧٢ يلغي «اختياري» من قرار ٣٤)
+        $this->actingAsRole('employee');
         $this->post('/incident/normal', [])
-            ->assertSessionHasErrors(['description', 'place_id'])
-            ->assertSessionDoesntHaveErrors(['title', 'risk_id']);
-        // المكان إلزامي في النموذج (required في الواجهة) — لكن IncidentController::store يتحقق منه nullable:
-        // ضيف يتجاوز الواجهة يرسل بلاغاً بلا مكان فلا يوجَّه آلياً. يبقى هذا التأكيد حتى يُحسم في المتحكم.
-        $this->post('/incident/normal', [])->assertSessionHasErrors('place_id');
+            ->assertSessionHasErrors(['description', 'place_id', 'risk_id'])
+            ->assertSessionDoesntHaveErrors(['title']);
     }
 
-    public function test_normal_store_creates_incident_publicly(): void
+    public function test_normal_store_creates_incident_for_the_account(): void
     {
         $risk = $this->makeRisk();
+        $reporter = $this->actingAsRole('employee');
 
         $response = $this->post('/incident/normal', [
             'title' => 'سقوط أداة من ارتفاع',
@@ -64,10 +66,10 @@ class IncidentControllerTest extends TestCase
         ]);
         $incident = Incident::first();
         $this->assertNull($incident->incident_field_team_id);
-        $this->assertNull($incident->actor_id);
-        // بلاغ ضيف: رمز تتبع ويظهر في وجهة التحويل
-        $this->assertNotEmpty($incident->secret_tracking_code);
-        $this->assertStringContainsString($incident->secret_tracking_code, $response->headers->get('Location'));
+        // قرار ٧٢: المبلّغ معروف — باسمه، بلا رمز تتبع، ويتابعه من حسابه
+        $this->assertSame($reporter->id, $incident->actor_id);
+        $this->assertNull($incident->secret_tracking_code);
+        $this->assertStringContainsString($incident->code, urldecode($response->headers->get('Location')));
     }
 
     public function test_urgent_form_renders_publicly(): void
@@ -101,11 +103,14 @@ class IncidentControllerTest extends TestCase
 
     public function test_secret_store_returns_tracking_code(): void
     {
-        // الخطر اختياري في السري
+        // قرار ٧٢: السري نفس العادي — بخطر إلزامي — لكن بلا دخول ولا هوية
+        $this->post('/incident/secret', ['description' => 'وصف البلاغ السري', 'place_id' => $this->placeId('HZ-06')])->assertSessionHasErrors('risk_id');
+        $risk = $this->makeRisk();
         $response = $this->post('/incident/secret', [
             'description' => 'وصف البلاغ السري',
             'place_id' => $this->placeId('HZ-06'),
             'secrecy_reason' => 'حماية المُبلّغ',
+            'risk_id' => $risk->id,
         ]);
 
         $response->assertRedirect();
@@ -116,7 +121,8 @@ class IncidentControllerTest extends TestCase
         $this->assertNotNull($incident);
         $this->assertNotNull($incident->secret_tracking_code);
         $this->assertNotNull($incident->secret_key);
-        $this->assertNull($incident->risk_id);
+        $this->assertSame($risk->id, $incident->risk_id);
+        $this->assertNull($incident->actor_id);
         $this->assertStringContainsString($incident->secret_tracking_code, $location);
         // السري بلا سجل تدقيق
         $this->assertDatabaseMissing('audit_logs', ['model_name' => 'Incident']);

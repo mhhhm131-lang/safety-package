@@ -56,7 +56,7 @@ class SearchAndDoorsTest extends TestCase
 
     public function test_search_fans_out_by_permission_and_codes_open_records_directly(): void
     {
-        $this->post('/incident/normal', ['description' => 'سلك كهربائي مكشوف قرب الطابعة', 'place_id' => Place::idByCode('HZ-06')]);
+        $this->legacyReport(['description' => 'سلك كهربائي مكشوف قرب الطابعة', 'place_id' => Place::idByCode('HZ-06')]);
         $i = Incident::first();
         $cat = RiskCategory::create(['name' => 'الكهربائية', 'abbreviation' => 'EL', 'created_at' => now()]);
         $risk = Risk::create(['risk_type' => 'reference', 'code' => 'EL-01-01', 'title' => 'صعق كهربائي من سلك مكشوف', 'description' => 'x', 'category_id' => $cat->id, 'severity' => 4, 'likelihood' => 2, 'status' => 'approved']);

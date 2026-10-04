@@ -147,10 +147,17 @@ class IntentsTest extends TestCase
         $this->get('/hazards?q=مكشوف')->assertOk()->assertSee('FI-01-01');
         $this->get('/hazards?q=زلزال')->assertOk()->assertSee('لا خطر يطابق');
 
-        $f = $this->get('/incident/normal?risk='.$risk->id.'&place=HZ-06')->assertOk();
+        // قرار ٧٢: العادي بحساب — الضيف يُحوَّل إلى الدخول ويعود إلى النموذج نفسه بخطره ومكانه
+        $form = '/incident/normal?risk='.$risk->id.'&place=HZ-06';
+        $this->get($form)->assertRedirect(route('login', ['next' => $form]));
+        $reporter = \App\Models\User::create(['username' => 'muballigh', 'name' => 'مبلّغ بحساب', 'password' => '1234']);
+        \App\Modules\Governance\Models\UserProfile::create(['user_id' => $reporter->id, 'role' => 'employee', 'is_active' => true]);
+        $f = $this->actingAs($reporter)->get($form)->assertOk();
         $f->assertSee('id="presetRisk"', false)->assertSee('سلك مكشوف قرب مواد')->assertSee('name="risk_id" value="'.$risk->id.'"', false)->assertDontSee('id="riskCat"', false);
-        $this->post('/incident/normal', ['description' => 'رأيت السلك عند لوحة الطابق الثاني', 'place_id' => Place::idByCode('HZ-06'), 'risk_id' => $risk->id])->assertRedirect();
+        $this->actingAs($reporter)->post('/incident/normal', ['description' => 'رأيت السلك عند لوحة الطابق الثاني', 'place_id' => Place::idByCode('HZ-06'), 'risk_id' => $risk->id])->assertRedirect();
+        auth()->logout();
         $i = Incident::first();
+        $this->assertSame($reporter->id, $i->actor_id);
         $this->assertSame($risk->id, $i->risk_id); // لا يحتاج تصنيف المركز
         $this->assertSame('received', $i->status); // لا فني لـ HZ-06 في هذا الاختبار — ينتظر إحالة المركز
     }

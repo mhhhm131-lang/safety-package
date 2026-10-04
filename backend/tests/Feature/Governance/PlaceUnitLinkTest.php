@@ -53,12 +53,14 @@ class PlaceUnitLinkTest extends TestCase
     /** الشاغل يختار القاعة: تُحفظ وتظهر للفني في البطاقة وفي صفحة البلاغ وفي التتبع؛ وحدة من مكان آخر تُرفض. */
     public function test_occupant_report_carries_the_unit(): void
     {
-        $h = $this->get('/incident/normal')->assertOk()->getContent();
+        // قرار ٧٢: نموذج الضيف هو السري — الخانة نفسها والتحقق نفسه
+        $h = $this->get('/incident/secret')->assertOk()->getContent();
         $this->assertStringContainsString('name="place_unit_id"', $h);
         $this->assertStringContainsString('قاعة تدريب: ٣١٢ · الدور ٣', $h);
         // وحدة من مكان آخر (غرفة كهرباء) مع مكان القاعات: مرفوضة
-        $this->post('/incident/normal', ['description' => 'دخان من جهاز العرض', 'place_id' => $this->halls->id, 'place_unit_id' => $this->room->id])->assertSessionHasErrors('place_unit_id');
-        $this->post('/incident/normal', ['description' => 'دخان من جهاز العرض', 'place_id' => $this->halls->id, 'place_unit_id' => $this->hall->id])->assertRedirect();
+        $this->post('/incident/secret', ['description' => 'دخان من جهاز العرض', 'place_id' => $this->halls->id, 'place_unit_id' => $this->room->id])->assertSessionHasErrors('place_unit_id');
+        $this->assertSame(0, Incident::count());
+        $this->legacyReport(['description' => 'دخان من جهاز العرض', 'place_id' => $this->halls->id, 'place_unit_id' => $this->hall->id]);
         $i = Incident::first();
         $this->assertSame($this->hall->id, $i->place_unit_id);
         app(\App\Modules\Incident\Services\IncidentService::class)->referToField($i, $this->salama->id, $this->fani->id); // ٢١-٤ (قرار ٥٤): لا قفز آلي إلى فني المكان — المركز يحيل

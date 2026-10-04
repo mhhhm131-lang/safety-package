@@ -69,7 +69,7 @@ class PlaceFileTest extends TestCase
     public function test_place_file_shows_what_the_dashboard_place_file_showed(): void
     {
         $this->seedBasement();
-        $this->post('/incident/normal', ['description' => 'تسرب زيت في الموقف', 'place_id' => $this->park->id])->assertRedirect();
+        $this->legacyReport(['description' => 'تسرب زيت في الموقف', 'place_id' => $this->park->id]);
         $i = Incident::first();
 
         $this->get("/app/places/{$this->park->id}/file")->assertRedirect('/login');

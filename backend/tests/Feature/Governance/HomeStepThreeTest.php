@@ -39,7 +39,7 @@ class HomeStepThreeTest extends TestCase
     public function test_order_and_no_duplicates_on_the_home_screen(): void
     {
         $emp = $this->user('emp', 'employee', 'HZ-06');
-        $this->post('/incident/normal', ['description' => 'بلاط مكسور', 'place_id' => Place::idByCode('HZ-06')])->assertRedirect();
+        $this->legacyReport(['description' => 'بلاط مكسور', 'place_id' => Place::idByCode('HZ-06')]);
         $h = $this->actingAs($emp)->get('/app')->assertOk()->getContent();
 
         // الترتيب: ما ينتظرك ← الأماكن ← الرسم ← أريد أن…

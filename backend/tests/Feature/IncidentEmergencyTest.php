@@ -152,7 +152,7 @@ class IncidentEmergencyTest extends TestCase
 
     public function test_normal_report_shows_operational_layer_and_tech_receives_by_opening(): void
     {
-        $this->post('/incident/normal', ['description' => 'حرارة مرتفعة في المكتب', 'place_id' => Place::idByCode('HZ-06'), 'place_unit_id' => $this->office, 'risk_id' => $this->physRisk->id, 'reporter_name' => 'سعد'])->assertRedirect();
+        $this->legacyReport(['description' => 'حرارة مرتفعة في المكتب', 'place_id' => Place::idByCode('HZ-06'), 'place_unit_id' => $this->office, 'risk_id' => $this->physRisk->id, 'reporter_name' => 'سعد']);
         $i = Incident::first();
         $this->assertSame('forwarded', $i->status);
         $this->assertNull($i->field_received_at);
@@ -190,7 +190,7 @@ class IncidentEmergencyTest extends TestCase
     /** المرحلة ١١-١ (ج): «عولج» بصورة في الطلب نفسه من «استلمه الفني» — الصورة تُرفق، والبدء يُسجَّل، ثم عولج. */
     public function test_resolve_with_inline_photo_from_field_received(): void
     {
-        $this->post('/incident/normal', ['description' => 'حرارة مرتفعة في المكتب', 'place_id' => Place::idByCode('HZ-06'), 'place_unit_id' => $this->office, 'risk_id' => $this->physRisk->id]);
+        $this->legacyReport(['description' => 'حرارة مرتفعة في المكتب', 'place_id' => Place::idByCode('HZ-06'), 'place_unit_id' => $this->office, 'risk_id' => $this->physRisk->id]);
         $i = Incident::first();
         $this->actingAs($this->fani)->get("/app/incidents/{$i->id}"); // = استلم
         $this->assertSame('field_received', $i->fresh()->status);

@@ -13,6 +13,18 @@ abstract class TestCase extends BaseTestCase
      * للاختبارات التي تعدّ بطاقات المركز: بلا خطط تصله بطاقة «أماكن بلا خطة استجابة» (٢٧-ب) فيزيد العدّ واحداً.
      * يُستدعى بعد بذر الأماكن.
      */
+    /**
+     * قرار ٧٢ (٢٠٢٦-١٠-٠٤): النموذج صار لا يرسل بلاغاً بلا خطر، والعادي بحساب. ما أُرسل قبله — بلا خطر أو بلا حساب —
+     * قائم ويكمل طريقه (تصنيف المركز، الإحالة، رمز التتبع). الاختبارات التي تحرس ذلك تبنيه من الخدمة كما كان النموذج يبنيه.
+     */
+    protected function legacyReport(array $data, string $type = 'normal', ?int $userId = null): \App\Modules\Incident\Models\Incident
+    {
+        $service = app(\App\Modules\Incident\Services\IncidentService::class);
+        $incident = $type === 'secret' ? $service->createSecretIncident($data)['incident'] : $service->createIncident($type, $userId, $data);
+        app(\App\Modules\Incident\Services\OccSync::class)->refresh($userId);
+        return $incident;
+    }
+
     protected function plansInSystem(): void
     {
         foreach (Place::where('code', '!=', 'HZ-00')->get() as $place) {

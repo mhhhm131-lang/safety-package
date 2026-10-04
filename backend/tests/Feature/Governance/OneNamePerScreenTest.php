@@ -90,7 +90,7 @@ class OneNamePerScreenTest extends TestCase
         $reg = $this->page(route('incidents.index'));
         $this->assertStringContainsString('<title>سجل بلاغات الشاغلين — ', $reg);
         $this->assertMatchesRegularExpression('~<h1[^>]*>\s*سجل بلاغات الشاغلين~u', $reg);
-        $this->post('/incident/normal', ['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')])->assertRedirect();
+        $this->legacyReport(['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')]);
         $i = \App\Modules\Incident\Models\Incident::firstOrFail();
         $this->assertMatchesRegularExpression('~<a href="'.preg_quote(route('incidents.index'), '~').'"[^>]*>سجل بلاغات الشاغلين</a>~u', $this->page(route('incidents.show', $i)));
 
@@ -122,7 +122,7 @@ class OneNamePerScreenTest extends TestCase
     /** الكسرة تحت الحاء كانت تُقرأ نقطةً على الشاشة («أجله») — الزر يُكتب بلا شكل */
     public function test_refer_button_is_written_without_the_mark_that_reads_as_a_dot(): void
     {
-        $this->post('/incident/normal', ['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')])->assertRedirect();
+        $this->legacyReport(['description' => 'بلاط مكسور قرب المصعد', 'place_id' => Place::idByCode('HZ-06')]);
         $home = $this->page('/app');
         $this->assertStringContainsString('>أحله</a>', $home);
         $this->assertStringNotContainsString('أحِل', $home);
