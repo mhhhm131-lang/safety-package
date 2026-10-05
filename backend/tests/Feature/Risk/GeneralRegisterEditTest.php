@@ -111,31 +111,33 @@ class GeneralRegisterEditTest extends TestCase
         $this->assertSame(['صعق من مقبس أو تمديد تالف', null], [$g->fresh()->title, $g->fresh()->organization_unit_id]);
     }
 
-    public function test_a_proposer_corrects_his_own_draft_until_he_submits_it(): void
+    /** قرار ٧٦: «حفظ» يرسل المقترح — صاحبه لا يصحّحه بعدها إلا إذا أعاده له مسؤول السلامة، وحفظ التصحيح يعيد إرساله */
+    public function test_a_proposal_is_sent_on_save_and_its_author_corrects_it_only_when_returned(): void
     {
         $coord = $this->makeUser('safety_coordinator', 'hr');
         $this->actingAs($coord)->post(route('risk.reference.store'), $this->generalBody('انزلاق عند مدخل القاعة'))->assertRedirect(route('risk.reference.index'));
         $p = Risk::where('title', 'انزلاق عند مدخل القاعة')->firstOrFail();
-        $this->assertSame(['reference', 'draft', $coord->id], [$p->risk_type, $p->status, (int) $p->created_by_id]);
+        $this->assertSame(['reference', 'pending_approval', $coord->id], [$p->risk_type, $p->status, (int) $p->created_by_id]);
 
-        // مقترحه مسودة: يفتحه ويصحّحه
-        $this->actingAs($coord)->get(route('risk.reference.edit', $p))->assertOk();
-        $this->actingAs($coord)->post(route('risk.reference.update', $p), $this->generalBody('انزلاق عند مدخل القاعة الكبرى'));
-        $this->assertSame('انزلاق عند مدخل القاعة الكبرى', $p->fresh()->title);
-
-        // مقترح غيره لا يلمسه: منسق آخر، والمناوب، والمكتب الاستشاري
-        foreach ([$this->makeUser('safety_coordinator', 'it'), $this->makeUser('system_staff'), $this->makeUser('consultant_office')] as $other) {
-            $this->actingAs($other)->get(route('risk.reference.edit', $p))->assertForbidden();
-            $this->actingAs($other)->post(route('risk.reference.update', $p), $this->generalBody('غيّره غير صاحبه'))->assertForbidden();
-            $this->assertSame('انزلاق عند مدخل القاعة الكبرى', $p->fresh()->title);
+        // أُرسل: ينتظر مسؤول السلامة، ولا يلمسه صاحبه ولا غيره
+        foreach ([$coord, $this->makeUser('safety_coordinator', 'it'), $this->makeUser('system_staff'), $this->makeUser('consultant_office')] as $u) {
+            $this->actingAs($u)->get(route('risk.reference.edit', $p))->assertForbidden();
+            $this->actingAs($u)->post(route('risk.reference.update', $p), $this->generalBody('بعد الإرسال'))->assertForbidden();
+            $this->assertSame('انزلاق عند مدخل القاعة', $p->fresh()->title);
         }
         // مسؤول السلامة يعدّل أي مقترح
         $this->actingAs($this->salama)->get(route('risk.reference.edit', $p))->assertOk();
 
-        // رفعه: ينتظر مسؤول السلامة، ولا يصحّحه صاحبه
-        $this->actingAs($coord)->post(route('risk.submit', $p))->assertRedirect();
-        $this->assertSame('pending_approval', $p->fresh()->status);
-        $this->actingAs($coord)->post(route('risk.reference.update', $p), $this->generalBody('بعد الرفع'))->assertForbidden();
+        // أعاده له مسؤول السلامة للتعديل: صاحبه وحده يصحّحه، وحفظه يعيد إرساله
+        $this->actingAs($this->salama)->post(route('risk.requestModification', $p), ['notes' => 'حدّد المدخل'])->assertRedirect();
+        $this->assertSame('draft', $p->fresh()->status);
+        foreach ([$this->makeUser('safety_coordinator', 'it'), $this->makeUser('system_staff')] as $other) {
+            $this->actingAs($other)->get(route('risk.reference.edit', $p))->assertForbidden();
+            $this->actingAs($other)->post(route('risk.reference.update', $p), $this->generalBody('غيّره غير صاحبه'))->assertForbidden();
+        }
+        $this->actingAs($coord)->get(route('risk.reference.edit', $p))->assertOk();
+        $this->actingAs($coord)->post(route('risk.reference.update', $p), $this->generalBody('انزلاق عند مدخل القاعة الكبرى'))->assertRedirect(route('risk.reference.index'));
+        $this->assertSame(['انزلاق عند مدخل القاعة الكبرى', 'pending_approval'], [$p->fresh()->title, $p->fresh()->status]);
 
         // اعتُمد: صار من العام، لا يلمسه إلا مسؤول السلامة
         $this->actingAs($this->salama)->post(route('risk.approve', $p))->assertRedirect();
@@ -145,25 +147,41 @@ class GeneralRegisterEditTest extends TestCase
         $this->assertSame(['انزلاق عند مدخل القاعة الكبرى', 'approved'], [$p->fresh()->title, $p->fresh()->status]);
     }
 
-    public function test_a_rejected_proposal_returns_to_its_author_alone(): void
+    /** قرار ٧٦: المرفوض — بطاقة صاحبه «صحّحه» تفتح النموذج، وحفظه يعيد إرساله (ضغطتان) */
+    public function test_a_rejected_proposal_is_corrected_and_resent_by_its_author_alone(): void
     {
         $coord = $this->makeUser('safety_coordinator', 'hr');
         $p = $this->general('مقترح يُرفض', 'pending_approval', $coord);
         $this->actingAs($this->salama)->post(route('risk.reject', $p), ['note' => 'الوصف ناقص'])->assertRedirect();
         $this->assertSame('rejected', $p->fresh()->status);
 
-        // مرفوض: لا يصحّحه قبل إعادته، ولا يعيده غير صاحبه
-        $this->actingAs($coord)->post(route('risk.reference.update', $p), $this->generalBody('قبل الإعادة'))->assertForbidden();
-        $this->actingAs($this->makeUser('safety_coordinator', 'it'))->post(route('risk.changeStatus', ['risk' => $p, 'status' => 'draft']))->assertForbidden();
-        $this->assertSame('rejected', $p->fresh()->status);
+        // غير صاحبه لا يصحّحه ولا يعيده
+        $other = $this->makeUser('safety_coordinator', 'it');
+        $this->actingAs($other)->get(route('risk.reference.edit', $p))->assertForbidden();
+        $this->actingAs($other)->post(route('risk.reference.update', $p), $this->generalBody('غيّره غير صاحبه'))->assertForbidden();
+        $this->actingAs($other)->post(route('risk.changeStatus', ['risk' => $p, 'status' => 'draft']))->assertForbidden();
+        $this->assertSame(['مقترح يُرفض', 'rejected'], [$p->fresh()->title, $p->fresh()->status]);
 
-        // بطاقته «أعده للتعديل» ثم «عدّله» ثم «قدّمه»
-        $this->actingAs($coord)->post(route('risk.changeStatus', ['risk' => $p, 'status' => 'draft']))->assertRedirect();
-        $this->assertSame('draft', $p->fresh()->status);
-        $this->actingAs($coord)->post(route('risk.reference.update', $p), $this->generalBody('مقترح صُحّح'));
-        $this->assertSame('مقترح صُحّح', $p->fresh()->title);
-        $this->actingAs($coord)->post(route('risk.submit', $p));
-        $this->assertSame('pending_approval', $p->fresh()->status);
+        // بطاقته: «صحّحه» تفتح نموذج مقترحه
+        $card = app(InboxService::class)->forUser($coord->fresh())->first(fn (Task $t) => $t->key === "risk:{$p->id}:rejected");
+        $this->assertNotNull($card, 'لا بطاقة لصاحب المقترح المرفوض');
+        $this->assertSame(['صحّحه', route('risk.reference.edit', $p), 'GET'], [$card->primary['label'], $card->primary['url'], $card->primaryMethod()]);
+        $this->actingAs($coord)->get($card->primary['url'])->assertOk();
+
+        // «حفظ» يعيد إرساله إلى مسؤول السلامة
+        $this->actingAs($coord)->post(route('risk.reference.update', $p), $this->generalBody('مقترح صُحّح'))->assertRedirect(route('risk.reference.index'));
+        $this->assertSame(['مقترح صُحّح', 'pending_approval'], [$p->fresh()->title, $p->fresh()->status]);
+        $this->assertNotNull(app(InboxService::class)->forUser($this->salama->fresh())->first(fn (Task $t) => $t->key === "risk:{$p->id}:approve"));
+    }
+
+    /** قرار ٧٦: مسؤول السلامة يضيف خطراً فيُعتمد بحفظه — هو المعتمد، ولا يرفعه إلى نفسه */
+    public function test_the_safety_officers_own_risk_is_approved_on_save(): void
+    {
+        $this->actingAs($this->salama)->post(route('risk.reference.store'), $this->generalBody('خطر يكتبه مسؤول السلامة'))->assertRedirect(route('risk.reference.index'));
+        $r = Risk::where('title', 'خطر يكتبه مسؤول السلامة')->firstOrFail();
+        $this->assertSame(['reference', 'approved', $this->salama->id], [$r->risk_type, $r->status, (int) $r->approved_by_id]);
+        $this->assertNotNull($r->approved_at);
+        $this->assertSame([], app(InboxService::class)->forUser($this->salama->fresh())->filter(fn (Task $t) => str_starts_with($t->key, "risk:{$r->id}:"))->all());
     }
 
     public function test_the_status_of_a_general_risk_moves_only_by_the_safety_officer(): void

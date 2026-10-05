@@ -64,15 +64,16 @@ final class RiskApproval
 
     /**
      * قرار ٧٤ (٢٠٢٦-١٠-٠٥، بكلمته «العام لا يعدل إلا من مسؤول السلامة»، وعن الإضافة «تبقى اقتراحاً»):
-     * من يعدّل خطراً في السجل العام — مسؤول السلامة وحده. وغيره ممن يملك الإنشاء يقترح خطراً جديداً
-     * ويصحّح مقترحه هو ما دام مسودة؛ بعد رفعه أو اعتماده لا يلمسه. مصدر واحد للمسار والزر.
+     * من يعدّل خطراً في السجل العام — مسؤول السلامة وحده. وغيره ممن يملك الإنشاء يقترح خطراً جديداً،
+     * ويصحّح مقترحه هو إذا أُعيد له (مسودة أو مرفوض)؛ وهو مرسَل أو معتمد لا يلمسه. مصدر واحد للمسار والزر.
+     * قرار ٧٦: «حفظ» يرسل المقترح، فالمسودة عند صاحبه ما أعاده له مسؤول السلامة للتعديل.
      */
     public static function canEditGeneral(User $user, Risk $risk): bool
     {
         $profile = $user->profile;
         if (!$profile || !$profile->is_active || $risk->risk_type === 'active') return false;
         if ($profile->role === self::GENERAL_APPROVER) return true;
-        return $risk->status === 'draft' && (int) $risk->created_by_id === (int) $user->id
+        return in_array($risk->status, ['draft', 'rejected'], true) && (int) $risk->created_by_id === (int) $user->id
             && PermissionRegistry::hasPermission($profile->role, 'risk.create');
     }
 

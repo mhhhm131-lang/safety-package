@@ -54,6 +54,15 @@ class RiskTasks implements TaskSource
                         secondary: ['label' => 'عدّله', 'url' => $edit],
                         detailsUrl: route('risk.show', $r), createdAt: $r->updated_at,
                     ));
+                } elseif ($r->risk_type === 'reference') {
+                    // قرار ٧٦: مقترح للسجل العام رُفض ← «صحّحه» تفتح نموذجه، وحفظه يعيد إرساله (ضغطتان لا أربع)
+                    $out->push(new Task(
+                        key: "risk:{$r->id}:rejected", module: 'المخاطر',
+                        question: 'مقترحك «'.$r->title.'» رُفض'.($r->approval_notes ? ': '.mb_substr((string) $r->approval_notes, 0, 80) : '').' — صحّحه، والحفظ يعيد إرساله',
+                        primary: ['label' => 'صحّحه', 'url' => $edit],
+                        secondary: ['label' => 'التفاصيل', 'url' => route('risk.show', $r)],
+                        detailsUrl: route('risk.show', $r), createdAt: $r->updated_at,
+                    ));
                 } else {
                     $out->push(new Task(
                         key: "risk:{$r->id}:rejected", module: 'المخاطر',

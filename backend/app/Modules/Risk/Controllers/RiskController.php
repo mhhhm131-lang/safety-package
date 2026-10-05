@@ -32,7 +32,10 @@ class RiskController extends Controller
     private const NOT_APPROVER = 'خطر الإدارة يعتمده مديرها، والسجل العام يعتمده مسؤول السلامة.';
 
     /** قرار ٧٤ */
-    private const GENERAL_EDIT = 'السجل العام يعدّله مسؤول السلامة — ولغيره مقترحه ما دام مسودة.';
+    private const GENERAL_EDIT = 'السجل العام يعدّله مسؤول السلامة — ولغيره مقترحه إذا أُعيد له.';
+
+    /** قرارا ٧٥ و٧٦: ما يقال للمقترِح عند «حفظ» */
+    private const PROPOSAL_SENT = 'أُرسل مقترحك إلى مسؤول السلامة. يظهر في السجل العام بعد اعتماده.';
 
     public function __construct(protected RiskService $riskService)
     {
@@ -228,9 +231,13 @@ class RiskController extends Controller
             $validated['description'] = trim((string) ($validated['description'] ?? '')) ?: $validated['title'];
             $risk = $this->riskService->createRisk(Auth::id(), collect($validated)->except(['phases'])->all(), 'reference');
             $this->riskService->persistAllPhases($risk, $validated['phases'] ?? []);
-            // قرار ٧٥: المقترِح يُقال له عند الحفظ أين مقترحه وما الخطوة التالية
-            $mine = Auth::user()->role() === RiskApproval::GENERAL_APPROVER;
-            return redirect()->route('risk.reference.index')->with('success', ($mine ? 'حُفظ الخطر مسودة.' : 'حُفظ مقترحك مسودة.').$this->proposalNote($risk));
+            // قرار ٧٦: «حفظ» ضغطة واحدة — مسؤول السلامة يضيف فيُعتمد (هو المعتمد)، وغيره يُرسَل مقترحه إليه ويُقال له ذلك (قرار ٧٥)
+            if (Auth::user()->role() === RiskApproval::GENERAL_APPROVER) {
+                $this->riskService->approveOwn($risk, Auth::id());
+                return redirect()->route('risk.reference.index')->with('success', 'أُضيف الخطر إلى السجل العام.');
+            }
+            $this->riskService->submitForApproval($risk, Auth::id());
+            return redirect()->route('risk.reference.index')->with('success', self::PROPOSAL_SENT);
         } catch (\Throwable $e) {
             return redirect()->back()->withInput()->with('error', 'حدث خطأ: '.$e->getMessage());
         }
@@ -259,8 +266,17 @@ class RiskController extends Controller
             $validated['description'] = trim((string) ($validated['description'] ?? '')) ?: $validated['title'];
             $this->riskService->updateRisk($risk, Auth::id(), collect($validated)->except(['phases'])->all());
             $this->riskService->persistAllPhases($risk, $validated['phases'] ?? []);
-            $note = $this->proposalNote($risk->fresh());
-            return redirect()->route('risk.reference.index')->with('success', $note !== '' ? 'حُفظ التصحيح.'.$note : 'حُدّث الخطر المرجعي بمراحله الثلاث.');
+            $risk = $risk->fresh();
+            if (!in_array($risk->status, Risk::PROPOSED, true)) {
+                return redirect()->route('risk.reference.index')->with('success', 'حُدّث الخطر المرجعي بمراحله الثلاث.');
+            }
+            if (Auth::user()->role() === RiskApproval::GENERAL_APPROVER) {
+                return redirect()->route('risk.reference.index')->with('success', 'حُفظ التعديل. المقترح يظهر في السجل العام بعد اعتماده.');
+            }
+            // قرار ٧٦: صاحب المقترح صحّحه (مسودة أُعيدت له، أو مرفوض) ← الحفظ يعيد إرساله إلى مسؤول السلامة
+            if ($risk->status === 'rejected') $risk = $this->riskService->changeStatus($risk, Auth::id(), 'draft');
+            $this->riskService->submitForApproval($risk, Auth::id());
+            return redirect()->route('risk.reference.index')->with('success', self::PROPOSAL_SENT);
         } catch (\Throwable $e) {
             return redirect()->back()->withInput()->with('error', 'فشل التحديث: '.$e->getMessage());
         }
@@ -271,17 +287,6 @@ class RiskController extends Controller
     {
         abort_if($risk->risk_type === 'active', 404);
         abort_unless(RiskApproval::canEditGeneral(Auth::user(), $risk), 403, self::GENERAL_EDIT);
-    }
-
-    /** قرار ٧٥: ما يقال عند حفظ مقترح — أين هو وما الخطوة التالية. فارغ لخطر معتمد */
-    private function proposalNote(Risk $risk): string
-    {
-        if (!in_array($risk->status, Risk::PROPOSED, true)) return '';
-        if (Auth::user()->role() !== RiskApproval::GENERAL_APPROVER) {
-            return ' لا يظهر في السجل العام إلا بعد اعتماد مسؤول السلامة — قدّمه له من «ما ينتظرك».';
-        }
-        return $risk->status === 'pending_approval' ? ' يظهر في السجل العام بعد أن تعتمده من «ما ينتظرك».'
-            : ' يظهر في السجل العام بعد أن تقدّمه ثم تعتمده من «ما ينتظرك».';
     }
 
     // ── التفعيل: من السجل العام إلى سجل إدارة/مكان ──

@@ -86,10 +86,9 @@ class ReferenceSingleLayerTest extends TestCase
         $this->assertSame('high', $detail->impact);
         $this->assertSame('الأمن والمواقف والفنيون', $detail->impact_description);
 
-        // شجرة السجل العام تُظهر التفصيل — بعد اعتماده (قرار ٧٥: المسودة لا تظهر في العام)
-        $this->actingAs($admin)->post(route('risk.submit', $risk))->assertRedirect();
-        $this->actingAs($admin)->post(route('risk.approve', $risk))->assertRedirect();
-        $json =$this->actingAs($admin)->getJson("/app/risk/registry/tree/reference/risk/{$risk->id}")->assertOk()->json();
+        // شجرة السجل العام تُظهر التفصيل — مسؤول السلامة أضافه فاعتُمد بحفظه (قرار ٧٦)
+        $this->assertSame('approved', $risk->status);
+        $json = $this->actingAs($admin)->getJson("/app/risk/registry/tree/reference/risk/{$risk->id}")->assertOk()->json();
         $groups = collect($json['phases'])->firstWhere('phase', RiskPhase::PHASE_PROACTIVE)['affected_groups'];
         $this->assertSame('الأمن والمواقف والفنيون', $groups[0]['detail']);
     }

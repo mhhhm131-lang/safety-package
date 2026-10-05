@@ -232,6 +232,17 @@ class RiskService
         });
     }
 
+    /** قرار ٧٦: المعتمد يكتب الخطر بنفسه ← معتمد بحفظه، بلا رفع إلى نفسه ولا تنبيه لنفسه */
+    public function approveOwn(Risk $risk, int $userId): Risk
+    {
+        return DB::transaction(function () use ($risk, $userId) {
+            $fromStatus = $risk->status;
+            $risk->update(['status' => 'approved', 'approved_by_id' => $userId, 'approved_at' => now()]);
+            RiskEvent::create(['risk_id' => $risk->id, 'action' => 'approved', 'from_status' => $fromStatus, 'to_status' => 'approved', 'actor_id' => $userId]);
+            return $risk->fresh();
+        });
+    }
+
     /**
      * Reject a pending risk.
      */

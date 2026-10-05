@@ -1,17 +1,19 @@
 # -*- coding: utf-8 -*-
-"""بوابة قراري ٧٤ و٧٥ (٢٠٢٦-١٠-٠٥) على WebKit iPhone 13 — القاعدة المحلية وحدها (قرار ٥٧).
+"""بوابة القرارات ٧٤ و٧٥ و٧٦ (٢٠٢٦-١٠-٠٥) على WebKit iPhone 13 — القاعدة المحلية وحدها (قرار ٥٧).
 
-٧٤: السجل العام يعدّله مسؤول السلامة وحده؛ وغيره يقترح خطراً جديداً ويصحّح مقترحه ما دام مسودة.
+٧٤: السجل العام يعدّله مسؤول السلامة وحده؛ وغيره يقترح خطراً جديداً ويصحّح مقترحه إذا أُعيد له.
 ٧٥: المقترح لا يظهر في السجل العام ولا يُفعَّل حتى يعتمده مسؤول السلامة، وبعد اعتماده يظهر دائماً؛ والمقترِح يُقال له ذلك عند «حفظ».
+٧٦: «حفظ» ضغطة واحدة — يرسل المقترح إلى مسؤول السلامة؛ ومسؤول السلامة يضيف فيُعتمد؛ والمرفوض «صحّحه» ثم «حفظ» يعيد إرساله.
   المنسق (أضعف من كان يعدّل): خطر معتمد ← لا زر «تعديل»، والعنوان باليد يُرفض ←
-  يقترح خطراً ← رسالة «لا يظهر… إلا بعد اعتماد مسؤول السلامة» ← المقترح ليس في الشجرة ولا الجدول ←
-  بطاقته «عدّله» ← يصحّح ويحفظ ← «قدّمه» ← ما زال خارج العام، وتعديله وتفعيله بالعنوان يُرفضان ←
-  مسؤول السلامة: لا يراه في العام، يعتمده من بطاقته ← يظهر في الشجرة، يعدّله فيبقى «معتمد» ←
-  مقترح بلا فئة فرعية ← بعد اعتماده يظهر تحت «بلا فئة فرعية» ←
+  يقترح خطراً ← «حفظ» ← رسالة «أُرسل مقترحك إلى مسؤول السلامة…» ← بانتظار الاعتماد بلا ضغطة ثانية، ولا بطاقة عنده ←
+  ليس في الشجرة ولا الجدول، وتعديله وتفعيله بالعنوان يُرفضان ←
+  مسؤول السلامة: لا يراه في العام، يرفضه من شاشة الاعتماد ← المنسق: بطاقة «صحّحه» ← يصحّح و«حفظ» يعيد إرساله ←
+  مسؤول السلامة يعتمده من بطاقته ← يظهر في الشجرة، يعدّله فيبقى «معتمد» ←
+  مقترح بلا فئة فرعية ← بعد اعتماده يظهر تحت «بلا فئة فرعية» ← مسؤول السلامة يضيف خطراً ← معتمد ويظهر فوراً ←
   المنسق بعد الاعتماد: يراه بلا زر «تعديل». مدير الإدارة: لا زر، وباب الخاص لا يفتح الخطر العام.
-الحالة تُقرأ من القاعدة بعد كل ضغطة. خطر الكتاب يُقرأ ولا يُكتب عليه؛ الكتابة كلها على مقترحَي الجولة.
+الحالة تُقرأ من القاعدة بعد كل ضغطة. خطر الكتاب يُقرأ ولا يُكتب عليه؛ الكتابة كلها على أخطار الجولة.
 
-ثلاثة حسابات مؤقتة بكلمة عشوائية ومقترحان (وسمهما G74) تُنشأ للجولة وتُحذف بعدها.
+ثلاثة حسابات مؤقتة بكلمة عشوائية وثلاثة أخطار (وسمها G74) تُنشأ للجولة وتُحذف بعدها.
 التشغيل: PYTHONIOENCODING=utf-8 python webkit-74.py [BASE]
 """
 import sys, os, secrets, subprocess
@@ -32,10 +34,12 @@ DBF = 'Illuminate\\Support\\Facades\\DB'
 # الوسم اللاتيني يُبحث به من سطر الأوامر (العربية لا تمر فيه سليمة على ويندوز)
 PROPOSAL = 'مقترح G74A — انزلاق عند مدخل القاعة'
 NOSUB = 'مقترح G74B — بلا فئة فرعية'
+OWN = 'خطر G74C — يضيفه مسؤول السلامة'
 MINE = f'{RISK}::where("title","like","%G74A%")'
 MINE_B = f'{RISK}::where("title","like","%G74B%")'
+MINE_C = f'{RISK}::where("title","like","%G74C%")'
 ROW = '["title","severity","likelihood","status","organization_unit_id"]'
-NOTE = 'لا يظهر في السجل العام إلا بعد اعتماد مسؤول السلامة'
+SENT = 'أُرسل مقترحك إلى مسؤول السلامة. يظهر في السجل العام بعد اعتماده.'
 
 
 def log(k, v, ok=None):
@@ -133,7 +137,7 @@ def card(page, key):
 
 
 def press(page, c):
-    """ضغطة الزر الأساسي في البطاقة؛ تعيد حالة الاستجابة"""
+    """ضغطة الزر الأساسي في البطاقة (نموذج أو رابط)؛ تعيد حالة الاستجابة"""
     form = c.locator('.task-actions form button.btn-g')
     target = form if form.count() else c.locator('.task-actions a.btn-g')
     with page.expect_navigation(wait_until='domcontentloaded') as nav:
@@ -141,8 +145,13 @@ def press(page, c):
     return nav.value.status
 
 
-def propose(page, cat, sub, title):
-    """نموذج الإضافة ← «حفظ»؛ يعيد (حالة الاستجابة، نص الرسالة الخضراء في الصفحة التي عاد إليها)"""
+def flash(page):
+    msg = page.locator('.alert-success')
+    return msg.first.inner_text().strip() if msg.count() else ''
+
+
+def add(page, cat, sub, title):
+    """نموذج الإضافة ← «حفظ» (ضغطة واحدة)؛ يعيد (حالة الاستجابة، نص الرسالة الخضراء في الصفحة التي عاد إليها)"""
     page.goto(BASE + '/app/risk/reference/create', wait_until='networkidle')
     page.select_option('#catSelect', str(cat))
     if sub:
@@ -150,10 +159,14 @@ def propose(page, cat, sub, title):
         page.select_option('#subCatSelect', str(sub))
     page.fill('input[name=title]', title)
     page.select_option('#sevSelect', '2'); page.select_option('#likSelect', '3')
+    # القائمتان تُحمَّلان بعد الاختيار، وخانة «جاري التحميل...» بلا قيمة فارغة: الحفظ قبل اكتمالها يُرفض (مسجَّل في المؤجلات) — ننتظرها كما ينتظر الإنسان
+    page.wait_for_function("() => !['subCatSelect','riskTypeSelect'].some(id => document.getElementById(id).innerHTML.includes('جاري'))")
     with page.expect_navigation(wait_until='domcontentloaded') as nav:
         page.locator('form[action$="/app/risk/reference/create"] button[type=submit]').click()
-    msg = page.locator('.alert-success')
-    return nav.value.status, (msg.first.inner_text().strip() if msg.count() else '')
+    bad = page.locator('.alert-danger')
+    if bad.count():  # النموذج عاد بخطأ: يُقال نصّه لا صمت
+        return nav.value.status, 'خطأ: ' + bad.first.inner_text().strip()[:200]
+    return nav.value.status, flash(page)
 
 
 print(tinker(CLEAN + 'echo "V:clean";').split('V:')[-1].strip())
@@ -170,115 +183,120 @@ try:
 
     with sync_playwright() as p:
         b = p.webkit.launch()
+        cctx, cp, cbad = session(b, 'g74.c')   # المنسق
+        sctx, sp, sbad = session(b, 'g74.s')   # مسؤول السلامة
 
         # ── المنسق: المعتمد بلا زر تعديل (٧٤) ──
-        ctx, page, bad = session(b, 'g74.c')
-        edit, act = open_risk(page, cat, sub, gid)
+        edit, act = open_risk(cp, cat, sub, gid)
         log('المنسق: زر «تعديل» على خطر معتمد', f'عدده={edit}', edit == 0)
         log('المنسق: زر «تفعيل للخاص» باقٍ', f'عدده={act}', act == 1)
-        st = status_of(page, f'/app/risk/reference/{gid}/edit')
+        st = status_of(cp, f'/app/risk/reference/{gid}/edit')
         log('المنسق: عنوان تعديل المعتمد باليد', f'HTTP {st}', st == 403)
-        st = status_of(page, f'/app/risk/active/{gid}/edit')
+        st = status_of(cp, f'/app/risk/active/{gid}/edit')
         log('المنسق: الخطر العام من باب الخاص', f'HTTP {st}', st == 404)
 
-        # ── المنسق يقترح: الرسالة عند «حفظ»، والمقترح خارج العام (٧٥) ──
-        st, msg = propose(page, cat, sub, PROPOSAL)
-        page.screenshot(path=os.path.join(SHOT, 'g75-1-coord-saved-message.png'))
+        # ── المنسق يقترح: «حفظ» ضغطة واحدة ترسل، والرسالة تقول ذلك (٧٥ و٧٦) ──
+        st, msg = add(cp, cat, sub, PROPOSAL)
+        cp.screenshot(path=os.path.join(SHOT, 'g76-1-coord-sent-message.png'))
         prow = db(f'json_encode({MINE}->first()?->only(["risk_type","status"]))')
         pid = db(f'{MINE}->value("id")')
-        log('المنسق اقترح خطراً ← مسودة', f'HTTP {st} #{pid} {prow}', prow == '{"risk_type":"reference","status":"draft"}')
-        log('المنسق: رسالة الحفظ تقول أين مقترحه', msg, NOTE in msg and 'قدّمه' in msg)
+        log('المنسق ضغط «حفظ» ← مقترحه عند مسؤول السلامة', f'HTTP {st} #{pid} {prow}', prow == '{"risk_type":"reference","status":"pending_approval"}')
+        log('المنسق: رسالة الحفظ', msg, msg == SENT)
         pid = int(pid)
-        n = tree_count(page, cat, sub, pid)
-        log('المنسق: مقترحه المسودة في شجرة العام', f'عدده={n}', n == 0)
-        page.screenshot(path=os.path.join(SHOT, 'g75-2-coord-tree-without-proposal.png'))
-        n = in_table(page, pid)
-        log('المنسق: مقترحه المسودة في جدول العام', f'عدده={n}', n == 0)
-
-        # ── يصحّحه من بطاقته ثم يرفعه ──
-        c = card(page, f'risk:{pid}:draft')
-        log('المنسق: بطاقة مقترحه في ما ينتظرك', f'عددها={c.count()}', c.count() == 1)
-        with page.expect_navigation(wait_until='domcontentloaded') as nav:
-            c.locator(f'a[href$="/reference/{pid}/edit"]').first.click()
-        log('المنسق: «عدّله» من البطاقة يفتح نموذج مقترحه', f'HTTP {nav.value.status}', nav.value.status == 200)
-        page.wait_for_load_state('networkidle')
-        page.fill('input[name=title]', PROPOSAL + ' الكبرى')
-        with page.expect_navigation(wait_until='domcontentloaded') as nav:
-            page.locator(f'form[action$="/reference/{pid}/edit"] button[type=submit]').click()
-        t = db(f'{MINE}->value("title")')
-        msg = page.locator('.alert-success').first.inner_text().strip() if page.locator('.alert-success').count() else ''
-        log('المنسق صحّح مقترحه', f'HTTP {nav.value.status} {t}', t == PROPOSAL + ' الكبرى')
-        log('المنسق: رسالة التصحيح', msg, NOTE in msg)
-        c = card(page, f'risk:{pid}:draft')
-        st = press(page, c)
-        s = db(f'{MINE}->value("status")')
-        log('المقترح بعد «قدّمه»', f'HTTP {st} ← {s}', s == 'pending_approval')
-        n = tree_count(page, cat, sub, pid)
-        log('المنسق: مقترحه المرفوع في شجرة العام', f'عدده={n}', n == 0)
-        st = status_of(page, f'/app/risk/reference/{pid}/edit')
-        log('المنسق: عنوان تعديل مقترحه بعد الرفع', f'HTTP {st}', st == 403)
-        st = status_of(page, f'/app/risk/{pid}/activate')
+        c = card(cp, f'risk:{pid}:draft')
+        log('المنسق: لا بطاقة «قدّمه» عنده (لا ضغطة ثانية)', f'عددها={c.count()}', c.count() == 0)
+        n = tree_count(cp, cat, sub, pid)
+        log('المنسق: مقترحه في شجرة العام قبل اعتماده', f'عدده={n}', n == 0)
+        n = in_table(cp, pid)
+        log('المنسق: مقترحه في جدول العام قبل اعتماده', f'عدده={n}', n == 0)
+        st = status_of(cp, f'/app/risk/reference/{pid}/edit')
+        log('المنسق: عنوان تعديل مقترحه المرسَل', f'HTTP {st}', st == 403)
+        st = status_of(cp, f'/app/risk/{pid}/activate')
         log('المنسق: عنوان تفعيل مقترح لم يُعتمد', f'HTTP {st}', st == 404)
 
-        # ── مقترح ثانٍ بلا فئة فرعية، يرفعه ──
-        st, msg = propose(page, cat, None, NOSUB)
+        # ── مقترح ثانٍ بلا فئة فرعية ──
+        st, msg = add(cp, cat, None, NOSUB)
         qid = int(db(f'{MINE_B}->value("id")'))
         qrow = db(f'json_encode({MINE_B}->first()->only(["status","sub_category_id"]))')
-        log('المنسق اقترح خطراً بلا فئة فرعية', f'HTTP {st} #{qid} {qrow}', qrow == '{"status":"draft","sub_category_id":null}')
-        st = press(page, card(page, f'risk:{qid}:draft'))
-        s = db(f'{MINE_B}->value("status")')
-        log('المقترح الثاني بعد «قدّمه»', f'HTTP {st} ← {s}', s == 'pending_approval')
-        log('المنسق: أخطاء خادم', bad, not bad)
-        ctx.close()
+        log('المنسق اقترح خطراً بلا فئة فرعية', f'HTTP {st} #{qid} {qrow}', qrow == '{"status":"pending_approval","sub_category_id":null}' and msg == SENT)
 
-        # ── مسؤول السلامة ──
-        ctx, page, bad = session(b, 'g74.s')
-        edit, _ = open_risk(page, cat, sub, gid)
+        # ── مسؤول السلامة: لا يراه في العام؛ يرفضه من شاشة الاعتماد ──
+        n = tree_count(sp, cat, sub, pid)
+        log('مسؤول السلامة: المقترح في شجرة العام قبل اعتماده', f'عدده={n}', n == 0)
+        sp.goto(BASE + '/app/risk/approval/queue', wait_until='networkidle')
+        sp.locator(f'[data-bs-target="#rejectModal{pid}"]').click(); sp.wait_for_selector(f'#rejectModal{pid}.show')
+        sp.fill(f'#rejectModal{pid} textarea[name=note]', 'حدّد أي مدخل')
+        with sp.expect_navigation(wait_until='domcontentloaded') as nav:
+            sp.locator(f'#rejectModal{pid} button[type=submit]').click()  # النافذة داخل جدول: الزر مربوط بنموذجه لا ابناً له
+        s = db(f'{MINE}->value("status")')
+        log('مسؤول السلامة رفض المقترح بسببه', f'HTTP {nav.value.status} ← {s}', s == 'rejected')
+
+        # ── المنسق: «صحّحه» ثم «حفظ» يعيد إرساله (ضغطتان) ──
+        c = card(cp, f'risk:{pid}:rejected')
+        txt = c.first.inner_text().strip().replace('\n', ' ') if c.count() else ''
+        log('المنسق: بطاقة المرفوض بسببه وزرها «صحّحه»', txt[:110], c.count() == 1 and 'حدّد أي مدخل' in txt and 'صحّحه' in txt)
+        cp.screenshot(path=os.path.join(SHOT, 'g76-2-coord-rejected-card.png'))
+        st = press(cp, c)
+        log('المنسق: «صحّحه» تفتح نموذج مقترحه', f'HTTP {st} {cp.url.replace(BASE, "")}', st == 200 and cp.url.endswith(f'/reference/{pid}/edit'))
+        cp.wait_for_load_state('networkidle')
+        cp.fill('input[name=title]', PROPOSAL + ' الكبرى')
+        with cp.expect_navigation(wait_until='domcontentloaded') as nav:
+            cp.locator(f'form[action$="/reference/{pid}/edit"] button[type=submit]').click()
+        row = db(f'json_encode({MINE}->first()->only(["title","status"]), JSON_UNESCAPED_UNICODE)')
+        log('المنسق صحّح و«حفظ» أعاد الإرسال', f'HTTP {nav.value.status} {row}', row == '{"title":"' + PROPOSAL + ' الكبرى","status":"pending_approval"}')
+        log('المنسق: رسالة حفظ التصحيح', flash(cp), flash(cp) == SENT)
+
+        # ── مسؤول السلامة يعتمد، ثم يعدّل المعتمد ──
+        edit, _ = open_risk(sp, cat, sub, gid)
         log('مسؤول السلامة: زر «تعديل» على خطر الكتاب المعتمد', f'عدده={edit}', edit == 1)
-        n = tree_count(page, cat, sub, pid)
-        log('مسؤول السلامة: المقترح المرفوع في شجرة العام', f'عدده={n}', n == 0)
-        c = card(page, f'risk:{pid}:approve')
+        c = card(sp, f'risk:{pid}:approve')
         log('مسؤول السلامة: بطاقة «اعتمد» للمقترح', f'عددها={c.count()}', c.count() == 1)
-        page.screenshot(path=os.path.join(SHOT, 'g75-3-officer-awaiting-card.png'))
-        st = press(page, c)
+        st = press(sp, c)
         s = db(f'{MINE}->value("status")')
         log('مسؤول السلامة اعتمد المقترح', f'HTTP {st} ← {s}', s == 'approved')
-        edit, _ = open_risk(page, cat, sub, pid)
+        edit, _ = open_risk(sp, cat, sub, pid)
         log('مسؤول السلامة: المقترح بعد اعتماده في الشجرة وعليه «تعديل»', f'عدده={edit}', edit == 1)
-        page.locator('#ref-detail-panel-header').scroll_into_view_if_needed()
-        page.screenshot(path=os.path.join(SHOT, 'g75-4-officer-approved-in-tree.png'))
-        n = in_table(page, pid)
+        n = in_table(sp, pid)
         log('مسؤول السلامة: المعتمد في جدول العام', f'عدده={n}', n == 1)
-        page.goto(BASE + f'/app/risk/reference/{pid}/edit', wait_until='networkidle')
-        page.fill('input[name=title]', PROPOSAL + ' — عدّله مسؤول السلامة')
-        with page.expect_navigation(wait_until='domcontentloaded') as nav:
-            page.locator(f'form[action$="/reference/{pid}/edit"] button[type=submit]').click()
+        sp.goto(BASE + f'/app/risk/reference/{pid}/edit', wait_until='networkidle')
+        sp.fill('input[name=title]', PROPOSAL + ' — عدّله مسؤول السلامة')
+        with sp.expect_navigation(wait_until='domcontentloaded') as nav:
+            sp.locator(f'form[action$="/reference/{pid}/edit"] button[type=submit]').click()
         row = db(f'json_encode({MINE}->first()->only(["title","status"]), JSON_UNESCAPED_UNICODE)')
         log('مسؤول السلامة عدّل خطراً معتمداً وبقي «معتمد»', f'HTTP {nav.value.status} {row}',
             row == '{"title":"' + PROPOSAL + ' — عدّله مسؤول السلامة","status":"approved"}')
 
         # بلا فئة فرعية: قبل الاعتماد لا يظهر، وبعده تحت «بلا فئة فرعية»
-        n = tree_count(page, cat, -cat, qid)
+        n = tree_count(sp, cat, -cat, qid)
         log('مسؤول السلامة: المقترح بلا فئة فرعية قبل اعتماده', f'عدده={n} (‎-1 = لا خانة)', n in (0, -1))
-        st = press(page, card(page, f'risk:{qid}:approve'))
+        st = press(sp, card(sp, f'risk:{qid}:approve'))
         s = db(f'{MINE_B}->value("status")')
         log('مسؤول السلامة اعتمد المقترح الثاني', f'HTTP {st} ← {s}', s == 'approved')
-        n = tree_count(page, cat, -cat, qid)
-        name = page.locator(f'label[for="ref-sc--{cat}"]').inner_text().strip() if n >= 0 else ''
+        n = tree_count(sp, cat, -cat, qid)
+        name = sp.locator(f'label[for="ref-sc--{cat}"]').inner_text().strip() if n >= 0 else ''
         log('مسؤول السلامة: المعتمد بلا فئة فرعية يظهر تحت خانته', f'«{name}» عدده={n}', n == 1 and name == 'بلا فئة فرعية')
-        page.screenshot(path=os.path.join(SHOT, 'g75-5-officer-no-subcategory.png'))
-        log('مسؤول السلامة: أخطاء خادم', bad, not bad)
-        ctx.close()
+
+        # مسؤول السلامة يضيف خطراً: «حفظ» ← معتمد ويظهر فوراً (٧٦)
+        st, msg = add(sp, cat, sub, OWN)
+        sp.screenshot(path=os.path.join(SHOT, 'g76-3-officer-added-message.png'))
+        oid = int(db(f'{MINE_C}->value("id")'))
+        orow = db(f'json_encode({MINE_C}->first()->only(["status"]))')
+        log('مسؤول السلامة ضغط «حفظ» ← خطره معتمد', f'HTTP {st} #{oid} {orow}', orow == '{"status":"approved"}')
+        log('مسؤول السلامة: رسالة الحفظ', msg, msg == 'أُضيف الخطر إلى السجل العام.')
+        n = tree_count(sp, cat, sub, oid)
+        log('مسؤول السلامة: خطره في شجرة العام فوراً', f'عدده={n}', n == 1)
+        log('مسؤول السلامة: أخطاء خادم', sbad, not sbad)
+        sctx.close()
 
         # ── المنسق بعد الاعتماد ──
-        ctx, page, bad = session(b, 'g74.c')
-        edit, act = open_risk(page, cat, sub, pid)
+        edit, act = open_risk(cp, cat, sub, pid)
         log('المنسق: مقترحه بعد اعتماده في الشجرة بلا «تعديل»', f'تعديل={edit} تفعيل={act}', edit == 0 and act == 1)
-        st = status_of(page, f'/app/risk/reference/{pid}/edit')
+        st = status_of(cp, f'/app/risk/reference/{pid}/edit')
         log('المنسق: عنوان تعديل مقترحه بعد اعتماده', f'HTTP {st}', st == 403)
-        st = status_of(page, f'/app/risk/{pid}/activate')
+        st = status_of(cp, f'/app/risk/{pid}/activate')
         log('المنسق: نموذج تفعيله بعد اعتماده', f'HTTP {st}', st == 200)
-        ctx.close()
+        log('المنسق: أخطاء خادم', cbad, not cbad)
+        cctx.close()
 
         # ── مدير الإدارة ──
         ctx, page, bad = session(b, 'g74.m')

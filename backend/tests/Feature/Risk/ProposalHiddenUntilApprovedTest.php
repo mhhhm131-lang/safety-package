@@ -27,7 +27,7 @@ class ProposalHiddenUntilApprovedTest extends TestCase
 {
     use RefreshDatabase, RiskFixtures;
 
-    private const NOTE = 'لا يظهر في السجل العام إلا بعد اعتماد مسؤول السلامة';
+    private const NOTE = 'أُرسل مقترحك إلى مسؤول السلامة. يظهر في السجل العام بعد اعتماده.';
 
     private RiskCategory $cat;
     private RiskSubCategory $sub;
@@ -86,31 +86,35 @@ class ProposalHiddenUntilApprovedTest extends TestCase
 
     public function test_a_proposal_is_not_in_the_general_register_until_approved_then_it_is(): void
     {
+        // قرار ٧٦: «حفظ» أرسله إلى مسؤول السلامة
         $p = $this->propose($this->duty, 'انزلاق عند مدخل القاعة', $this->sub->id);
-        $this->assertSame('draft', $p->status);
+        $this->assertSame('pending_approval', $p->status);
 
-        // مسودة ثم مرفوعة: لا أحد يراها في العام — لا صاحبها ولا مسؤول السلامة ولا مدير
-        foreach (['draft', 'pending_approval'] as $stage) {
-            if ($stage === 'pending_approval') $this->actingAs($this->duty)->post(route('risk.submit', $p))->assertRedirect();
+        // ينتظر الاعتماد: لا أحد يراه في العام — لا صاحبه ولا مسؤول السلامة ولا مدير
+        $hidden = function (string $stage) use ($p) {
             $this->assertSame($stage, $p->fresh()->status);
             foreach ([$this->duty, $this->salama, $this->mudir] as $u) {
                 $this->assertFalse($this->inTree($u, $p), "مقترح ({$stage}) ظهر في شجرة العام لـ{$u->profile->role}");
                 $this->assertFalse($this->inTable($u, $p), "مقترح ({$stage}) ظهر في جدول العام لـ{$u->profile->role}");
                 $this->actingAs($u)->getJson(url('app/risk/registry/tree/reference/risk/'.$p->id))->assertNotFound();
             }
-        }
-        // مكانه: «ما ينتظرك» عند مسؤول السلامة وطابور اعتماده
+        };
+        $hidden('pending_approval');
+        // مكانه: «ما ينتظرك» عند مسؤول السلامة وطابور اعتماده — ولا بطاقة عند صاحبه (لا ضغطة ثانية عليه)
         $this->assertSame(["risk:{$p->id}:approve"], $this->cards($this->salama, $p));
+        $this->assertSame([], $this->cards($this->duty, $p));
         $this->actingAs($this->salama)->get(route('risk.approval.queue'))->assertOk()->assertSee('انزلاق عند مدخل القاعة');
 
-        // مرفوض: يبقى خارج العام
+        // مرفوض، ثم معاد للتعديل: يبقى خارج العام
         $this->actingAs($this->salama)->post(route('risk.reject', $p), ['note' => 'ناقص'])->assertRedirect();
-        $this->assertFalse($this->inTree($this->salama, $p));
-        $this->assertFalse($this->inTable($this->salama, $p));
-
-        // أعاده وقدّمه فاعتُمد: يظهر للجميع
+        $hidden('rejected');
         $this->actingAs($this->duty)->post(route('risk.changeStatus', ['risk' => $p, 'status' => 'draft']));
-        $this->actingAs($this->duty)->post(route('risk.submit', $p));
+        $hidden('draft');
+
+        // صحّحه صاحبه فأُرسل، فاعتُمد: يظهر للجميع
+        $this->actingAs($this->duty)->post(route('risk.reference.update', $p), ['category_id' => $this->cat->id, 'sub_category_id' => $this->sub->id,
+            'severity' => 2, 'likelihood' => 2, 'title' => 'انزلاق عند مدخل القاعة']);
+        $this->assertSame('pending_approval', $p->fresh()->status);
         $this->actingAs($this->salama)->post(route('risk.approve', $p))->assertRedirect();
         $this->assertSame('approved', $p->fresh()->status);
         foreach ([$this->duty, $this->salama, $this->mudir] as $u) {
@@ -127,7 +131,6 @@ class ProposalHiddenUntilApprovedTest extends TestCase
         $this->assertNotContains('بلا فئة فرعية', $names(), 'ظهرت خانة «بلا فئة فرعية» لمقترح لم يُعتمد');
         $this->assertFalse($this->inTree($this->salama, $p));
 
-        $this->actingAs($this->duty)->post(route('risk.submit', $p));
         $this->actingAs($this->salama)->post(route('risk.approve', $p))->assertRedirect();
         $this->assertContains('بلا فئة فرعية', $names());
         foreach ([$this->salama, $this->duty, $this->mudir] as $u) {
@@ -144,33 +147,34 @@ class ProposalHiddenUntilApprovedTest extends TestCase
         $this->assertFalse($listed(), 'فئة ليس فيها إلا مقترح ظهرت في العام');
         $this->assertSame([], $this->treeJson($this->mudir, 'sub-categories/'.$empty->id));
 
-        $this->actingAs($this->duty)->post(route('risk.submit', $p));
         $this->actingAs($this->salama)->post(route('risk.approve', $p));
         $this->assertTrue($listed());
     }
 
-    public function test_the_proposer_is_told_on_save_that_it_waits_for_the_safety_officer(): void
+    /** قرار ٧٦: «حفظ» ضغطة واحدة — يرسل ويقول للمقترِح أين مقترحه؛ لا «قدّمه» ولا «ما ينتظرك» */
+    public function test_the_proposer_is_told_on_save_that_it_was_sent_to_the_safety_officer(): void
     {
+        $body = fn (string $title) => ['category_id' => $this->cat->id, 'sub_category_id' => $this->sub->id, 'severity' => 2, 'likelihood' => 2, 'title' => $title];
+
         // المقترِح: الرسالة عند «حفظ»، وتُعرض في الصفحة التي يعود إليها
-        $res = $this->actingAs($this->duty)->post(route('risk.reference.store'), ['category_id' => $this->cat->id, 'sub_category_id' => $this->sub->id,
-            'severity' => 2, 'likelihood' => 2, 'title' => 'مقترح برسالة']);
-        $res->assertRedirect(route('risk.reference.index'));
-        $this->assertStringContainsString(self::NOTE, (string) session('success'));
-        $this->assertStringContainsString('قدّمه', (string) session('success'));
-        $this->actingAs($this->duty)->followingRedirects()->post(route('risk.reference.store'), ['category_id' => $this->cat->id, 'sub_category_id' => $this->sub->id,
-            'severity' => 2, 'likelihood' => 2, 'title' => 'مقترح برسالة ٢'])->assertOk()->assertSee(self::NOTE);
+        $this->actingAs($this->duty)->post(route('risk.reference.store'), $body('مقترح برسالة'))->assertRedirect(route('risk.reference.index'));
+        $this->assertSame(self::NOTE, (string) session('success'));
+        $this->assertStringNotContainsString('قدّمه', (string) session('success'));
+        $this->actingAs($this->duty)->followingRedirects()->post(route('risk.reference.store'), $body('مقترح برسالة ٢'))->assertOk()->assertSee(self::NOTE);
 
-        // وعند تصحيح مسودته
+        // أُعيد له فصحّحه: الحفظ يعيد إرساله ويقول ذلك
         $p = Risk::where('title', 'مقترح برسالة')->firstOrFail();
-        $this->actingAs($this->duty)->post(route('risk.reference.update', $p), ['category_id' => $this->cat->id, 'sub_category_id' => $this->sub->id,
-            'severity' => 2, 'likelihood' => 2, 'title' => 'مقترح برسالة صُحّح'])->assertRedirect(route('risk.reference.index'));
-        $this->assertStringContainsString(self::NOTE, (string) session('success'));
+        $this->actingAs($this->salama)->post(route('risk.requestModification', $p), ['notes' => 'أوضح'])->assertRedirect();
+        $this->actingAs($this->duty)->post(route('risk.reference.update', $p), $body('مقترح برسالة صُحّح'))->assertRedirect(route('risk.reference.index'));
+        $this->assertSame(self::NOTE, (string) session('success'));
+        $this->assertSame('pending_approval', $p->fresh()->status);
 
-        // مسؤول السلامة لا يُقال له «ينتظر مسؤول السلامة»: يُقال له ما عليه هو
-        $this->actingAs($this->salama)->post(route('risk.reference.store'), ['category_id' => $this->cat->id, 'sub_category_id' => $this->sub->id,
-            'severity' => 2, 'likelihood' => 2, 'title' => 'خطر يكتبه مسؤول السلامة'])->assertRedirect(route('risk.reference.index'));
-        $this->assertStringNotContainsString(self::NOTE, (string) session('success'));
-        $this->assertStringContainsString('تعتمده', (string) session('success'));
+        // مسؤول السلامة يضيف فيُعتمد ويظهر فوراً: يُقال له ذلك
+        $this->actingAs($this->salama)->post(route('risk.reference.store'), $body('خطر يكتبه مسؤول السلامة'))->assertRedirect(route('risk.reference.index'));
+        $this->assertSame('أُضيف الخطر إلى السجل العام.', (string) session('success'));
+        $mine = Risk::where('title', 'خطر يكتبه مسؤول السلامة')->firstOrFail();
+        $this->assertSame('approved', $mine->status);
+        $this->assertTrue($this->inTree($this->mudir, $mine), 'خطر أضافه مسؤول السلامة لم يظهر في العام');
 
         // وتعديله خطراً معتمداً: بلا ملاحظة المقترح
         $g = Risk::where('title', 'خطر معتمد قائم')->firstOrFail();
@@ -227,7 +231,6 @@ class ProposalHiddenUntilApprovedTest extends TestCase
         $options = fn () => (string) $this->actingAs($this->salama)->get(route('external-parties.risks', $party))->assertOk()->getContent();
         $this->assertStringNotContainsString('value="'.$p->id.'"', $options());
 
-        $this->actingAs($this->duty)->post(route('risk.submit', $p));
         $this->actingAs($this->salama)->post(route('risk.approve', $p));
         $html = $found($this->mudir);
         $this->assertStringContainsString(route('risk.show', $p), $html);
