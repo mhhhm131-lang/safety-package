@@ -31,6 +31,9 @@ class RiskController extends Controller
     /** قرار ٦٩ */
     private const NOT_APPROVER = 'خطر الإدارة يعتمده مديرها، والسجل العام يعتمده مسؤول السلامة.';
 
+    /** قرار ٧٤ */
+    private const GENERAL_EDIT = 'السجل العام يعدّله مسؤول السلامة — ولغيره مقترحه ما دام مسودة.';
+
     public function __construct(protected RiskService $riskService)
     {
         $this->globalScopeRoles = RiskApproval::REGISTER_WIDE; // قرار ٧٠: منسق السلامة نطاقه نطاق مديره
@@ -121,6 +124,7 @@ class RiskController extends Controller
     public function activeEdit(int $risk)
     {
         $risk = Risk::findOrFail($risk);
+        abort_unless($risk->risk_type === 'active', 404); // قرار ٧٤: باب الخاص لا يفتح خطراً من السجل العام
         $this->authorizeScope($risk);
         $this->riskService->ensurePhases($risk);
         $risk->load(['phases.causes', 'phases.affectedGroups', 'phases.affectedGroupDetails']);
@@ -130,6 +134,7 @@ class RiskController extends Controller
     public function activeUpdate(Request $request, int $risk)
     {
         $risk = Risk::findOrFail($risk);
+        abort_unless($risk->risk_type === 'active', 404); // قرار ٧٤
         $this->authorizeScope($risk);
         $validated = $request->validate(array_merge($this->referenceValidationRules(), $this->activeExtraRules()), $this->assignMessages());
         // قرار ٧٠: يبقى الخطر حيث هو، أو يُنقل إلى وحدة في نطاق صاحب الحساب — لا إلى وحدة غيره
@@ -171,6 +176,8 @@ class RiskController extends Controller
 
     public function destroy(Risk $risk)
     {
+        // قرار ٧٤: مقترح في السجل العام يحذفه صاحبه أو مسؤول السلامة
+        abort_if($risk->risk_type !== 'active' && !RiskApproval::canEditGeneral(Auth::user(), $risk), 403, self::GENERAL_EDIT);
         $this->authorizeScope($risk);
         if ($risk->status !== 'draft') {
             return redirect()->route('risk.active.index')->with('error', 'لا يُحذف إلا خطر في حالة مسودة.');
@@ -228,6 +235,7 @@ class RiskController extends Controller
 
     public function referenceEdit(Risk $risk)
     {
+        $this->authorizeGeneralEdit($risk);
         $this->riskService->ensurePhases($risk);
         $risk->load(['phases.causes', 'phases.affectedGroups', 'phases.affectedGroupDetails']);
         return view('modules.risks.reference_edit', $this->formData() + compact('risk'));
@@ -235,6 +243,7 @@ class RiskController extends Controller
 
     public function referenceUpdate(Request $request, Risk $risk)
     {
+        $this->authorizeGeneralEdit($risk);
         $validated = $request->validate($this->referenceValidationRules());
         try {
             $typed = trim((string) ($validated['title'] ?? ''));
@@ -251,6 +260,13 @@ class RiskController extends Controller
         } catch (\Throwable $e) {
             return redirect()->back()->withInput()->with('error', 'فشل التحديث: '.$e->getMessage());
         }
+    }
+
+    /** قرار ٧٤: باب السجل العام لخطر عام وحده، ويعدّله مسؤول السلامة — ولغيره مقترحه ما دام مسودة */
+    private function authorizeGeneralEdit(Risk $risk): void
+    {
+        abort_if($risk->risk_type === 'active', 404);
+        abort_unless(RiskApproval::canEditGeneral(Auth::user(), $risk), 403, self::GENERAL_EDIT);
     }
 
     // ── التفعيل: من السجل العام إلى سجل إدارة/مكان ──
@@ -461,6 +477,10 @@ class RiskController extends Controller
         $validated = $request->validate(['status' => ['required', 'string'], 'note' => ['nullable', 'string', 'max:5000']]);
         // قرار ٧٠: الاعتماد والرفض لمن يعتمد هذا الخطر وحده — لا يُعتمد خطر بتغيير حالته من هذا الباب
         abort_if(in_array($validated['status'], ['approved', 'rejected'], true) && !RiskApproval::canApprove(Auth::user(), $risk), 403, self::NOT_APPROVER);
+        // قرار ٧٤: حالة الخطر في السجل العام يغيّرها مسؤول السلامة — ولصاحب المقترح المرفوض إعادته إلى المسودة
+        if ($risk->risk_type !== 'active' && Auth::user()->role() !== RiskApproval::GENERAL_APPROVER) {
+            abort_unless((int) $risk->created_by_id === (int) Auth::id() && $risk->status === 'rejected' && $validated['status'] === 'draft', 403, self::GENERAL_EDIT);
+        }
         // قرار ٦٩: من لا يملك الإنشاء (مدير الإدارة) يعيد خطره المرفوض إلى المسودة فقط — لا حالة أخرى من هذا الباب
         if (!\App\Core\Permissions\PermissionRegistry::hasPermission(Auth::user()->role(), 'risk.create')) {
             abort_unless(\App\Core\Permissions\PermissionRegistry::hasPermission(Auth::user()->role(), 'risk.activate')

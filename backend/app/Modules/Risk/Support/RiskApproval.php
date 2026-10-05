@@ -2,6 +2,7 @@
 
 namespace App\Modules\Risk\Support;
 
+use App\Core\Permissions\PermissionRegistry;
 use App\Models\User;
 use App\Modules\Governance\Models\OrganizationUnit;
 use App\Modules\Governance\Models\UserProfile;
@@ -59,6 +60,20 @@ final class RiskApproval
         if (self::isGeneral($risk)) return $profile->role === self::GENERAL_APPROVER;
         if (!in_array($profile->role, self::UNIT_MANAGERS, true) || !$profile->organization_unit_id) return false;
         return in_array((int) $risk->organization_unit_id, OrganizationUnit::descendantIdsOf($profile->organization_unit_id), true);
+    }
+
+    /**
+     * قرار ٧٤ (٢٠٢٦-١٠-٠٥، بكلمته «العام لا يعدل إلا من مسؤول السلامة»، وعن الإضافة «تبقى اقتراحاً»):
+     * من يعدّل خطراً في السجل العام — مسؤول السلامة وحده. وغيره ممن يملك الإنشاء يقترح خطراً جديداً
+     * ويصحّح مقترحه هو ما دام مسودة؛ بعد رفعه أو اعتماده لا يلمسه. مصدر واحد للمسار والزر.
+     */
+    public static function canEditGeneral(User $user, Risk $risk): bool
+    {
+        $profile = $user->profile;
+        if (!$profile || !$profile->is_active || $risk->risk_type === 'active') return false;
+        if ($profile->role === self::GENERAL_APPROVER) return true;
+        return $risk->status === 'draft' && (int) $risk->created_by_id === (int) $user->id
+            && PermissionRegistry::hasPermission($profile->role, 'risk.create');
     }
 
     /** حسابات من يعتمدون هذا الخطر — للتنبيه عند رفعه. @return array<int, int> */

@@ -58,7 +58,7 @@ class RiskTreeController extends Controller
         return response()->json($this->pack($risk) + [
             'status' => $risk->status, 'status_label' => $risk->status_label, 'scope_type' => $risk->scope_type,
             'organization_unit' => $risk->organizationUnit?->name, 'place' => $risk->place?->name,
-        ]);
+        ] + ($type === 'reference' ? ['can_edit' => \App\Modules\Risk\Support\RiskApproval::canEditGeneral(auth()->user(), $risk)] : [])); // قرار ٧٤: زر «تعديل» لمن يقبله المسار
     }
 
     /**

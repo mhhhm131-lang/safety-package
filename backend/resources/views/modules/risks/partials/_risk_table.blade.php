@@ -232,7 +232,8 @@
                                 <a href="{{ route('risk.show', $risk) }}" class="btn btn-sm btn-outline-primary" title="عرض">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                @if($can_edit)
+                                {{-- قرار ٧٤: السجل العام يعدّله مسؤول السلامة، ولغيره مقترحه ما دام مسودة --}}
+                                @if($can_edit && ($registry_type !== 'reference' || \App\Modules\Risk\Support\RiskApproval::canEditGeneral(auth()->user(), $risk)))
                                 <a href="{{ $registry_type === 'reference'
                                     ? route('risk.reference.edit', $risk)
                                     : route('risk.active.edit', $risk) }}"

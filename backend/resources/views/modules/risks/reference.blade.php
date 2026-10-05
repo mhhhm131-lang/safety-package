@@ -637,10 +637,10 @@
                        style="background:#10b981;color:#fff;font-size:.72rem;white-space:nowrap;">
                         <i class="bi bi-lightning me-1"></i>تفعيل للخاص
                     </a>
-                    <a href="${API.editRisk(r0.id)}" class="btn btn-sm btn-outline-secondary"
+                    ${r0.can_edit ? `<a href="${API.editRisk(r0.id)}" class="btn btn-sm btn-outline-secondary"
                        style="font-size:.72rem;white-space:nowrap;">
                         <i class="bi bi-pencil me-1"></i>تعديل
-                    </a>
+                    </a>` : ''}
                 </div>`;
         } else {
             headerEl.innerHTML = `
@@ -738,10 +738,10 @@
                                        style="background:#10b981;color:#fff;font-size:.6rem;padding:2px 4px;white-space:nowrap;text-align:center;">
                                         <i class="bi bi-lightning"></i> تفعيل
                                     </a>
-                                    <a href="${API.editRisk(r.id)}" class="btn btn-sm btn-outline-secondary w-100"
+                                    ${r.can_edit ? `<a href="${API.editRisk(r.id)}" class="btn btn-sm btn-outline-secondary w-100"
                                        style="font-size:.6rem;padding:2px 4px;white-space:nowrap;text-align:center;">
                                         <i class="bi bi-pencil"></i> تعديل
-                                    </a>
+                                    </a>` : ''}
                                 </div>` : ''}
                             </div>
                         </td>`;
