@@ -112,7 +112,7 @@
         <div class="card mb-3" style="background:var(--bg-card); border:1px solid var(--border-color);">
             <div class="card-body">
                 <form method="GET" action="{{ route('risk.reference.index') }}" class="row g-2">
-                    <div class="col-md-4">
+                    <div class="col-md-7">
                         <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="ابحث في العنوان أو الكود...">
                     </div>
                     <div class="col-md-3">
@@ -123,14 +123,7 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-3">
-                        <select name="status" class="form-select">
-                            <option value="">جميع الحالات</option>
-                            <option value="draft" @selected(request('status')=='draft')>مسودة</option>
-                            <option value="pending_approval" @selected(request('status')=='pending_approval')>بانتظار الاعتماد</option>
-                            <option value="approved" @selected(request('status')=='approved')>معتمد</option>
-                        </select>
-                    </div>
+                    {{-- قرار ٧٥: السجل العام ما اعتمده مسؤول السلامة — لا مسودات فيه تُصفّى بالحالة --}}
                     <div class="col-md-2">
                         <button type="submit" class="btn btn-accent w-100"><i class="bi bi-search"></i> بحث</button>
                     </div>

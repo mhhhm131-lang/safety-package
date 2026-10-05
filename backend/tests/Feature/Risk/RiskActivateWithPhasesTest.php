@@ -32,6 +32,7 @@ class RiskActivateWithPhasesTest extends TestCase
         $category = $this->makeCategory();
         $risk = $this->makeRisk([
             'risk_type'   => 'reference',
+            'status'      => 'approved', // قرار ٧٥: يُفعَّل ما اعتمده مسؤول السلامة
             'category_id' => $category->id,
             'severity'    => 3,
             'likelihood'  => 3,

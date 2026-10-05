@@ -25,9 +25,19 @@ class RiskTreeController extends Controller
 
     // ── السجل العام (reference) وسجل الإدارة (active) ──
 
+    /** قرار ٧٥: خطر معتمد في السجل العام بلا فئة فرعية يظهر تحت فئته في هذه الخانة — رقمها سالبُ رقم الفئة */
+    private const NO_SUB = 'بلا فئة فرعية';
+
+    /** قرار ٧٥: السجل العام ما اعتمده مسؤول السلامة — المقترح لا يظهر فيه */
+    private function registry(string $type)
+    {
+        $q = Risk::where('risk_type', $type);
+        return $type === 'reference' ? $q->adopted() : $q;
+    }
+
     public function registryCategories(string $type): JsonResponse
     {
-        $q = Risk::where('risk_type', $type)->whereNotNull('category_id');
+        $q = $this->registry($type)->whereNotNull('category_id');
         if ($type === 'active') { $this->scopeToUserOrgUnit($q); $this->scopeToPlace($q); }
         $catIds = $q->distinct()->pluck('category_id');
         return response()->json(RiskCategory::whereIn('id', $catIds)->where('is_active', true)->orderBy('name')->get(['id', 'name', 'name_en']));
@@ -35,15 +45,22 @@ class RiskTreeController extends Controller
 
     public function registrySubCategories(string $type, $categoryId): JsonResponse
     {
-        $q = Risk::where('risk_type', $type)->where('category_id', (int) $categoryId)->whereNotNull('sub_category_id');
+        $q = $this->registry($type)->where('category_id', (int) $categoryId);
         if ($type === 'active') { $this->scopeToUserOrgUnit($q); $this->scopeToPlace($q); }
-        $subIds = $q->distinct()->pluck('sub_category_id');
-        return response()->json(RiskSubCategory::whereIn('id', $subIds)->orderBy('name')->get(['id', 'name', 'is_universal']));
+        $subIds = (clone $q)->whereNotNull('sub_category_id')->distinct()->pluck('sub_category_id');
+        $subs = RiskSubCategory::whereIn('id', $subIds)->orderBy('name')->get(['id', 'name', 'is_universal'])->toBase();
+        if ($type === 'reference' && (clone $q)->whereNull('sub_category_id')->exists()) {
+            $subs->push(['id' => -(int) $categoryId, 'name' => self::NO_SUB, 'is_universal' => false]);
+        }
+        return response()->json($subs);
     }
 
     public function registryRisksBySubCategory(string $type, $subCatId): JsonResponse
     {
-        $q = Risk::where('risk_type', $type)->where('sub_category_id', (int) $subCatId);
+        $q = $this->registry($type);
+        $type === 'reference' && (int) $subCatId < 0
+            ? $q->where('category_id', -(int) $subCatId)->whereNull('sub_category_id')
+            : $q->where('sub_category_id', (int) $subCatId);
         if ($type === 'active') { $this->scopeToUserOrgUnit($q); $this->scopeToPlace($q); }
         return response()->json($q->orderByDesc('risk_score')->limit(200)
             ->get(['id', 'code', 'title', 'severity', 'likelihood', 'risk_score', 'status', 'scope_type', 'organization_unit_id', 'place_id']));
@@ -53,6 +70,7 @@ class RiskTreeController extends Controller
     {
         $q = Risk::with(['category', 'subCategory', 'organizationUnit', 'place', 'assignedCoordinator', 'assignedFieldTeam',
             'phases.causes', 'phases.affectedGroups', 'phases.affectedGroupDetails.affectedGroup'])->where('risk_type', $type);
+        if ($type === 'reference') $q->adopted(); // قرار ٧٥
         if ($type === 'active') $this->scopeToUserOrgUnit($q);
         $risk = $q->findOrFail((int) $riskId);
         return response()->json($this->pack($risk) + [

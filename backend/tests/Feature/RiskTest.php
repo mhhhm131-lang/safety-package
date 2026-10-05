@@ -122,6 +122,9 @@ class RiskTest extends TestCase
         $itMgr = $this->user('it.mgr', 'department_manager', 'it');
         $m = $this->masterRisk();
         $ref = app(RiskCopyService::class)->masterToReference($m, $safety->id);
+        // قرار ٧٥: يُفعَّل من السجل العام ما اعتمده مسؤول السلامة — يقدّمه ثم يعتمده
+        $this->actingAs($safety)->post(route('risk.submit', $ref))->assertRedirect();
+        $this->actingAs($safety)->post(route('risk.approve', $ref))->assertRedirect();
         $hr = OrganizationUnit::where('code', 'hr')->first();
         $it = OrganizationUnit::where('code', 'it')->first();
         $group = AffectedGroup::first();
@@ -166,7 +169,10 @@ class RiskTest extends TestCase
         // ٤) الاعتماد: خطر مرجعي جديد يُقدَّم ويعتمده مسؤول السلامة وحده (قرار ٦٩ — كان: الإدارة العليا) (آلة الحالة + سجل الأحداث)
         $draft = app(RiskService::class)->createRisk($safety->id, ['title' => 'خطر جديد', 'description' => 'x', 'category_id' => $this->cat->id,
             'severity' => 2, 'likelihood' => 2], 'reference');
-        $this->actingAs($safety)->get('/app/risk/reference')->assertOk()->assertSee("/app/risk/{$draft->id}/submit", false);
+        // قرار ٧٥: المسودة لا تظهر في السجل العام — صاحبها يقدّمها من بطاقته في «ما ينتظرك»
+        $this->actingAs($safety)->get('/app/risk/reference')->assertOk()->assertDontSee("/app/risk/{$draft->id}/submit", false);
+        $card = app(\App\Core\Inbox\InboxService::class)->forUser($safety->fresh())->first(fn ($t) => $t->key === "risk:{$draft->id}:draft");
+        $this->assertSame(route('risk.submit', $draft), $card?->primary['url']);
         $this->actingAs($safety)->post("/app/risk/{$draft->id}/submit")->assertRedirect();
         $this->actingAs($safety)->get('/app/risk/reference')->assertOk()->assertDontSee("/app/risk/{$draft->id}/submit", false);
         $this->assertSame('pending_approval', $draft->fresh()->status);

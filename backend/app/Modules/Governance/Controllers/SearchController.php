@@ -61,8 +61,13 @@ class SearchController extends Controller
                 fn (EmergencyIncident $e) => ['label' => $e->incident_code.' — '.$e->getTypeLabel(), 'meta' => $e->getStatusLabel().($e->place ? ' · '.$e->place->name : ''), 'url' => route('emergency.incidents.live', $e)]);
         }
         if (PermissionRegistry::hasPermission($role, 'risk.list')) {
-            $add('المخاطر', Risk::where(fn ($w) => $w->where('title', 'like', $like)->orWhere('code', 'like', $like))->orderBy('code')->limit(self::LIMIT)->get(),
-                fn (Risk $r) => ['label' => ($r->code ? $r->code.' — ' : '').$r->title, 'meta' => ($r->risk_type === 'active' ? 'خطر فعلي' : 'السجل العام').' · '.(Risk::STATUS_LABELS[$r->status] ?? $r->status), 'url' => route('risk.show', $r)]);
+            // قرار ٧٥: مقترح للسجل العام لا يُعرض خطراً عاماً — يجده صاحبه ومسؤول السلامة وحدهما، وباسمه «مقترح»
+            $add('المخاطر', Risk::where(fn ($w) => $w->where('title', 'like', $like)->orWhere('code', 'like', $like))
+                ->when($role !== \App\Modules\Risk\Support\RiskApproval::GENERAL_APPROVER, fn ($w) => $w->where(fn ($x) => $x->where('risk_type', 'active')
+                    ->orWhereNotIn('status', Risk::PROPOSED)->orWhere('created_by_id', $user->id)))
+                ->orderBy('code')->limit(self::LIMIT)->get(),
+                fn (Risk $r) => ['label' => ($r->code ? $r->code.' — ' : '').$r->title, 'meta' => ($r->risk_type === 'active' ? 'خطر فعلي'
+                    : (in_array($r->status, Risk::PROPOSED, true) ? 'مقترح للسجل العام' : 'السجل العام')).' · '.(Risk::STATUS_LABELS[$r->status] ?? $r->status), 'url' => route('risk.show', $r)]);
         }
         if (PermissionRegistry::hasPermission($role, 'permit.list')) {
             $add('التصاريح', Permit::where(fn ($w) => $w->where('code', 'like', $like)->orWhere('title', 'like', $like))->latest()->limit(self::LIMIT)->get(),

@@ -108,6 +108,11 @@ class RiskPhaseEndToEndTest extends TestCase
         // العنوان يبقى (لا فئة فرعية تُشتق منها).
         $this->assertSame('سقوط من ارتفاع', $reference->fresh()->title);
 
+        // قرار ٧٥: يُفعَّل من السجل العام ما اعتمده مسؤول السلامة — يقدّمه ثم يعتمده
+        $this->post(route('risk.submit', $reference))->assertRedirect();
+        $this->post(route('risk.approve', $reference))->assertRedirect();
+        $this->assertSame('approved', $reference->fresh()->status);
+
         // ─── STAGE 4 — Activate the reference → active risk ────
         $this->post(route('risk.activate', $reference), ['assigned_coordinator_id' => \App\Models\User::min('id'), 'assigned_field_team_id' => \App\Models\User::min('id'), /* ٢١-٤: التسمية شرط التفعيل */ 
             'scope_type' => 'general',

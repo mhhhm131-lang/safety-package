@@ -190,7 +190,8 @@ class RiskController extends Controller
 
     public function referenceIndex(Request $request)
     {
-        $query = Risk::where('risk_type', 'reference')->with([
+        // قرار ٧٥: المقترح لا يظهر في السجل العام حتى يعتمده مسؤول السلامة
+        $query = Risk::where('risk_type', 'reference')->adopted()->with([
             'category', 'assignedCoordinator', 'assignedFieldTeam',
             'phases', 'phases.causes', 'phases.affectedGroups', 'phases.responsibleOrgUnit', 'phases.responsibleUser',
         ]);
@@ -227,7 +228,9 @@ class RiskController extends Controller
             $validated['description'] = trim((string) ($validated['description'] ?? '')) ?: $validated['title'];
             $risk = $this->riskService->createRisk(Auth::id(), collect($validated)->except(['phases'])->all(), 'reference');
             $this->riskService->persistAllPhases($risk, $validated['phases'] ?? []);
-            return redirect()->route('risk.reference.index')->with('success', 'أُنشئ الخطر في السجل العام بمراحله الثلاث.');
+            // قرار ٧٥: المقترِح يُقال له عند الحفظ أين مقترحه وما الخطوة التالية
+            $mine = Auth::user()->role() === RiskApproval::GENERAL_APPROVER;
+            return redirect()->route('risk.reference.index')->with('success', ($mine ? 'حُفظ الخطر مسودة.' : 'حُفظ مقترحك مسودة.').$this->proposalNote($risk));
         } catch (\Throwable $e) {
             return redirect()->back()->withInput()->with('error', 'حدث خطأ: '.$e->getMessage());
         }
@@ -256,7 +259,8 @@ class RiskController extends Controller
             $validated['description'] = trim((string) ($validated['description'] ?? '')) ?: $validated['title'];
             $this->riskService->updateRisk($risk, Auth::id(), collect($validated)->except(['phases'])->all());
             $this->riskService->persistAllPhases($risk, $validated['phases'] ?? []);
-            return redirect()->route('risk.reference.index')->with('success', 'حُدّث الخطر المرجعي بمراحله الثلاث.');
+            $note = $this->proposalNote($risk->fresh());
+            return redirect()->route('risk.reference.index')->with('success', $note !== '' ? 'حُفظ التصحيح.'.$note : 'حُدّث الخطر المرجعي بمراحله الثلاث.');
         } catch (\Throwable $e) {
             return redirect()->back()->withInput()->with('error', 'فشل التحديث: '.$e->getMessage());
         }
@@ -269,11 +273,28 @@ class RiskController extends Controller
         abort_unless(RiskApproval::canEditGeneral(Auth::user(), $risk), 403, self::GENERAL_EDIT);
     }
 
+    /** قرار ٧٥: ما يقال عند حفظ مقترح — أين هو وما الخطوة التالية. فارغ لخطر معتمد */
+    private function proposalNote(Risk $risk): string
+    {
+        if (!in_array($risk->status, Risk::PROPOSED, true)) return '';
+        if (Auth::user()->role() !== RiskApproval::GENERAL_APPROVER) {
+            return ' لا يظهر في السجل العام إلا بعد اعتماد مسؤول السلامة — قدّمه له من «ما ينتظرك».';
+        }
+        return $risk->status === 'pending_approval' ? ' يظهر في السجل العام بعد أن تعتمده من «ما ينتظرك».'
+            : ' يظهر في السجل العام بعد أن تقدّمه ثم تعتمده من «ما ينتظرك».';
+    }
+
     // ── التفعيل: من السجل العام إلى سجل إدارة/مكان ──
+
+    /** قرار ٧٥: يُفعَّل من السجل العام ما اعتمده مسؤول السلامة وحده — الحكم نفسه في التفعيل دفعةً */
+    private function activatable(int $id): Risk
+    {
+        return Risk::where('risk_type', 'reference')->whereIn('status', ['approved', 'active'])->findOrFail($id);
+    }
 
     public function activateForm(int $risk)
     {
-        $risk = Risk::findOrFail($risk);
+        $risk = $this->activatable($risk);
         $this->riskService->ensurePhases($risk);
         $risk->load(['category', 'subCategory', 'phases.causes', 'phases.affectedGroups', 'phases.affectedGroupDetails']);
         return view('modules.risks.activate', $this->formData() + compact('risk'));
@@ -281,6 +302,7 @@ class RiskController extends Controller
 
     public function activate(Request $request, int $risk)
     {
+        $reference = $this->activatable($risk);
         $validated = $request->validate(array_merge([
             'title' => ['nullable', 'string', 'max:300'],
             'description' => ['nullable', 'string', 'max:10000'],
@@ -296,7 +318,6 @@ class RiskController extends Controller
         $validated = $this->withinUnitScope($validated);
         if (is_string($validated)) return redirect()->back()->withInput()->with('error', $validated);
         try {
-            $reference = Risk::findOrFail($risk);
             // قرار ٧٠: من يعتمد هذا الخطر إن فعّله بنفسه صار نشطاً؛ غيره ينتظر المعتمد
             $unitId = !empty($validated['organization_unit_id']) ? (int) $validated['organization_unit_id'] : null;
             $await = !RiskApproval::activatesDirectly(Auth::user(), $unitId);

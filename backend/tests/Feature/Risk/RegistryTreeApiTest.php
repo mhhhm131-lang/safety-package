@@ -34,6 +34,7 @@ class RegistryTreeApiTest extends TestCase
     {
         return $this->makeRisk(array_merge([
             'risk_type'       => $type,
+            'status'          => 'approved', // قرار ٧٥: السجل العام يعرض ما اعتُمد
             'category_id'     => $this->category->id,
             'sub_category_id' => $this->subCategory->id,
         ], $extra));

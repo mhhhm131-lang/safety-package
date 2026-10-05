@@ -65,7 +65,7 @@ class ExternalPartyController extends Controller
     {
         $this->assertPartyAccess($externalParty->id);
         $risks = $externalParty->risks()->with(['category', 'subCategory'])->latest('risks.created_at')->paginate(20);
-        $registry = Risk::where('risk_type', 'reference')->orderBy('code')->get(['id', 'code', 'title']);
+        $registry = Risk::where('risk_type', 'reference')->adopted()->orderBy('code')->get(['id', 'code', 'title']); // قرار ٧٥: المعتمد وحده
         return view('modules.external_parties.risks', compact('externalParty', 'risks', 'registry'));
     }
 

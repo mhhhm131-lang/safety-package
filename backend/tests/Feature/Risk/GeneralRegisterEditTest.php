@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Risk;
 
+use App\Core\Inbox\InboxService;
+use App\Core\Inbox\Task;
 use App\Core\Permissions\PermissionRegistry;
 use App\Models\User;
 use App\Modules\Risk\Models\Risk;
@@ -209,24 +211,23 @@ class GeneralRegisterEditTest extends TestCase
     public function test_the_edit_button_shows_only_to_who_can_edit(): void
     {
         $coord = $this->makeUser('safety_coordinator', 'hr');
-        $other = $this->makeUser('safety_coordinator', 'it');
         $g = $this->general();
+        $detail = fn (User $u) => $this->actingAs($u)->getJson(url('app/risk/registry/tree/reference/risk/'.$g->id))->assertOk()->json('can_edit');
+        $link = fn (User $u) => str_contains((string) $this->actingAs($u)->get(route('risk.reference.index'))->assertOk()->getContent(), route('risk.reference.edit', $g));
+
+        // الشجرة: ما يبني به زر «تعديل»؛ والجدول: الرابط نفسه
+        $this->assertTrue($detail($this->salama));
+        $this->assertTrue($link($this->salama));
+        foreach ([$coord, $this->makeUser('system_staff'), $this->makeUser('department_manager', 'hr')] as $u) {
+            $this->assertFalse($detail($u), $u->profile->role);
+            $this->assertFalse($link($u), $u->profile->role);
+        }
+
+        // قرار ٧٥: المقترح لا يظهر في العام — صاحبه يصحّحه من بطاقته «عدّله» في «ما ينتظرك»
         $p = $this->general('مقترح المنسق', 'draft', $coord);
-        $detail = fn (User $u, Risk $r) => $this->actingAs($u)->getJson(url('app/risk/registry/tree/reference/risk/'.$r->id))->assertOk()->json('can_edit');
-        $link = fn (User $u, Risk $r) => str_contains((string) $this->actingAs($u)->get(route('risk.reference.index'))->assertOk()->getContent(), route('risk.reference.edit', $r));
-
-        // الشجرة: ما يبني به زر «تعديل»
-        $this->assertTrue($detail($this->salama, $g));
-        $this->assertFalse($detail($coord, $g));
-        $this->assertTrue($detail($coord, $p));
-        $this->assertFalse($detail($other, $p));
-        $this->assertTrue($detail($this->salama, $p));
-
-        // الجدول: الرابط نفسه
-        $this->assertTrue($link($this->salama, $g));
-        $this->assertFalse($link($coord, $g));
-        $this->assertTrue($link($coord, $p));
-        $this->assertFalse($link($other, $p));
-        $this->assertFalse($link($this->makeUser('department_manager', 'hr'), $g));
+        $card = app(InboxService::class)->forUser($coord->fresh())->first(fn (Task $t) => $t->key === "risk:{$p->id}:draft");
+        $this->assertNotNull($card, 'لا بطاقة لمسودة المقترِح');
+        $this->assertSame(route('risk.reference.edit', $p), $card->secondary['url']);
+        $this->actingAs($coord)->get($card->secondary['url'])->assertOk();
     }
 }

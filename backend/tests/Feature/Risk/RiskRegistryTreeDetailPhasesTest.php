@@ -21,7 +21,7 @@ class RiskRegistryTreeDetailPhasesTest extends TestCase
 
     private function referenceRisk(): Risk
     {
-        return $this->makeRisk(['risk_type' => 'reference']);
+        return $this->makeRisk(['risk_type' => 'reference', 'status' => 'approved']); // قرار ٧٥: السجل العام يعرض ما اعتُمد
     }
 
     public function test_risk_detail_returns_phases_in_fixed_order(): void
