@@ -25,24 +25,45 @@
   @if(!empty($placeTiles))
   <div class="col-md-5">
     <div class="card h-100" id="placesCard"><div class="card-body">
-      <h2 class="sec-h d-flex align-items-center gap-2 flex-wrap"><i class="bi bi-geo-alt"></i> {{ $scopeAll ? 'الأماكن (٨+١)' : (count($placeTiles) === 1 ? 'مكانك' : 'أماكنك') }} <span class="small text-muted fw-normal">اضغط المكان لملفه</span>
+      @php
+        // الكتلة لا المختصرة: المختصرة تبتلع كتلة @php التالية (درس مسجَّل)
+        $multiB = !empty($tileGroups) && count($tileGroups) > 1;
+      @endphp
+      <h2 class="sec-h d-flex align-items-center gap-2 flex-wrap"><i class="bi bi-geo-alt"></i> {{ $multiB ? 'الأماكن في كل مبنى' : ($scopeAll ? 'الأماكن (٨+١)' : (count($placeTiles) === 1 ? 'مكانك' : 'أماكنك')) }} <span class="small text-muted fw-normal">{{ $multiB ? 'اضغط المبنى فتظهر أماكنه، والمكان لملفه' : 'اضغط المكان لملفه' }}</span>
         <a class="btn btn-o btn-sm ms-auto" href="tel:{{ \App\Modules\Governance\Models\Place::CENTER_PHONE }}"><i class="bi bi-telephone-fill"></i> المركز <span dir="ltr">{{ \App\Modules\Governance\Models\Place::CENTER_PHONE }}</span></a></h2>
+      @if($multiB)
+      {{-- بكلمته «طبّقها الآن» (٢٠٢٦-١٠-٠٨): أكثر من مبنى ← عنوان لكل مبنى، مبنى الجلسة مفتوح والباقي مطوي --}}
+      <div class="d-grid gap-2" id="places">
+        @foreach($tileGroups as $g)
+        <div data-tile-group="{{ $g['b']->id }}">
+          <button class="grp-h {{ $g['expanded'] ? '' : 'collapsed' }}" type="button" data-bs-toggle="collapse" data-bs-target="#tiles-{{ $g['b']->id }}" aria-expanded="{{ $g['expanded'] ? 'true' : 'false' }}">
+            <i class="bi {{ $g['main'] ? 'bi-building' : 'bi-geo-alt' }}" style="color:var(--gold)"></i>
+            <span>{{ $g['b']->name }}</span>
+            <span class="small text-muted fw-normal">{{ $g['branch'] ? $g['branch'].' · ' : '' }}{{ count($g['codes']) }} أماكن
+              @if($g['od']) · <span class="text-danger">{{ $g['od'] }} متجاوز</span>@elseif($g['open']) · {{ $g['open'] }} مفتوح @endif</span>
+            <i class="bi bi-chevron-down grp-caret ms-auto"></i>
+          </button>
+          <div class="collapse {{ $g['expanded'] ? 'show' : '' }}" id="tiles-{{ $g['b']->id }}">
+            <div class="pl-grid pt-2">
+              @foreach($g['codes'] as $hz)
+                @if(($t = $placeTiles[$hz] ?? null) && ($p = $placeByCode[$hz] ?? null))
+                  @include('governance._place_tile', ['hz' => $hz, 't' => $t, 'p' => $p, 'n' => count($placeTiles)])
+                @endif
+              @endforeach
+            </div>
+          </div>
+        </div>
+        @endforeach
+      </div>
+      @else
       <div class="pl-grid" id="places">
         @foreach($placeTiles as $hz => $t)
           @if($p = $placeByCode[$hz] ?? null)
-          {{-- ٢٨-٣: المفتاح رمز المكان الكامل (HZ-06 أو HZ-06/DMM)، ومركز السلامة بصنفه --}}
-          <a class="pl-tile {{ $t['cls'] }}" href="{{ $p->category === 'HZ-00' ? route('emergency.dashboard') : route('app.places.units.file', $p) }}" data-place="{{ $hz }}" data-cls="{{ $t['cls'] }}" data-open="{{ $t['open'] }}" data-od="{{ $t['od'] }}" data-a="{{ $t['a'] }}"@if(count($placeTiles) > 1 && $p->category !== 'HZ-00') data-filter="1"@endif>
-            <span class="small text-muted" dir="ltr">{{ $hz }}</span>
-            <span class="nm">{{ $p->name }}</span>
-            <span class="small st">
-              @if(!$t['has'])<span class="text-muted">لم تُفتح جولة بعد</span>
-              @elseif($t['open'])<b>{{ $t['open'] }}</b> مفتوح@if($t['od']) · <b class="text-danger">{{ $t['od'] }} متجاوز</b>@endif
-              @else<b class="text-success">لا شيء مفتوح</b>@endif
-            </span>
-          </a>
+          @include('governance._place_tile', ['hz' => $hz, 't' => $t, 'p' => $p, 'n' => count($placeTiles)])
           @endif
         @endforeach
       </div>
+      @endif
       <p class="small text-muted mt-2 mb-0">أخضر لا شيء مفتوح · ذهبي مفتوح · أحمر متجاوز</p>
     </div></div>
   </div>

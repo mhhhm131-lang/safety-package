@@ -84,10 +84,26 @@ class HomeController extends Controller
             $tilesByB[$pp->building_id] ??= \App\Modules\Store\Services\InspectionDocReader::placeTiles((int) $pp->building_id);
             if (isset($tilesByB[$pp->building_id][$pp->category])) $placeTiles[$code] = $tilesByB[$pp->building_id][$pp->category];
         }
+        // بكلمته «طبّقها الآن» (٢٠٢٦-١٠-٠٨): أكثر من مبنى ← المربعات مجمَّعة بالمبنى، مبنى الجلسة مفتوح والباقي مطوي
+        $tileGroups = [];
+        $byB = [];
+        foreach (array_keys($placeTiles) as $code) $byB[$placeByCode[$code]->building_id][] = $code;
+        if (count($byB) > 1) {
+            $sessionB = \App\Modules\Governance\Services\BuildingContext::id($user);
+            $mainId = \App\Modules\Emergency\Models\EmergencyBuilding::main()?->id;
+            $blds = \App\Modules\Emergency\Models\EmergencyBuilding::with('branchUnit')->whereIn('id', array_keys($byB))->get()->keyBy('id');
+            foreach ($byB as $bidKey => $codesOf) {
+                $b = $blds->get($bidKey);
+                if (!$b) continue;
+                $tileGroups[] = ['b' => $b, 'branch' => $b->branchUnit?->name ?? $b->branch, 'codes' => $codesOf, 'main' => $b->id === $mainId, 'expanded' => $b->id === $sessionB,
+                    'open' => array_sum(array_map(fn ($c) => (int) ($placeTiles[$c]['open'] ?? 0), $codesOf)), 'od' => array_sum(array_map(fn ($c) => (int) ($placeTiles[$c]['od'] ?? 0), $codesOf))];
+            }
+        }
 
         // المرحلة ١٢ (قرار ٣٥): «ما ينتظرك» + «أريد أن…»
         return view('governance.inbox', [
             'placeTiles' => $placeTiles,
+            'tileGroups' => $tileGroups,
             'placeByCode' => $placeByCode,
             'scopeAll' => $snapshot['all'],
             'snapshot' => $snapshot,
