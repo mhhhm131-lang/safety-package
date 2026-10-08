@@ -74,6 +74,6 @@ class ResponsePlan extends Model
 
     public function documentUrl(): string
     {
-        return '/'.(Place::FOLDERS[$this->place?->code] ?? '').'/response-plan.html';
+        return '/'.(Place::FOLDERS[$this->place?->category] ?? '').'/response-plan.html'; // ٢٨-٣: بالصنف
     }
 }

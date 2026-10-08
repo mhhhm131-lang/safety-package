@@ -65,7 +65,9 @@ class EmergencyController extends Controller
         $activeIncidents = EmergencyIncident::open()->with('building', 'place')->orderByDesc('triggered_at')->get();
         $recentIncidents = EmergencyIncident::whereIn('status', ['ended', 'cancelled'])->with('place')->orderByDesc('triggered_at')->limit(8)->get();
         $upcomingDrills = EvacuationDrill::where('status', 'scheduled')->where('scheduled_at', '>=', now())->orderBy('scheduled_at')->limit(5)->with('building', 'place')->get();
-        $places = Place::orderBy('sort')->get();
+        // ٢٨-٣ (قرار ٧٨): صفحة المركز لمبنى الجلسة — أماكنه الفعّالة ووثائقه
+        $bid = \App\Modules\Governance\Services\BuildingContext::id();
+        $places = Place::active()->where('building_id', $bid)->orderBy('sort')->get();
         $teamsByPlace = EmergencyTeam::active()->whereNotNull('place_id')->get()->groupBy('place_id');
         $pendingCalls = EmergencyIncident::open()->pluck('id')->isEmpty() ? 0
             : \App\Modules\Emergency\Models\EmergencyNotification::whereIn('incident_id', EmergencyIncident::open()->pluck('id'))->manual()->count();
@@ -85,16 +87,16 @@ class EmergencyController extends Controller
         // ٢٦-٧ (قرار ٦٦): صفحة المركز الواحدة — الاستعداد لكل مكان (خطة الاستجابة وتمرينها من ملف المكان، المعدات التي تحتاج فحصاً)،
         // وبلاغات الشاغلين المفتوحة، والمركز كمكان (نماذجه وبلاغات فحصه وفريقه)
         $profiles = [];
-        foreach ($places as $pl) $profiles[$pl->code] = \App\Modules\Emergency\Services\PlaceProfile::get($pl->code)['plans'] ?? [];
+        foreach ($places as $pl) $profiles[$pl->code] = \App\Modules\Emergency\Services\PlaceProfile::get($pl->category, $bid)['plans'] ?? [];
         $equipByPlace = \App\Modules\Emergency\Models\EmergencyEquipment::query()->needsInspection()->whereNotNull('place_id')
             ->selectRaw('place_id, COUNT(*) as c')->groupBy('place_id')->pluck('c', 'place_id')->all();
         $occupantOpen = \App\Modules\Incident\Models\Incident::whereNotIn('status', \App\Modules\Incident\Models\Incident::TERMINAL)->count();
-        $centerPlace = $places->firstWhere('code', 'HZ-00');
+        $centerPlace = $places->firstWhere('category', 'HZ-00');
         $R = \App\Modules\Store\Services\InspectionDocReader::class;
         $centerTeams = $centerPlace ? $teamsByPlace->get($centerPlace->id, collect()) : collect();
         $centerFile = [
             'forms' => $R::formsOf('HZ-00'),
-            'open' => array_values(array_filter($R::reportsOf('HZ-00'), fn ($r) => !$R::isClosed($r))),
+            'open' => array_values(array_filter($R::reportsOf('HZ-00', $bid), fn ($r) => !$R::isClosed($r))),
             'members' => $centerTeams->flatMap(fn ($t) => $t->members->map(fn ($m) => ['role' => $m->role, 'name' => $m->name ?: $m->user?->name, 'phone' => $m->phone]))->values()->all(),
         ];
         return view('modules.emergency.dashboard', compact(
@@ -797,7 +799,7 @@ class EmergencyController extends Controller
         // الوثيقة هي الحقيقة: تُعاد قراءتها عند كل فتح إن تغيّرت بصمتها (رخيصة: sha1 لثمانية ملفات)
         $summary = app(ResponsePlanSync::class)->sync();
         $plans = ResponsePlan::with(['place', 'steps'])->get()->keyBy(fn ($p) => $p->place->code);
-        $places = Place::where('code', '!=', 'HZ-00')->orderBy('sort')->get();
+        $places = Place::where('category', '!=', 'HZ-00')->orderBy('building_id')->orderBy('sort')->get(); // ٢٨-٣: بالصنف، كل المباني
         $cards = RoleCards::byCategory();
         return view('modules.emergency.plans.index', compact('summary', 'plans', 'places', 'cards'));
     }

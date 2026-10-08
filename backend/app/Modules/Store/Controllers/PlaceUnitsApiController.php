@@ -17,7 +17,9 @@ class PlaceUnitsApiController extends Controller
     public function index(Request $request): JsonResponse
     {
         $code = (string) $request->query('place', '');
-        $place = Place::where('code', $code)->first();
+        // ٢٨-٣: النموذج يرسل الصنف (HZ-xx) من جلسته ← مكان مبنى الجلسة بهذا الصنف؛ وإلا بالرمز الكامل
+        $place = Place::where('building_id', \App\Modules\Governance\Services\BuildingContext::id($request->user()))->where('category', $code)->first()
+            ?? Place::where('code', $code)->first();
         if (!$place) return response()->json([]);
         $units = PlaceUnit::where('place_id', $place->id)->where('is_active', true)->orderBy('type')->orderBy('sort')->orderBy('name')->get();
         return response()->json($units->map(fn (PlaceUnit $u) => [

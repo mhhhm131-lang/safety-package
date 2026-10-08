@@ -22,7 +22,7 @@ class PlaceFileController extends Controller
     /** المرحلة ١٩-٢: ملف النظام — ما كان يعرضه `renderSystem` في dashboard.html:715-740. */
     public function system(Place $place, string $form, string $sys): View
     {
-        $s = R::systemOf($place->code, $form, $sys);
+        $s = R::systemOf($place->category, $form, $sys, $place->building_id); // ٢٨-٣: بالمبنى والصنف
         abort_unless($s, 404, 'لا نظام بهذا الرمز في نماذج هذا المكان.');
         return view('governance.places.system', ['place' => $place, 's' => $s,
             'ui' => PermissionRegistry::uiRole(Auth::user()->role())]);
@@ -31,9 +31,10 @@ class PlaceFileController extends Controller
     public function show(Place $place): View
     {
         $user = Auth::user();
-        $hz = $place->code;
-        $systems = R::systemsOf($hz);
-        $reports = R::reportsOf($hz);
+        $hz = $place->category; // ٢٨-٣: الصنف، والوثائق بمبنى المكان لا مبنى الجلسة
+        $bid = (int) $place->building_id;
+        $systems = R::systemsOf($hz, $bid);
+        $reports = R::reportsOf($hz, $bid);
         $open = array_values(array_filter($reports, fn ($r) => !R::isClosed($r)));
         usort($open, fn ($a, $b) => (R::overdueHours($b) ?? -INF) <=> (R::overdueHours($a) ?? -INF));
 
@@ -50,7 +51,7 @@ class PlaceFileController extends Controller
         ];
 
         // الجاهزية: الخطتان والفريق من ملف المكان (ipa-place) — ١٩-٥: تُحرَّر من هنا عبر PlaceTeamController
-        $profile = P::get($hz);
+        $profile = P::get($hz, $bid);
         $pl = $profile['plans'];
         $drillDays = !empty($pl['drill']) && ($t = \DateTimeImmutable::createFromFormat('!Y-m-d', substr((string) $pl['drill'], 0, 10))) ? (int) $t->diff(now())->days : null;
         $folder = '/'.(Place::FOLDERS[$hz] ?? $hz);
@@ -69,7 +70,7 @@ class PlaceFileController extends Controller
         $inspOk = count(array_filter($systems, fn ($s) => $s['st'] === 'ok'));
         $plans[] = ['key' => 'insp', 'label' => 'نماذج الفحص', 'url' => null, 'cls' => !count($systems) ? 'bad' : ($inspOk === count($systems) ? 'ok' : 'warn'),
             'v' => !count($systems) ? 'لم تُفعَّل' : $inspOk.' من '.count($systems).' في موعده', 'd' => count($systems) ? 'تُحسب تلقائياً من سجل الجولات' : 'افتح النموذج وسجّل أول جولة'];
-        [$units, $teamCard] = $this->teams($user, $hz, $profile);
+        [$units, $teamCard] = $this->teams($user, $hz, $profile, $bid);
         $events = $hz === P::HALLS ? $this->events($profile) : null;
         $plans[] = ['key' => 'team', 'url' => null] + ($events ? $events['card'] : $teamCard);
 
@@ -108,7 +109,7 @@ class PlaceFileController extends Controller
     private function units(Place $place)
     {
         $rows = PlaceUnit::where('place_id', $place->id)->where('is_active', true)->orderBy('type')->orderBy('sort')->orderBy('name')->get();
-        if (!in_array('department', PlaceUnit::typesFor($place->code), true)) return $rows;
+        if (!in_array('department', PlaceUnit::typesFor($place->category), true)) return $rows;
         $byUnit = $rows->where('type', 'department')->keyBy('organization_unit_id');
         $depts = \App\Modules\Governance\Models\OrganizationUnit::where('place_id', $place->id)->where('is_active', true)->orderBy('order')->orderBy('name')->get()
             ->map(fn ($ou) => $byUnit->get($ou->id) ?? new PlaceUnit(['place_id' => $place->id, 'type' => 'department', 'organization_unit_id' => $ou->id, 'name' => $ou->name]));
@@ -117,10 +118,10 @@ class PlaceFileController extends Controller
     }
 
     /** ١٩-٥: وحدات الفريق بفرقها وحالاتها وأزرارها، وبطاقة الجاهزية الرابعة (dashboard.html:925-945 readiness) */
-    private function teams($user, string $hz, array $profile): array
+    private function teams($user, string $hz, array $profile, int $bid): array
     {
         $rows = []; $states = [];
-        foreach (P::unitList($hz, $profile) as $un) {
+        foreach (P::unitList($hz, $profile, $bid) as $un) {
             $u = P::unit($profile, $un['uid']);
             $need = P::teamsNeeded($u); $n = P::teamCount($u); $canUnit = P::canUnit($user, $un);
             $teams = [];

@@ -55,23 +55,27 @@ final class PlaceSnapshot
             ->selectRaw('place_id, COUNT(*) as c')->groupBy('place_id')->pluck('c', 'place_id')->all();
         $permits = Permit::query()->where('status', Permit::STATUS_ACTIVE)->whereIn('place_id', $ids)
             ->selectRaw('place_id, COUNT(*) as c')->groupBy('place_id')->pluck('c', 'place_id')->all();
-        $tiles = InspectionDocReader::placeTiles();
-        $rounds = self::dueRoundsByPlace();
+        // ٢٨-٣ (قرار ٧٨): وثائق الفحص بالمبنى والصنف — لكل مبنى في النطاق بلاطاته وجولاته
+        $tiles = []; $rounds = [];
+        foreach ($places->pluck('building_id')->unique() as $bid) {
+            $tiles[$bid] = InspectionDocReader::placeTiles((int) $bid);
+            $rounds[$bid] = self::dueRoundsByPlace((int) $bid);
+        }
 
         $rows = [];
         $total = array_fill_keys(array_keys(self::KEYS), 0);
         foreach ($places as $p) {
             $n = [
                 'incidents' => (int) ($incidents[$p->id] ?? 0),
-                'reports'   => (int) ($tiles[$p->code]['open'] ?? 0),
-                'overdue'   => (int) ($tiles[$p->code]['od'] ?? 0),
-                'rounds'    => (int) ($rounds[$p->code] ?? 0),
+                'reports'   => (int) ($tiles[$p->building_id][$p->category]['open'] ?? 0),
+                'overdue'   => (int) ($tiles[$p->building_id][$p->category]['od'] ?? 0),
+                'rounds'    => (int) ($rounds[$p->building_id][$p->category] ?? 0),
                 'emergency' => (int) ($emergencies[$p->id] ?? 0),
                 'permits'   => (int) ($permits[$p->id] ?? 0),
             ];
             foreach ($n as $k => $v) $total[$k] += $v;
             // ٢٦-٧: مربع «مركز السلامة» يفتح صفحة المركز الواحدة (فيها بنود المكان بأسفلها بالمعرّفات نفسها)
-            $file = $p->code === 'HZ-00' ? route('emergency.dashboard') : route('app.places.units.file', $p);
+            $file = $p->category === 'HZ-00' ? route('emergency.dashboard') : route('app.places.units.file', $p);
             $rows[$p->code] = ['code' => $p->code, 'id' => $p->id, 'name' => $p->name, 'file' => $file, 'n' => $n, 'links' => self::links($p->code, $file)];
         }
 
@@ -87,11 +91,11 @@ final class PlaceSnapshot
     }
 
     /** الجولات المستحقة في كل مكان لكل أدوار الواجهة، بلا تكرار (مكان × نظام × دورية × مهمة) */
-    private static function dueRoundsByPlace(): array
+    private static function dueRoundsByPlace(int $buildingId): array
     {
         $seen = [];
         foreach (array_keys(InspectionDocReader::WHO_ROLE) as $ui) {
-            foreach (InspectionDocReader::dueRounds($ui) as $r) {
+            foreach (InspectionDocReader::dueRounds($ui, true, $buildingId) as $r) {
                 $seen[$r['hz'].'|'.$r['k'].'|'.$r['freq'].'|'.$r['task']] = $r['hz'];
             }
         }

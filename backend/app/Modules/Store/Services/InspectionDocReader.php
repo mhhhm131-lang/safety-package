@@ -2,12 +2,14 @@
 
 namespace App\Modules\Store\Services;
 
+use App\Modules\Governance\Services\BuildingContext;
 use App\Modules\Store\Inbox\InspectionReportTasks;
 use App\Modules\Store\Models\InstituteDocument;
 
 /**
  * المرحلة ١٩-١ (قرار ٤٨): قارئ واحد لوثائق نماذج الفحص — منطق اللوحة حرفياً (dashboard.html:440-514, 636-658).
  * كان منسوخاً في InspectionReportTasks وفي dashboard.html؛ الآن مصدر واحد في الخلفية يستعمله «ما ينتظرك» وملف المكان.
+ * ٢٨-٣ (قرار ٧٨): كل قراءة بالمبنى والصنف — `$b` معرّف المبنى، وبلا تحديد مبنى الجلسة (BuildingContext).
  */
 class InspectionDocReader
 {
@@ -71,10 +73,11 @@ class InspectionDocReader
     /**
      * وثائق نماذج المكان مفكوكة: [key => ['form' => f, 'data' => array]]
      */
-    public static function docsOf(string $hz): array
+    public static function docsOf(string $hz, ?int $b = null): array
     {
+        $b ??= BuildingContext::id();
         $forms = self::formsOf($hz);
-        $docs = InstituteDocument::whereIn('key', array_column($forms, 'key'))->get()->keyBy('key');
+        $docs = InstituteDocument::whereIn('key', array_column($forms, 'key'))->where('building_id', $b)->get()->keyBy('key');
         $out = [];
         foreach ($forms as $f) {
             $d = $docs->get($f['key']);
@@ -99,10 +102,10 @@ class InspectionDocReader
      * أنظمة المكان من وثائق نماذجه (dashboard.html:643-658 systemsOf) — الحالة: ok / late / fault / none.
      * @return array<int, array{k:string,form:array,name:string,code:string,last:?array,rounds:array,days:?int,freq:?string,next:?string,st:string,open:int,reports:array}>
      */
-    public static function systemsOf(string $hz): array
+    public static function systemsOf(string $hz, ?int $b = null): array
     {
         $out = []; $today = now()->startOfDay();
-        foreach (self::docsOf($hz) as $key => $doc) {
+        foreach (self::docsOf($hz, $b) as $key => $doc) {
             $d = $doc['data'];
             foreach ((array) ($d['defs'] ?? []) as $k => $def) {
                 if (!is_array($def)) continue;
@@ -128,12 +131,12 @@ class InspectionDocReader
      * المرحلة ١٩-٢: نظام واحد بتفاصيله (dashboard.html:715-740 renderSystem) — البنود بعلاماتها، القراءات بمرجعيتها والمقاسة،
      * الجدول الدوري، والبلاغات المفتوح أولاً ثم الأشد تأخراً. null إن لم يوجد النظام في نموذج هذا المكان.
      */
-    public static function systemOf(string $hz, string $formKey, string $k): ?array
+    public static function systemOf(string $hz, string $formKey, string $k, ?int $b = null): ?array
     {
         $sys = null;
-        foreach (self::systemsOf($hz) as $s) if ($s['form']['key'] === $formKey && $s['k'] === $k) { $sys = $s; break; }
+        foreach (self::systemsOf($hz, $b) as $s) if ($s['form']['key'] === $formKey && $s['k'] === $k) { $sys = $s; break; }
         if (!$sys) return null;
-        $d = self::docsOf($hz)[$formKey]['data'] ?? [];
+        $d = self::docsOf($hz, $b)[$formKey]['data'] ?? [];
         $def = (array) (($d['defs'] ?? [])[$k] ?? []);
         $marks = (array) ($d['marks'] ?? []); $vals = (array) ($d['vals'] ?? []);
         $items = [];
@@ -195,14 +198,14 @@ class InspectionDocReader
      * left = الأيام الباقية (سالب = متأخرة، null = لم تُنفَّذ). المستحق: null أو ≤ ٧.
      * @return array<int, array{hz:string,form:array,k:string,system:string,freq:string,task:string,who:string,last:?array,next:?string,left:?int}>
      */
-    public static function dueRounds(string $ui, bool $onlyDue = true): array
+    public static function dueRounds(string $ui, bool $onlyDue = true, ?int $b = null): array
     {
         $mine = self::WHO_ROLE[$ui] ?? null;
         if (!$mine) return [];
         $today = new \DateTimeImmutable(now()->toDateString());
         $out = [];
         foreach (self::allPlaces() as $hz) {
-            foreach (self::systemsOf($hz) as $s) {
+            foreach (self::systemsOf($hz, $b) as $s) {
                 foreach ($s['sched_rows'] as $sc) { // من systemsOf — بلا قراءة ثانية للوثيقة
                     $freq = trim((string) ($sc[0] ?? '')); $days = self::FREQ_DAYS[$freq] ?? null;
                     if (!$days) continue;
@@ -225,18 +228,18 @@ class InspectionDocReader
     }
 
     /** كل بلاغات الفحص في الأماكن كلها مع نموذجها */
-    public static function allReports(): array
+    public static function allReports(?int $b = null): array
     {
         $out = [];
-        foreach (self::allPlaces() as $hz) foreach (self::reportsOf($hz) as $r) $out[] = $r;
+        foreach (self::allPlaces() as $hz) foreach (self::reportsOf($hz, $b) as $r) $out[] = $r;
         return $out;
     }
 
     /** سكة «أين تقف البلاغات»: لكل مستوى عدد المفتوح والمتأخر (dashboard.html:588-593) */
-    public static function rail(): array
+    public static function rail(?int $b = null): array
     {
         $cnt = [1 => 0, 2 => 0, 3 => 0, 4 => 0]; $od = [1 => 0, 2 => 0, 3 => 0, 4 => 0]; $open = 0;
-        foreach (self::allReports() as $r) {
+        foreach (self::allReports($b) as $r) {
             if (self::isClosed($r)) continue;
             $open++; $h = self::holder($r);
             if ($h) { $cnt[$h]++; if ((self::overdueHours($r) ?? -1) >= 0) $od[$h]++; }
@@ -260,7 +263,7 @@ class InspectionDocReader
     }
 
     /** «بلاغاتي»: قررتُ فيها ولم تُغلق ولا تنتظرني الآن (mineDone:469-474) */
-    public static function decidedByRole(string $ui): array
+    public static function decidedByRole(string $ui, ?int $b = null): array
     {
         $lv = self::ROLE_LEVEL[$ui] ?? null;
         if (!$lv) return [];
@@ -269,7 +272,7 @@ class InspectionDocReader
             return !empty($L[$lv]) || (!empty($L[$lv - 1]) && !empty($L[$lv - 1]['up']));
         };
         $out = [];
-        foreach (self::allReports() as $r) {
+        foreach (self::allReports($b) as $r) {
             if (self::isClosed($r) || self::waitsFor($r, $ui)) continue;
             if ($ui === 'tech') { if (!empty($r['sent'])) $out[] = $r; continue; }
             $hit = $reached($r['levels'] ?? []) || ($lv === 4 && !empty($r['path']) && $r['path'] !== 'إداري');
@@ -289,9 +292,9 @@ class InspectionDocReader
         'a' => ['فئة أ — حماية معطّلة', 'لا بديل — يستوجب إجراءات تعويضية'], 'reg' => ['تصعيد رقابي', 'رفعه مسؤول السلامة لتوقّف المسار']];
 
     /** بلاغات المبنى المفتوحة بتصنيف الرقم المنقور، الأشد تأخراً أولاً */
-    public static function reportsByKpi(string $k): array
+    public static function reportsByKpi(string $k, ?int $b = null): array
     {
-        $open = array_values(array_filter(self::allReports(), fn ($r) => !self::isClosed($r)));
+        $open = array_values(array_filter(self::allReports($b), fn ($r) => !self::isClosed($r)));
         $list = match ($k) {
             'open' => $open,
             'od' => array_filter($open, fn ($r) => (self::overdueHours($r) ?? -1) >= 0),
@@ -305,10 +308,10 @@ class InspectionDocReader
     }
 
     /** الأرقام الأربعة لصورة المبنى */
-    public static function buildingKpis(): array
+    public static function buildingKpis(?int $b = null): array
     {
         $out = [];
-        foreach (array_keys(self::KPI) as $k) $out[$k] = count(self::reportsByKpi($k));
+        foreach (array_keys(self::KPI) as $k) $out[$k] = count(self::reportsByKpi($k, $b));
         return $out;
     }
 
@@ -316,13 +319,14 @@ class InspectionDocReader
      * بلاطة كل مكان: هل فُتحت له جولة (وثيقة نموذج موجودة)، وعدد المفتوح والمتجاوز وفئة أ، والحالة none/late/busy/calm.
      * @return array<string, array{hz:string,forms:array,has:bool,open:int,od:int,a:int,cls:string}>
      */
-    public static function placeTiles(): array
+    public static function placeTiles(?int $b = null): array
     {
-        $existing = InstituteDocument::whereIn('key', array_column(InspectionReportTasks::FORMS, 'key'))->pluck('key')->all();
+        $b ??= BuildingContext::id();
+        $existing = InstituteDocument::whereIn('key', array_column(InspectionReportTasks::FORMS, 'key'))->where('building_id', $b)->pluck('key')->all();
         $out = [];
         foreach (self::HZ_ORDER as $hz) {
             $forms = self::formsOf($hz);
-            $open = array_values(array_filter(self::reportsOf($hz), fn ($r) => !self::isClosed($r)));
+            $open = array_values(array_filter(self::reportsOf($hz, $b), fn ($r) => !self::isClosed($r)));
             $o = count($open);
             $d = count(array_filter($open, fn ($r) => (self::overdueHours($r) ?? -1) >= 0));
             $a = count(array_filter($open, fn ($r) => ($r['imp'] ?? '') === 'none'));
@@ -333,10 +337,10 @@ class InspectionDocReader
     }
 
     /** كل بلاغات فحص المكان مع نموذجها */
-    public static function reportsOf(string $hz): array
+    public static function reportsOf(string $hz, ?int $b = null): array
     {
         $out = [];
-        foreach (self::docsOf($hz) as $doc) {
+        foreach (self::docsOf($hz, $b) as $doc) {
             foreach ((array) ($doc['data']['reports'] ?? []) as $r) {
                 if (is_array($r)) $out[] = $r + ['_form' => $doc['form']];
             }

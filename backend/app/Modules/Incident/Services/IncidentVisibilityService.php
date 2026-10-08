@@ -79,7 +79,8 @@ class IncidentVisibilityService
             } elseif ($role === 'safety_coordinator' && $profile->place_id) {
                 $places = [$profile->place_id];
             }
-            $hub = Place::idByCode(PlaceProfile::HUB);
+            // ٢٨-٣: مكاتب مبنى الحساب (صنف HZ-06 في مبناه)
+            $hub = Place::where('category', PlaceProfile::HUB)->where('building_id', $profile->myBuilding()?->id ?? \App\Modules\Emergency\Models\EmergencyBuilding::main()?->id)->value('id');
             $places = array_values(array_filter($places, fn ($id) => (int) $id !== (int) $hub)); // في المكاتب الرؤية بالإدارة لا بالمكان
         }
 

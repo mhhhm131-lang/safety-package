@@ -531,8 +531,8 @@ class IncidentService
         if (!empty($data['place_unit_id']) && ($u = PlaceUnit::find($data['place_unit_id'])?->organization_unit_id)) return (int) $u;
         $own = $userId ? UserProfile::where('user_id', $userId)->value('organization_unit_id') : null;
         $place = !empty($data['place_id']) ? Place::find($data['place_id']) : null;
-        if ($place && $place->code !== PlaceProfile::HUB) {
-            $list = PlaceProfile::unitList($place->code, PlaceProfile::get($place->code));
+        if ($place && $place->category !== PlaceProfile::HUB) { // ٢٨-٣: بالصنف وفي مبنى المكان
+            $list = PlaceProfile::unitList($place->category, PlaceProfile::get($place->category, $place->building_id), $place->building_id);
             $code = (string) ($list[0]['dept'] ?? '');
             if ($code !== '' && ($op = OrganizationUnit::where('code', $code)->value('id'))) return (int) $op;
         }

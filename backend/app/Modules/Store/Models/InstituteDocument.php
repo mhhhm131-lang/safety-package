@@ -28,6 +28,21 @@ class InstituteDocument extends Model
         return $this->belongsTo(\App\Modules\Emergency\Models\EmergencyBuilding::class, 'building_id');
     }
 
+    public function scopeOfBuilding($q, int $buildingId) { return $q->where('building_id', $buildingId); }
+
+    /** ٢٨-٣: وثيقة بمفتاحها في مبنى بعينه */
+    public static function doc(string $key, int $buildingId): ?self
+    {
+        return static::where('key', $key)->where('building_id', $buildingId)->first();
+    }
+
+    /** ٢٨-٣: رابط صفحة معهدية (نموذج فحص) لمبنى بعينه — `?b=` يبدّل مبنى الجلسة لمن يحق له؛ الملز بلا وسم كما كان */
+    public static function fileUrl(string $file, int $buildingId, string $hash = ''): string
+    {
+        $main = \App\Modules\Emergency\Models\EmergencyBuilding::main()?->id;
+        return '/'.$file.($main !== null && $buildingId !== $main ? '?b='.$buildingId : '').$hash;
+    }
+
     /** المفاتيح المسموح تخزينها: ipa- ثم حروف وأرقام وشرطات، بلا الجلسة وبلا الطابور المحلي. */
     public static function isAllowedKey(string $key): bool
     {

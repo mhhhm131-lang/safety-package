@@ -30,14 +30,18 @@ class PlaceUnitsController extends Controller
         $decision = in_array($ui, ['fm', 'adm', 'exec', 'safety'], true);
         $k = $decision && array_key_exists((string) $request->query('k'), $R::KPI) ? (string) $request->query('k') : null;
         if ($k === null) return redirect(route('app.home').'#places');
-        $tiles = $R::placeTiles();
-        $byCode = Place::all()->keyBy('code');
+        // ٢٨-٣ (قرار ٧٨): مبنى الجلسة — البلاطات بالرمز الكامل من وثائق مبناه وصنفه
+        $bid = \App\Modules\Governance\Services\BuildingContext::id($user);
+        $byCat = $R::placeTiles($bid);
+        $byCode = Place::where('building_id', $bid)->get()->keyBy('code');
+        $tiles = [];
+        foreach ($byCode as $code => $pl) if (isset($byCat[$pl->category])) $tiles[$code] = $byCat[$pl->category];
         // ٢٠-٥ (قرار ٥١): النطاق من الحساب — المعهد كله، أو الفرع، أو الوحدة، أو ما يغطيه، أو مكانه (كان: مدير الإدارة مكان إدارته وحده)
         $scope = \App\Modules\Governance\Services\ScopeService::forUser($user);
         if (!$scope->isAll()) $tiles = array_intersect_key($tiles, array_flip($scope->codes()));
         $counts = PlaceUnit::where('is_active', true)->selectRaw('place_id, count(*) as c')->groupBy('place_id')->pluck('c', 'place_id');
         return view('governance.places.units_hub', ['tiles' => $tiles, 'byCode' => $byCode, 'counts' => $counts, 'ui' => $ui,
-            'kpis' => $decision ? $R::buildingKpis() : null, 'k' => $k, 'kList' => $k ? $R::reportsByKpi($k) : []]);
+            'kpis' => $decision ? $R::buildingKpis($bid) : null, 'k' => $k, 'kList' => $k ? $R::reportsByKpi($k, $bid) : []]);
     }
 
     public function index(Place $place): View

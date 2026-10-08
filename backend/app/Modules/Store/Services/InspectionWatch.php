@@ -3,6 +3,8 @@
 namespace App\Modules\Store\Services;
 
 use App\Core\Services\NotificationService;
+use App\Modules\Emergency\Models\EmergencyBuilding;
+use App\Modules\Governance\Services\BuildingContext;
 use App\Modules\Store\Inbox\InspectionReportTasks;
 use App\Modules\Store\Models\InstituteDocument;
 use Illuminate\Support\Carbon;
@@ -15,6 +17,7 @@ use Illuminate\Support\Facades\DB;
  * المستلمون بكلمة المستخدم: مسؤول السلامة، مناوب مركز السلامة، مدير المرافق والصيانة.
  * كل حدث يُسجَّل مرة في inspection_notices (insertOrIgnore) فلا يتكرر الإشعار بتعدد الحفظ أو الأجهزة.
  * النموذج نفسه لا يُمس هنا: القراءة من الوثيقة كما يكتبها snapshot() في النماذج العشرة.
+ * ٢٨-٣ (قرار ٧٨): كل وثيقة بمبناها — الجولة في سجل السلامة بمبناها، ومفتاح الحدث والعنوان والرابط يحملان المبنى غير الملز.
  */
 class InspectionWatch
 {
@@ -32,22 +35,40 @@ class InspectionWatch
     }
 
     /** بعد حفظ وثيقة نموذج: إشعار البلاغات المرسلة، ولقطة الجولة، وإشعار الجولة المنتهية. */
-    public function afterSave(string $key, ?string $oldRaw, string $newRaw): void
+    public function afterSave(string $key, ?string $oldRaw, string $newRaw, ?int $buildingId = null): void
     {
         $f = self::form($key);
         if (!$f) return;
+        $b = $buildingId ?? BuildingContext::id();
         $new = json_decode($newRaw, true);
         if (!is_array($new)) return;
         $old = $oldRaw ? json_decode($oldRaw, true) : null;
         if (!is_array($old)) $old = [];
 
-        $this->reports($f, $old, $new);
-        $this->rounds($f, $old, $new);
+        $this->reports($f, $old, $new, $b);
+        $this->rounds($f, $old, $new, $b);
+    }
+
+    // ── المبنى في المفتاح والعنوان والرابط (الملز كما كان بلا وسم) ──
+
+    private static function isMain(int $b): bool
+    {
+        return $b === (EmergencyBuilding::main()?->id ?? $b);
+    }
+
+    private static function nkey(int $b, string $key): string
+    {
+        return self::isMain($b) ? $key : 'b'.$b.':'.$key;
+    }
+
+    private static function label(array $f, int $b): string
+    {
+        return $f['name'].(self::isMain($b) ? '' : ' · '.(EmergencyBuilding::find($b)?->name ?? ''));
     }
 
     // ── بلاغ فحص: عولج موقعياً أو صُعِّد ──
 
-    private function reports(array $f, array $old, array $new): void
+    private function reports(array $f, array $old, array $new, int $b): void
     {
         $before = [];
         foreach ((array) ($old['reports'] ?? []) as $r) {
@@ -60,17 +81,17 @@ class InspectionWatch
             $id = $this->reportId($r);
             if (($before[$id] ?? null) === $ld) continue;                 // لم يتغير منذ الحفظ السابق
             $row = (string) ($r['row'] ?? '');
-            if (!$this->claim('report:'.$f['key'].':'.$id.':'.$ld, 'inspection_report', $f['key'])) continue;
+            if (!$this->claim(self::nkey($b, 'report:'.$f['key'].':'.$id.':'.$ld), 'inspection_report', $f['key'])) continue;
 
             $sys = explode('-', $row)[0];
             $sysName = (string) ($new['defs'][$sys]['name'] ?? '');
-            $title = 'بلاغ فحص '.($r['id'] ?? $row).' · '.$f['name'].($sysName !== '' ? ' · '.$sysName : '');
+            $title = 'بلاغ فحص '.($r['id'] ?? $row).' · '.self::label($f, $b).($sysName !== '' ? ' · '.$sysName : '');
             $state = $ld === 'up'
                 ? 'صُعِّد لمدير المرافق والصيانة'.(!empty($r['sev']) ? ' ('.$r['sev'].(!empty($r['due']) && $r['due'] !== '—' ? ' · '.$r['due'] : '').')' : '')
                 : 'عولج موقعياً';
             $message = mb_substr((string) ($r['item'] ?? ''), 0, 90).' — '.$state
                 .(!empty($r['desc']) ? "\n".mb_substr((string) $r['desc'], 0, 200) : '');
-            $this->notify->notifyRoles(self::RECIPIENTS, 'inspection_report', $title, $message, '/'.$f['file'].'#open='.rawurlencode($row));
+            $this->notify->notifyRoles(self::RECIPIENTS, 'inspection_report', $title, $message, InstituteDocument::fileUrl($f['file'], $b, '#open='.rawurlencode($row)));
         }
     }
 
@@ -89,7 +110,7 @@ class InspectionWatch
 
     // ── سجل السلامة: الجولة كاملة، وإشعار «جولة نُفِّذت» ──
 
-    private function rounds(array $f, array $old, array $new): void
+    private function rounds(array $f, array $old, array $new, int $b): void
     {
         $nf = $this->fields($new);
         $of = $this->fields($old);
@@ -98,14 +119,14 @@ class InspectionWatch
 
         // الجولة السابقة لم تعد القائمة («جولة جديدة» يمسح تاريخها) ← تُثبَّت ويُنبَّه عنها إن لم يُنبَّه
         if ($od !== '' && ($od !== $nd || $os !== $ns)) {
-            DB::table('inspection_rounds')->where(['form_key' => $f['key'], 'round_date' => $od, 'started_at' => $os])
+            DB::table('inspection_rounds')->where(['building_id' => $b, 'form_key' => $f['key'], 'round_date' => $od, 'started_at' => $os])
                 ->whereNull('closed_at')->update(['closed_at' => now(), 'updated_at' => now()]);
-            $this->roundDone($f, $new, $od, $os);
+            $this->roundDone($f, $new, $od, $os, $b);
         }
 
         // الجولة القائمة ← لقطتها الكاملة (ما لم تُثبَّت)
         if ($nd !== '') {
-            $where = ['form_key' => $f['key'], 'round_date' => $nd, 'started_at' => $ns];
+            $where = ['building_id' => $b, 'form_key' => $f['key'], 'round_date' => $nd, 'started_at' => $ns];
             $row = DB::table('inspection_rounds')->where($where)->first();
             $values = [
                 'inspector' => $nf['insN'] ?? null, 'qualifier' => $nf['insQ'] ?? null, 'freq' => $nf['freq'] ?? null,
@@ -120,15 +141,15 @@ class InspectionWatch
         $done = $new['roundDone'] ?? null;
         if (is_array($done) && !empty($done['d'])) {
             $d = (string) $done['d']; $s = (string) ($done['s'] ?? '');
-            DB::table('inspection_rounds')->where(['form_key' => $f['key'], 'round_date' => $d, 'started_at' => $s])
+            DB::table('inspection_rounds')->where(['building_id' => $b, 'form_key' => $f['key'], 'round_date' => $d, 'started_at' => $s])
                 ->whereNull('finished_at')->update(['finished_at' => now(), 'updated_at' => now()]);
-            $this->roundDone($f, $new, $d, $s);
+            $this->roundDone($f, $new, $d, $s, $b);
         }
     }
 
-    private function roundDone(array $f, array $doc, string $d, string $s): void
+    private function roundDone(array $f, array $doc, string $d, string $s, int $b): void
     {
-        if (!$this->claim('round:'.$f['key'].':'.$d.':'.$s, 'inspection_round', $f['key'])) return;
+        if (!$this->claim(self::nkey($b, 'round:'.$f['key'].':'.$d.':'.$s), 'inspection_round', $f['key'])) return;
         $ok = $no = $na = $tot = 0; $n = ''; $sysList = [];
         foreach ((array) ($doc['rounds'] ?? []) as $sys => $rows) {
             foreach ((array) $rows as $e) {
@@ -137,9 +158,9 @@ class InspectionWatch
                 $n = $n ?: (string) ($e['n'] ?? ''); $sysList[] = (string) $sys;
             }
         }
-        $title = 'جولة نُفِّذت · '.$f['name'].' · '.$d;
+        $title = 'جولة نُفِّذت · '.self::label($f, $b).' · '.$d;
         $message = count($sysList).' نظام · '.$tot.' بنداً: '.$ok.' مطابق · '.$no.' غير مطابق · '.$na.' لا ينطبق'.($n !== '' ? ' · الفاحص: '.$n : '');
-        $this->notify->notifyRoles(self::RECIPIENTS, 'inspection_round', $title, $message, '/'.$f['file'].($sysList ? '#sys='.$sysList[0] : ''));
+        $this->notify->notifyRoles(self::RECIPIENTS, 'inspection_round', $title, $message, InstituteDocument::fileUrl($f['file'], $b, $sysList ? '#sys='.$sysList[0] : ''));
     }
 
     /** الحقول الثابتة بالمعرّف كما يحفظها snapshot() */
@@ -167,22 +188,25 @@ class InspectionWatch
         ];
     }
 
-    // ── الفحوص التي فات موعدها (أمر مجدول) ──
+    // ── الفحوص التي فات موعدها (أمر مجدول) — في كل المباني ──
 
     /** يعيد [عدد إشعارات «فات موعده» الجديدة، عدد المهام التي لم تُنفَّذ قط] */
     public function checkOverdue(): array
     {
         $today = now()->startOfDay();
-        $docs = InstituteDocument::whereIn('key', array_column(InspectionReportTasks::FORMS, 'key'))->get()->keyBy('key');
+        $byKey = [];
+        foreach (InspectionReportTasks::FORMS as $f) $byKey[$f['key']] = $f;
+        $docs = InstituteDocument::whereIn('key', array_keys($byKey))->orderBy('building_id')->orderBy('key')->get();
         $sent = 0; $never = 0;
-        foreach (InspectionReportTasks::FORMS as $f) {
-            $doc = $docs->get($f['key']);
-            $data = $doc ? json_decode($doc->data, true) : null;
+        foreach ($docs as $doc) {
+            $f = $byKey[$doc->key];
+            $b = (int) $doc->building_id;
+            $data = json_decode($doc->data, true);
             if (!is_array($data)) continue;
             foreach ((array) ($data['defs'] ?? []) as $sys => $def) {
                 if (!is_array($def)) continue;
                 $rounds = array_values(array_filter((array) ($data['rounds'][$sys] ?? []), 'is_array'));
-                usort($rounds, fn ($a, $b) => strcmp(($b['d'] ?? '').($b['s'] ?? ''), ($a['d'] ?? '').($a['s'] ?? '')));
+                usort($rounds, fn ($a, $b2) => strcmp(($b2['d'] ?? '').($b2['s'] ?? ''), ($a['d'] ?? '').($a['s'] ?? '')));
                 foreach ((array) ($def['sched'] ?? []) as $sc) {
                     $freq = trim((string) ($sc[0] ?? ''));
                     $days = self::FREQ_DAYS[$freq] ?? null;
@@ -193,11 +217,11 @@ class InspectionWatch
                     if (!$last || empty($last['d'])) { $never++; continue; }
                     try { $due = Carbon::parse($last['d'], config('app.timezone'))->startOfDay()->addDays($days); } catch (\Throwable) { continue; }
                     if (!$due->lt($today)) continue;
-                    if (!$this->claim('overdue:'.$f['key'].':'.$sys.':'.$freq.':'.$due->toDateString(), 'inspection_overdue', $f['key'])) continue;
+                    if (!$this->claim(self::nkey($b, 'overdue:'.$f['key'].':'.$sys.':'.$freq.':'.$due->toDateString()), 'inspection_overdue', $f['key'])) continue;
                     $this->notify->notifyRoles(self::RECIPIENTS, 'inspection_overdue',
-                        'فات موعد: فحص '.$freq.' · '.$f['name'].' · '.($def['name'] ?? $sys),
+                        'فات موعد: فحص '.$freq.' · '.self::label($f, $b).' · '.($def['name'] ?? $sys),
                         mb_substr((string) ($sc[1] ?? ''), 0, 90).' — آخر تنفيذ '.$last['d'].' · كان مستحقاً '.$due->toDateString().(!empty($sc[2]) ? ' (مسؤوله: '.$sc[2].')' : ''),
-                        '/'.$f['file'].'#sys='.$sys);
+                        InstituteDocument::fileUrl($f['file'], $b, '#sys='.$sys));
                     $sent++;
                 }
             }

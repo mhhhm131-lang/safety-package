@@ -61,17 +61,29 @@ class HomeController extends Controller
         $ui = PermissionRegistry::uiRole($role);
         if (in_array($ui, ['tech', 'fm', 'adm', 'exec', 'safety'], true)) {
             $R = \App\Modules\Store\Services\InspectionDocReader::class;
-            $rail = $R::rail();
-            $follow = ['rail' => $rail, 'me' => $R::ROLE_LEVEL[$ui] ?? 0, 'mine' => array_slice($R::decidedByRole($ui), 0, 12), 'hasLevel' => isset($R::ROLE_LEVEL[$ui])];
+            $bid = \App\Modules\Governance\Services\BuildingContext::id($user); // ٢٨-٣: سكة مبنى الجلسة
+            $rail = $R::rail($bid);
+            $follow = ['rail' => $rail, 'me' => $R::ROLE_LEVEL[$ui] ?? 0, 'mine' => array_slice($R::decidedByRole($ui, $bid), 0, 12), 'hasLevel' => isset($R::ROLE_LEVEL[$ui])];
             if (!$rail['open'] && !$follow['mine']) $follow = null; // لا بلاغات فحص: لا يُعرض القسم
         }
 
         // المرحلة ٢٥-١ (قرار ٦٤): الأماكن في الصفحة الأولى لكل حساب في نطاقه — مربعات ملف المكان نفسها
         // (لونها من حال الفحص) بلا شرط report.view؛ الموظف مكانه، الفني ما يغطيه، مدير الفرع فرعه، القيادة الكل
         // المرحلة ٢٥-٢: الرسم «حال الآن» من المصدر الواحد `PlaceSnapshot` بالنطاق نفسه، ويترشّح بالمكان في المتصفح
+        // ٢٨-٣ (قرار ٧٨): المربعات بالرمز الكامل، وبلاطة كل مكان من وثائق مبناه وصنفه
         $snapshot = \App\Modules\Governance\Services\PlaceSnapshot::forUser($user);
-        $placeTiles = array_intersect_key(\App\Modules\Store\Services\InspectionDocReader::placeTiles(), $snapshot['places']);
         $placeByCode = Place::all()->keyBy('code');
+        $placeTiles = []; $tilesByB = [];
+        // ترتيب اللوحة داخل كل مبنى (HZ_ORDER: القبو قبل مركز السلامة)، والمباني بترتيبها
+        $order = array_flip(\App\Modules\Store\Services\InspectionDocReader::HZ_ORDER);
+        $codes = array_keys($snapshot['places']);
+        usort($codes, fn ($a, $b) => [(int) ($placeByCode[$a]->building_id ?? 0), $order[$placeByCode[$a]->category ?? ''] ?? 99]
+            <=> [(int) ($placeByCode[$b]->building_id ?? 0), $order[$placeByCode[$b]->category ?? ''] ?? 99]);
+        foreach ($codes as $code) {
+            if (!($pp = $placeByCode[$code] ?? null)) continue;
+            $tilesByB[$pp->building_id] ??= \App\Modules\Store\Services\InspectionDocReader::placeTiles((int) $pp->building_id);
+            if (isset($tilesByB[$pp->building_id][$pp->category])) $placeTiles[$code] = $tilesByB[$pp->building_id][$pp->category];
+        }
 
         // المرحلة ١٢ (قرار ٣٥): «ما ينتظرك» + «أريد أن…»
         return view('governance.inbox', [

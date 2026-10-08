@@ -27,15 +27,20 @@ class TeamSync
 
     private const ROLE_KEYS = ['coordinator', 'medic', 'rescuer', 'firefighter'];
 
-    /** يعيد عدد الفرق المشتقة بعد المزامنة. */
-    public function sync(): int
+    /** يعيد عدد الفرق المشتقة بعد المزامنة — لمبنى بعينه، أو لكل المباني (٢٨-٣: وثيقة ipa-place لكل مبنى، والفريق يُنسب إلى مبناه). */
+    public function sync(?int $buildingId = null): int
     {
-        $doc = InstituteDocument::where('key', self::KEY)->first();
+        if ($buildingId === null) {
+            $n = 0;
+            foreach (EmergencyBuilding::query()->pluck('id') as $id) $n += $this->sync((int) $id);
+            return $n;
+        }
+        $doc = InstituteDocument::doc(self::KEY, $buildingId);
         $data = $doc ? json_decode($doc->data, true) : [];
         if (!is_array($data)) $data = [];
 
-        $building = EmergencyBuilding::main();
-        $places = Place::all()->keyBy('code');
+        $building = EmergencyBuilding::find($buildingId);
+        $places = Place::where('building_id', $buildingId)->get()->keyBy('category');
         $units = OrganizationUnit::all()->keyBy('code');
         $accounts = User::query()->get(['id', 'username', 'name'])->keyBy(fn ($u) => mb_strtolower($u->username));
 
@@ -109,8 +114,8 @@ class TeamSync
                     }
                 }
             }
-            // فرق اختفت من الوثيقة تُعطَّل (لا تُحذف: لها سجل في الحالات السابقة)
-            EmergencyTeam::where('source', 'place_profile')->whereNotIn('id', $seen)->update(['is_active' => false, 'synced_at' => now()]);
+            // فرق اختفت من الوثيقة تُعطَّل (لا تُحذف: لها سجل في الحالات السابقة) — فرق هذا المبنى وحده
+            EmergencyTeam::where('source', 'place_profile')->where('building_id', $building?->id)->whereNotIn('id', $seen)->update(['is_active' => false, 'synced_at' => now()]);
             return count($seen);
         });
     }

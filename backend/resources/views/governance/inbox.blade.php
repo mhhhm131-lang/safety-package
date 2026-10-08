@@ -30,7 +30,8 @@
       <div class="pl-grid" id="places">
         @foreach($placeTiles as $hz => $t)
           @if($p = $placeByCode[$hz] ?? null)
-          <a class="pl-tile {{ $t['cls'] }}" href="{{ $hz === 'HZ-00' ? route('emergency.dashboard') : route('app.places.units.file', $p) }}" data-place="{{ $hz }}" data-cls="{{ $t['cls'] }}" data-open="{{ $t['open'] }}" data-od="{{ $t['od'] }}" data-a="{{ $t['a'] }}"@if(count($placeTiles) > 1 && $hz !== 'HZ-00') data-filter="1"@endif>
+          {{-- ٢٨-٣: المفتاح رمز المكان الكامل (HZ-06 أو HZ-06/DMM)، ومركز السلامة بصنفه --}}
+          <a class="pl-tile {{ $t['cls'] }}" href="{{ $p->category === 'HZ-00' ? route('emergency.dashboard') : route('app.places.units.file', $p) }}" data-place="{{ $hz }}" data-cls="{{ $t['cls'] }}" data-open="{{ $t['open'] }}" data-od="{{ $t['od'] }}" data-a="{{ $t['a'] }}"@if(count($placeTiles) > 1 && $p->category !== 'HZ-00') data-filter="1"@endif>
             <span class="small text-muted" dir="ltr">{{ $hz }}</span>
             <span class="nm">{{ $p->name }}</span>
             <span class="small st">

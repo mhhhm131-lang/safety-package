@@ -17,7 +17,8 @@ class InspectionsController extends Controller
     public function index(Request $request)
     {
         abort_unless(PermissionRegistry::uiRole($request->user()->role()), 403);
-        $docs = InstituteDocument::whereIn('key', array_column(InspectionReportTasks::FORMS, 'key'))->get()->keyBy('key');
+        // ٢٨-٣: نماذج مبنى الجلسة
+        $docs = InstituteDocument::whereIn('key', array_column(InspectionReportTasks::FORMS, 'key'))->where('building_id', \App\Modules\Governance\Services\BuildingContext::id($request->user()))->get()->keyBy('key');
         $rows = [];
         foreach (InspectionReportTasks::FORMS as $f) {
             $doc = $docs->get($f['key']);

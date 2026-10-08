@@ -33,15 +33,17 @@ class ReadinessTasks implements TaskSource
         $role = $user->role();
         $out = collect();
 
-        // ٤٣ — فرق الفعاليات
-        if (PlaceProfile::canApproveEvent($user) && ($halls = Place::where('code', PlaceProfile::HALLS)->first())) {
+        // ٤٣ — فرق الفعاليات — ٢٨-٣: قاعات كل مبنى من مباني الحساب
+        if (PlaceProfile::canApproveEvent($user)) foreach (\App\Modules\Governance\Services\BuildingContext::choices($user) as $bld) {
+            $halls = Place::where('category', PlaceProfile::HALLS)->where('building_id', $bld->id)->first();
+            if (!$halls) continue;
             $today = now()->toDateString();
-            foreach (PlaceProfile::events(PlaceProfile::get(PlaceProfile::HALLS)) as $i => $e) {
+            foreach (PlaceProfile::events(PlaceProfile::get(PlaceProfile::HALLS, $bld->id)) as $i => $e) {
                 $upcoming = empty($e['date']) || $e['date'] >= $today;
                 if (!$upcoming || empty($e['nom']['date']) || !empty($e['appr']['date']) || !PlaceProfile::named($e['team'])) continue;
                 $file = route('app.places.units.file', $halls).'#pfEvents';
                 $out->push(new Task(
-                    key: 'eventteam:'.$i.':'.substr(md5(($e['name'] ?? '').'|'.($e['date'] ?? '')), 0, 8),
+                    key: 'eventteam:'.($halls->code === PlaceProfile::HALLS ? '' : 'b'.$bld->id.':').$i.':'.substr(md5(($e['name'] ?? '').'|'.($e['date'] ?? '')), 0, 8),
                     module: 'الفريق الأولي',
                     question: 'فعالية «'.($e['name'] ?? '—').'»'.(!empty($e['date']) ? ' ('.$e['date'].')' : '').' في '.$halls->name.': فريقها مرشَّح — اعتمده',
                     primary: ['label' => 'اعتمده', 'url' => route('app.places.team.event.approve', ['place' => $halls, 'i' => $i]), 'method' => 'POST'],
@@ -56,7 +58,7 @@ class ReadinessTasks implements TaskSource
         // ٣٨ — أماكن بلا خطة استجابة في النظام
         if (in_array($role, self::CENTER, true)) {
             $have = ResponsePlan::pluck('place_id')->all();
-            $missing = Place::where('code', '!=', 'HZ-00')->whereNotIn('id', $have)->orderBy('sort')->pluck('name');
+            $missing = Place::active()->where('category', '!=', 'HZ-00')->whereNotIn('id', $have)->orderBy('building_id')->orderBy('sort')->pluck('name'); // ٢٨-٣: بالصنف
             if ($missing->isNotEmpty()) {
                 $out->push(new Task(
                     key: 'emplans',

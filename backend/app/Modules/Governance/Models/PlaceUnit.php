@@ -52,7 +52,8 @@ class PlaceUnit extends Model
 
     public function getTypeLabelAttribute(): string { return self::TYPE_LABELS[$this->type] ?? $this->type; }
 
-    public static function typesFor(string $placeCode): array { return self::TYPES_BY_PLACE[$placeCode] ?? []; }
+    /** ٢٨-٣: بالصنف — يقبل الرمز الكامل (HZ-06/DMM) أو الصنف */
+    public static function typesFor(string $placeCode): array { return self::TYPES_BY_PLACE[Place::categoryOf($placeCode)] ?? []; }
 
     /**
      * من يعدّل وحدات المكان (قرار ٤٧، وبكلمته: القاعات لمدير المرافق):

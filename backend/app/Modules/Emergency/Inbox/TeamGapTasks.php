@@ -33,13 +33,16 @@ class TeamGapTasks implements TaskSource
         $myUnit = $profile->organization_unit_id ? OrganizationUnit::find($profile->organization_unit_id)?->code : null;
         if (!$all && !($ui === 'dept' && $myUnit)) return collect();
 
-        $raw = InstituteDocument::where('key', 'ipa-place')->value('data');
-        $data = $raw ? json_decode($raw, true) : [];
-        if (!is_array($data)) return collect();
-
-        $places = Place::all()->keyBy('code');
         $units = OrganizationUnit::all()->keyBy('code');
         $out = collect();
+        // ٢٨-٣ (قرار ٧٨): ملف المكان لكل مبنى من مباني الحساب — الأماكن بصنفها داخل المبنى
+        $buildings = \App\Modules\Governance\Services\BuildingContext::choices($user);
+        $multi = $buildings->count() > 1;
+        foreach ($buildings as $bld) {
+        $raw = InstituteDocument::where('key', 'ipa-place')->where('building_id', $bld->id)->value('data');
+        $data = $raw ? json_decode($raw, true) : [];
+        if (!is_array($data)) continue;
+        $places = Place::where('building_id', $bld->id)->get()->keyBy('category');
         foreach ($data as $hz => $p) {
             if (!is_array($p) || !isset($places[$hz])) continue;
             foreach ((array) ($p['units'] ?? []) as $uid => $u) {
@@ -54,16 +57,17 @@ class TeamGapTasks implements TaskSource
                 if ($ready >= $need) continue;
                 $label = $units[$code]->name ?? ($uid === '_' ? 'الإدارة المشغّلة للمكان' : $uid);
                 $out->push(new Task(
-                    key: 'team-gap:'.$hz.':'.$uid,
+                    key: 'team-gap:'.($multi && $places[$hz]->code !== $hz ? 'b'.$bld->id.':' : '').$hz.':'.$uid,
                     module: 'الفريق الأولي',
-                    question: $label.' في '.$places[$hz]->name.': '.$this->ar($staff).' موظفاً تحتاج '.$this->word($need)
+                    question: $label.' في '.$places[$hz]->name.($multi ? ' · '.$bld->name : '').': '.$this->ar($staff).' موظفاً تحتاج '.$this->word($need)
                         .' — المعتمد: '.($ready ? $this->word($ready) : 'لا فريق'),
                     // ١٩-٥ (قرار ٤٨): ملف المكان في الخلفية — الترشيح والاعتماد منه
                     primary: ['label' => 'افتح ملف المكان', 'url' => route('app.places.units.file', $places[$hz]->id, false).'#pfTeams'],
-                    place: $hz.' '.$places[$hz]->name,
+                    place: $hz.' '.$places[$hz]->name.($multi ? ' · '.$bld->name : ''),
                     detailsUrl: route('app.places.units.file', $places[$hz]->id, false).'#pfTeams',
                 ));
             }
+        }
         }
         return $out;
     }

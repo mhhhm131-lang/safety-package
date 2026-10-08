@@ -67,7 +67,9 @@
 
   function readPending() { try { return JSON.parse(origGet(PKEY)) || {}; } catch (e) { return {}; } }
   function writePending(p) { try { if (Object.keys(p).length) origSet(PKEY, JSON.stringify(p)); else origRemove(PKEY); } catch (e) {} }
-  function markPending(k, op) { var p = readPending(); p[k] = { op: op, version: VER[k] || 0 }; writePending(p); }
+  /* ٢٨-٣ (قرار ٧٨): مبنى الجلسة — كل كتابة تحمل مبناها، والخادم يرفض (422) ما جاء من مبنى غير مبنى الجلسة */
+  function sessionB() { try { var j = JSON.parse(origGet('ipa-session')); return (j && j.b) || 0; } catch (e) { return 0; } }
+  function markPending(k, op) { var p = readPending(); p[k] = { op: op, version: VER[k] || 0, b: sessionB() }; writePending(p); }
   function clearPending(k) { var p = readPending(); if (p[k]) { delete p[k]; writePending(p); } }
 
   function xsrf() {
@@ -96,16 +98,16 @@
   }
 
   /* ---------- ٠) إرسال الكتابات المعلقة من زيارة سابقة (متزامن، قبل الجلب) ---------- */
-  function syncSend(k, op, version) {
+  function syncSend(k, op, version, b) {
     var raw = origGet(k);
     if (op === 'put' && raw == null) return { status: 0 };
     var y = new XMLHttpRequest();
     try {
-      y.open(op === 'del' ? 'DELETE' : 'PUT', API + '/' + encodeURIComponent(k), false);
+      y.open(op === 'del' ? 'DELETE' : 'PUT', API + '/' + encodeURIComponent(k) + (op === 'del' && b ? '?b=' + b : ''), false);
       y.setRequestHeader('Content-Type', 'application/json');
       y.setRequestHeader('Accept', 'application/json');
       y.setRequestHeader('X-XSRF-TOKEN', xsrf());
-      y.send(op === 'del' ? null : JSON.stringify({ data: raw, version: version || 0 }));
+      y.send(op === 'del' ? null : JSON.stringify({ data: raw, version: version || 0, b: b || 0 }));
       var j = null; try { j = JSON.parse(y.responseText); } catch (e) {}
       return { status: y.status, json: j };
     } catch (e) { return { status: 0 }; }
@@ -114,7 +116,7 @@
   var pendKeys = Object.keys(pend);
   if (pendKeys.length) {
     pendKeys.forEach(function (k) {
-      var r = syncSend(k, pend[k].op, pend[k].version);
+      var r = syncSend(k, pend[k].op, pend[k].version, pend[k].b);
       LOG.push({ k: k, op: pend[k].op, replay: true, status: r.status, body: (r.status >= 400 && r.json) ? (r.json.error || r.json.message || '') : '' });
       if (r.status === 200 || r.status === 404 || r.status === 409 || r.status === 422) clearPending(k);
       if (r.status === 401 || r.status === 419) { toLogin(); return; }
@@ -123,8 +125,10 @@
 
   /* ---------- ١) الجلب الأولي المتزامن ---------- */
   var x = new XMLHttpRequest();
+  /* ٢٨-٣: رابط يحمل ?b= (إشعار عن نموذج مبنى آخر) يبدّل مبنى الجلسة لمن يحق له قبل الجلب */
+  var qb = (location.search.match(/[?&]b=(\d+)/) || [])[1];
   try {
-    x.open('GET', API + '?all=1', false);
+    x.open('GET', API + '?all=1' + (qb ? '&b=' + qb : ''), false);
     x.setRequestHeader('Accept', 'application/json');
     x.send(null);
   } catch (e) { fail('offline'); return; }
@@ -138,8 +142,17 @@
   var cur = null;
   try { cur = JSON.parse(origGet('ipa-session')); } catch (e) {}
   /* المرحلة ١٥-٦: role = الدور نفسه (لا دور الواجهة) — اللوحة تحتاجه لاعتماد فريق الفعالية برئيس الأمن والسلامة */
-  var s = { u: res.session.u, r: res.session.r, role: res.session.role || '', n: res.session.n, at: Date.now() };
+  var s = { u: res.session.u, r: res.session.r, role: res.session.role || '', n: res.session.n, at: Date.now(), b: res.session.b || 0, bn: res.session.bn || '' };
   if (res.session.d) s.d = res.session.d; else if (cur && cur.d) s.d = cur.d;
+  if (res.session.p) s.p = res.session.p;
+  /* ٢٨-٣: تغيّر مبنى الجلسة عن آخر زيارة ← ما على الجهاز من وثائق المبنى السابق يُمسح قبل كتابة وثائق هذا المبنى، ولا يُرفع منه شيء */
+  var switched = !!(cur && cur.b && s.b && cur.b !== s.b);
+  if (switched) {
+    var stale = [];
+    for (var q0 = 0; q0 < LS.length; q0++) { var kq = LS.key(q0); if (isKey(kq)) stale.push(kq); }
+    stale.forEach(function (k) { origRemove(k); });
+    writePending({});
+  }
   origSet('ipa-session', JSON.stringify(s));
   window.ipaStore.status = 'ok';
 
@@ -151,8 +164,8 @@
     if (stillPending[k]) return; /* كتابة محلية لم تصل بعد: لا تُكتب فوقها */
     origSet(k, docs[k].data);
   });
-  /* مفاتيح على هذا الجهاز ليست في الخادم بعد (أول ربط): تُرفع */
-  for (var i = 0; i < LS.length; i++) {
+  /* مفاتيح على هذا الجهاز ليست في الخادم بعد (أول ربط): تُرفع — إلا بعد تبديل المبنى */
+  if (!switched) for (var i = 0; i < LS.length; i++) {
     var k0 = LS.key(i);
     if (isKey(k0) && !(k0 in docs)) queue(k0);
   }
@@ -203,9 +216,10 @@
       var op = Q[k]; delete Q[k];
       var raw = origGet(k);
       if (op === 'put' && raw == null) { clearPending(k); return; }
-      var body = op === 'put' ? JSON.stringify({ data: raw, version: VER[k] || 0 }) : null;
+      var sb = sessionB();
+      var body = op === 'put' ? JSON.stringify({ data: raw, version: VER[k] || 0, b: sb }) : null;
       INFLIGHT[k] = true;
-      fetch(API + '/' + encodeURIComponent(k), {
+      fetch(API + '/' + encodeURIComponent(k) + (op === 'del' && sb ? '?b=' + sb : ''), {
         method: op === 'del' ? 'DELETE' : 'PUT',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-XSRF-TOKEN': xsrf() },
@@ -229,6 +243,14 @@
             bar('تغيّرت البيانات من جهاز آخر — أُعيد تحميلها من الخادم', 'warn');
             setTimeout(function () { bar(''); }, 6000);
             window.dispatchEvent(new StorageEvent('storage', { key: k }));
+          });
+        }
+        if (r.status === 422) {
+          /* ٢٨-٣: مفتاح غير مسموح أو صفحة مفتوحة على مبنى غير مبنى الجلسة — لا يُعاد؛ تُقال الرسالة ويُطلب إعادة التحميل */
+          return r.json().catch(function () { return {}; }).then(function (j) {
+            delete Q[k]; clearPending(k); entry.body = (j && j.message) || '';
+            bar((j && j.message) || 'رُفض الحفظ', 'bad');
+            setTimeout(function () { bar(''); }, 8000);
           });
         }
         if (!r.ok) { retry(k, op, 'تعذّر الحفظ في الخادم — سيُعاد'); return; }
@@ -280,10 +302,11 @@
       var op = Q[k]; delete Q[k];
       var raw = origGet(k);
       if (op === 'put' && raw == null) return;
-      var body = op === 'put' ? JSON.stringify({ data: raw, version: VER[k] || 0 }) : null;
+      var sb2 = sessionB();
+      var body = op === 'put' ? JSON.stringify({ data: raw, version: VER[k] || 0, b: sb2 }) : null;
       if (body && body.length > 60000) return; /* أكبر من حد keepalive: يبقى معلقاً للصفحة التالية */
       try {
-        fetch(API + '/' + encodeURIComponent(k), {
+        fetch(API + '/' + encodeURIComponent(k) + (op === 'del' && sb2 ? '?b=' + sb2 : ''), {
           method: op === 'del' ? 'DELETE' : 'PUT', credentials: 'same-origin', keepalive: true,
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-XSRF-TOKEN': xsrf() },
           body: body

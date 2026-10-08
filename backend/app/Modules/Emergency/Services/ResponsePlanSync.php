@@ -33,8 +33,9 @@ class ResponsePlanSync
     public function sync(?string $from = null, bool $force = false): array
     {
         $result = [];
-        foreach (Place::where('code', '!=', 'HZ-00')->orderBy('sort')->get() as $place) {
-            $path = $this->resolvePath($place->code, $from);
+        // ٢٨-٣ (قرار ٧٨): وثيقة الصنف لكل مكان منه في كل مبنى
+        foreach (Place::where('category', '!=', 'HZ-00')->orderBy('building_id')->orderBy('sort')->get() as $place) {
+            $path = $this->resolvePath($place->category, $from);
             if (!$path) {
                 $result[$place->code] = ['status' => 'missing'];
                 continue;

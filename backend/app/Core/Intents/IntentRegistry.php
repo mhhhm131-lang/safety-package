@@ -49,7 +49,7 @@ class IntentRegistry
         $can = fn (string $p) => PermissionRegistry::hasPermission($role, $p);
         $ui = PermissionRegistry::uiRole($role);
         $active = (bool) $profile?->is_active;
-        $placeCode = $profile?->place_id ? Place::find($profile->place_id)?->code : null;
+        $placeCode = $profile?->place_id ? Place::find($profile->place_id)?->category : null; // ٢٨-٣: مجلد الصنف
         $folder = $placeCode ? (Place::FOLDERS[$placeCode] ?? null) : null;
         // ٢٦-١٣ (قرار ٦٦ «الزر يفي بوعده»): «مكاني» لزرّي التوعية = مكان الحساب وإلا مكان إدارته (UserProfile::myPlace) — أغلب الموظفين مكانهم من إدارتهم
         $myPlace = $active ? $profile?->myPlace() : null;

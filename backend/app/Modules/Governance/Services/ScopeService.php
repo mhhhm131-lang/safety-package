@@ -27,6 +27,12 @@ final class ScopeService
 
     public function __construct(public readonly string $kind, private readonly Collection $places) {}
 
+    /** ٢٨-٣: من يرى المعهد كله — له مبدّل المبنى */
+    public static function seesAll(string $role): bool
+    {
+        return in_array($role, self::ALL, true);
+    }
+
     public static function forUser(User $user): self
     {
         $p = $user->profile;

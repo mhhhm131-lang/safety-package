@@ -6,6 +6,8 @@ use App\Core\Inbox\Task;
 use App\Core\Inbox\TaskSource;
 use App\Core\Permissions\PermissionRegistry;
 use App\Models\User;
+use App\Modules\Governance\Models\Place;
+use App\Modules\Governance\Services\BuildingContext;
 use App\Modules\Store\Models\InstituteDocument;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -15,10 +17,11 @@ use Illuminate\Support\Collection;
  * الخلفية تقرأ وثائق النماذج من جدولها (institute_documents، كما TeamSync يقرأ ipa-place) وتنقل منطق
  * dashboard.html:461-488 (isClosed / overdue / lastLvl / mine) إلى PHP حرفياً. لا يُمس أي ملف معهدي.
  * الزر يفتح النموذج على السطر نفسه (`{file}#open={row}` كما link(r) في اللوحة)؛ القرار يبقى داخل النموذج.
+ * ٢٨-٣ (قرار ٧٨): لكل مبنى من مباني الحساب (BuildingContext::choices) وثائقه؛ البطاقة تسمّي المبنى حين يتعدد، والرابط يحمله.
  */
 class InspectionReportTasks implements TaskSource
 {
-    /** الأماكن والنماذج كما في dashboard.html:410-421 */
+    /** الأماكن (بأصنافها) والنماذج كما في dashboard.html:410-421 */
     public const FORMS = [
         ['hz' => 'HZ-01', 'name' => 'القبو ومواقف السيارات', 'key' => 'ipa-park-form-v10',   'file' => 'HZ-01-basement/inspection-form.html'],
         ['hz' => 'HZ-02', 'name' => 'غرف الكهرباء',          'key' => 'ipa-elec-form-v10',   'file' => 'HZ-02-electrical/inspection-form.html'],
@@ -41,36 +44,44 @@ class InspectionReportTasks implements TaskSource
         $ui = PermissionRegistry::uiRole($user->role());
         if (!in_array($ui, ['tech', 'fm', 'adm', 'exec', 'safety'], true)) return collect();
 
-        $docs = InstituteDocument::whereIn('key', array_column(self::FORMS, 'key'))->get()->keyBy('key');
+        $buildings = BuildingContext::choices($user);
+        $multi = $buildings->count() > 1;
+        $main = \App\Modules\Emergency\Models\EmergencyBuilding::main()?->id;
+        $docs = InstituteDocument::whereIn('key', array_column(self::FORMS, 'key'))->whereIn('building_id', $buildings->pluck('id'))->get()->groupBy('building_id');
         // ٢٠-٥ (قرار ٥١): الفني يرى بلاغات الأماكن التي يغطيها وبتخصصه (صف البلاغ يبدأ بمفتاح النظام)
         $role = $user->role();
         $scope = $ui === 'tech' ? \App\Modules\Governance\Services\ScopeService::forUser($user) : null;
         $out = collect();
-        foreach (self::FORMS as $f) {
-            $doc = $docs->get($f['key']);
-            if (!$doc) continue;
-            if ($scope && !$scope->contains($f['hz'])) continue;
-            $data = json_decode($doc->data, true);
-            foreach ((array) ($data['reports'] ?? []) as $r) {
-                if (!is_array($r) || !$this->mine($r, $ui)) continue;
-                if ($scope && !\App\Modules\Store\Services\SystemSpecialty::fits($role, (string) ($r['row'] ?? ''))) continue;
-                $holder = $this->holder($r);
-                $over = $this->overdueHours($r);
-                $started = $this->parseStamp($r['cycleAt'] ?? '') ?? $this->parseStamp($r['when'] ?? '') ?? $this->parseStamp($r['sent'] ?? '');
-                $h = self::DUE_H[$r['due'] ?? ''] ?? null;
-                $row = (string) ($r['row'] ?? '');
-                $out->push(new Task(
-                    key: 'inspection:'.$f['key'].':'.$row,
-                    module: 'بلاغات الفحص',
-                    question: 'بلاغ فحص '.($r['id'] ?? $row).' في '.$f['name'].(!empty($r['unit']) ? ' · '.mb_substr((string) $r['unit'], 0, 40) : '').': '.mb_substr((string) ($r['item'] ?? ''), 0, 60) // ١٨-٣ (ج): الوحدة إن حملتها الصف
-                        .' — '.($ui === 'tech' ? 'قرارك: عولج أم تعذّر' : 'ينتظر قرارك (المستوى '.(self::LNAME[$holder] ?? $holder).')'),
-                    primary: ['label' => 'افتحه', 'url' => '/'.$f['file'].'#open='.rawurlencode($row)],
-                    dueAt: ($started && $h) ? Carbon::instance($started)->addHours($h) : null,
-                    isOverdue: $over !== null && $over > 0,
-                    place: $f['hz'].' '.$f['name'],
-                    detailsUrl: ($pid = \App\Modules\Governance\Models\Place::idByCode($f['hz'])) ? '/app/places/'.$pid.'/file' : null, // ١٩-٧
-                    createdAt: $started ? Carbon::instance($started) : null,
-                ));
+        foreach ($buildings as $bld) {
+            $bdocs = ($docs->get($bld->id) ?? collect())->keyBy('key');
+            $placesByCat = Place::where('building_id', $bld->id)->get()->keyBy('category');
+            foreach (self::FORMS as $f) {
+                $doc = $bdocs->get($f['key']);
+                if (!$doc) continue;
+                $pl = $placesByCat->get($f['hz']);
+                if ($scope && (!$pl || !$scope->contains($pl->code))) continue;
+                $data = json_decode($doc->data, true);
+                foreach ((array) ($data['reports'] ?? []) as $r) {
+                    if (!is_array($r) || !$this->mine($r, $ui)) continue;
+                    if ($scope && !\App\Modules\Store\Services\SystemSpecialty::fits($role, (string) ($r['row'] ?? ''))) continue;
+                    $holder = $this->holder($r);
+                    $over = $this->overdueHours($r);
+                    $started = $this->parseStamp($r['cycleAt'] ?? '') ?? $this->parseStamp($r['when'] ?? '') ?? $this->parseStamp($r['sent'] ?? '');
+                    $h = self::DUE_H[$r['due'] ?? ''] ?? null;
+                    $row = (string) ($r['row'] ?? '');
+                    $out->push(new Task(
+                        key: 'inspection:'.($bld->id === $main ? '' : 'b'.$bld->id.':').$f['key'].':'.$row,
+                        module: 'بلاغات الفحص',
+                        question: 'بلاغ فحص '.($r['id'] ?? $row).' في '.$f['name'].($multi ? ' · '.$bld->name : '').(!empty($r['unit']) ? ' · '.mb_substr((string) $r['unit'], 0, 40) : '').': '.mb_substr((string) ($r['item'] ?? ''), 0, 60) // ١٨-٣ (ج): الوحدة إن حملتها الصف
+                            .' — '.($ui === 'tech' ? 'قرارك: عولج أم تعذّر' : 'ينتظر قرارك (المستوى '.(self::LNAME[$holder] ?? $holder).')'),
+                        primary: ['label' => 'افتحه', 'url' => InstituteDocument::fileUrl($f['file'], $bld->id, '#open='.rawurlencode($row))],
+                        dueAt: ($started && $h) ? Carbon::instance($started)->addHours($h) : null,
+                        isOverdue: $over !== null && $over > 0,
+                        place: $f['hz'].' '.$f['name'].($multi ? ' · '.$bld->name : ''),
+                        detailsUrl: $pl ? '/app/places/'.$pl->id.'/file' : null, // ١٩-٧
+                        createdAt: $started ? Carbon::instance($started) : null,
+                    ));
+                }
             }
         }
         return $out;

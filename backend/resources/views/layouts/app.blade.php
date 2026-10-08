@@ -153,6 +153,15 @@
   <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="offcanvas" data-bs-target="#moreNav" id="navMore"><i class="bi bi-list"></i> المزيد</button>
   @endif
   <span class="ms-auto"></span>
+  @php($bc = \App\Modules\Governance\Services\BuildingContext::class)
+  @if($bc::canSwitch(auth()->user()))
+  {{-- ٢٨-٣ (قرار ٧٨): مبدّل المبنى لمن يرى أكثر من مبنى — صفحات المعهد والمركز والجولات تتبع مبنى الجلسة --}}
+  <form method="post" action="{{ route('app.building.switch', ['building' => $bc::id()]) }}" class="m-0" id="bldSwitch">@csrf
+    <select name="building_switch" class="form-select form-select-sm" style="max-width:220px" title="المبنى" aria-label="المبنى" onchange="this.form.action=this.form.action.replace(/\/\d+$/,'/'+this.value);this.form.submit()">
+      @foreach($bc::choices(auth()->user()) as $bb)<option value="{{ $bb->id }}" @selected($bb->id === $bc::id())>{{ $bb->name }}</option>@endforeach
+    </select>
+  </form>
+  @endif
   <a class="bell" href="{{ route('app.notifications.index') }}" title="الإشعارات"><i class="bi bi-bell fs-5"></i><span class="n" id="bellN" hidden>0</span></a>
   <span class="small d-none d-md-inline">{{ auth()->user()->name }} <span class="text-white-50">· {{ auth()->user()->roleName() }}</span></span>
   <form method="post" action="/logout" class="m-0">@csrf<button class="btn btn-sm btn-outline-light">خروج</button></form>

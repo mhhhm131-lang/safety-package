@@ -5,6 +5,8 @@ namespace App\Modules\Emergency\Services;
 use App\Core\Permissions\PermissionRegistry;
 use App\Models\User;
 use App\Modules\Governance\Models\OrganizationUnit;
+use App\Modules\Governance\Services\BuildingContext;
+use App\Modules\Governance\Services\DeptSync;
 use App\Modules\Store\Models\InstituteDocument;
 use Illuminate\Support\Facades\DB;
 
@@ -33,15 +35,17 @@ class PlaceProfile
 
     // ── القراءة ──
 
-    public static function all(): array
+    /** ٢٨-٣ (قرار ٧٨): ملف المكان لكل مبنى — $buildingId أو مبنى الجلسة */
+    public static function all(?int $buildingId = null): array
     {
-        $data = json_decode((string) InstituteDocument::where('key', self::KEY)->value('data'), true);
+        $buildingId ??= BuildingContext::id();
+        $data = json_decode((string) InstituteDocument::where('key', self::KEY)->where('building_id', $buildingId)->value('data'), true);
         return is_array($data) ? $data : [];
     }
 
-    public static function get(string $hz): array
+    public static function get(string $hz, ?int $buildingId = null): array
     {
-        return self::normalize(self::all()[$hz] ?? []);
+        return self::normalize(self::all($buildingId)[$hz] ?? []);
     }
 
     /** placeGet: الصيغة القديمة (فريق على مستوى المكان) تصير الوحدة «_»، وكل وحدة بخاناتها الأربع */
@@ -67,18 +71,20 @@ class PlaceProfile
         return $t;
     }
 
-    /** إدارات المكان كما تراها اللوحة من ipa-depts (DeptSync::toDocument): الفعّالة، وبلا مكان = المكاتب الإدارية */
-    private static function depts(string $hz): array
+    /** إدارات المكان كما تراها اللوحة من ipa-depts (DeptSync::toDocument): الفعّالة في فرع المبنى، وبلا مكان = المكاتب الإدارية */
+    private static function depts(string $hz, ?int $buildingId = null): array
     {
-        return OrganizationUnit::with('place', 'manager')->where('is_active', true)->orderBy('order')->orderBy('id')->get()
-            ->filter(fn (OrganizationUnit $u) => ($u->place?->code ?? self::HUB) === $hz)
+        $buildingId ??= BuildingContext::id();
+        $ids = DeptSync::scopeIds($buildingId);
+        return OrganizationUnit::with('place', 'manager')->where('is_active', true)->when($ids !== null, fn ($q) => $q->whereIn('id', $ids))->orderBy('order')->orderBy('id')->get()
+            ->filter(fn (OrganizationUnit $u) => ($u->place?->category ?? self::HUB) === $hz && ($u->place === null || $u->place->building_id === $buildingId))
             ->map(fn (OrganizationUnit $u) => ['id' => (string) $u->code, 'name' => $u->name, 'mgr' => $u->manager?->name ?? ($u->manager_name ?? '')])->values()->all();
     }
 
     /** unitList: في المكاتب الإدارية وحدة لكل إدارة؛ وفي غيرها وحدة «_» أو وحدة لكل إدارة تشغل المكان (والقديمة «_» تبقى للأولى) */
-    public static function unitList(string $hz, array $p): array
+    public static function unitList(string $hz, array $p, ?int $buildingId = null): array
     {
-        $ds = self::depts($hz);
+        $ds = self::depts($hz, $buildingId);
         $row = fn (string $uid, array $d) => ['uid' => $uid, 'dept' => $d['id'], 'label' => $d['name'], 'mgr' => $d['mgr']];
         if ($hz === self::HUB) return array_map(fn ($d) => $row($d['id'], $d), $ds);
         if (!$ds) {
@@ -182,7 +188,7 @@ class PlaceProfile
     {
         if (self::canPlans($user)) return true;
         $mine = $user->profile?->organizationUnit;
-        return self::ui($user) === 'dept' && $mine && $mine->is_active && ($mine->place?->code ?? self::HUB) === self::HALLS;
+        return self::ui($user) === 'dept' && $mine && $mine->is_active && ($mine->place?->category ?? self::HUB) === self::HALLS;
     }
 
     /** اعتماد فريق الفعالية: رئيس الأمن والسلامة وحده (قرار ٤٣) */
@@ -193,11 +199,13 @@ class PlaceProfile
 
     // ── الكتابة ──
 
-    /** تعديل ملف مكان واحد داخل معاملة بقفل، ثم رفع النسخة واشتقاق الفرق. $fn يعدّل $p بالمرجع وقد يرمي abort. */
-    public function mutate(string $hz, int $userId, callable $fn): void
+    /** تعديل ملف مكان واحد (في مبناه) داخل معاملة بقفل، ثم رفع النسخة واشتقاق الفرق. $fn يعدّل $p بالمرجع وقد يرمي abort. */
+    public function mutate(string $hz, int $userId, callable $fn, ?int $buildingId = null): void
     {
-        DB::transaction(function () use ($hz, $userId, $fn) {
-            $doc = InstituteDocument::where('key', self::KEY)->lockForUpdate()->first() ?? new InstituteDocument(['key' => self::KEY, 'version' => 0]);
+        $buildingId ??= BuildingContext::id();
+        DB::transaction(function () use ($hz, $userId, $fn, $buildingId) {
+            $doc = InstituteDocument::where('key', self::KEY)->where('building_id', $buildingId)->lockForUpdate()->first()
+                ?? new InstituteDocument(['key' => self::KEY, 'version' => 0, 'building_id' => $buildingId]);
             $all = json_decode((string) $doc->data, true);
             $all = is_array($all) ? $all : [];
             $p = self::normalize($all[$hz] ?? []);
@@ -209,7 +217,7 @@ class PlaceProfile
             $doc->save();
         });
         try {
-            app(TeamSync::class)->sync();
+            app(TeamSync::class)->sync($buildingId);
         } catch (\Throwable $e) {
             report($e);
         }
@@ -277,7 +285,7 @@ class PlaceProfile
     }
 
     /** saveUnit: الترشيح أو تعديله — تغيير الأسماء بعد الاعتماد يُلغي الاعتماد والإحالة */
-    public function saveTeam(string $hz, array $un, int $k, array $in, int $userId): void
+    public function saveTeam(string $hz, array $un, int $k, array $in, int $userId, ?int $buildingId = null): void
     {
         $this->mutate($hz, $userId, function (array &$p) use ($un, $k, $in) {
             $unit = self::unit($p, $un['uid']);
@@ -295,7 +303,7 @@ class PlaceProfile
             $unit['dept'] = $un['dept'] ?: ($unit['dept'] ?? '');
             if (array_key_exists('staff', $in)) self::setStaff($unit, $in['staff']);
             $p['units'][$un['uid']] = $unit;
-        });
+        }, $buildingId);
     }
 
     private static function setStaff(array &$unit, $v): void
@@ -305,17 +313,17 @@ class PlaceProfile
         else unset($unit['staff']);
     }
 
-    public function saveStaff(string $hz, array $un, $staff, int $userId): void
+    public function saveStaff(string $hz, array $un, $staff, int $userId, ?int $buildingId = null): void
     {
         $this->mutate($hz, $userId, function (array &$p) use ($un, $staff) {
             $unit = self::unit($p, $un['uid']);
             self::setStaff($unit, $staff);
             $p['units'][$un['uid']] = $unit;
-        });
+        }, $buildingId);
     }
 
     /** approveTeam / referHR — $step: appr أو hr */
-    public function stamp(string $hz, array $un, int $k, string $step, int $userId): void
+    public function stamp(string $hz, array $un, int $k, string $step, int $userId, ?int $buildingId = null): void
     {
         $this->mutate($hz, $userId, function (array &$p) use ($un, $k, $step) {
             $unit = self::unit($p, $un['uid']);
@@ -330,19 +338,19 @@ class PlaceProfile
             }
             unset($t);
             $p['units'][$un['uid']] = $unit;
-        });
+        }, $buildingId);
     }
 
-    public function savePlans(string $hz, array $in, int $userId): void
+    public function savePlans(string $hz, array $in, int $userId, ?int $buildingId = null): void
     {
         $this->mutate($hz, $userId, function (array &$p) use ($in) {
             $v = fn (string $k) => mb_substr(trim((string) ($in[$k] ?? '')), 0, 120);
             $p['plans'] = ['sa' => $v('sa'), 'saBy' => $v('sa_by'), 'ra' => $v('ra'), 'drill' => $v('drill')];
-        });
+        }, $buildingId);
     }
 
     /** saveEvent: $i = null لفعالية جديدة — تعديل الأسماء يُلغي الاعتماد */
-    public function saveEvent(string $hz, ?int $i, array $in, int $userId): void
+    public function saveEvent(string $hz, ?int $i, array $in, int $userId, ?int $buildingId = null): void
     {
         $this->mutate($hz, $userId, function (array &$p) use ($i, $in) {
             $ev = self::events($p);
@@ -357,10 +365,10 @@ class PlaceProfile
             if ($i !== null) $ev[$i] = $e;
             else $ev[] = $e;
             $p['events'] = $ev;
-        });
+        }, $buildingId);
     }
 
-    public function approveEvent(string $hz, int $i, string $by, int $userId): void
+    public function approveEvent(string $hz, int $i, string $by, int $userId, ?int $buildingId = null): void
     {
         $this->mutate($hz, $userId, function (array &$p) use ($i, $by) {
             $ev = self::events($p);
@@ -368,16 +376,16 @@ class PlaceProfile
             abort_unless(!empty($ev[$i]['nom']['date']) && self::named($ev[$i]['team']), 422, 'لا أسماء في الترشيح.');
             $ev[$i]['appr'] = ['by' => $by, 'date' => now()->toDateString()];
             $p['events'] = $ev;
-        });
+        }, $buildingId);
     }
 
-    public function deleteEvent(string $hz, int $i, int $userId): void
+    public function deleteEvent(string $hz, int $i, int $userId, ?int $buildingId = null): void
     {
         $this->mutate($hz, $userId, function (array &$p) use ($i) {
             $ev = self::events($p);
             abort_unless(isset($ev[$i]), 404);
             array_splice($ev, $i, 1);
             $p['events'] = $ev;
-        });
+        }, $buildingId);
     }
 }
