@@ -16,10 +16,10 @@ class UserProfile extends Model
 {
     use HasAuditLog;
 
-    protected $fillable = ['user_id', 'role', 'organization_unit_id', 'place_id', 'is_active', 'building_id', 'job_title',
+    protected $fillable = ['user_id', 'role', 'organization_unit_id', 'place_id', 'is_active', 'building_id', 'sees_all_buildings', 'job_title',
         'pending_since', 'pending_by_id', 'pending_note', 'approved_by_id', 'approved_at', 'return_note', 'role_card_no'];
 
-    protected $casts = ['is_active' => 'boolean', 'pending_since' => 'datetime', 'approved_at' => 'datetime'];
+    protected $casts = ['is_active' => 'boolean', 'sees_all_buildings' => 'boolean', 'pending_since' => 'datetime', 'approved_at' => 'datetime'];
 
     // ── ٢٠-٤-ب (قرار ٥٢): قاعدة الاعتماد — ما يسجله غير مسؤول السلامة لا يعمل حتى يعتمده ──
 

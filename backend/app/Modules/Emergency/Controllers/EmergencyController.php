@@ -60,24 +60,44 @@ class EmergencyController extends Controller
 
     public function dashboard()
     {
+        // بكلمته «نعم» (٢٠٢٦-١٠-٠٨): المركز يعرض مباني من يفتحه — مسؤول السلامة ومن «يرى كل الفروع» الكل، ومناوب الفرع مبناه وحده
+        $user = auth()->user();
+        $choices = \App\Modules\Governance\Services\BuildingContext::choices($user);
+        $bids = $choices->pluck('id');
         $stats = $this->service->getDashboardStats();
-        $buildings = EmergencyBuilding::with(['floors', 'assemblyPoints'])->orderBy('name')->get();
-        $activeIncidents = EmergencyIncident::open()->with('building', 'place')->orderByDesc('triggered_at')->get();
-        $recentIncidents = EmergencyIncident::whereIn('status', ['ended', 'cancelled'])->with('place')->orderByDesc('triggered_at')->limit(8)->get();
-        $upcomingDrills = EvacuationDrill::where('status', 'scheduled')->where('scheduled_at', '>=', now())->orderBy('scheduled_at')->limit(5)->with('building', 'place')->get();
+        $buildings = EmergencyBuilding::with(['floors', 'assemblyPoints'])->whereIn('id', $bids)->orderBy('name')->get();
+        $activeIncidents = EmergencyIncident::open()->with('building', 'place')->whereIn('building_id', $bids)->orderByDesc('triggered_at')->get();
+        $recentIncidents = EmergencyIncident::whereIn('status', ['ended', 'cancelled'])->whereIn('building_id', $bids)->with('place')->orderByDesc('triggered_at')->limit(8)->get();
+        $upcomingDrills = EvacuationDrill::where('status', 'scheduled')->where('scheduled_at', '>=', now())->whereIn('building_id', $bids)->orderBy('scheduled_at')->limit(5)->with('building', 'place')->get();
+        $stats['active_incidents'] = $activeIncidents->count();
+        $stats['total_buildings'] = $buildings->count();
+        $stats['buildings_in_emergency'] = $buildings->filter(fn ($b) => $b->isInEmergency())->count();
         // ٢٨-٣ (قرار ٧٨): صفحة المركز لمبنى الجلسة — أماكنه الفعّالة ووثائقه
-        $bid = \App\Modules\Governance\Services\BuildingContext::id();
+        $bid = \App\Modules\Governance\Services\BuildingContext::id($user);
         $places = Place::active()->where('building_id', $bid)->orderBy('sort')->get();
         $teamsByPlace = EmergencyTeam::active()->whereNotNull('place_id')->get()->groupBy('place_id');
-        $pendingCalls = EmergencyIncident::open()->pluck('id')->isEmpty() ? 0
-            : \App\Modules\Emergency\Models\EmergencyNotification::whereIn('incident_id', EmergencyIncident::open()->pluck('id'))->manual()->count();
-        $mainBuilding = \App\Modules\Governance\Services\BuildingContext::current(); // ٢٨-٤: مبنى الجلسة لا الملز دائماً
+        $pendingCalls = $activeIncidents->isEmpty() ? 0
+            : \App\Modules\Emergency\Models\EmergencyNotification::whereIn('incident_id', $activeIncidents->pluck('id'))->manual()->count();
+        $mainBuilding = \App\Modules\Governance\Services\BuildingContext::current($user); // ٢٨-٤: مبنى الجلسة لا الملز دائماً
         $escalationRules = app(AutoEscalationService::class)->getEscalationRules();
         // قرار ٣٣: تنبيهات الذعر والأساور المفتوحة تُعدّ في المركز، وشاشتاهما لهما مدخل في القائمة
-        $panicOpen = PanicAlert::active()->count();
+        $panicOpen = PanicAlert::active()->whereIn('building_id', $bids)->count();
         $wearableOpen = \App\Modules\Emergency\Models\WearableAlert::active()->count();
         // المرحلة ١٠-٤ (ز): بند الخطة في جاهزية كل مكان — مزامَنة من الوثيقة، عدد الخطوات، أدوار بلا شاغل
-        $plansByPlace = ResponsePlan::with('steps')->get()->keyBy('place_id');
+        $plansByPlace = ResponsePlan::with('steps')->whereHas('place', fn ($q) => $q->whereIn('building_id', $bids))->get()->keyBy('place_id');
+        // بطاقة لكل فرع لمن يرى أكثر من مبنى: حالاته وبلاغاته ومناوبه، وضغطة تدخل مركزه
+        $branchCards = [];
+        if ($choices->count() > 1) {
+            $openOcc = \App\Modules\Incident\Models\Incident::whereNotIn('status', \App\Modules\Incident\Models\Incident::TERMINAL)->whereNotNull('place_id')->with('place:id,building_id')->get()->groupBy(fn ($i) => $i->place?->building_id);
+            $duties = \App\Modules\Governance\Models\UserProfile::where('role', 'system_staff')->where('is_active', true)->with('user:id,name')->get()->groupBy('building_id');
+            foreach ($choices as $cb) {
+                $branchCards[] = ['b' => $cb, 'branch' => $cb->branchUnit?->name ?? $cb->branch, 'current' => $cb->id === $bid,
+                    'open' => $activeIncidents->where('building_id', $cb->id)->count(),
+                    'occupant' => ($openOcc->get($cb->id) ?? collect())->count(),
+                    'duty' => ($duties->get($cb->id) ?? collect())->map(fn ($p) => $p->user?->name)->filter()->implode('، '),
+                    'places' => Place::active()->where('building_id', $cb->id)->count()];
+            }
+        }
         $activeByRole = \App\Modules\Governance\Models\UserProfile::where('is_active', true)->selectRaw('role, COUNT(*) as c')->groupBy('role')->pluck('c', 'role')->all();
         $planReadiness = $plansByPlace->map(fn (ResponsePlan $p) => [
             'steps' => $p->steps_count, 'synced_at' => $p->synced_at, 'no_card' => $p->no_card_count,
@@ -90,7 +110,7 @@ class EmergencyController extends Controller
         foreach ($places as $pl) $profiles[$pl->code] = \App\Modules\Emergency\Services\PlaceProfile::get($pl->category, $bid)['plans'] ?? [];
         $equipByPlace = \App\Modules\Emergency\Models\EmergencyEquipment::query()->needsInspection()->whereNotNull('place_id')
             ->selectRaw('place_id, COUNT(*) as c')->groupBy('place_id')->pluck('c', 'place_id')->all();
-        $occupantOpen = \App\Modules\Incident\Models\Incident::whereNotIn('status', \App\Modules\Incident\Models\Incident::TERMINAL)->count();
+        $occupantOpen = \App\Modules\Incident\Models\Incident::whereNotIn('status', \App\Modules\Incident\Models\Incident::TERMINAL)->whereHas('place', fn ($q) => $q->whereIn('building_id', $bids))->count();
         $centerPlace = $places->firstWhere('category', 'HZ-00');
         $R = \App\Modules\Store\Services\InspectionDocReader::class;
         $centerTeams = $centerPlace ? $teamsByPlace->get($centerPlace->id, collect()) : collect();
@@ -101,7 +121,7 @@ class EmergencyController extends Controller
         ];
         return view('modules.emergency.dashboard', compact(
             'stats', 'buildings', 'activeIncidents', 'recentIncidents', 'upcomingDrills', 'places', 'teamsByPlace', 'pendingCalls', 'mainBuilding', 'escalationRules', 'planReadiness',
-            'panicOpen', 'wearableOpen', 'profiles', 'equipByPlace', 'occupantOpen', 'centerPlace', 'centerFile'
+            'panicOpen', 'wearableOpen', 'profiles', 'equipByPlace', 'occupantOpen', 'centerPlace', 'centerFile', 'branchCards'
         ));
     }
 

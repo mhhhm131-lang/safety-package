@@ -62,6 +62,31 @@
   </div>
 </section>
 
+{{-- بكلمته «نعم» (٢٠٢٦-١٠-٠٨): لمن يرى أكثر من مبنى بطاقة لكل فرع — حالاته وبلاغاته ومناوبه، وضغطة تدخل مركزه. الفرع لا يرى فرعاً آخر --}}
+@if(!empty($branchCards) && count($branchCards) > 1)
+<section class="c-sec" id="cBranches">
+  <h2 class="sec-h sec-h-lg"><i class="bi bi-diagram-3"></i> المباني والفروع <span class="small text-muted fw-normal">كل فرع يرى نفسه وحده؛ أنت ترى الكل</span></h2>
+  <div class="row g-2">
+  @foreach($branchCards as $c)
+    <div class="col-6 col-md-3">
+      <div class="card h-100 {{ $c['current'] ? 'border-success' : '' }}" data-branch-card="{{ $c['b']->id }}">
+        <div class="card-body py-2">
+          <div class="fw-bold">{{ $c['b']->name }}</div>
+          <div class="small text-muted">{{ $c['branch'] ?? '—' }} · {{ $c['places'] }} أماكن</div>
+          <div class="small mt-1"><span class="badge text-bg-{{ $c['open'] ? 'danger' : 'success' }}">{{ $c['open'] }} حالة مفتوحة</span> <span class="badge text-bg-{{ $c['occupant'] ? 'warning' : 'light' }} border">{{ $c['occupant'] }} بلاغ شاغلين</span></div>
+          <div class="small text-muted mt-1">المناوب: {{ $c['duty'] !== '' ? $c['duty'] : '—' }}</div>
+        </div>
+        <div class="card-footer py-1">
+          @if($c['current'])<span class="small text-success"><i class="bi bi-check2"></i> أنت فيه الآن</span>
+          @else<form method="post" action="{{ route('app.building.switch', $c['b']) }}" class="m-0">@csrf<button class="btn btn-sm btn-o"><i class="bi bi-box-arrow-in-left"></i> ادخل مركزه</button></form>@endif
+        </div>
+      </div>
+    </div>
+  @endforeach
+  </div>
+</section>
+@endif
+
 {{-- ٢. الاستعداد --}}
 <section class="c-sec" id="cReady">
   <h2 class="sec-h sec-h-lg"><i class="bi bi-shield-check"></i> الاستعداد</h2>

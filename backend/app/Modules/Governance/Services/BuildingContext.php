@@ -25,7 +25,7 @@ final class BuildingContext
         $p = $user->profile;
         $role = $user->role();
         $active = $p && $p->is_active;
-        if ($active && ScopeService::seesAll($role)) {
+        if ($active && ScopeService::seesAllFor($p)) {
             return EmergencyBuilding::query()->orderByRaw('CASE WHEN code = ? THEN 0 ELSE 1 END', [EmergencyBuilding::MAIN_CODE])->orderBy('id')->get();
         }
         if ($active && $role === 'branch_manager') {

@@ -62,7 +62,7 @@ class IncidentVisibilityService
         if (!$profile) return null;
         $role = $profile->role;
 
-        if ($role === 'system_admin' || in_array($role, self::INSTITUTE_VIEW_ALL, true)
+        if ($role === 'system_admin' || in_array($role, self::INSTITUTE_VIEW_ALL, true) || $profile->sees_all_buildings // بكلمته: خانة «يرى كل الفروع»
             || ($role === 'safety_coordinator' && !$profile->organization_unit_id && !$profile->place_id)) {
             return ['all' => true, 'units' => [], 'places' => []];
         }

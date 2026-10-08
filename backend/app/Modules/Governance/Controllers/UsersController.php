@@ -105,6 +105,12 @@ class UsersController extends Controller
         return view('governance.users.form', $this->formData(null));
     }
 
+    /** خانة «يرى كل الفروع»: مسؤول السلامة وحده يمنحها (قرار ٥٢) */
+    private function canGrantAllBuildings(): bool
+    {
+        return auth()->user()?->role() === 'system_admin';
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request, null);
@@ -114,6 +120,7 @@ class UsersController extends Controller
                 'user_id' => $user->id, 'role' => $data['role'],
                 'organization_unit_id' => $data['organization_unit_id'] ?? null, 'place_id' => $data['place_id'] ?? null,
                 'building_id' => $data['building_id'] ?? null, 'job_title' => $data['job_title'] ?? null, 'role_card_no' => $data['role_card_no'] ?? null, // ٢٠-١/٢٠-٢/٢٠-٦
+                'sees_all_buildings' => $this->canGrantAllBuildings() && !empty($data['sees_all_buildings']), // بكلمته: يمنحها مسؤول السلامة وحده
                 'is_active' => true,
             ]);
             $profile->coverage()->sync($data['coverage'] ?? []);
@@ -150,6 +157,7 @@ class UsersController extends Controller
             $profile = $user->profile ?: new UserProfile(['user_id' => $user->id]);
             $profile->fill(['role' => $data['role'], 'organization_unit_id' => $data['organization_unit_id'] ?? null, 'place_id' => $data['place_id'] ?? null,
                 'building_id' => $data['building_id'] ?? $profile->building_id, 'job_title' => $data['job_title'] ?? null, 'role_card_no' => $data['role_card_no'] ?? null]); // ٢٠-١/٢٠-٢/٢٠-٦
+            if ($this->canGrantAllBuildings()) $profile->sees_all_buildings = !empty($data['sees_all_buildings']); // بكلمته: مسؤول السلامة وحده؛ غيره لا يغيّرها
             $profile->save();
             $profile->coverage()->sync($data['coverage'] ?? []);
             $this->tail = $changed ? $this->afterWrite($profile, 'تغيير '.implode('، ', $changed))
@@ -240,6 +248,7 @@ class UsersController extends Controller
             'external_party_id' => 'nullable|exists:external_parties,id', // المرحلة ٦: حساب مقاول/مشرف مقاول/مكتب استشاري → طرفه
             // ٢٠-١/٢٠-٢ (قرار ٥١): المبنى (بلا تحديد = الرئيسي)، المسمى (مؤقت حتى البوابة)، والتغطية من أماكن مبنى الحساب
             'building_id' => 'nullable|exists:emergency_buildings,id',
+            'sees_all_buildings' => 'nullable|boolean', // بكلمته «نعم» (٢٠٢٦-١٠-٠٨): «يرى كل الفروع» — يمنحها مسؤول السلامة وحده
             'job_title' => 'nullable|string|max:120',
             // ٢٠-٦ (قرار ٥١): الدور ذو البطاقات المتعددة (فريق الإسناد) يحمل حسابُه بطاقته بالاسم
             'role_card_no' => ['nullable', 'integer', Rule::in(\App\Modules\Emergency\Support\RoleCards::cardsOfRole((string) $request->input('role')))],

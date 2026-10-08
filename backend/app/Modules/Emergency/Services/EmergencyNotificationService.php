@@ -90,10 +90,28 @@ class EmergencyNotificationService
             ['teams' => $teams->pluck('name')->all(), 'members' => $notified], 'info', $incident->triggered_by_id);
     }
 
-    /** ٢. الإسناد والقيادة. */
+    /**
+     * بكلمته «نعم» (٢٠٢٦-١٠-٠٨): التنبيه بالمبنى — مناوب الفرع ومنسقه وإسناده لمبنى الحالة وحده؛ ومسؤول السلامة والقيادة
+     * والمديرون الثلاثة ومن «يرى كل الفروع» دائماً. الفروع الأخرى لا تُنبَّه. والشاغلون بحساب: أهل مبنى الحالة وحدهم.
+     */
+    private function concerns(User $user, EmergencyIncident $incident): bool
+    {
+        $p = $user->profile;
+        if (!$p) return false;
+        if (\App\Modules\Governance\Services\ScopeService::seesAllFor($p)) return true;
+        return (int) ($p->myBuilding()?->id) === (int) $incident->building_id;
+    }
+
+    private function inBuilding(User $user, EmergencyIncident $incident): bool
+    {
+        return (int) ($user->profile?->myBuilding()?->id) === (int) $incident->building_id;
+    }
+
+    /** ٢. الإسناد والقيادة — لمبنى الحالة ومن يرى الكل. */
     public function notifyCommand(EmergencyIncident $incident): void
     {
         foreach ($this->usersWithRoles(self::COMMAND_ROLES) as $user) {
+            if (!$this->concerns($user, $incident)) continue;
             $this->sendToUser($incident, $user, $incident->getAlertMessage(), $this->getManagementReport($incident), 'emergency.triggered');
         }
     }
@@ -125,12 +143,13 @@ class EmergencyNotificationService
         }
     }
 
-    /** ٥. كل الحسابات المفعّلة بتعليمات الإخلاء (عدا من نُبّه أعلاه). */
+    /** ٥. الحسابات المفعّلة في مبنى الحالة بتعليمات الإخلاء (عدا من نُبّه أعلاه) — لا شاغلي الفروع الأخرى. */
     public function notifyOccupants(EmergencyIncident $incident): void
     {
         $already = EmergencyNotification::where('incident_id', $incident->id)->where('recipient_type', 'user')->pluck('recipient_id')->all();
-        $users = User::whereHas('profile', fn ($q) => $q->where('is_active', true))->whereNotIn('id', $already)->get();
+        $users = User::with('profile')->whereHas('profile', fn ($q) => $q->where('is_active', true))->whereNotIn('id', $already)->get();
         foreach ($users as $user) {
+            if (!$this->inBuilding($user, $incident)) continue;
             $this->sendToUser($incident, $user, $incident->getAlertMessage(), $this->getEvacuationInstructions($incident), 'emergency.triggered');
         }
     }
@@ -138,7 +157,8 @@ class EmergencyNotificationService
     public function notifyAllClear(EmergencyIncident $incident): void
     {
         $message = 'انتهى الخطر — '.($incident->place?->name ?? $incident->building->name).'. يمكنكم العودة بأمان.';
-        foreach (User::whereHas('profile', fn ($q) => $q->where('is_active', true))->get() as $user) {
+        foreach (User::with('profile')->whereHas('profile', fn ($q) => $q->where('is_active', true))->get() as $user) {
+            if (!$this->concerns($user, $incident)) continue;
             $this->sendToUser($incident, $user, 'انتهى الخطر', $message, 'emergency.ended');
         }
     }
@@ -147,14 +167,16 @@ class EmergencyNotificationService
     {
         $message = 'أُلغيت الحالة الطارئة '.$incident->incident_code.' — '.$reason;
         foreach ($this->usersWithRoles(array_merge(self::COMMAND_ROLES, self::MANAGEMENT_ROLES)) as $user) {
+            if (!$this->concerns($user, $incident)) continue;
             $this->sendToUser($incident, $user, 'إلغاء حالة طارئة', $message, 'emergency.cancelled');
         }
     }
 
-    /** تصعيد آلي (AutoEscalationService): أدوار المستوى + نداء الجهات الخارجية عند المستوى الأخير. */
+    /** تصعيد آلي (AutoEscalationService): أدوار المستوى + نداء الجهات الخارجية عند المستوى الأخير — لمبنى الحالة ومن يرى الكل. */
     public function notifyEscalation(EmergencyIncident $incident, array $roles, string $subject, string $body): void
     {
         foreach ($this->usersWithRoles($roles) as $user) {
+            if (!$this->concerns($user, $incident)) continue;
             $this->sendToUser($incident, $user, $subject, $body, 'emergency.escalated');
         }
     }

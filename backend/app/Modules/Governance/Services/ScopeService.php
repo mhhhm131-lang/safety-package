@@ -34,6 +34,12 @@ final class ScopeService
         return in_array($role, self::ALL, true);
     }
 
+    /** بكلمته «نعم» (٢٠٢٦-١٠-٠٨): يرى الكل بدوره، أو بخانة «يرى كل الفروع» التي يمنحها مسؤول السلامة في حسابه */
+    public static function seesAllFor(?UserProfile $p): bool
+    {
+        return $p !== null && (self::seesAll($p->role) || (bool) $p->sees_all_buildings);
+    }
+
     /** ٢٨-٥: مباني فرع مدير الفرع — التي تشير إلى وحدته أو ما تحتها؛ وإلا بنص الفرع على مبناه؛ وإلا مبناه */
     public static function branchBuildingIds(UserProfile $p): array
     {
@@ -51,7 +57,7 @@ final class ScopeService
         $role = $user->role();
         if (!$p || !$p->is_active) return new self('self', collect());
         // ٢٨-٢: المكان المعطَّل (صنف لا يوجد في مبناه) خارج كل نطاق
-        if (in_array($role, self::ALL, true)) return new self('all', Place::active()->orderBy('building_id')->orderBy('sort')->get());
+        if (self::seesAllFor($p)) return new self('all', Place::active()->orderBy('building_id')->orderBy('sort')->get());
         // ٢٨-٥ (س١ بكلمته): المناوب بمبناه — مناوب بلا مبنى (لم يُحدَّد) يرى الكل
         if ($role === 'system_staff') {
             $b = $p->myBuilding();

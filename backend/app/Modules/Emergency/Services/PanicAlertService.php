@@ -351,6 +351,8 @@ class PanicAlertService
 
         foreach ($coordinators as $profile) {
             if (!$profile->user) continue;
+            // بكلمته «نعم» (٢٠٢٦-١٠-٠٨): مناوب الفرع ومنسقه لمبنى التنبيه وحده؛ مسؤول السلامة ومن يرى الكل دائماً
+            if (!\App\Modules\Governance\Services\ScopeService::seesAllFor($profile) && $alert->building_id && (int) ($profile->myBuilding()?->id) !== (int) $alert->building_id) continue;
 
             PanicAlertResponder::create([
                 'panic_alert_id' => $alert->id,

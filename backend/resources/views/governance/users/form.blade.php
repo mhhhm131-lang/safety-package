@@ -26,7 +26,13 @@
     <div class="col-md-6"><label class="form-label">المبنى</label>
       <select class="form-select" name="building_id">
         @foreach($buildings as $b)<option value="{{ $b->id }}" @selected((int)old('building_id', $user?->profile?->building_id ?? $buildings->first()?->id)===$b->id)>{{ $b->name }}{{ $b->branch ? ' · '.$b->branch : '' }}</option>@endforeach
-      </select></div>
+      </select>
+      @if(auth()->user()->role() === 'system_admin')
+      {{-- بكلمته «نعم» (٢٠٢٦-١٠-٠٨): من يرى كل الفروع — مسؤول السلامة يمنحها، لمن في المركز الرئيسي فقط --}}
+      <div class="form-check mt-2"><input class="form-check-input" type="checkbox" name="sees_all_buildings" value="1" id="seesAll" @checked(old('sees_all_buildings', $user?->profile?->sees_all_buildings))>
+        <label class="form-check-label" for="seesAll">يرى كل الفروع <span class="text-muted small">— لمن في المركز الرئيسي فقط؛ الفرع لا يرى فرعاً آخر</span></label></div>
+      @endif
+    </div>
     <div class="col-md-6"><label class="form-label">المسمى الوظيفي</label><input class="form-control" name="job_title" maxlength="120" value="{{ old('job_title', $user?->profile?->job_title) }}" placeholder="مثل: فني كهرباء أول · نائب المدير العام">
       <div class="form-text">مؤقت حتى الربط ببوابة المعهد؛ عندها يأتي منها.</div></div>
     {{-- ٢٠-٦ (قرار ٥١): الدور ذو البطاقات المتعددة (فريق الإسناد) — أي بطاقة يحمل هذا الشخص --}}
