@@ -44,7 +44,7 @@ class RiskActivateWithPhasesTest extends TestCase
         $cause = RiskCause::create(['name' => 'سبب مرجعي']);
         $group = AffectedGroup::create(['name' => 'العامل']);
 
-        $proactive = $risk->phases()->where('phase', 'proactive')->first();
+        $proactive = $risk->phases()->where('phase', 'single')->first();
         $proactive->update([
             'preventive_action'         => 'وقاية مرجعية',
             'corrective_action'         => 'تصحيح مرجعي',
@@ -83,7 +83,7 @@ class RiskActivateWithPhasesTest extends TestCase
         $active = Risk::where('risk_type', 'active')->where('parent_reference_id', $risk->id)->firstOrFail();
         $this->assertSame('active', $active->status);
 
-        $activeProactive = $active->phases()->where('phase', 'proactive')
+        $activeProactive = $active->phases()->where('phase', 'single')
             ->with('causes', 'affectedGroups')->first();
         $this->assertSame('وقاية مرجعية', $activeProactive->preventive_action);
         $this->assertSame('تصحيح مرجعي', $activeProactive->corrective_action);
@@ -100,13 +100,11 @@ class RiskActivateWithPhasesTest extends TestCase
             'severity'   => 5,
             'likelihood' => 4,
             'phases' => [
-                'proactive' => [
-                    // Override the copied phase content.
+                'single' => [
+                    // Override the copied content.
                     'preventive_action' => 'وقاية خاصة بهذا التفعيل',
                     'corrective_action' => 'تصحيح خاص',
                 ],
-                'operational' => [],
-                'response'    => ['corrective_action' => 'إجراء استجابة جديد'],
             ],
         ]);
         $response->assertRedirect(route('risk.active.index'));
@@ -114,12 +112,10 @@ class RiskActivateWithPhasesTest extends TestCase
         $active = Risk::where('risk_type', 'active')->where('parent_reference_id', $risk->id)->firstOrFail();
         $this->assertSame(20, $active->risk_score);
 
-        $proactive = $active->phases()->where('phase', 'proactive')->first();
-        $this->assertSame('وقاية خاصة بهذا التفعيل', $proactive->preventive_action);
-        $this->assertSame('تصحيح خاص', $proactive->corrective_action);
-
-        $responsePhase = $active->phases()->where('phase', 'response')->first();
-        $this->assertSame('إجراء استجابة جديد', $responsePhase->corrective_action);
+        $row = $active->phases()->where('phase', 'single')->first();
+        $this->assertSame('وقاية خاصة بهذا التفعيل', $row->preventive_action);
+        $this->assertSame('تصحيح خاص', $row->corrective_action);
+        $this->assertSame(1, $active->phases()->count()); // الخطوة ٦: صف واحد بلا أطوار
     }
 
     public function test_activate_respects_scope_and_assignments(): void

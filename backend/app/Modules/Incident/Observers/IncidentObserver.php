@@ -58,13 +58,13 @@ class IncidentObserver
         if ($incident->incident_field_team_id === null && $risk->assigned_field_team_id && !\App\Modules\Incident\Services\HandlerResolver::governs($risk)) {
             $incident->incident_field_team_id = $risk->assigned_field_team_id;
         }
-        $proactive = $risk->phases()->where('phase', RiskPhase::PHASE_PROACTIVE)->first();
-        if ($proactive) {
-            if (empty($incident->corrective_action) && !empty($proactive->corrective_action)) {
-                $incident->corrective_action = $proactive->corrective_action;
+        $single = $risk->phases()->first(); // الخطوة ٦: صف واحد بلا أطوار
+        if ($single) {
+            if (empty($incident->corrective_action) && !empty($single->corrective_action)) {
+                $incident->corrective_action = $single->corrective_action;
             }
-            if (empty($incident->preventive_action) && !empty($proactive->preventive_action)) {
-                $incident->preventive_action = $proactive->preventive_action;
+            if (empty($incident->preventive_action) && !empty($single->preventive_action)) {
+                $incident->preventive_action = $single->preventive_action;
             }
         }
     }

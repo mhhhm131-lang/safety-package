@@ -88,7 +88,7 @@ class HandlingUnitAndHandlerTest extends TestCase
         $this->assertNull($j['handler']);
 
         // التعديل ينقلها إلى إدارة أخرى، ولا يمسّ نص الكتاب «من يطبّق الضوابط» وقد خرجت خاناته من النموذج
-        $op = $r->phases()->where('phase', 'operational')->firstOrFail();
+        $op = $r->phases()->firstOrFail(); // الخطوة ٦: صف واحد بلا أطوار
         $op->update(['responsible_org_unit_text' => '٨ المنسق في المكان (الجولة) · ١٩ فني الكهرباء (الإصلاح)']);
         $r->forceFill(['handler_specialty' => 'tech_electrical', 'handler_set_by_id' => $this->marafiq->id, 'handler_set_at' => now()])->save(); // معالج من الإدارة الأولى
         $this->actingAs($this->salama)->post(route('risk.reference.update', $r), $this->body('غطاء مقبس مكسور', ['handling_unit_id' => $this->orgUnit('hr')->id]))

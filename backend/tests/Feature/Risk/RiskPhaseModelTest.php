@@ -31,24 +31,24 @@ class RiskPhaseModelTest extends TestCase
             ]);
         }
 
-        $this->assertCount(3, $risk->fresh()->phases);
+        $this->assertCount(1, $risk->fresh()->phases); // الخطوة ٦: صف واحد بلا أطوار
     }
 
     public function test_unique_constraint_blocks_duplicate_phase(): void
     {
         $risk = $this->makeRisk();
 
-        RiskPhase::create(['risk_id' => $risk->id, 'phase' => RiskPhase::PHASE_PROACTIVE]);
+        RiskPhase::create(['risk_id' => $risk->id, 'phase' => RiskPhase::PHASE_SINGLE]);
 
         $this->expectException(\Illuminate\Database\QueryException::class);
-        RiskPhase::create(['risk_id' => $risk->id, 'phase' => RiskPhase::PHASE_PROACTIVE]);
+        RiskPhase::create(['risk_id' => $risk->id, 'phase' => RiskPhase::PHASE_SINGLE]);
     }
 
     public function test_phase_label_returns_arabic(): void
     {
-        $phase = new RiskPhase(['phase' => RiskPhase::PHASE_PROACTIVE]);
+        $phase = new RiskPhase(['phase' => RiskPhase::PHASE_SINGLE]);
 
-        $this->assertSame('استباقي', $phase->phase_label);
+        $this->assertSame('الإجراءات', $phase->phase_label);
     }
 
     public function test_responsible_display_prefers_fk_over_text(): void
@@ -59,7 +59,7 @@ class RiskPhaseModelTest extends TestCase
 
         $phase = RiskPhase::create([
             'risk_id' => $risk->id,
-            'phase'   => RiskPhase::PHASE_OPERATIONAL,
+            'phase'   => RiskPhase::PHASE_SINGLE,
             'responsible_org_unit_id'   => $unit->id,
             'responsible_org_unit_text' => 'نص احتياطي — لن يُستخدم',
             'responsible_user_id'       => $user->id,
@@ -76,7 +76,7 @@ class RiskPhaseModelTest extends TestCase
 
         $phase = RiskPhase::create([
             'risk_id' => $risk->id,
-            'phase'   => RiskPhase::PHASE_RESPONSE,
+            'phase'   => RiskPhase::PHASE_SINGLE,
             'responsible_org_unit_text' => 'قسم الطوارئ (نص حر)',
             'responsible_user_text'     => 'قائد الطوارئ (نص حر)',
         ]);
@@ -88,7 +88,7 @@ class RiskPhaseModelTest extends TestCase
     public function test_phase_attaches_causes_via_pivot(): void
     {
         $risk = $this->makeRisk();
-        $phase = RiskPhase::create(['risk_id' => $risk->id, 'phase' => RiskPhase::PHASE_PROACTIVE]);
+        $phase = RiskPhase::create(['risk_id' => $risk->id, 'phase' => RiskPhase::PHASE_SINGLE]);
 
         $cause1 = RiskCause::create(['name' => 'عدم تدريب']);
         $cause2 = RiskCause::create(['name' => 'معدات غير مفحوصة']);
@@ -105,7 +105,7 @@ class RiskPhaseModelTest extends TestCase
     public function test_phase_attaches_affected_groups_with_per_phase_details(): void
     {
         $risk = $this->makeRisk();
-        $phase = RiskPhase::create(['risk_id' => $risk->id, 'phase' => RiskPhase::PHASE_RESPONSE]);
+        $phase = RiskPhase::create(['risk_id' => $risk->id, 'phase' => RiskPhase::PHASE_SINGLE]);
 
         $group = AffectedGroup::create(['name' => 'أسرة العامل']);
 

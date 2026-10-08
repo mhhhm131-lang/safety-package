@@ -51,7 +51,7 @@ class IncidentTest extends TestCase
         $master = app(RiskService::class)->createRisk(null, ['title' => 'سلك كهربائي مكشوف', 'description' => 'x', 'category_id' => $cat->id,
             'sub_category_id' => $sub->id, 'severity' => 4, 'likelihood' => 3], 'master');
         $master->update(['status' => 'approved']);
-        $master->phases()->where('phase', 'proactive')->first()->update(['corrective_action' => 'فصل التيار وعزل السلك فوراً']);
+        $master->phases()->where('phase', 'single')->first()->update(['corrective_action' => 'فصل التيار وعزل السلك فوراً']);
         $this->reference = app(RiskCopyService::class)->masterToReference($master->fresh(), null);
         $this->reference->update(['status' => 'approved']);
 

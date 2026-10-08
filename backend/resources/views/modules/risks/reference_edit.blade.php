@@ -5,13 +5,13 @@
 @php
     use App\Modules\Risk\Models\RiskPhase;
 
+    // خطة المعالج — الخطوة ٦ (بكلمته): بلا أطوار — صف واحد
     $phaseMeta = [
-        RiskPhase::PHASE_PROACTIVE   => ['label' => 'استباقي',  'hint' => 'قبل بدء العمل — الوقاية والتحضير',   'icon' => 'bi-shield-plus',      'color' => '#3b82f6'],
-        RiskPhase::PHASE_OPERATIONAL => ['label' => 'تشغيلي',   'hint' => 'أثناء العمل — الضوابط والرقابة',      'icon' => 'bi-lightning-charge', 'color' => '#f59e0b'],
-        RiskPhase::PHASE_RESPONSE    => ['label' => 'استجابة',  'hint' => 'بعد وقوع الحادث — التعامل والتحقيق',  'icon' => 'bi-bandaid',          'color' => '#ef4444'],
+        RiskPhase::PHASE_SINGLE => ['label' => 'الأسباب والإجراءات', 'hint' => 'ما يسبّب الخطر، ومن يتضرر، وما يُفعل قبله وعند وقوعه', 'icon' => 'bi-list-check', 'color' => '#0f4c3a'],
     ];
 
     $phasesByKey = $risk->phases->keyBy('phase');
+    if (!$phasesByKey->has(RiskPhase::PHASE_SINGLE) && $risk->phases->isNotEmpty()) $phasesByKey->put(RiskPhase::PHASE_SINGLE, $risk->phases->first());
 @endphp
 
 @section('content')
@@ -218,11 +218,11 @@
         {{-- 4. المراحل الثلاث --}}
         <div class="card mb-3" style="background:var(--bg-card);border:1px solid var(--border-color);">
             <div class="card-header" style="background:transparent;border-bottom:1px solid var(--border-color);">
-                <h6 class="mb-0 fw-bold" style="color:var(--accent);"><i class="bi bi-layers me-2"></i>مراحل الخطر</h6>
-                <small style="color:var(--text-muted);">لكل مرحلة: أسباب + متأثرون + إجراءات</small>
+                <h6 class="mb-0 fw-bold" style="color:var(--accent);"><i class="bi bi-list-check me-2"></i>الأسباب والإجراءات</h6>
+                <small style="color:var(--text-muted);">أسباب + متأثرون + إجراء وقائي وتصحيحي + تقييم بعد الإجراءات</small>
             </div>
             <div class="card-body">
-                <ul class="nav nav-tabs mb-3" role="tablist">
+                <ul class="nav nav-tabs mb-3" role="tablist" @if(count($phaseMeta) < 2) style="display:none" @endif>
                     @foreach($phaseMeta as $phaseKey => $meta)
                     <li class="nav-item">
                         <button class="nav-link @if($loop->first)active @endif" type="button"

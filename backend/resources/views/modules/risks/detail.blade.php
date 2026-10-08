@@ -116,10 +116,11 @@
                 </div>
             </div>
 
-            {{-- المراحل الثلاث --}}
+            {{-- الأسباب والإجراءات — خطة المعالج الخطوة ٦: صف واحد بلا أطوار (المفاتيح القديمة تبقى للصفوف التي لم تُرحَّل) --}}
             @if($risk->phases->isNotEmpty())
             @php
                 $phaseMeta = [
+                    'single'      => ['label' => 'الأسباب والإجراءات', 'icon' => 'bi-list-check', 'color' => '#0f4c3a'],
                     'proactive'   => ['label' => 'استباقي',  'icon' => 'bi-shield-plus',      'color' => '#3b82f6'],
                     'operational' => ['label' => 'تشغيلي',  'icon' => 'bi-lightning-charge', 'color' => '#f59e0b'],
                     'response'    => ['label' => 'استجابة', 'icon' => 'bi-bandaid',          'color' => '#ef4444'],
@@ -127,16 +128,18 @@
             @endphp
             <div class="card mb-4" style="background: var(--bg-card); border: 1px solid var(--border-color);">
                 <div class="card-header" style="background: transparent; border-bottom: 1px solid var(--border-color);">
-                    <h6 class="mb-0 fw-bold" style="color: var(--text-main);"><i class="bi bi-layers me-2"></i>مراحل الخطر</h6>
+                    <h6 class="mb-0 fw-bold" style="color: var(--text-main);"><i class="bi bi-list-check me-2"></i>الأسباب والإجراءات</h6>
                 </div>
                 <div class="card-body p-0">
-                    @foreach($risk->phases->sortBy(fn($p) => array_search($p->phase, ['proactive','operational','response'])) as $phase)
+                    @foreach($risk->phases->sortBy(fn($p) => array_search($p->phase, ['single','proactive','operational','response'])) as $phase)
                     @php $meta = $phaseMeta[$phase->phase] ?? ['label' => $phase->phase, 'icon' => 'bi-circle', 'color' => '#6c757d']; @endphp
                     <div class="p-3" style="border-bottom: 1px solid var(--border-color);">
+                        @if($phase->phase !== 'single')
                         <div class="d-flex align-items-center gap-2 mb-3">
                             <i class="bi {{ $meta['icon'] }}" style="color: {{ $meta['color'] }};"></i>
                             <strong style="color: {{ $meta['color'] }};">{{ $meta['label'] }}</strong>
                         </div>
+                        @endif
                         <div class="row g-3">
                             @if($phase->preventive_action)
                             <div class="col-md-6">

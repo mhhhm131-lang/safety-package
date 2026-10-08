@@ -46,16 +46,16 @@
         <x-risk-score-badge :score="(int) $risk->risk_score" />
         <a class="btn btn-sm btn-outline-primary ms-auto" href="{{ route('risk.show', $risk) }}">عرض الخطر</a>
       </div>
-      {{-- المرحلة ١٠-٣ (ح-٢): الطبقة بنوع البلاغ — عادي/سري: التشغيلية؛ عاجل: الاستجابة + زر التفعيل --}}
+      {{-- المرحلة ١٠-٣ (ح-٢)، ثم خطة المعالج الخطوة ٦: الخطر صف واحد بلا أطوار — الإجراءان نفسهما لكل نوع؛ العاجل يزيد زر التفعيل --}}
       <div class="mt-2 p-2 rounded border small" style="background:{{ $layer['key'] === 'response' ? '#fff5f5' : '#f4f8f6' }}">
         <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-          <span class="badge text-bg-{{ $layer['key'] === 'response' ? 'danger' : 'success' }}">الطبقة {{ $layer['label'] }}</span>
+          <span class="badge text-bg-{{ $layer['key'] === 'response' ? 'danger' : 'success' }}">{{ $layer['label'] }} من السجل العام</span>
           <span class="text-muted">{{ $layer['why'] }}</span>
           @if($layer['key'] === 'response' && $canTrigger && !$terminal && !$linkedEmergency)<button class="btn btn-sm btn-danger ms-auto" data-bs-toggle="modal" data-bs-target="#emergencyModal"><i class="bi bi-broadcast me-1"></i> تفعيل حالة طارئة</button>@endif
         </div>
         @if($layer['phase'])
-          @if($layer['phase']->preventive_action)<div><b>{{ $layer['key'] === 'response' ? 'ما يُفعل فوراً' : 'الضوابط القائمة' }}:</b> <span style="white-space:pre-wrap">{{ $layer['phase']->preventive_action }}</span></div>@endif
-          @if($layer['phase']->corrective_action)<div><b>{{ $layer['key'] === 'response' ? 'بعد السيطرة' : 'الإجراء التصحيحي' }}:</b> <span style="white-space:pre-wrap">{{ $layer['phase']->corrective_action }}</span></div>@endif
+          @if($layer['phase']->preventive_action)<div><b>الإجراء الوقائي:</b> <span style="white-space:pre-wrap">{{ $layer['phase']->preventive_action }}</span></div>@endif
+          @if($layer['phase']->corrective_action)<div><b>الإجراء التصحيحي:</b> <span style="white-space:pre-wrap">{{ $layer['phase']->corrective_action }}</span></div>@endif
           @if($layer['phase']->responsible_user_text || $layer['phase']->responsible_org_unit_text)<div class="text-muted">الجهة والشخص: {{ $layer['phase']->responsible_org_unit_text }} {{ $layer['phase']->responsible_user_text }}</div>@endif
         @else
           <div class="text-muted">لا نص لهذه الطبقة في جدول الخطر بعد.</div>

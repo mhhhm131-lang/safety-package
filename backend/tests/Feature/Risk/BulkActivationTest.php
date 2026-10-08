@@ -91,7 +91,7 @@ class BulkActivationTest extends TestCase
             $this->assertSame($this->hr->id, $r->organization_unit_id);
             $this->assertSame($this->coord->id, $r->assigned_coordinator_id, 'منسق الخطر ليس منسق الوحدة');
             $this->assertSame($this->handler->id, $r->assigned_field_team_id);
-            $this->assertSame(3, $r->phases()->count());
+            $this->assertSame(1, $r->phases()->count()); // الخطوة ٦: صف واحد بلا أطوار
         }
         // تنبيه واحد للدفعة لا ثلاثة
         $this->assertSame(1, AppNotification::where('user_id', $this->mudir->id)->where('type', 'risk.approve')->count());

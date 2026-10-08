@@ -31,32 +31,27 @@ class RiskCopyServicePhasesTest extends TestCase
         $this->user = $this->makeUser('system_admin');
     }
 
-    public function test_master_to_reference_copies_all_three_phases(): void
+    /** خطة المعالج — الخطوة ٦: صف واحد بلا أطوار يُنسخ كما هو */
+    public function test_master_to_reference_copies_the_single_row(): void
     {
         $master = $this->buildPopulatedMaster();
 
         $reference = $this->copy->masterToReference($master, $this->user->id);
 
         $phases = $reference->fresh()->phases;
-        $this->assertCount(3, $phases);
-        $this->assertEqualsCanonicalizing(
-            ['proactive', 'operational', 'response'],
-            $phases->pluck('phase')->all()
-        );
+        $this->assertCount(1, $phases);
+        $this->assertSame(['single'], $phases->pluck('phase')->all());
     }
 
-    public function test_copy_preserves_per_phase_content(): void
+    public function test_copy_preserves_the_row_content(): void
     {
         $master = $this->buildPopulatedMaster();
 
         $reference = $this->copy->masterToReference($master, $this->user->id);
 
-        $refProactive = $reference->fresh()->phases->firstWhere('phase', RiskPhase::PHASE_PROACTIVE);
-        $this->assertSame('تدريب العمال قبل العمل', $refProactive->preventive_action);
-        $this->assertSame('فحص المعدات', $refProactive->corrective_action);
-
-        $refResponse = $reference->phases->firstWhere('phase', RiskPhase::PHASE_RESPONSE);
-        $this->assertSame('إسعاف أولي + تحقيق', $refResponse->corrective_action);
+        $row = $reference->fresh()->phases->firstWhere('phase', RiskPhase::PHASE_SINGLE);
+        $this->assertSame('تدريب العمال قبل العمل', $row->preventive_action);
+        $this->assertSame("فحص المعدات\nإسعاف أولي + تحقيق", $row->corrective_action);
     }
 
     public function test_copy_carries_phase_causes_and_affected_groups(): void
@@ -64,24 +59,24 @@ class RiskCopyServicePhasesTest extends TestCase
         $master = $this->buildPopulatedMaster();
 
         $reference = $this->copy->masterToReference($master, $this->user->id);
-        $proactive = $reference->fresh()->phases->firstWhere('phase', RiskPhase::PHASE_PROACTIVE);
+        $proactive = $reference->fresh()->phases->firstWhere('phase', RiskPhase::PHASE_SINGLE);
 
         $this->assertCount(2, $proactive->causes);
         $this->assertEqualsCanonicalizing(
             ['عدم تدريب', 'حبال غير مفحوصة'],
             $proactive->causes->pluck('name')->all()
         );
-        $this->assertCount(1, $proactive->affectedGroups);
+        $this->assertCount(2, $proactive->affectedGroups);
     }
 
-    public function test_copy_carries_rich_affected_group_details_per_phase(): void
+    public function test_copy_carries_rich_affected_group_details(): void
     {
         $master = $this->buildPopulatedMaster();
 
         $reference = $this->copy->masterToReference($master, $this->user->id);
-        $response = $reference->fresh()->phases->firstWhere('phase', RiskPhase::PHASE_RESPONSE);
+        $row = $reference->fresh()->phases->firstWhere('phase', RiskPhase::PHASE_SINGLE);
 
-        $detail = $response->affectedGroupDetails->first();
+        $detail = $row->affectedGroupDetails->first();
         $this->assertNotNull($detail);
         $this->assertSame('critical', $detail->impact);
         $this->assertSame('خسارة دخل + صدمة', $detail->impact_description);
@@ -96,25 +91,22 @@ class RiskCopyServicePhasesTest extends TestCase
         $reference = $this->makeRisk(['risk_type' => 'reference']);
         RiskPhase::create([
             'risk_id' => $reference->id,
-            'phase'   => RiskPhase::PHASE_PROACTIVE,
+            'phase'   => RiskPhase::PHASE_SINGLE,
             'responsible_org_unit_id' => $unit->id,
             'responsible_user_id'     => $responsible->id,
         ]);
-        RiskPhase::create(['risk_id' => $reference->id, 'phase' => RiskPhase::PHASE_OPERATIONAL]);
-        RiskPhase::create(['risk_id' => $reference->id, 'phase' => RiskPhase::PHASE_RESPONSE]);
-
         $active = $this->copy->referenceToActive($reference, $this->user->id, [
             'scope_type' => 'org_unit', 'organization_unit_id' => $unit->id,
         ]);
         $this->assertSame('active', $active->risk_type);
         $this->assertSame($reference->id, $active->parent_reference_id);
 
-        $copiedProactive = $active->fresh()->phases->firstWhere('phase', RiskPhase::PHASE_PROACTIVE);
+        $copiedProactive = $active->fresh()->phases->firstWhere('phase', RiskPhase::PHASE_SINGLE);
         $this->assertSame($unit->id, $copiedProactive->responsible_org_unit_id);
         $this->assertSame($responsible->id, $copiedProactive->responsible_user_id);
     }
 
-    public function test_copying_risk_without_phases_still_produces_three(): void
+    public function test_copying_risk_without_phases_still_produces_the_single_row(): void
     {
         // Simulates legacy pre-migration master risks — no phase rows on source.
         $master = $this->makeRisk(['risk_type' => 'master']);
@@ -122,12 +114,11 @@ class RiskCopyServicePhasesTest extends TestCase
 
         $reference = $this->copy->masterToReference($master, $this->user->id);
 
-        $this->assertSame(3, RiskPhase::where('risk_id', $reference->id)->count());
+        $this->assertSame(1, RiskPhase::where('risk_id', $reference->id)->count());
     }
 
     /**
-     * Builds a master risk with all three phases populated — used by the
-     * happy-path assertions above.
+     * Builds a master risk with its single row populated (الخطوة ٦: ما كان في ثلاثة أطوار صار صفاً واحداً).
      */
     private function buildPopulatedMaster(): Risk
     {
@@ -143,32 +134,18 @@ class RiskCopyServicePhasesTest extends TestCase
         $group         = AffectedGroup::create(['name' => 'العامل']);
         $familyGroup   = AffectedGroup::create(['name' => 'الأسرة']);
 
-        $proactive = RiskPhase::create([
+        $row = RiskPhase::create([
             'risk_id'           => $master->id,
-            'phase'             => RiskPhase::PHASE_PROACTIVE,
+            'phase'             => RiskPhase::PHASE_SINGLE,
             'preventive_action' => 'تدريب العمال قبل العمل',
-            'corrective_action' => 'فحص المعدات',
+            'corrective_action' => "فحص المعدات\nإسعاف أولي + تحقيق",
             'responsible_org_unit_text' => 'قسم التدريب',
             'responsible_user_text'     => 'مدرب السلامة',
         ]);
-        $proactive->causes()->sync([$causeTraining->id, $causeRopes->id]);
-        $proactive->affectedGroups()->sync([$group->id]);
-
-        RiskPhase::create([
-            'risk_id'           => $master->id,
-            'phase'             => RiskPhase::PHASE_OPERATIONAL,
-            'preventive_action' => 'إيقاف العمل عند الرياح',
-            'corrective_action' => 'رفع العامل بأمان',
-        ]);
-
-        $response = RiskPhase::create([
-            'risk_id'           => $master->id,
-            'phase'             => RiskPhase::PHASE_RESPONSE,
-            'corrective_action' => 'إسعاف أولي + تحقيق',
-        ]);
-        $response->affectedGroups()->sync([$familyGroup->id]);
+        $row->causes()->sync([$causeTraining->id, $causeRopes->id]);
+        $row->affectedGroups()->sync([$group->id, $familyGroup->id]);
         RiskPhaseAffectedGroupDetail::create([
-            'risk_phase_id'      => $response->id,
+            'risk_phase_id'      => $row->id,
             'affected_group_id'  => $familyGroup->id,
             'impact'             => 'critical',
             'impact_description' => 'خسارة دخل + صدمة',

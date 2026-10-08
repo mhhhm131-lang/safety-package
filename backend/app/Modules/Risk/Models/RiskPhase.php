@@ -10,29 +10,28 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * A risk carries three phases — proactive (before work), operational
- * (during work), response (after incident). Each phase holds its own
- * preventive/corrective actions, its own causes, its own affected
- * groups, and its own responsible unit+person. The three rows per risk
- * are enforced by a UNIQUE(risk_id, phase) constraint.
+ * خطة المعالج — الخطوة ٦ (بكلمته ٢٠٢٦-١٠-٠٧ «الأطوار الثلاثة في سجل المخاطر تلغى ويؤخذ محتواها… بلا قبل أثناء بعد»):
+ * الخطر صف واحد من الأسباب والمتأثرين والإجراء الوقائي والتصحيحي والتقييم المتبقي ومن يطبّق الضوابط (نص الكتاب).
+ * كان من OHSMS ثلاثة أطوار (استباقي/تشغيلي/استجابة) لكل خطر؛ دُمج محتواها في صف واحد مفتاحه `single`
+ * (الترحيل `2026_10_08_100003` للقائم، و`Support\PhaseMerger` للبذر من ملفات الكتاب التي بقيت بأطوارها الثلاثة).
+ * المفاتيح القديمة باقية للدمج والترحيل فقط، لا تُنشأ بها صفوف جديدة.
  *
- * Responsibility is dual-stored: an FK to the hierarchy/users (preferred,
- * tenant registers) plus a free-text fallback (master book suggestions,
- * or entries not yet in the tree).
+ * Responsibility is dual-stored: an FK to the hierarchy/users plus a free-text fallback (نص الكتاب «من يطبّق الضوابط»).
  */
 class RiskPhase extends Model
 {
+    public const PHASE_SINGLE = 'single'; // الصف الواحد
+
+    /** مفاتيح OHSMS القديمة — للترحيل والدمج من ملفات الكتاب فقط */
     public const PHASE_PROACTIVE   = 'proactive';   // استباقي
     public const PHASE_OPERATIONAL = 'operational'; // تشغيلي
     public const PHASE_RESPONSE    = 'response';    // استجابة
+    public const LEGACY_PHASES = [self::PHASE_PROACTIVE, self::PHASE_OPERATIONAL, self::PHASE_RESPONSE];
 
-    public const PHASES = [
-        self::PHASE_PROACTIVE,
-        self::PHASE_OPERATIONAL,
-        self::PHASE_RESPONSE,
-    ];
+    public const PHASES = [self::PHASE_SINGLE];
 
     public const PHASE_LABELS = [
+        self::PHASE_SINGLE      => 'الإجراءات',
         self::PHASE_PROACTIVE   => 'استباقي',
         self::PHASE_OPERATIONAL => 'تشغيلي',
         self::PHASE_RESPONSE    => 'استجابة',

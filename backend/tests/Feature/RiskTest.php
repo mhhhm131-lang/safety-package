@@ -55,7 +55,7 @@ class RiskTest extends TestCase
         $r = $svc->createRisk(null, ['title' => $title, 'description' => $title, 'category_id' => $this->cat->id,
             'sub_category_id' => $this->sub->id, 'severity' => 5, 'likelihood' => 3, 'status' => 'approved'], 'master');
         $r->update(['status' => 'approved']);
-        $r->phases()->where('phase', RiskPhase::PHASE_PROACTIVE)->first()->update(['preventive_action' => 'تصريح عمل ساخن قبل البدء']);
+        $r->phases()->where('phase', RiskPhase::PHASE_SINGLE)->first()->update(['preventive_action' => 'تصريح عمل ساخن قبل البدء']);
         return $r->fresh();
     }
 
@@ -67,7 +67,7 @@ class RiskTest extends TestCase
         $this->assertSame(49, RiskSubCategory::count());
         $this->assertSame(0, Risk::where('risk_type', 'master')->count()); // قرار ٢١: طبقة واحدة
         $this->assertSame(177, Risk::where('risk_type', 'reference')->count());
-        $this->assertSame(177 * 3, RiskPhase::count());
+        $this->assertSame(177, RiskPhase::count()); // الخطوة ٦: صف واحد لكل خطر بلا أطوار
         $this->assertSame(177, Risk::whereNull('sub_category_id')->count() === 0 ? 177 : -1); // لا خطر بلا فرع
         // إعادة التشغيل لا تكرر
         $this->seed(\Database\Seeders\RiskBookSeeder::class);
@@ -110,8 +110,8 @@ class RiskTest extends TestCase
         $this->assertSame('مراقب حريق طوال العمل', $ref1->controls()->first()?->description_ar);
         $this->assertSame(1, $ref1->controls()->count());
         $this->assertSame('reference', $ref1->risk_type);
-        $this->assertSame('تصريح عمل ساخن قبل البدء', $ref1->phases()->where('phase', 'proactive')->first()->preventive_action);
-        $this->assertSame(3, $ref1->phases()->count());
+        $this->assertSame('تصريح عمل ساخن قبل البدء', $ref1->phases()->where('phase', 'single')->first()->preventive_action);
+        $this->assertSame(1, $ref1->phases()->count()); // الخطوة ٦: صف واحد بلا أطوار
     }
 
     public function test_gate_department_manager_activates_risk_names_owner_and_it_gets_approved(): void
@@ -134,7 +134,7 @@ class RiskTest extends TestCase
         $this->actingAs($hrMgr)->post("/app/risk/{$ref->id}/activate", ['assigned_coordinator_id' => \App\Models\User::min('id'), 'assigned_field_team_id' => \App\Models\User::min('id'), /* ٢١-٤: التسمية شرط التفعيل */ 
             'scope_type' => 'org_unit', 'organization_unit_id' => $hr->id, 'place_id' => Place::where('code', 'HZ-06')->value('id'),
             'severity' => 4, 'likelihood' => 3,
-            'phases' => ['proactive' => ['responsible_org_unit_id' => $hr->id, 'responsible_user_text' => 'أحمد — مسؤول السلامة في الإدارة',
+            'phases' => ['single' => ['responsible_org_unit_id' => $hr->id, 'responsible_user_text' => 'أحمد — مسؤول السلامة في الإدارة',
                 'affected_group_ids' => [$group->id], 'affected_impact' => [$group->id => 'high']]],
         ])->assertRedirect('/app/risk/active');
         $active = Risk::where('risk_type', 'active')->first();
@@ -143,7 +143,7 @@ class RiskTest extends TestCase
         $this->assertSame('HZ-06', $active->place->code);
         $this->assertSame(12, $active->risk_score);
         $this->assertSame('active', $active->status);
-        $proactive = $active->phases()->where('phase', 'proactive')->first();
+        $proactive = $active->phases()->where('phase', 'single')->first();
         $this->assertSame('أحمد — مسؤول السلامة في الإدارة', $proactive->responsible_user_text);
         $this->assertSame('تصريح عمل ساخن قبل البدء', $proactive->preventive_action); // موروث من الكتاب
         $this->assertSame('high', $proactive->affectedGroupDetails()->first()->impact);

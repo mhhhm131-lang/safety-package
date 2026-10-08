@@ -43,13 +43,10 @@ class IncidentRiskInheritanceTest extends TestCase
         // الإجراءات على المرحلة الاستباقية — المراقب يسحبها منها عند الإنشاء
         RiskPhase::create([
             'risk_id'           => $risk->id,
-            'phase'             => RiskPhase::PHASE_PROACTIVE,
+            'phase'             => RiskPhase::PHASE_SINGLE,
             'corrective_action' => 'إيقاف + عزل + إبلاغ',
             'preventive_action' => 'تدريب دوري + صيانة وقائية',
         ]);
-        RiskPhase::create(['risk_id' => $risk->id, 'phase' => RiskPhase::PHASE_OPERATIONAL]);
-        RiskPhase::create(['risk_id' => $risk->id, 'phase' => RiskPhase::PHASE_RESPONSE]);
-
         return $risk;
     }
 

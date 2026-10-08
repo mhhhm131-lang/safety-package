@@ -24,24 +24,22 @@ class RiskRegistryTreeDetailPhasesTest extends TestCase
         return $this->makeRisk(['risk_type' => 'reference', 'status' => 'approved']); // قرار ٧٥: السجل العام يعرض ما اعتُمد
     }
 
-    public function test_risk_detail_returns_phases_in_fixed_order(): void
+    /** خطة المعالج — الخطوة ٦: صف واحد بلا أطوار، ومحتواه مسطّح في الجذر أيضاً */
+    public function test_risk_detail_returns_the_single_row_and_flat_fields(): void
     {
         $this->actingAsRole('system_admin');
         $risk = $this->referenceRisk();
-
-        // Insert in an intentionally scrambled order to verify the endpoint
-        // still returns proactive → operational → response.
-        RiskPhase::create(['risk_id' => $risk->id, 'phase' => RiskPhase::PHASE_RESPONSE, 'corrective_action' => 'R']);
-        RiskPhase::create(['risk_id' => $risk->id, 'phase' => RiskPhase::PHASE_PROACTIVE, 'corrective_action' => 'P']);
-        RiskPhase::create(['risk_id' => $risk->id, 'phase' => RiskPhase::PHASE_OPERATIONAL, 'corrective_action' => 'O']);
+        RiskPhase::create(['risk_id' => $risk->id, 'phase' => RiskPhase::PHASE_SINGLE, 'corrective_action' => 'P']);
 
         $response = $this->getJson(route('risk.registry.tree.riskDetail', ['type' => 'reference', 'riskId' => $risk->id]));
         $response->assertOk();
 
         $phases = $response->json('phases');
-        $this->assertCount(3, $phases);
-        $this->assertSame(['proactive', 'operational', 'response'], array_column($phases, 'phase'));
-        $this->assertSame(['استباقي', 'تشغيلي', 'استجابة'], array_column($phases, 'phase_label'));
+        $this->assertCount(1, $phases);
+        $this->assertSame(['single'], array_column($phases, 'phase'));
+        $this->assertSame(['الإجراءات'], array_column($phases, 'phase_label'));
+        $this->assertSame('P', $response->json('corrective_action'));
+        $this->assertSame([], $response->json('causes'));
     }
 
     public function test_phase_body_includes_causes_and_affected_groups_with_impact(): void
@@ -51,15 +49,12 @@ class RiskRegistryTreeDetailPhasesTest extends TestCase
 
         $phase = RiskPhase::create([
             'risk_id' => $risk->id,
-            'phase'   => RiskPhase::PHASE_PROACTIVE,
+            'phase'   => RiskPhase::PHASE_SINGLE,
             'preventive_action' => 'تدريب',
             'corrective_action' => 'فحص',
             'responsible_org_unit_text' => 'قسم السلامة',
             'responsible_user_text'     => 'مشرف السلامة',
         ]);
-        RiskPhase::create(['risk_id' => $risk->id, 'phase' => RiskPhase::PHASE_OPERATIONAL]);
-        RiskPhase::create(['risk_id' => $risk->id, 'phase' => RiskPhase::PHASE_RESPONSE]);
-
         $cause = RiskCause::create(['name' => 'إهمال']);
         $phase->causes()->sync([$cause->id]);
 
@@ -73,7 +68,7 @@ class RiskRegistryTreeDetailPhasesTest extends TestCase
         ]);
 
         $response = $this->getJson(route('risk.registry.tree.riskDetail', ['type' => 'reference', 'riskId' => $risk->id]));
-        $proactive = collect($response->json('phases'))->firstWhere('phase', 'proactive');
+        $proactive = collect($response->json('phases'))->firstWhere('phase', 'single');
 
         $this->assertSame('تدريب', $proactive['preventive_action']);
         $this->assertSame('فحص', $proactive['corrective_action']);
@@ -97,22 +92,17 @@ class RiskRegistryTreeDetailPhasesTest extends TestCase
         $response->assertJsonPath('phases', []);
     }
 
-    public function test_detail_no_longer_exposes_legacy_single_phase_fields_at_root(): void
+    /** الخطوة ٦: الصف الواحد مسطّح في الجذر (الأسباب والإجراءان والمتأثرون) إلى جانب `phases`؛ ولا خانات OHSMS القديمة للمالك */
+    public function test_detail_exposes_the_single_row_flat_and_no_legacy_owner_fields(): void
     {
-        // The legacy columns never existed in the institute schema — the
-        // endpoint must expose `phases` and NOT the old root-level fields.
         $this->actingAsRole('system_admin');
         $risk = $this->referenceRisk();
 
         $response = $this->getJson(route('risk.registry.tree.riskDetail', ['type' => 'reference', 'riskId' => $risk->id]));
         $json = $response->json();
 
-        $this->assertArrayNotHasKey('corrective_action', $json);
-        $this->assertArrayNotHasKey('preventive_action', $json);
+        foreach (['corrective_action', 'preventive_action', 'residual_assessment', 'causes', 'affected_groups', 'phases'] as $k) $this->assertArrayHasKey($k, $json);
         $this->assertArrayNotHasKey('owner_department', $json);
         $this->assertArrayNotHasKey('owner_person', $json);
-        $this->assertArrayNotHasKey('causes', $json);
-        $this->assertArrayNotHasKey('affected_groups', $json);
-        $this->assertArrayHasKey('phases', $json);
     }
 }

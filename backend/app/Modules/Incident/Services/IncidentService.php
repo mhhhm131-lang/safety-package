@@ -641,8 +641,8 @@ class IncidentService
     }
 
     /**
-     * الإجراء التصحيحي المنسوخ إلى البلاغ يأتي من الطبقة المناسبة لنوعه (قاعدة الجداول ٠٠-و، ٢٠٢٦-٠٩-١١):
-     * عادي/سري = انحراف تشغيلي ← التشغيلية؛ عاجل ← الاستجابة؛ وإن خلت الطبقة يُؤخذ من الاستباقية (بيانات OHSMS القديمة).
+     * الإجراء التصحيحي المنسوخ إلى البلاغ من الخطر. خطة المعالج — الخطوة ٦ (٢٠٢٦-١٠-٠٨): الخطر صف واحد بلا أطوار،
+     * فالتصحيحي واحد للعادي والسري والعاجل (كان: التشغيلية للعادي، الاستجابة للعاجل، والاستباقية احتياطاً).
      */
     private function buildRiskContext(?int $riskId, string $type = 'normal'): array
     {
@@ -650,9 +650,7 @@ class IncidentService
         if (!$riskId) return $result;
         $risk = Risk::with(['phases.affectedGroupDetails'])->find($riskId);
         if (!$risk) return $result;
-        $key = $type === 'urgent' ? RiskPhase::PHASE_RESPONSE : RiskPhase::PHASE_OPERATIONAL;
-        $proactive = $risk->phases->firstWhere('phase', RiskPhase::PHASE_PROACTIVE);
-        $result['corrective_action'] = $risk->phases->firstWhere('phase', $key)?->corrective_action ?: $proactive?->corrective_action;
+        $result['corrective_action'] = $risk->phases->first()?->corrective_action;
         $result['risk_title'] = $risk->title;
         $impactRoles = ['critical' => ['top_management', 'safety_committee', 'safety_coordinator'], 'high' => ['safety_committee', 'safety_coordinator'], 'medium' => ['safety_coordinator'], 'low' => []];
         foreach ($risk->phases as $phase) {

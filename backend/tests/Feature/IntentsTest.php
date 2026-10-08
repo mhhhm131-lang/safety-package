@@ -133,7 +133,7 @@ class IntentsTest extends TestCase
         $sub = RiskSubCategory::create(['category_id' => $cat->id, 'name' => 'مصادر الاشتعال', 'abbreviation' => 'IG']);
         $risk = Risk::create(['risk_type' => 'reference', 'code' => 'FI-01-01', 'title' => 'سلك مكشوف قرب مواد قابلة للاشتعال', 'description' => 'شرارة تشعل ما حولها',
             'category_id' => $cat->id, 'sub_category_id' => $sub->id, 'severity' => 4, 'likelihood' => 2, 'status' => 'approved']);
-        \App\Modules\Risk\Models\RiskPhase::updateOrCreate(['risk_id' => $risk->id, 'phase' => 'operational'], ['preventive_action' => 'أبعد المواد وأبلغ فوراً']);
+        \App\Modules\Risk\Models\RiskPhase::updateOrCreate(['risk_id' => $risk->id, 'phase' => 'single'], ['preventive_action' => 'أبعد المواد وأبلغ فوراً']);
         Risk::create(['risk_type' => 'reference', 'code' => 'FI-01-02', 'title' => 'مسودة لا تُعرض', 'description' => 'x', 'category_id' => $cat->id, 'sub_category_id' => $sub->id, 'severity' => 1, 'likelihood' => 1, 'status' => 'draft']);
 
         $h = $this->get('/incident')->assertOk()->getContent();

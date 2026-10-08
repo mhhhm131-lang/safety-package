@@ -92,21 +92,22 @@ class IncidentEmergencyBridge
     }
 
     /**
-     * (ح-٢) الطبقة المعروضة في بطاقة الخطر بحسب نوع البلاغ.
+     * (ح-٢) بطاقة الخطر في صفحة البلاغ. خطة المعالج — الخطوة ٦: الخطر صف واحد بلا أطوار، فالإجراءان واحدان لكل نوع؛
+     * بنود التحكم (RiskControl) تبقى بمفتاحها: العاجل بنود الاستجابة وغيره التشغيلية.
      * @return array{key:string,label:string,phase:?RiskPhase,controls:\Illuminate\Support\Collection,why:string}
      */
     public function riskLayer(Incident $incident): array
     {
-        $key = $incident->incident_type === 'urgent' ? RiskPhase::PHASE_RESPONSE : RiskPhase::PHASE_OPERATIONAL;
+        $key = $incident->incident_type === 'urgent' ? 'response' : 'operational';
         $risk = $incident->risk;
-        $phase = $risk?->phases()->where('phase', $key)->first();
+        $phase = $risk?->phases()->first();
         $controls = $risk ? $risk->controls()->where('phase', $key)->orderBy('sort_order')->get() : collect();
         return [
             'key' => $key,
-            'label' => $key === RiskPhase::PHASE_RESPONSE ? 'الاستجابة' : 'التشغيلية',
+            'label' => 'الإجراءات',
             'phase' => $phase,
             'controls' => $controls,
-            'why' => $key === RiskPhase::PHASE_RESPONSE ? 'بلاغ عاجل: ما يُفعل الآن، وزر التفعيل' : 'بلاغ عادي: الضوابط القائمة والإجراء التصحيحي',
+            'why' => $key === 'response' ? 'بلاغ عاجل: ما يُفعل الآن، وزر التفعيل' : 'بلاغ عادي: الضوابط القائمة والإجراء التصحيحي',
         ];
     }
 }

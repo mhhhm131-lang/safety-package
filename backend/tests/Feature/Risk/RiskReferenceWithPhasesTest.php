@@ -46,14 +46,13 @@ class RiskReferenceWithPhasesTest extends TestCase
             'severity'    => 3,
             'likelihood'  => 4,
             'phases' => [
-                'proactive' => [
+                'single' => [
                     'preventive_action' => 'تدريب دوري',
+                    'corrective_action' => 'استدعاء الطوارئ',
                     'responsible_org_unit_id' => $unit->id,
                     'responsible_user_id'     => $responsibleUser->id,
                     'responsible_user_text'   => 'مسؤول احتياطي',
                 ],
-                'operational' => [],
-                'response'    => ['corrective_action' => 'استدعاء الطوارئ'],
             ],
         ]);
         $response->assertRedirect(route('risk.reference.index'));
@@ -63,7 +62,7 @@ class RiskReferenceWithPhasesTest extends TestCase
         $this->assertSame('الأعمال الساخنة', $risk->title);
         $this->assertSame(12, $risk->risk_score);
 
-        $proactive = $risk->phases()->where('phase', 'proactive')->first();
+        $proactive = $risk->phases()->where('phase', 'single')->first();
         $this->assertSame($unit->id, $proactive->responsible_org_unit_id);
         $this->assertSame($responsibleUser->id, $proactive->responsible_user_id);
         $this->assertSame('مسؤول احتياطي', $proactive->responsible_user_text);
@@ -73,8 +72,7 @@ class RiskReferenceWithPhasesTest extends TestCase
         // User accessor: returns the linked user's name.
         $this->assertSame('مسؤول السلامة', $proactive->fresh(['responsibleUser'])->responsible_user_display);
 
-        $responsePhase = $risk->phases()->where('phase', 'response')->first();
-        $this->assertSame('استدعاء الطوارئ', $responsePhase->corrective_action);
+        $this->assertSame('استدعاء الطوارئ', $proactive->corrective_action); // الخطوة ٦: الصف الواحد يحمل التصحيحي أيضاً
     }
 
     public function test_reference_store_falls_back_to_free_text_when_no_fk(): void
@@ -83,18 +81,16 @@ class RiskReferenceWithPhasesTest extends TestCase
             'severity'    => 2,
             'likelihood'  => 2,
             'phases' => [
-                'proactive' => [
+                'single' => [
                     'responsible_org_unit_text' => 'قسم لم يُنشأ بعد',
                     'responsible_user_text'     => 'شخص من خارج النظام',
                 ],
-                'operational' => [],
-                'response'    => [],
             ],
         ]);
         $response->assertRedirect(route('risk.reference.index'));
 
         $risk = Risk::where('risk_type', 'reference')->latest('id')->firstOrFail();
-        $proactive = $risk->phases()->where('phase', 'proactive')->first();
+        $proactive = $risk->phases()->where('phase', 'single')->first();
         $this->assertNull($proactive->responsible_org_unit_id);
         $this->assertNull($proactive->responsible_user_id);
         $this->assertSame('قسم لم يُنشأ بعد', $proactive->responsible_org_unit_text);
@@ -113,7 +109,7 @@ class RiskReferenceWithPhasesTest extends TestCase
         $response = $this->get(route('risk.reference.edit', $risk));
         $response->assertOk();
 
-        $this->assertSame(3, $risk->phases()->count());
+        $this->assertSame(1, $risk->phases()->count()); // الخطوة ٦: صف واحد بلا أطوار
     }
 
     public function test_reference_update_replaces_phase_pivots(): void
@@ -127,7 +123,7 @@ class RiskReferenceWithPhasesTest extends TestCase
         // Seed the proactive phase with two existing affected-group links.
         $groupA = AffectedGroup::create(['name' => 'مجموعة أ']);
         $groupB = AffectedGroup::create(['name' => 'مجموعة ب']);
-        $proactive = $risk->phases()->where('phase', 'proactive')->first();
+        $proactive = $risk->phases()->where('phase', 'single')->first();
         $proactive->affectedGroups()->sync([$groupA->id, $groupB->id]);
 
         // Submit an update that keeps only group A.
@@ -136,12 +132,10 @@ class RiskReferenceWithPhasesTest extends TestCase
             'severity'    => $risk->severity,
             'likelihood'  => $risk->likelihood,
             'phases' => [
-                'proactive' => [
+                'single' => [
                     'affected_group_ids' => [$groupA->id],
                     'affected_impact'    => [$groupA->id => 'critical'],
                 ],
-                'operational' => [],
-                'response'    => [],
             ],
         ]);
         $response->assertRedirect(route('risk.reference.index'));

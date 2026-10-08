@@ -389,12 +389,9 @@
     function renderDetail(risks, headerEl, bodyEl) {
         const single = risks.length === 1;
         const r0     = risks[0];
-        const phaseStyles = {
-            proactive:   { color:'#0891b2', bg:'rgba(8,145,178,.07)',  icon:'🛡️', label:'استباقي',  hint:'قبل بدء العمل' },
-            operational: { color:'#d97706', bg:'rgba(217,119,6,.07)',  icon:'⚡', label:'تشغيلي',   hint:'أثناء العمل' },
-            response:    { color:'#dc2626', bg:'rgba(220,38,38,.07)',  icon:'🚑', label:'استجابة',  hint:'بعد وقوع الحادث' },
-        };
-        const phaseOrder = ['proactive', 'operational', 'response'];
+        // خطة المعالج — الخطوة ٦ (بكلمته): صف واحد لكل خطر بلا أطوار
+        const phaseStyles = { single: { color:'#0f4c3a', bg:'transparent', icon:'', label:'', hint:'' } };
+        const phaseOrder = ['single'];
         const dash = `<span style="color:var(--text-muted)">—</span>`;
 
         // ── Header (breadcrumb) ──
@@ -420,32 +417,29 @@
         } else {
             headerEl.innerHTML = `
                 <span class="badge bg-danger fs-6 me-2">${risks.length}</span>
-                <span class="fw-semibold flex-grow-1">مقارنة أطوار المخاطر المحددة</span>`;
+                <span class="fw-semibold flex-grow-1">المخاطر المحددة</span>`;
         }
 
         // ── Full table rows (matches _risk_table.blade.php — active type) ──
         function buildRow(r) {
             const phasesById = {};
             (r.phases || []).forEach(p => { phasesById[p.phase] = p; });
+            if (!phasesById.single && (r.phases || []).length) phasesById.single = r.phases[0]; // صف لم يُرحَّل بعد
             const score = r.risk_score || 0;
             const scoreColor = score >= 15 ? '#ef4444' : (score >= 7 ? '#f59e0b' : '#10b981');
             let rows = '';
 
-            ['proactive','operational','response'].forEach((key, idx) => {
-                const st = {
-                    proactive:   { label:'استباقي', color:'#0891b2', bg:'rgba(8,145,178,.10)' },
-                    operational: { label:'تشغيلي',  color:'#d97706', bg:'rgba(217,119,6,.10)'  },
-                    response:    { label:'استجابة', color:'#dc2626', bg:'rgba(220,38,38,.10)'  },
-                }[key];
+            phaseOrder.forEach((key, idx) => {
+                const st = phaseStyles[key];
                 const p       = phasesById[key];
                 const isFirst = idx === 0;
-                const isLast  = idx === 2;
+                const isLast  = idx === phaseOrder.length - 1;
                 const rowStyle = `background:${st.bg};${isFirst ? 'border-top:2px solid var(--border-color);' : ''}${isLast ? 'border-bottom:3px solid var(--border-color);' : ''}`;
 
                 const causesList = (p?.causes || []).map(c => c.name);
                 let causesHtml = dash;
                 if (causesList.length) {
-                    causesHtml = popTrigger(`الأسباب — ${st.label}`,
+                    causesHtml = popTrigger(`الأسباب`,
                         `<ul class='mb-0 ps-3'>${causesList.map(c => `<li>${escAttr(c)}</li>`).join('')}</ul>`,
                         `<span class="badge-count">${causesList.length} سبب</span>`);
                 }
@@ -453,20 +447,20 @@
                 const groupsList = (p?.affected_groups || []).map(g => g.name);
                 let groupsHtml = dash;
                 if (groupsList.length) {
-                    groupsHtml = popTrigger(`العواقب والأضرار — ${st.label}`,
+                    groupsHtml = popTrigger(`العواقب والأضرار`,
                         `<ul class='mb-0 ps-3'>${groupsList.map(g => `<li>${escAttr(g)}</li>`).join('')}</ul>`,
                         `<span class="badge-count">${groupsList.length} فئة</span>`);
                 }
 
                 let correctiveHtml = dash;
                 if (p?.corrective_action) {
-                    correctiveHtml = popTrigger(`الإجراء التصحيحي — ${st.label}`, escAttr(p.corrective_action),
+                    correctiveHtml = popTrigger(`الإجراء التصحيحي`, escAttr(p.corrective_action),
                         `<span class="pop-preview">${truncWords(p.corrective_action, 3)}</span>`);
                 }
 
                 let preventiveHtml = dash;
                 if (p?.preventive_action) {
-                    preventiveHtml = popTrigger(`الإجراء الوقائي — ${st.label}`, escAttr(p.preventive_action),
+                    preventiveHtml = popTrigger(`الإجراء الوقائي`, escAttr(p.preventive_action),
                         `<span class="pop-preview">${truncWords(p.preventive_action, 3)}</span>`);
                 }
 
@@ -474,7 +468,7 @@
                 const respUser = p?.responsible_user;
                 let responsibleHtml = dash;
                 if (orgUnit || respUser) {
-                    responsibleHtml = popTrigger(`الجهة والمفوّض — ${st.label}`,
+                    responsibleHtml = popTrigger(`الجهة والمفوّض`,
                         `<b>الجهة:</b> ${escAttr(orgUnit||'—')}<br><b>المفوّض:</b> ${escAttr(respUser||'—')}`,
                         `<span class="pop-preview">${truncWords(orgUnit||respUser||'', 2)}</span>`);
                 }
@@ -482,44 +476,39 @@
                 rows += `
                     <tr style="${rowStyle}">
                         ${isFirst ? `
-                        <td rowspan="3" class="align-middle text-center" style="vertical-align:middle!important;">
+                        <td rowspan="1" class="align-middle text-center" style="vertical-align:middle!important;">
                             <span class="code-pill code-pill-active">${escAttr(r.code || 'R-' + r.id)}</span>
                         </td>
-                        <td rowspan="3" class="align-middle text-center" style="vertical-align:middle!important;">
+                        <td rowspan="1" class="align-middle text-center" style="vertical-align:middle!important;">
                             <span class="score-circle" style="background:${scoreColor};">${score}</span>
                         </td>
-                        <td rowspan="3" class="risk-title-cell align-middle" style="vertical-align:middle!important;">
+                        <td rowspan="1" class="risk-title-cell align-middle" style="vertical-align:middle!important;">
                             <a href="${API.editRisk(r.id)}" class="risk-title-link" title="${escAttr(r.title||'')}">
                                 ${escAttr((r.title||'').length > 35 ? r.title.slice(0,35)+'…' : (r.title||''))}
                             </a>
                         </td>
-                        <td rowspan="3" class="align-middle" style="vertical-align:middle!important;">
+                        <td rowspan="1" class="align-middle" style="vertical-align:middle!important;">
                             <small class="text-muted">${escAttr(r.category||'—')}</small>
                         </td>
                         ` : ''}
-                        <td class="text-nowrap">
-                            <span class="phase-badge" style="background:${st.bg};color:${st.color};border:1px solid ${st.color};">
-                                ${st.label}
-                            </span>
-                        </td>
                         <td>${causesHtml}</td>
                         <td>${groupsHtml}</td>
                         <td>${correctiveHtml}</td>
                         <td>${preventiveHtml}</td>
                         ${isFirst ? `
-                        <td rowspan="3" class="align-middle" style="vertical-align:middle!important;">
+                        <td rowspan="1" class="align-middle" style="vertical-align:middle!important;">
                             <small>${escAttr(r.organization_unit||'—')}</small>
                         </td>
-                        <td rowspan="3" class="align-middle" style="vertical-align:middle!important;">
+                        <td rowspan="1" class="align-middle" style="vertical-align:middle!important;">
                             ${statusBadge(r.status, r.status_label)}
                         </td>
-                        <td rowspan="3" class="align-middle" style="vertical-align:middle!important;">
+                        <td rowspan="1" class="align-middle" style="vertical-align:middle!important;">
                             ${r.handling_unit ? `<small class="fw-bold">${escAttr(r.handling_unit)}</small>` : `<small class="text-muted">— لم تُحدَّد في العام</small>`}
                         </td>
-                        <td rowspan="3" class="align-middle" style="vertical-align:middle!important;">
+                        <td rowspan="1" class="align-middle" style="vertical-align:middle!important;">
                             <small class="text-muted">${escAttr(r.assigned_coordinator||'—')}</small>
                         </td>
-                        <td rowspan="3" class="align-middle" style="vertical-align:middle!important;">
+                        <td rowspan="1" class="align-middle" style="vertical-align:middle!important;">
                             ${r.handler
                                 ? `<small class="fw-bold">${escAttr(r.handler)}</small>${r.handler_set_by ? `<div class="small text-muted">كتبه ${escAttr(r.handler_set_by)}</div>` : ''}`
                                 : `<small class="text-muted">${r.handling_unit ? 'لم يُكتب بعد' : (r.assigned_field_team ? escAttr(r.assigned_field_team) + ' (مسمّى قديماً)' : '—')}</small>`}
@@ -527,7 +516,7 @@
                         ` : ''}
                         <td>${responsibleHtml}</td>
                         ${isFirst ? `
-                        <td rowspan="3" class="align-middle" style="vertical-align:middle!important;">
+                        <td rowspan="1" class="align-middle" style="vertical-align:middle!important;">
                             <a href="${API.editRisk(r.id)}" class="btn btn-sm btn-outline-secondary" title="تعديل">
                                 <i class="bi bi-pencil"></i>
                             </a>
@@ -548,7 +537,6 @@
                         <th class="text-center">الدرجة</th>
                         <th>العنوان</th>
                         <th>الفئة</th>
-                        <th class="phase-col">الطور</th>
                         <th>الأسباب</th>
                         <th>العواقب والأضرار</th>
                         <th>الإجراء التصحيحي</th>

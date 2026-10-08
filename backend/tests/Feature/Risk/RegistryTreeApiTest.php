@@ -128,10 +128,7 @@ class RegistryTreeApiTest extends TestCase
     public function test_detail_returns_risk_with_phases_in_order(): void
     {
         $risk = $this->makeTypedRisk('reference');
-        RiskPhase::create(['risk_id' => $risk->id, 'phase' => RiskPhase::PHASE_RESPONSE]);
-        RiskPhase::create(['risk_id' => $risk->id, 'phase' => RiskPhase::PHASE_PROACTIVE]);
-        RiskPhase::create(['risk_id' => $risk->id, 'phase' => RiskPhase::PHASE_OPERATIONAL]);
-
+        RiskPhase::create(['risk_id' => $risk->id, 'phase' => RiskPhase::PHASE_SINGLE]);
         $r = $this->getJson(route('risk.registry.tree.riskDetail', [
             'type'   => 'reference',
             'riskId' => $risk->id,
@@ -140,8 +137,8 @@ class RegistryTreeApiTest extends TestCase
         $r->assertOk();
         $r->assertJsonPath('id', $risk->id);
         $phases = $r->json('phases');
-        $this->assertCount(3, $phases);
-        $this->assertSame(['proactive', 'operational', 'response'], array_column($phases, 'phase'));
+        $this->assertCount(1, $phases); // الخطوة ٦: صف واحد بلا أطوار
+        $this->assertSame(['single'], array_column($phases, 'phase'));
     }
 
     public function test_detail_returns_status_and_scope_type_for_active_risk(): void

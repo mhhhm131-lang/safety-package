@@ -46,7 +46,7 @@ class RiskControllerTest extends TestCase
             'severity' => 4,
             'likelihood' => 3,
             'phases' => [
-                'proactive' => [
+                'single' => [
                     'corrective_action' => 'تركيب سلة أمان وحبل حياة',
                     'preventive_action' => 'تدريب العمال على معدات الحماية',
                 ],
@@ -153,7 +153,7 @@ class RiskControllerTest extends TestCase
         $this->post(route('risk.store'), $this->validPayload(['phases' => [], 'scope_type' => 'org_unit', 'organization_unit_id' => $this->orgUnit('hr')->id]))->assertRedirect();
 
         $risk = Risk::latest('id')->first();
-        $this->assertSame(3, $risk->phases()->count());
+        $this->assertSame(1, $risk->phases()->count()); // الخطوة ٦: صف واحد بلا أطوار
     }
 
     // ===========================================================

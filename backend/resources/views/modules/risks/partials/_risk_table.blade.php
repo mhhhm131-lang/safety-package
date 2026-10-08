@@ -13,10 +13,9 @@
     $can_edit = $can_edit ?? true;
     $isActive = $registry_type === 'active';
 
+    // خطة المعالج — الخطوة ٦: صف واحد لكل خطر بلا أطوار
     $phaseOrder = [
-        RiskPhase::PHASE_PROACTIVE   => ['label' => 'استباقي',  'color' => '#0891b2', 'bg' => 'rgba(8,145,178,.10)'],
-        RiskPhase::PHASE_OPERATIONAL => ['label' => 'تشغيلي',   'color' => '#d97706', 'bg' => 'rgba(217,119,6,.10)'],
-        RiskPhase::PHASE_RESPONSE    => ['label' => 'استجابة',  'color' => '#dc2626', 'bg' => 'rgba(220,38,38,.10)'],
+        RiskPhase::PHASE_SINGLE => ['label' => '', 'color' => '#0f4c3a', 'bg' => 'transparent'],
     ];
 @endphp
 
@@ -30,7 +29,6 @@
                         <th class="text-center">الدرجة</th>
                         <th>العنوان</th>
                         <th>الفئة</th>
-                        <th class="phase-col">الطور</th>
                         <th>الأسباب</th>
                         <th>المتأثرون</th>
                         <th>الإجراء التصحيحي</th>
@@ -54,7 +52,8 @@
                         $score      = $risk->risk_score ?? 0;
                         $scoreColor = $score >= 15 ? '#ef4444' : ($score >= 7 ? '#f59e0b' : '#10b981');
                         $phasesByKey = $risk->phases->keyBy('phase');
-                        $totalCols = $isActive ? 17 : 15;
+                        if (!$phasesByKey->has(RiskPhase::PHASE_SINGLE) && $risk->phases->isNotEmpty()) $phasesByKey->put(RiskPhase::PHASE_SINGLE, $risk->phases->first());
+                        $totalCols = $isActive ? 16 : 14;
                     @endphp
 
                     @foreach($phaseOrder as $phaseKey => $phaseMeta)
@@ -77,31 +76,24 @@
 
                         {{-- Code + Score + Title + Category: span 3 rows on first phase only --}}
                         @if($isFirst)
-                        <td rowspan="3" class="align-middle text-center" style="vertical-align:middle!important;">
+                        <td rowspan="1" class="align-middle text-center" style="vertical-align:middle!important;">
                             <span class="code-pill code-pill-{{ $registry_type }}">
                                 {{ $risk->code ?? 'R-' . $risk->id }}
                             </span>
                         </td>
-                        <td rowspan="3" class="align-middle text-center" style="vertical-align:middle!important;">
+                        <td rowspan="1" class="align-middle text-center" style="vertical-align:middle!important;">
                             <span class="score-circle" style="background:{{ $scoreColor }};">{{ $score }}</span>
                         </td>
-                        <td rowspan="3" class="risk-title-cell align-middle" style="vertical-align:middle!important;">
+                        <td rowspan="1" class="risk-title-cell align-middle" style="vertical-align:middle!important;">
                             <a href="{{ route('risk.show', $risk) }}" class="risk-title-link"
                                title="{{ $risk->title }}">
                                 {{ \Illuminate\Support\Str::limit($risk->title, 35) }}
                             </a>
                         </td>
-                        <td rowspan="3" class="align-middle" style="vertical-align:middle!important;">
+                        <td rowspan="1" class="align-middle" style="vertical-align:middle!important;">
                             <small class="text-muted">{{ $risk->category->name ?? '—' }}</small>
                         </td>
                         @endif
-
-                        {{-- Phase badge --}}
-                        <td class="text-nowrap">
-                            <span class="phase-badge" style="background:{{ $phaseMeta['bg'] }}; color:{{ $phaseMeta['color'] }}; border:1px solid {{ $phaseMeta['color'] }};">
-                                {{ $phaseMeta['label'] }}
-                            </span>
-                        </td>
 
                         {{-- Causes --}}
                         <td>
@@ -110,7 +102,7 @@
                                       data-bs-toggle="popover"
                                       data-bs-placement="top"
                                       data-bs-trigger="click"
-                                      data-bs-title="الأسباب ({{ $phaseMeta['label'] }})"
+                                      data-bs-title="الأسباب"
                                       data-bs-html="true"
                                       data-bs-content="{{ e('<ul class=\'mb-0 ps-3\'>' . $causesList->map(fn($c) => '<li>' . e($c) . '</li>')->implode('') . '</ul>') }}">
                                     <span class="badge-count">{{ $causesList->count() }} سبب</span>
@@ -128,7 +120,7 @@
                                       data-bs-toggle="popover"
                                       data-bs-placement="top"
                                       data-bs-trigger="click"
-                                      data-bs-title="المتأثرون ({{ $phaseMeta['label'] }})"
+                                      data-bs-title="المتأثرون"
                                       data-bs-html="true"
                                       data-bs-content="{{ e('<ul class=\'mb-0 ps-3\'>' . $groupsList->map(fn($g) => '<li>' . e($g) . '</li>')->implode('') . '</ul>') }}">
                                     <span class="badge-count">{{ $groupsList->count() }} فئة</span>
@@ -146,7 +138,7 @@
                                       data-bs-toggle="popover"
                                       data-bs-placement="top"
                                       data-bs-trigger="click"
-                                      data-bs-title="الإجراء التصحيحي ({{ $phaseMeta['label'] }})"
+                                      data-bs-title="الإجراء التصحيحي"
                                       data-bs-content="{{ e($corrective) }}">
                                     <span class="pop-preview">{{ \Illuminate\Support\Str::words($corrective, 2, '…') }}</span>
                                     <i class="bi bi-chevron-down pop-arrow"></i>
@@ -163,7 +155,7 @@
                                       data-bs-toggle="popover"
                                       data-bs-placement="top"
                                       data-bs-trigger="click"
-                                      data-bs-title="الإجراء الوقائي ({{ $phaseMeta['label'] }})"
+                                      data-bs-title="الإجراء الوقائي"
                                       data-bs-content="{{ e($preventive) }}">
                                     <span class="pop-preview">{{ \Illuminate\Support\Str::words($preventive, 2, '…') }}</span>
                                     <i class="bi bi-chevron-down pop-arrow"></i>
@@ -175,10 +167,10 @@
 
                         {{-- Active-only columns --}}
                         @if($isActive && $isFirst)
-                        <td rowspan="3" class="align-middle" style="vertical-align:middle!important;">
+                        <td rowspan="1" class="align-middle" style="vertical-align:middle!important;">
                             <small>{{ \Illuminate\Support\Str::limit($risk->organizationUnit->name ?? '—', 15) }}</small>
                         </td>
-                        <td rowspan="3" class="align-middle" style="vertical-align:middle!important;">
+                        <td rowspan="1" class="align-middle" style="vertical-align:middle!important;">
                             @php
                                 $statusBadge = [
                                     'draft'            => 'secondary',
@@ -198,18 +190,18 @@
 
                         {{-- الإدارة المعالجة / المعالج / الإدارة / المنسق — خطة المعالج الخطوة ١ (الخاص يقرأ المعالج من العام في الخطوة ٤) --}}
                         @if($isFirst)
-                        <td rowspan="3" class="align-middle" style="vertical-align:middle!important;">
+                        <td rowspan="1" class="align-middle" style="vertical-align:middle!important;">
                             <small class="{{ $risk->handling_unit_display ? 'fw-bold' : 'text-muted' }}">{{ $risk->handling_unit_display ?? '—' }}</small>
                         </td>
-                        <td rowspan="3" class="align-middle" style="vertical-align:middle!important;">
+                        <td rowspan="1" class="align-middle" style="vertical-align:middle!important;">
                             {{-- الخطوة ٤: المعالج من العام للسجلين (النسخة تقرأ أصلها)؛ معالج النسخة القديم يُذكر حتى تُعلَّق الإدارة --}}
                             <small class="{{ $risk->handler_label ? 'fw-bold' : 'text-muted' }}">{{ $risk->handler_label ?? ($risk->handling_unit_display ? 'لم يُكتب بعد' : ($isActive && $risk->assignedFieldTeam ? $risk->assignedFieldTeam->name.' (مسمّى قديماً)' : '—')) }}</small>
                             @if($risk->handler_set_by_name)<div class="small text-muted">كتبه {{ $risk->handler_set_by_name }}</div>@endif
                         </td>
-                        <td rowspan="3" class="align-middle" style="vertical-align:middle!important;">
+                        <td rowspan="1" class="align-middle" style="vertical-align:middle!important;">
                             <small class="text-muted">{{ $risk->organizationUnit?->name ?? '—' }}</small>
                         </td>
-                        <td rowspan="3" class="align-middle" style="vertical-align:middle!important;">
+                        <td rowspan="1" class="align-middle" style="vertical-align:middle!important;">
                             <small class="text-muted">{{ $risk->assignedCoordinator?->name ?? '—' }}</small>
                         </td>
                         @endif
@@ -221,7 +213,7 @@
                                       data-bs-toggle="popover"
                                       data-bs-placement="top"
                                       data-bs-trigger="click"
-                                      data-bs-title="الجهة والمفوّض ({{ $phaseMeta['label'] }})"
+                                      data-bs-title="الجهة والمفوّض"
                                       data-bs-html="true"
                                       data-bs-content="{{ e('<b>الجهة:</b> ' . ($orgUnit ?? '—') . '<br><b>المفوّض:</b> ' . ($user ?? '—')) }}">
                                     <span class="pop-preview">{{ \Illuminate\Support\Str::words($orgUnit ?? $user ?? '', 2, '…') }}</span>
@@ -234,7 +226,7 @@
 
                         {{-- Actions: first row only, spans 3 --}}
                         @if($isFirst)
-                        <td rowspan="3" class="align-middle" style="vertical-align:middle!important;">
+                        <td rowspan="1" class="align-middle" style="vertical-align:middle!important;">
                             <div class="d-flex flex-column gap-1">
                                 <a href="{{ route('risk.show', $risk) }}" class="btn btn-sm btn-outline-primary" title="عرض">
                                     <i class="bi bi-eye"></i>

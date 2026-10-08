@@ -32,13 +32,10 @@ class IncidentDetailDisplayTest extends TestCase
         // الإجراءات على المرحلة الاستباقية — المراقب يسحبها منها عند الإنشاء
         RiskPhase::create([
             'risk_id'           => $risk->id,
-            'phase'             => RiskPhase::PHASE_PROACTIVE,
+            'phase'             => RiskPhase::PHASE_SINGLE,
             'corrective_action' => 'إيقاف الآلة فوراً وعزل المنطقة',
             'preventive_action' => 'صيانة دورية شهرية وفحص الواقيات',
         ]);
-        RiskPhase::create(['risk_id' => $risk->id, 'phase' => RiskPhase::PHASE_OPERATIONAL]);
-        RiskPhase::create(['risk_id' => $risk->id, 'phase' => RiskPhase::PHASE_RESPONSE]);
-
         $incident = Incident::create([
             'risk_id' => $risk->id,
             'title' => 'حادث الاختبار',
@@ -67,13 +64,10 @@ class IncidentDetailDisplayTest extends TestCase
         $risk = $this->makeRisk();
         RiskPhase::create([
             'risk_id'           => $risk->id,
-            'phase'             => RiskPhase::PHASE_PROACTIVE,
+            'phase'             => RiskPhase::PHASE_SINGLE,
             'corrective_action' => 'الأصلي',
             'preventive_action' => 'الأصلي',
         ]);
-        RiskPhase::create(['risk_id' => $risk->id, 'phase' => RiskPhase::PHASE_OPERATIONAL]);
-        RiskPhase::create(['risk_id' => $risk->id, 'phase' => RiskPhase::PHASE_RESPONSE]);
-
         $incident = $this->makeIncident(['risk_id' => $risk->id]);
 
         $this->actingAsRole('system_admin');
@@ -92,7 +86,7 @@ class IncidentDetailDisplayTest extends TestCase
         // المرحلة الاستباقية للخطر لا تُمس — تعديل إجراءات البلاغ لا يتسرب إلى مصدره
         $this->assertDatabaseHas('risk_phases', [
             'risk_id'           => $risk->id,
-            'phase'             => 'proactive',
+            'phase'             => 'single',
             'corrective_action' => 'الأصلي',
             'preventive_action' => 'الأصلي',
         ]);

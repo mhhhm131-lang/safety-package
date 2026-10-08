@@ -5,13 +5,13 @@
 @php
     use App\Modules\Risk\Models\RiskPhase;
 
+    // خطة المعالج — الخطوة ٦ (بكلمته): بلا أطوار — صف واحد
     $phaseMeta = [
-        RiskPhase::PHASE_PROACTIVE   => ['label' => 'استباقي',  'hint' => 'قبل بدء العمل — الوقاية والتحضير', 'icon' => 'bi-shield-plus',      'color' => '#3b82f6'],
-        RiskPhase::PHASE_OPERATIONAL => ['label' => 'تشغيلي',  'hint' => 'أثناء العمل — الضوابط والرقابة',    'icon' => 'bi-lightning-charge', 'color' => '#f59e0b'],
-        RiskPhase::PHASE_RESPONSE    => ['label' => 'استجابة', 'hint' => 'بعد وقوع الحادث — التعامل والتحقيق',  'icon' => 'bi-bandaid',          'color' => '#ef4444'],
+        RiskPhase::PHASE_SINGLE => ['label' => 'الأسباب والإجراءات', 'hint' => 'منسوخة من السجل العام — عدّل ما يناسب هذا التفعيل', 'icon' => 'bi-list-check', 'color' => '#0f4c3a'],
     ];
 
     $phasesByKey = $risk->phases->keyBy('phase');
+    if (!$phasesByKey->has(RiskPhase::PHASE_SINGLE) && $risk->phases->isNotEmpty()) $phasesByKey->put(RiskPhase::PHASE_SINGLE, $risk->phases->first());
 @endphp
 
 @section('content')
@@ -19,7 +19,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h4 class="mb-1" style="color: var(--text-main);"><i class="bi bi-lightning me-2" style="color:#e74c3c;"></i>تفعيل خطر في السجل الخاص</h4>
-            <small style="color: var(--text-muted);">ينسخ مراحل الخطر الثلاث من السجل العام — عدّلها حسب سياق التفعيل</small>
+            <small style="color: var(--text-muted);">ينسخ أسباب الخطر وإجراءاته من السجل العام — عدّلها حسب سياق التفعيل</small>
         </div>
         <a href="{{ route('risk.reference.index') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-right me-1"></i> رجوع</a>
     </div>
@@ -136,11 +136,11 @@
         {{-- ═══════ المراحل الثلاث (مُنسوخة من المرجعي، قابلة للتعديل) ═══════ --}}
         <div class="card mb-3" style="background:var(--bg-card);border:1px solid var(--border-color);">
             <div class="card-header" style="background:transparent;border-bottom:1px solid var(--border-color);">
-                <h6 class="mb-0 fw-bold" style="color:var(--accent);"><i class="bi bi-layers me-2"></i>مراحل الخطر عند التفعيل</h6>
-                <small style="color:var(--text-muted);">البيانات منسوخة من السجل العام للمعهد — عدّل ما يناسب سياق هذا التفعيل.</small>
+                <h6 class="mb-0 fw-bold" style="color:var(--accent);"><i class="bi bi-list-check me-2"></i>الأسباب والإجراءات عند التفعيل</h6>
+                <small style="color:var(--text-muted);">منسوخة من السجل العام للمعهد — عدّل ما يناسب سياق هذا التفعيل.</small>
             </div>
             <div class="card-body">
-                <ul class="nav nav-tabs mb-3" role="tablist">
+                <ul class="nav nav-tabs mb-3" role="tablist" @if(count($phaseMeta) < 2) style="display:none" @endif>
                     @foreach($phaseMeta as $phaseKey => $meta)
                     <li class="nav-item" role="presentation">
                         <button class="nav-link @if($loop->first) active @endif" type="button"

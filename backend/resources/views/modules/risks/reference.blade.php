@@ -595,12 +595,9 @@
     function renderDetail(risks, headerEl, bodyEl) {
         const single = risks.length === 1;
         const r0     = risks[0];
-        const phaseStyles = {
-            proactive:   { color:'#0891b2', bg:'rgba(8,145,178,.07)',  icon:'🛡️', label:'استباقي',  hint:'قبل بدء العمل' },
-            operational: { color:'#d97706', bg:'rgba(217,119,6,.07)',  icon:'⚡', label:'تشغيلي',   hint:'أثناء العمل' },
-            response:    { color:'#dc2626', bg:'rgba(220,38,38,.07)',  icon:'🚑', label:'استجابة',  hint:'بعد وقوع الحادث' },
-        };
-        const phaseOrder = ['proactive','operational','response'];
+        // خطة المعالج — الخطوة ٦ (بكلمته): صف واحد لكل خطر بلا أطوار
+        const phaseStyles = { single: { color:'#0f4c3a', bg:'transparent', icon:'', label:'', hint:'' } };
+        const phaseOrder = ['single'];
         const dash = `<span style="color:var(--text-muted)">—</span>`;
 
         // ── Header ──
@@ -638,7 +635,7 @@
                 .join(`<span style="margin:0 4px;color:var(--text-muted);opacity:.5;">›</span>`);
             return `
                 <tr class="risk-title-row" data-risk-id="${r.id}" style="background:var(--bg-main);border-top:3px solid var(--border-color);">
-                    <td colspan="15" style="padding:6px 10px;font-size:.85rem;line-height:1.7;word-break:break-word;">
+                    <td colspan="14" style="padding:6px 10px;font-size:.85rem;line-height:1.7;word-break:break-word;">
                         ${crumbs ? crumbs + `<span style="margin:0 4px;color:var(--text-muted);opacity:.5;">›</span>` : ''}
                         <strong style="color:var(--text-main);">${escAttr(r.title || '')}</strong>
                     </td>
@@ -649,6 +646,7 @@
         function buildPhaseRows(r, showRiskCol) {
             const phasesById = {};
             (r.phases || []).forEach(p => { phasesById[p.phase] = p; });
+            if (!phasesById.single && (r.phases || []).length) phasesById.single = r.phases[0]; // صف لم يُرحَّل بعد
             const sc = r.risk_score >= 15 ? 'score-high' : (r.risk_score >= 7 ? 'score-med' : 'score-low');
             const scoreColor = r.risk_score >= 15 ? '#dc3545' : (r.risk_score >= 9 ? '#ffc107' : (r.risk_score >= 4 ? '#0dcaf0' : '#198754'));
             let rows = '';
@@ -661,7 +659,7 @@
                 let causesHtml = dash;
                 if (p?.causes?.length) {
                     const listHtml = `<ul class='mb-0 ps-3'>${p.causes.map(c => `<li>${escAttr(c.name)}</li>`).join('')}</ul>`;
-                    causesHtml = popTrigger(`الأسباب — ${st.label}`, listHtml,
+                    causesHtml = popTrigger(`الأسباب`, listHtml,
                         `<span class="badge-count">${p.causes.length} سبب</span>`);
                 }
 
@@ -671,7 +669,7 @@
                     const chips = p.affected_groups.map(g =>
                         `<span style="display:inline-block;margin:1px 2px;padding:1px 6px;border-radius:12px;font-size:.7rem;background:${st.color}20;color:${st.color};border:1px solid ${st.color}60;">${escAttr(g.name)}</span>`
                     ).join('');
-                    groupsHtml = popTrigger(`العواقب والأضرار — ${st.label}`,
+                    groupsHtml = popTrigger(`العواقب والأضرار`,
                         `<div>${p.affected_groups.map(g => `<div><b>${escAttr(g.name)}</b>${g.impact ? ' — ' + ({'1':'١ طفيف','2':'٢ بسيط','3':'٣ متوسط','4':'٤ كبير','5':'٥ كارثي',low:'٢ بسيط',medium:'٣ متوسط',high:'٤ كبير',critical:'٥ كارثي'}[g.impact] || g.impact) : ''}${g.rep_scope ? ' / ' + ({local:'محلي',regional:'إقليمي',national:'وطني',international:'دولي'}[g.rep_scope] || g.rep_scope) : ''}${g.detail ? '<div class="small text-muted">' + escAttr(g.detail) + '</div>' : ''}</div>`).join('')}</div>`,
                         `<div style="line-height:1.8;">${chips}</div>`);
                 }
@@ -679,21 +677,21 @@
                 // الإجراء الوقائي
                 let preventiveHtml = dash;
                 if (p?.preventive_action) {
-                    preventiveHtml = popTrigger(`الإجراء الوقائي — ${st.label}`, escAttr(p.preventive_action),
+                    preventiveHtml = popTrigger(`الإجراء الوقائي`, escAttr(p.preventive_action),
                         `<span class="pop-preview">${truncWords(p.preventive_action, 4)}</span>`);
                 }
 
                 // الإجراء التصحيحي
                 let correctiveHtml = dash;
                 if (p?.corrective_action) {
-                    correctiveHtml = popTrigger(`الإجراء التصحيحي — ${st.label}`, escAttr(p.corrective_action),
+                    correctiveHtml = popTrigger(`الإجراء التصحيحي`, escAttr(p.corrective_action),
                         `<span class="pop-preview">${truncWords(p.corrective_action, 4)}</span>`);
                 }
 
                 // التقييم بعد الإجراءات
                 let residualHtml = dash;
                 if (p?.residual_assessment) {
-                    residualHtml = popTrigger(`التقييم بعد الإجراءات — ${st.label}`, escAttr(p.residual_assessment),
+                    residualHtml = popTrigger(`التقييم بعد الإجراءات`, escAttr(p.residual_assessment),
                         `<span class="pop-preview">${truncWords(p.residual_assessment, 4)}</span>`);
                 }
 
@@ -703,7 +701,7 @@
                 const respUser = p?.responsible_user;
                 if (orgUnit || respUser) {
                     const cHtml = `<b>الجهة:</b> ${escAttr(orgUnit || '—')}<br><b>الشخص:</b> ${escAttr(respUser || '—')}`;
-                    responsibleHtml = popTrigger(`الجهة والشخص — ${st.label}`, cHtml,
+                    responsibleHtml = popTrigger(`الجهة والشخص`, cHtml,
                         `<span class="pop-preview" style="font-size:.72rem;">${truncWords(orgUnit || respUser || '', 2)}</span>`);
                 }
 
@@ -711,7 +709,7 @@
                 let riskCell = '';
                 if (idx === 0) {
                     riskCell = `
-                        <td rowspan="3" class="align-top text-center" style="vertical-align:top!important;min-width:70px;max-width:90px;padding:6px 4px;">
+                        <td rowspan="1" class="align-top text-center" style="vertical-align:top!important;min-width:70px;max-width:90px;padding:6px 4px;">
                             <div class="d-flex flex-column align-items-center gap-1">
                                 ${r.code
                                     ? `<code style="font-size:.7rem;color:var(--text-muted);word-break:break-all;direction:ltr;">${escAttr(r.code)}</code>`
@@ -734,7 +732,7 @@
                 let preAssessCell = '';
                 if (idx === 0) {
                     preAssessCell = `
-                        <td rowspan="3" class="align-middle text-center" style="vertical-align:middle!important;min-width:80px;">
+                        <td rowspan="1" class="align-middle text-center" style="vertical-align:middle!important;min-width:80px;">
                             <div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px;">
                                 <span style="display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:${scoreColor};color:#fff;font-weight:bold;font-size:.95rem;">${r.risk_score || 0}</span>
                                 <span style="font-size:.65rem;color:var(--text-muted);">${r.severity || ''}×${r.likelihood || ''}</span>
@@ -746,7 +744,7 @@
                 let legalCell = '';
                 if (idx === 0) {
                     legalCell = `
-                        <td rowspan="3" class="align-top" style="vertical-align:top!important;min-width:110px;">
+                        <td rowspan="1" class="align-top" style="vertical-align:top!important;min-width:110px;">
                             ${r.legal_reference
                                 ? `<span style="font-size:.75rem;color:var(--g);line-height:1.6;"><i class="bi bi-book-half me-1"></i>${escAttr(r.legal_reference)}</span>`
                                 : dash}
@@ -757,7 +755,7 @@
                 let benefitCell = '';
                 if (idx === 0) {
                     benefitCell = `
-                        <td rowspan="3" class="align-top" style="vertical-align:top!important;min-width:100px;">
+                        <td rowspan="1" class="align-top" style="vertical-align:top!important;min-width:100px;">
                             ${r.benefit
                                 ? `<span style="font-size:.75rem;color:var(--text-muted);line-height:1.6;">${escAttr(r.benefit)}</span>`
                                 : dash}
@@ -768,7 +766,7 @@
                 let handlingUnitCell = '';
                 if (idx === 0) {
                     handlingUnitCell = `
-                        <td rowspan="3" class="align-middle" style="vertical-align:middle!important;min-width:100px;">
+                        <td rowspan="1" class="align-middle" style="vertical-align:middle!important;min-width:100px;">
                             ${r.handling_unit ? `<span style="font-size:.78rem;color:var(--text-main);font-weight:600;">${escAttr(r.handling_unit)}</span>` : `<small style="color:var(--text-muted);">— لم تُحدَّد</small>`}
                         </td>`;
                 }
@@ -777,7 +775,7 @@
                 let handlerCell = '';
                 if (idx === 0) {
                     handlerCell = `
-                        <td rowspan="3" class="align-middle" style="vertical-align:middle!important;min-width:100px;">
+                        <td rowspan="1" class="align-middle" style="vertical-align:middle!important;min-width:100px;">
                             ${r.handler
                                 ? `<span style="font-size:.78rem;color:var(--text-main);font-weight:600;">${escAttr(r.handler)}</span>${r.handler_set_by ? `<div style="font-size:.65rem;color:var(--text-muted);">كتبه ${escAttr(r.handler_set_by)}${r.handler_set_at ? ' · ' + escAttr(r.handler_set_at) : ''}</div>` : ''}`
                                 : `<small style="color:var(--text-muted);">${r.handling_unit ? 'لم يُكتب بعد' : '—'}</small>`}
@@ -788,7 +786,7 @@
                 let adminCell = '';
                 if (idx === 0) {
                     adminCell = `
-                        <td rowspan="3" class="align-middle" style="vertical-align:middle!important;min-width:90px;">
+                        <td rowspan="1" class="align-middle" style="vertical-align:middle!important;min-width:90px;">
                             <small style="color:var(--text-muted);">${escAttr(r.organization_unit || '—')}</small>
                         </td>`;
                 }
@@ -797,7 +795,7 @@
                 let coordinatorCell = '';
                 if (idx === 0) {
                     coordinatorCell = `
-                        <td rowspan="3" class="align-middle" style="vertical-align:middle!important;min-width:90px;">
+                        <td rowspan="1" class="align-middle" style="vertical-align:middle!important;min-width:90px;">
                             <small style="color:var(--text-muted);">${escAttr(r.assigned_coordinator || '—')}</small>
                         </td>`;
                 }
@@ -805,13 +803,6 @@
                 rows += `
                     <tr style="background:${st.bg};">
                         ${riskCell}
-                        <td class="text-nowrap align-top" style="width:100px;">
-                            <span class="detail-phase-badge"
-                                  style="background:${st.bg};color:${st.color};border:1px solid ${st.color};">
-                                ${st.icon} ${st.label}
-                            </span>
-                            <div style="font-size:.6rem;color:var(--text-muted);margin-top:2px;">${st.hint}</div>
-                        </td>
                         <td>${causesHtml}</td>
                         <td>${groupsHtml}</td>
                         ${preAssessCell}
@@ -839,7 +830,6 @@
                     <thead>
                         <tr style="background:var(--bg-main);">
                             <th style="min-width:70px;text-align:center;">الكود</th>
-                            <th style="width:100px;">الطور</th>
                             <th>الأسباب</th>
                             <th>العواقب والأضرار</th>
                             <th style="width:80px;text-align:center;">التقييم القبلي</th>

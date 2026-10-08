@@ -98,11 +98,9 @@ class RiskTreeController extends Controller
 
     private function pack(Risk $risk): array
     {
-        $phasesByKey = $risk->phases->keyBy('phase');
+        // خطة المعالج — الخطوة ٦: الخطر صف واحد بلا أطوار؛ `phases` تبقى مصفوفة (عنصر واحد) للشاشات القائمة
         $phases = [];
-        foreach (RiskPhase::PHASES as $key) {
-            $p = $phasesByKey->get($key);
-            if (!$p) continue;
+        foreach ($risk->phases->sortBy(fn (RiskPhase $p) => $p->phase === RiskPhase::PHASE_SINGLE ? 0 : 1)->values() as $p) {
             $detailsByGroup = $p->affectedGroupDetails->keyBy('affected_group_id');
             $phases[] = [
                 'phase' => $p->phase, 'phase_label' => $p->phase_label,
@@ -117,8 +115,14 @@ class RiskTreeController extends Controller
                 ])->values(),
             ];
         }
+        $one = $phases[0] ?? null;
         return [
             'id' => $risk->id, 'code' => $risk->code, 'title' => $risk->title, 'description' => $risk->description,
+            // الخطوة ٦: الصف الواحد مسطّحاً — الشاشات تقرؤه مباشرة
+            'causes' => $one['causes'] ?? [], 'affected_groups' => $one['affected_groups'] ?? [],
+            'preventive_action' => $one['preventive_action'] ?? null, 'corrective_action' => $one['corrective_action'] ?? null,
+            'residual_assessment' => $one['residual_assessment'] ?? null,
+            'responsible_org_unit' => $one['responsible_org_unit'] ?? null, 'responsible_user' => $one['responsible_user'] ?? null,
             'category' => $risk->category?->name, 'sub_category' => $risk->subCategory?->name,
             'severity' => $risk->severity, 'likelihood' => $risk->likelihood, 'risk_score' => $risk->risk_score,
             'benefit' => $risk->benefit, 'legal_reference' => $risk->legal_reference, 'contact_channel' => $risk->contact_channel,

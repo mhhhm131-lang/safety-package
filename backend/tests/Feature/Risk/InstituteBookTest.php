@@ -170,7 +170,7 @@ class InstituteBookTest extends TestCase
         $this->seed([PlacesSeeder::class, OrganizationUnitsSeeder::class, AffectedGroupsSeeder::class, RiskBookSeeder::class]);
         $ref = Risk::where('code', 'PH-01-03')->firstOrFail(); // كل الأخطار لها جداول الآن (١٧٧/١٧٧) — نُعيد كتابة تفصيل الفئة لا إدراجه
         $group = AffectedGroup::where('name', 'الموظفون')->firstOrFail();
-        $phase = $ref->phases()->where('phase', RiskPhase::PHASE_PROACTIVE)->firstOrFail();
+        $phase = $ref->phases()->where('phase', RiskPhase::PHASE_SINGLE)->firstOrFail();
         $phase->affectedGroups()->sync([$group->id]);
         RiskPhaseAffectedGroupDetail::updateOrCreate(['risk_phase_id' => $phase->id, 'affected_group_id' => $group->id],
             ['impact' => 'high', 'rep_scope' => 'local', 'impact_description' => 'الأمن والمواقف']);
@@ -187,14 +187,14 @@ class InstituteBookTest extends TestCase
         $this->assertSame('ضربة الحرارة لحراس بوابة الموارد البشرية', $active->title);
         $this->assertSame('المصدر: حرارة الصيف — بوابة HR', $active->description);
         $this->assertSame('مركز السلامة', $active->contact_channel); // نُسخت من المرجعي
-        $ap = $active->phases()->where('phase', RiskPhase::PHASE_PROACTIVE)->firstOrFail();
+        $ap = $active->phases()->where('phase', RiskPhase::PHASE_SINGLE)->firstOrFail();
         $this->assertSame('الأمن والمواقف', RiskPhaseAffectedGroupDetail::where('risk_phase_id', $ap->id)->value('impact_description'));
 
         // ثم يعدّل المنسق تفصيل المتأثرين واسم الخطر من لوحة السجل الفعلي
         $this->actingAs($manager)->post("/app/risk/active/{$active->id}/edit", ['assigned_coordinator_id' => \App\Models\User::min('id'), 'assigned_field_team_id' => \App\Models\User::min('id'), /* ٢١-٤: التسمية شرط التفعيل */ 
             'category_id' => $ref->category_id, 'sub_category_id' => $ref->sub_category_id, 'severity' => 4, 'likelihood' => 2,
             'title' => 'ضربة الحرارة — بوابة الموارد البشرية', 'scope_type' => 'org_unit', 'organization_unit_id' => $unitId,
-            'phases' => [RiskPhase::PHASE_PROACTIVE => ['affected_group_ids' => [$group->id], 'affected_impact' => [$group->id => 'critical'], 'affected_detail' => [$group->id => 'حارسا البوابة الشمالية']]],
+            'phases' => [RiskPhase::PHASE_SINGLE => ['affected_group_ids' => [$group->id], 'affected_impact' => [$group->id => 'critical'], 'affected_detail' => [$group->id => 'حارسا البوابة الشمالية']]],
         ])->assertRedirect(route('risk.active.index'));
         $this->assertSame('ضربة الحرارة — بوابة الموارد البشرية', $active->fresh()->title);
         $this->assertSame('حارسا البوابة الشمالية', RiskPhaseAffectedGroupDetail::where('risk_phase_id', $ap->id)->value('impact_description'));

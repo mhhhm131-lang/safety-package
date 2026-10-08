@@ -66,7 +66,7 @@ class ReferenceSingleLayerTest extends TestCase
             'description' => 'المصدر: مركبات في حيز مغلق · الحدث: تراكم CO',
             'contact_channel' => 'مركز السلامة — مسؤول السلامة',
             'phases' => [
-                RiskPhase::PHASE_PROACTIVE => [
+                RiskPhase::PHASE_SINGLE => [
                     'affected_group_ids' => [$group->id],
                     'affected_impact' => [$group->id => 'high'],
                     'affected_rep_scope' => [$group->id => 'local'],
@@ -81,7 +81,7 @@ class ReferenceSingleLayerTest extends TestCase
         $this->assertSame('المصدر: مركبات في حيز مغلق · الحدث: تراكم CO', $risk->description);
         $this->assertSame('مركز السلامة — مسؤول السلامة', $risk->contact_channel);
 
-        $phase = $risk->phases()->where('phase', RiskPhase::PHASE_PROACTIVE)->firstOrFail();
+        $phase = $risk->phases()->where('phase', RiskPhase::PHASE_SINGLE)->firstOrFail();
         $detail = RiskPhaseAffectedGroupDetail::where('risk_phase_id', $phase->id)->where('affected_group_id', $group->id)->firstOrFail();
         $this->assertSame('high', $detail->impact);
         $this->assertSame('الأمن والمواقف والفنيون', $detail->impact_description);
@@ -89,7 +89,7 @@ class ReferenceSingleLayerTest extends TestCase
         // شجرة السجل العام تُظهر التفصيل — مسؤول السلامة أضافه فاعتُمد بحفظه (قرار ٧٦)
         $this->assertSame('approved', $risk->status);
         $json = $this->actingAs($admin)->getJson("/app/risk/registry/tree/reference/risk/{$risk->id}")->assertOk()->json();
-        $groups = collect($json['phases'])->firstWhere('phase', RiskPhase::PHASE_PROACTIVE)['affected_groups'];
+        $groups = collect($json['phases'])->firstWhere('phase', RiskPhase::PHASE_SINGLE)['affected_groups'];
         $this->assertSame('الأمن والمواقف والفنيون', $groups[0]['detail']);
     }
 

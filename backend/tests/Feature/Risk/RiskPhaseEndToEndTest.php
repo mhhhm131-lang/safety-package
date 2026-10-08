@@ -38,24 +38,14 @@ class RiskPhaseEndToEndTest extends TestCase
             'severity'    => 5,
             'likelihood'  => 3,
             'phases' => [
-                'proactive' => [
+                'single' => [
                     'preventive_action' => 'تدريب + فحص معدات',
                     'corrective_action' => 'شهادات + checklist',
                     'responsible_org_unit_text' => 'قسم التدريب (اقتراح)',
                     'responsible_user_text'     => 'مدرب السلامة (اقتراح)',
                     'cause_names'               => ['عدم تدريب', 'حبال غير مفحوصة'],
-                    'affected_group_ids'        => [$worker->id],
-                    'affected_impact'           => [$worker->id => 'high'],
-                ],
-                'operational' => [
-                    'preventive_action' => 'إيقاف العمل وقت الرياح',
-                    'corrective_action' => 'رفع العامل بأمان',
-                ],
-                'response' => [
-                    'preventive_action' => 'خطة طوارئ جاهزة',
-                    'corrective_action' => 'إسعاف أولي + تحقيق',
-                    'affected_group_ids' => [$family->id],
-                    'affected_impact'    => [$family->id => 'critical'],
+                    'affected_group_ids'        => [$worker->id, $family->id],
+                    'affected_impact'           => [$worker->id => 'high', $family->id => 'critical'],
                 ],
             ],
         ];
@@ -64,17 +54,17 @@ class RiskPhaseEndToEndTest extends TestCase
         $service->persistAllPhases($created, $payload['phases']);
 
         $master = Risk::where('risk_type', 'master')->firstOrFail();
-        $this->assertSame(3, $master->phases()->count());
+        $this->assertSame(1, $master->phases()->count()); // الخطوة ٦: صف واحد بلا أطوار
 
         // ─── STAGE 2 — Bulk copy from the book into the reference register ───
         app(\App\Modules\Risk\Services\RiskCopyService::class)->masterToReference($master, $safety->id);
 
         $reference = Risk::where('parent_reference_id', $master->id)->firstOrFail();
         $this->assertSame('reference', $reference->risk_type);
-        $this->assertSame(3, $reference->phases()->count());
+        $this->assertSame(1, $reference->phases()->count());
 
         // Phase content propagated.
-        $refProactive = $reference->phases()->where('phase', 'proactive')->with('causes')->first();
+        $refProactive = $reference->phases()->where('phase', 'single')->with('causes')->first();
         $this->assertSame('تدريب + فحص معدات', $refProactive->preventive_action);
         $this->assertCount(2, $refProactive->causes);
 
@@ -88,7 +78,7 @@ class RiskPhaseEndToEndTest extends TestCase
             'severity'    => $reference->severity,
             'likelihood'  => $reference->likelihood,
             'phases' => [
-                'proactive' => [
+                'single' => [
                     'preventive_action' => $refProactive->preventive_action,
                     'corrective_action' => $refProactive->corrective_action,
                     'responsible_org_unit_id' => $safetyUnit->id,
@@ -97,8 +87,6 @@ class RiskPhaseEndToEndTest extends TestCase
                     'affected_group_ids'      => [$worker->id],
                     'affected_impact'         => [$worker->id => 'high'],
                 ],
-                'operational' => ['preventive_action' => 'إيقاف العمل وقت الرياح'],
-                'response'    => ['corrective_action' => 'إسعاف أولي + تحقيق'],
             ],
         ])->assertRedirect(route('risk.reference.index'));
 
@@ -130,7 +118,7 @@ class RiskPhaseEndToEndTest extends TestCase
 
         // Active risk inherits all 3 phases with their content AND the
         // responsibility FKs (one institute, so they carry over).
-        $activeProactive = $active->phases()->where('phase', 'proactive')->first();
+        $activeProactive = $active->phases()->where('phase', 'single')->first();
         $this->assertSame('تدريب + فحص معدات', $activeProactive->preventive_action);
         $this->assertSame('شهادات + checklist', $activeProactive->corrective_action);
         $this->assertSame($safetyUnit->id, $activeProactive->responsible_org_unit_id);
@@ -152,7 +140,7 @@ class RiskPhaseEndToEndTest extends TestCase
         $this->assertTrue(Schema::hasTable('risk_phase_affected_groups'));
         $this->assertTrue(Schema::hasTable('risk_phase_affected_group_details'));
 
-        // Count check: master (3) + reference (3) + active (3) = 9 phase rows minimum.
-        $this->assertGreaterThanOrEqual(9, RiskPhase::count());
+        // الخطوة ٦: صف واحد لكل خطر — master + reference + active = ٣ صفوف
+        $this->assertSame(3, RiskPhase::count());
     }
 }

@@ -155,7 +155,7 @@ class RiskServiceLifecycleTest extends TestCase
         $phases = $risk->fresh()->phases->pluck('phase')->sort()->values()->all();
 
         $this->assertSame(
-            ['operational', 'proactive', 'response'],
+            ['single'],
             $phases,
         );
     }
@@ -171,7 +171,7 @@ class RiskServiceLifecycleTest extends TestCase
         $this->service->ensurePhases($risk);
         $this->service->ensurePhases($risk);
 
-        $this->assertSame(3, RiskPhase::where('risk_id', $risk->id)->count());
+        $this->assertSame(1, RiskPhase::where('risk_id', $risk->id)->count()); // الخطوة ٦: صف واحد بلا أطوار
     }
 
     public function test_activate_from_reference_creates_phases_on_active_risk(): void
@@ -193,6 +193,6 @@ class RiskServiceLifecycleTest extends TestCase
 
         $this->assertSame('active', $active->risk_type);
         $this->assertSame('active', $active->status);
-        $this->assertSame(3, RiskPhase::where('risk_id', $active->id)->count());
+        $this->assertSame(1, RiskPhase::where('risk_id', $active->id)->count()); // الخطوة ٦: صف واحد بلا أطوار
     }
 }

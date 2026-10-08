@@ -74,7 +74,9 @@ class IncidentEmergencyTest extends TestCase
         $sub = RiskSubCategory::create(['category_id' => $cat->id, 'name' => 'فرع '.$title, 'abbreviation' => 'X'.$abbr]);
         $master = app(RiskService::class)->createRisk(null, ['title' => $title, 'description' => 'x', 'category_id' => $cat->id, 'sub_category_id' => $sub->id, 'severity' => 4, 'likelihood' => 3], 'master');
         $master->update(['status' => 'approved']);
-        foreach ($phases as $key => $data) $master->phases()->where('phase', $key)->first()->update($data);
+        // خطة المعالج — الخطوة ٦: بلا أطوار — ما كان يُكتب في طورين يُدمج في الصف الواحد (كما يفعل البذر من ملفات الكتاب)
+        $merged = \App\Modules\Risk\Support\PhaseMerger::merge(array_values($phases));
+        $master->phases()->first()->update(['preventive_action' => $merged['preventive_action'], 'corrective_action' => $merged['corrective_action']]);
         $ref = app(RiskCopyService::class)->masterToReference($master->fresh(), null);
         $ref->update(['status' => 'approved']);
         return $ref;
@@ -95,11 +97,12 @@ class IncidentEmergencyTest extends TestCase
         $i = Incident::first();
         $this->assertSame('urgent', $i->incident_type);
         $this->assertSame('forwarded', $i->status); // (ح-١) الاستلام بيد الفني
-        $this->assertSame('فحص فني قبل استعادة التشغيل', $i->corrective_action); // العاجل يرث تصحيحي طبقة الاستجابة (٢٠٢٦-٠٩-١١)
+        // الخطوة ٦: الخطر صف واحد — التصحيحي الواحد (نص الطورين مدموجاً) لكل نوع بلاغ
+        $this->assertSame("إزالة مصدر الاشتعال فوراً\nفحص فني قبل استعادة التشغيل", $i->corrective_action);
 
-        // المركز يفتح البلاغ: الطبقة «الاستجابة» بنصها، والنوع المقترح «حريق»، وزر التفعيل
+        // المركز يفتح البلاغ: الإجراءات من السجل العام بنصها كله، والنوع المقترح «حريق»، وزر التفعيل
         $r = $this->actingAs($this->munawib)->get("/app/incidents/{$i->id}");
-        $r->assertOk()->assertSee('الطبقة الاستجابة')->assertSee('تنبيه المركز والفريق الأولي يباشر الإطفاء')->assertDontSee('جولات تفقد وإطفاء الأجهزة')
+        $r->assertOk()->assertSee('الإجراءات من السجل العام')->assertSee('تنبيه المركز والفريق الأولي يباشر الإطفاء')->assertSee('جولات تفقد وإطفاء الأجهزة')
             ->assertSee('تفعيل حالة طارئة')->assertSee('<option value="fire" selected>', false)->assertSee('trigger-emergency');
         // ١١-١ (د): الخطورة مقترحة من خطورة الخطر (٤ ← مرتفع) والزر الواحد يسمّي النوع المقترح
         $r->assertSee('<option value="high" selected>', false)->assertSee('فعّل حالة حريق الآن');
@@ -156,13 +159,13 @@ class IncidentEmergencyTest extends TestCase
         $i = Incident::first();
         $this->assertSame('forwarded', $i->status);
         $this->assertNull($i->field_received_at);
-        $this->assertSame('نقل المصاب لمكان بارد', $i->corrective_action); // العادي يرث تصحيحي الطبقة التشغيلية
-        $this->get('/incident/api/risks?sub_category_id='.$this->physRisk->sub_category_id)->assertOk()->assertJsonPath('0.corrective_action', 'نقل المصاب لمكان بارد')->assertJsonPath('0.preventive_action', 'ماء وظل وفترات راحة');
+        $this->assertSame('نقل المصاب لمكان بارد', $i->corrective_action); // الخطوة ٦: التصحيحي الواحد (كان في طور واحد فبقي كما هو)
+        $this->get('/incident/api/risks?sub_category_id='.$this->physRisk->sub_category_id)->assertOk()->assertJsonPath('0.corrective_action', 'نقل المصاب لمكان بارد')->assertJsonPath('0.preventive_action', "ماء وظل وفترات راحة\nتبريد واستدعاء الطبيب");
         $this->assertSame(['create', 'receive', 'refer', 'ref_receive', 'forward'], $i->events()->orderBy('id')->pluck('action')->all());
 
-        // (ح-٢) الطبقة التشغيلية: الضوابط القائمة والإجراء التصحيحي — لا نص الاستجابة
+        // (ح-٢) ثم الخطوة ٦: الإجراءات من السجل العام كلها، بلا أطوار
         $r = $this->actingAs($this->munawib)->get("/app/incidents/{$i->id}");
-        $r->assertOk()->assertSee('الطبقة التشغيلية')->assertSee('ماء وظل وفترات راحة')->assertSee('نقل المصاب لمكان بارد')->assertDontSee('تبريد واستدعاء الطبيب');
+        $r->assertOk()->assertSee('الإجراءات من السجل العام')->assertSee('ماء وظل وفترات راحة')->assertSee('نقل المصاب لمكان بارد')->assertSee('تبريد واستدعاء الطبيب');
         // الزر متاح للمركز على أي بلاغ مفتوح (القرار بيده) والنوع المقترح «أخرى» لصنف فيزيائي
         $r->assertSee('trigger-emergency')->assertSee('<option value="other" selected>', false);
         // ١١-١ (د): خطورة الخطر ٥ ← «حرج» مقترحاً

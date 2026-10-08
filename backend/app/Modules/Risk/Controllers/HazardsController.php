@@ -30,7 +30,7 @@ class HazardsController extends Controller
         $mine = $placeRefIds->isNotEmpty() && !$request->boolean('all');
         $risks = Risk::where('risk_type', 'reference')->whereIn('status', ['approved', 'active'])
             ->when($mine, fn ($w) => $w->whereIn('id', $placeRefIds))
-            ->with(['category:id,name', 'subCategory:id,name,category_id', 'phases' => fn ($p) => $p->where('phase', RiskPhase::PHASE_OPERATIONAL)])
+            ->with(['category:id,name', 'subCategory:id,name,category_id', 'phases']) // الخطوة ٦: صف واحد بلا أطوار
             ->when($q !== '', fn ($w) => $w->where(fn ($x) => $x->where('title', 'like', "%$q%")->orWhere('code', 'like', "%$q%")->orWhere('description', 'like', "%$q%")))
             ->orderBy('code')->get();
         $tree = $risks->groupBy(fn (Risk $r) => $r->category?->name ?? '—')->map(fn ($rs) => $rs->groupBy(fn (Risk $r) => $r->subCategory?->name ?? '—'));
