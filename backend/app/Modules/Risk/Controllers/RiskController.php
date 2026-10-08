@@ -627,7 +627,8 @@ class RiskController extends Controller
             'myUnitId' => $this->userProfile()?->organization_unit_id,
             'categories' => RiskCategory::where('is_active', true)->with('subCategories')->orderBy('name')->get(),
             'orgUnits' => OrganizationUnit::where('is_active', true)->orderBy('order')->get(),
-            'places' => Place::orderBy('sort')->get(),
+            // ٢٨-٥ (قرار ٧٨): أماكن مباني الحساب (مدير إدارة في الشرقية: أماكن الشرقية؛ مسؤول السلامة: الكل)
+            'places' => Place::active()->whereIn('building_id', \App\Modules\Governance\Services\BuildingContext::choices(auth()->user())->pluck('id'))->orderBy('building_id')->orderBy('sort')->get(),
             'units' => \App\Modules\Governance\Models\PlaceUnit::where('is_active', true)->orderBy('type')->orderBy('sort')->orderBy('name')->get(), // ١٨-٣ (ج)
             'tenantUsers' => User::whereHas('profile', fn ($q) => $q->where('is_active', true))->orderBy('name')->get(),
             'masterAndTenantGroups' => AffectedGroup::orderBy('id')->get(),

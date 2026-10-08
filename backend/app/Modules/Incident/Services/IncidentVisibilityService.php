@@ -62,9 +62,15 @@ class IncidentVisibilityService
         if (!$profile) return null;
         $role = $profile->role;
 
-        if (in_array($role, ['system_admin', 'system_staff'], true) || in_array($role, self::INSTITUTE_VIEW_ALL, true)
+        if ($role === 'system_admin' || in_array($role, self::INSTITUTE_VIEW_ALL, true)
             || ($role === 'safety_coordinator' && !$profile->organization_unit_id && !$profile->place_id)) {
             return ['all' => true, 'units' => [], 'places' => []];
+        }
+        // ٢٨-٥ (س١ بكلمته): المناوب يرى بلاغات مبناه؛ مناوب بلا مبنى يرى الكل
+        if ($role === 'system_staff') {
+            $b = $profile->myBuilding();
+            if (!$b) return ['all' => true, 'units' => [], 'places' => []];
+            return ['all' => false, 'units' => [], 'places' => Place::where('building_id', $b->id)->pluck('id')->map(fn ($i) => (int) $i)->all()];
         }
 
         $units = ($profile->organization_unit_id && (in_array($role, self::MANAGEMENT_ROLES, true) || $role === 'safety_coordinator'))

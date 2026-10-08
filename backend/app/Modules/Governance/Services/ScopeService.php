@@ -12,8 +12,9 @@ use Illuminate\Support\Collection;
 
 /**
  * المرحلة ٢٠-٥ (قرار ٥١): النطاق يُشتق من الحساب عند الدخول — لا يُسأل أحد شيئاً.
- *   all      المعهد كله: مسؤول السلامة، المناوب، الإدارة العليا، اللجنة، مدير الشؤون، مدير المرافق، رئيس الأمن
- *   branch   مدير الفرع: أماكن مباني فرعه
+ *   all      المعهد كله: مسؤول السلامة، الإدارة العليا، اللجنة، مدير الشؤون، مدير المرافق، رئيس الأمن
+ *   building المناوب (٢٨-٥، س١ بكلمته): أماكن مبنى حسابه
+ *   branch   مدير الفرع: أماكن مباني فرعه (المباني التي تشير إلى وحدته أو ما تحتها؛ وإلا بالنص القديم)
  *   unit     مدير الإدارة/القسم (والرئيس التنفيذي بدور مدير إدارة)، منسق السلامة، المكتب: مكان وحدته وما تحتها
  *   coverage الفنيون والإسناد والفريق الأولي: الأماكن التي يغطونها (وإلا مكان الحساب)
  *   self     الموظف والمقاولون والأطراف: مكانه وحده
@@ -21,7 +22,7 @@ use Illuminate\Support\Collection;
  */
 final class ScopeService
 {
-    private const ALL = ['system_admin', 'system_staff', 'top_management', 'safety_committee', 'admin_eng_manager', 'facilities_manager', 'security_safety_head'];
+    private const ALL = ['system_admin', 'top_management', 'safety_committee', 'admin_eng_manager', 'facilities_manager', 'security_safety_head'];
     private const UNIT = ['department_manager', 'section_manager', 'safety_coordinator', 'consultant_office'];
     private const COVERAGE = ['support_team', 'evac_coordinator', 'medic', 'rescuer', 'firefighter'];
 
@@ -33,6 +34,17 @@ final class ScopeService
         return in_array($role, self::ALL, true);
     }
 
+    /** ٢٨-٥: مباني فرع مدير الفرع — التي تشير إلى وحدته أو ما تحتها؛ وإلا بنص الفرع على مبناه؛ وإلا مبناه */
+    public static function branchBuildingIds(UserProfile $p): array
+    {
+        $unitIds = $p->organization_unit_id ? OrganizationUnit::descendantIdsOf($p->organization_unit_id) : [];
+        $ids = $unitIds ? EmergencyBuilding::whereIn('branch_unit_id', $unitIds)->pluck('id')->all() : [];
+        if ($ids) return $ids;
+        $own = $p->myBuilding();
+        if (!$own) return [];
+        return $own->branch !== null ? EmergencyBuilding::where('branch', $own->branch)->pluck('id')->all() : [$own->id];
+    }
+
     public static function forUser(User $user): self
     {
         $p = $user->profile;
@@ -40,10 +52,14 @@ final class ScopeService
         if (!$p || !$p->is_active) return new self('self', collect());
         // ٢٨-٢: المكان المعطَّل (صنف لا يوجد في مبناه) خارج كل نطاق
         if (in_array($role, self::ALL, true)) return new self('all', Place::active()->orderBy('building_id')->orderBy('sort')->get());
+        // ٢٨-٥ (س١ بكلمته): المناوب بمبناه — مناوب بلا مبنى (لم يُحدَّد) يرى الكل
+        if ($role === 'system_staff') {
+            $b = $p->myBuilding();
+            return $b ? new self('building', Place::active()->where('building_id', $b->id)->orderBy('sort')->get())
+                : new self('all', Place::active()->orderBy('building_id')->orderBy('sort')->get());
+        }
         if ($role === 'branch_manager') {
-            $branch = $p->myBuilding()?->branch;
-            $ids = EmergencyBuilding::query()->when($branch !== null, fn ($q) => $q->where('branch', $branch), fn ($q) => $q->whereKey($p->myBuilding()?->id))->pluck('id');
-            return new self('branch', Place::active()->whereIn('building_id', $ids)->orderBy('building_id')->orderBy('sort')->get());
+            return new self('branch', Place::active()->whereIn('building_id', self::branchBuildingIds($p))->orderBy('building_id')->orderBy('sort')->get());
         }
         if (in_array($role, self::UNIT, true)) {
             $ids = $p->organization_unit_id ? OrganizationUnit::descendantIdsOf($p->organization_unit_id) : [];

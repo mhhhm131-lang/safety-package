@@ -44,7 +44,8 @@ class EmergencyCommandTasks implements TaskSource
         $commander = ($c = RoleCards::get(self::COMMANDER_CARD)) && !empty($c['role']) && $c['role'] === $role;
         $out = collect();
 
-        $open = EmergencyIncident::open()->with('place')->orderBy('triggered_at')->get();
+        // ٢٨-٥ (قرار ٧٨): حالات مباني الحساب — المناوب بمبناه
+        $open = EmergencyIncident::open()->with('place')->whereIn('building_id', \App\Modules\Governance\Services\BuildingContext::choices($user)->pluck('id'))->orderBy('triggered_at')->get();
         $locks = Lockdown::whereIn('state', ['active', 'partial'])->with('building')->get();
         $lockedIncidents = $locks->pluck('incident_id')->filter()->all();
 

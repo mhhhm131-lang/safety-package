@@ -44,13 +44,15 @@ final class HandlerResolver
     {
         $out = ['governs' => false, 'user_id' => null, 'note' => null, 'reason' => null];
         if ($ref->risk_type !== 'reference') return $out;
-        $unit = self::handlingUnit($ref);
+        $unit = self::handlingUnit($ref, $placeId);
         if (!$unit && !$ref->handling_unit_name) {
             $out['reason'] = 'هذا الخطر بلا إدارة معالجة في السجل العام';
             return $out;
         }
         $out['governs'] = true;
+        // ٢٨-٥ (قرار ٧٨): الوحدة المسمّاة في العام وُجدت باسمها داخل فرع مكان البلاغ — تُسمّى بفرعها في الخط الزمني
         $unitName = $unit?->name ?? $ref->handling_unit_name;
+        if ($unit && $unit->id !== (int) $ref->handling_unit_id && ($root = self::rootOf($unit))) $unitName .= ' — '.$root->name;
 
         // ١ شخص مسمّى
         if ($ref->handler_user_id) {
@@ -83,7 +85,7 @@ final class HandlerResolver
             [$mgr, $mgrUnit] = self::managerOf($unit);
             if ($mgr) {
                 $out['user_id'] = (int) $mgr->user_id;
-                $out['note'] = 'من السجل العام: مدير الإدارة المعالجة «'.$mgrUnit->name.'» '.self::name($mgr->user_id).' — '.$why;
+                $out['note'] = 'من السجل العام: مدير الإدارة المعالجة «'.($mgrUnit->id === $unit->id ? $unitName : $mgrUnit->name).'» '.self::name($mgr->user_id).' — '.$why;
                 return $out;
             }
             $out['reason'] = 'الإدارة المعالجة «'.$unitName.'» بلا مدير بحساب';
@@ -95,15 +97,35 @@ final class HandlerResolver
         return $out;
     }
 
-    /** الوحدة بمعرّفها إن كانت نشطة، وإلا باسمها بين الوحدات النشطة */
-    private static function handlingUnit(Risk $ref): ?OrganizationUnit
+    /**
+     * ٢٨-٥ (قرار ٧٨): الإدارة المعالجة باسمها داخل فرع مكان البلاغ أولاً (الفرع = وحدة الهيكل التي يشير إليها مبنى المكان)،
+     * وإلا الوحدة المسمّاة في العام (وحدة المركز الرئيسي) بمعرّفها إن كانت نشطة، وإلا باسمها بين الوحدات النشطة.
+     */
+    private static function handlingUnit(Risk $ref, ?int $placeId = null): ?OrganizationUnit
     {
         $u = $ref->handling_unit_id ? OrganizationUnit::find($ref->handling_unit_id) : null;
+        $name = $ref->handling_unit_name ?: $u?->name;
+        $root = $placeId ? Place::find($placeId)?->building?->branch_unit_id : null;
+        if ($root && $name) {
+            $ids = OrganizationUnit::descendantIdsOf($root);
+            $inBranch = OrganizationUnit::whereIn('id', $ids)->where('name', $name)->where('is_active', true)->orderBy('id')->first();
+            if ($inBranch) return $inBranch;
+        }
         if ($u && $u->is_active) return $u;
-        if ($ref->handling_unit_name) {
-            return OrganizationUnit::where('name', $ref->handling_unit_name)->where('is_active', true)->orderBy('id')->first() ?? $u;
+        if ($name) {
+            return OrganizationUnit::where('name', $name)->where('is_active', true)->orderBy('id')->first() ?? $u;
         }
         return $u;
+    }
+
+    /** رأس شجرة الوحدة (الفرع أو المركز الرئيسي) */
+    private static function rootOf(OrganizationUnit $unit): ?OrganizationUnit
+    {
+        for ($u = $unit, $n = 0; $u && $n < 10; $n++) {
+            if (!$u->parent_id) return $u->id === $unit->id ? null : $u;
+            $u = OrganizationUnit::find($u->parent_id);
+        }
+        return null;
     }
 
     /** فنيون مفعَّلون بهذا التخصص يغطون المكان (أو مكان حسابهم هو وبلا تغطية) — كما في ScopeService::techniciansFor */

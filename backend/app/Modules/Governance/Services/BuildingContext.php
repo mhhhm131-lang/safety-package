@@ -4,7 +4,6 @@ namespace App\Modules\Governance\Services;
 
 use App\Models\User;
 use App\Modules\Emergency\Models\EmergencyBuilding;
-use App\Modules\Governance\Models\OrganizationUnit;
 use Illuminate\Support\Collection;
 
 /**
@@ -30,16 +29,7 @@ final class BuildingContext
             return EmergencyBuilding::query()->orderByRaw('CASE WHEN code = ? THEN 0 ELSE 1 END', [EmergencyBuilding::MAIN_CODE])->orderBy('id')->get();
         }
         if ($active && $role === 'branch_manager') {
-            $unitIds = $p->organization_unit_id ? OrganizationUnit::descendantIdsOf($p->organization_unit_id) : [];
-            $own = $p->myBuilding();
-            $list = EmergencyBuilding::query()->where(function ($q) use ($unitIds, $own) {
-                $q->whereRaw('1 = 0');
-                if ($unitIds) $q->orWhereIn('branch_unit_id', $unitIds);
-                if ($own) {
-                    $q->orWhere('id', $own->id);
-                    if ($own->branch !== null) $q->orWhere('branch', $own->branch);
-                }
-            })->orderBy('id')->get();
+            $list = EmergencyBuilding::whereIn('id', ScopeService::branchBuildingIds($p))->orderBy('id')->get();
             if ($list->isNotEmpty()) return $list;
         }
         return collect([$p?->myBuilding() ?? EmergencyBuilding::mainOrCreate()]);

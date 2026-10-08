@@ -28,7 +28,9 @@ class EmergencyTasks implements TaskSource
     {
         $role = $user->role();
         $out = collect();
-        $open = EmergencyIncident::open()->with('place')->get();
+        // ٢٨-٥ (قرار ٧٨): حالات مباني الحساب — المناوب بمبناه، ومسؤول السلامة الكل
+        $bids = \App\Modules\Governance\Services\BuildingContext::choices($user)->pluck('id');
+        $open = EmergencyIncident::open()->with('place')->whereIn('building_id', $bids)->get();
 
         // خطواتي في الحالات المفتوحة
         foreach ($open as $inc) {
@@ -89,7 +91,7 @@ class EmergencyTasks implements TaskSource
         // ٢٢-١٥: حالة حقيقية انتهت ولا تقرير بعدها — للمركز، والزر يبني التقرير من سجل الحالة (كان لا يذكّر أحداً فيضيع الدرس).
         // التمرين خارجها: له تقييمه. بلا مهلة ولا حد زمني (النظام لم يُطلق، والتجريبي يُحذف).
         if (in_array($role, ['system_admin', 'system_staff'], true)) {
-            $ended = EmergencyIncident::where('status', EmergencyIncident::STATUS_ENDED)->where('is_drill', false)
+            $ended = EmergencyIncident::where('status', EmergencyIncident::STATUS_ENDED)->where('is_drill', false)->whereIn('building_id', $bids)
                 ->whereDoesntHave('afterActionReport')->with('place')->orderByDesc('ended_at')->get();
             foreach ($ended as $inc) {
                 $out->push(new Task(
