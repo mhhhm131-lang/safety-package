@@ -40,7 +40,8 @@ class VisitorController extends Controller
             'photo' => 'nullable|image|max:5120',
         ]);
 
-        $validated['building_id'] = $validated['building_id'] ?? EmergencyBuilding::main()?->id;
+        // ٢٨-٤ (قرار ٧٨): بلا تحديد = مبنى جلسة من يسجّل الزائر (مبنى حسابه)
+        $validated['building_id'] = $validated['building_id'] ?? \App\Modules\Governance\Services\BuildingContext::id($request->user());
         if (!$validated['building_id']) {
             return response()->json(['success' => false, 'message' => 'لا مبنى مسجّل'], 422);
         }

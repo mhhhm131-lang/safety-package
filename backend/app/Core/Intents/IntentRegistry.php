@@ -53,7 +53,7 @@ class IntentRegistry
         $folder = $placeCode ? (Place::FOLDERS[$placeCode] ?? null) : null;
         // ٢٦-١٣ (قرار ٦٦ «الزر يفي بوعده»): «مكاني» لزرّي التوعية = مكان الحساب وإلا مكان إدارته (UserProfile::myPlace) — أغلب الموظفين مكانهم من إدارتهم
         $myPlace = $active ? $profile?->myPlace() : null;
-        $main = EmergencyBuilding::main();
+        $main = \App\Modules\Governance\Services\BuildingContext::current($user); // ٢٨-٤: زر التفعيل على مبنى الشخص (أو مبنى جلسته)
         // ٢٦-٩: من لا مكان في نطاقه لا مربعات عنده ولا رسم — فما بابه المكان أو الرسم يأخذ زراً هنا حتى لا يُخفى عنه (قرار ٦١)
         $noPlace = false;
         if ($can('permit.list') || $can('risk.list')) { // النطاق يُحسب لمن يعنيه وحده — السجل يُبنى في كل صفحة

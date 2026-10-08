@@ -73,7 +73,8 @@ class IncidentEmergencyBridge
         if (!in_array($type, self::TYPE_OPTIONS, true)) {
             throw new InvalidArgumentException('نوع الحالة غير معروف.');
         }
-        $building = EmergencyBuilding::main();
+        // ٢٨-٤ (قرار ٧٨): الحالة على مبنى مكان البلاغ — وحالة مفتوحة في مبنى آخر لا تمنعها
+        $building = $incident->place?->building ?? EmergencyBuilding::main();
         if (!$building) throw new InvalidArgumentException('لا مبنى مسجّلاً في وحدة الطوارئ.');
         if ($open = $building->getActiveIncident()) {
             throw new InvalidArgumentException('توجد حالة طارئة مفتوحة '.$open->incident_code.' — أنهِها أو ألغِها أولاً، أو أضف هذا البلاغ ملاحظةً فيها.');

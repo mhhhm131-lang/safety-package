@@ -240,7 +240,7 @@ class EmergencyApiController extends Controller
             'building_id' => 'nullable|exists:emergency_buildings,id', 'floor_id' => 'nullable|exists:building_floors,id',
             'latitude' => 'nullable|numeric|between:-90,90', 'longitude' => 'nullable|numeric|between:-180,180',
         ]);
-        $building = !empty($validated['building_id']) ? EmergencyBuilding::findOrFail($validated['building_id']) : EmergencyBuilding::main();
+        $building = !empty($validated['building_id']) ? EmergencyBuilding::findOrFail($validated['building_id']) : \App\Modules\Governance\Services\BuildingContext::current($request->user()); // ٢٨-٤
         if (!$building) {
             return response()->json(['success' => false, 'message' => 'لا مبنى مسجّل'], 404);
         }

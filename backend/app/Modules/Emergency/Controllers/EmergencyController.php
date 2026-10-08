@@ -71,7 +71,7 @@ class EmergencyController extends Controller
         $teamsByPlace = EmergencyTeam::active()->whereNotNull('place_id')->get()->groupBy('place_id');
         $pendingCalls = EmergencyIncident::open()->pluck('id')->isEmpty() ? 0
             : \App\Modules\Emergency\Models\EmergencyNotification::whereIn('incident_id', EmergencyIncident::open()->pluck('id'))->manual()->count();
-        $mainBuilding = EmergencyBuilding::main();
+        $mainBuilding = \App\Modules\Governance\Services\BuildingContext::current(); // ٢٨-٤: مبنى الجلسة لا الملز دائماً
         $escalationRules = app(AutoEscalationService::class)->getEscalationRules();
         // قرار ٣٣: تنبيهات الذعر والأساور المفتوحة تُعدّ في المركز، وشاشتاهما لهما مدخل في القائمة
         $panicOpen = PanicAlert::active()->count();
@@ -1016,7 +1016,7 @@ class EmergencyController extends Controller
         $checkIn = $this->screenCheckIn($user);
         $incident = $checkIn?->incident ?? $this->myTeamIncident($user)[0];
 
-        $building = $incident?->building ?? EmergencyBuilding::main();
+        $building = $incident?->building ?? $user->profile?->myBuilding() ?? EmergencyBuilding::main(); // ٢٨-٤: مبنى الشخص
         $myPlace = $user->profile?->myPlace();
 
         // أقرب مخرج = مخرج طابق الشخص (الطابق يُعرف من مكانه عبر zone)، وإلا مخارج المبنى كلها.

@@ -28,8 +28,8 @@ class PanicAlertService
     public function trigger(User $user, array $data): PanicAlert
     {
         return DB::transaction(function () use ($user, $data) {
-            // 1. Determine nearest building if location provided
-            $buildingId = $data['building_id'] ?? EmergencyBuilding::main()?->id;
+            // 1. Determine nearest building if location provided — ٢٨-٤: وإلا مبنى صاحب التنبيه (حسابه أو مكانه)، وإلا الملز
+            $buildingId = $data['building_id'] ?? $user->profile?->myBuilding()?->id ?? EmergencyBuilding::main()?->id;
 
             // 2. Create the alert
             $alert = PanicAlert::create([
@@ -200,7 +200,7 @@ class PanicAlertService
 
         // التصعيد يمر بخدمة الحالة الطارئة (آلة الحالة والتنبيه والحصر) لا بإنشاء مباشر
         $incident = app(EmergencyService::class)->triggerAlarm(
-            $alert->building ?? EmergencyBuilding::main(), $incidentType, $alert->user, $alert->severity, false,
+            $alert->building ?? $alert->user?->profile?->myBuilding() ?? EmergencyBuilding::main(), $incidentType, $alert->user, $alert->severity, false, // ٢٨-٤
             "تصعيد من تنبيه ذعر: {$alert->message}", $alert->place_id,
         );
         $incident->update(['initial_report' => "موقع التنبيه: {$alert->getLocationString()}"]);
