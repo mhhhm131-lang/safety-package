@@ -133,10 +133,12 @@ class EmergencyController extends Controller
         return view('modules.emergency.buildings.index', compact('buildings'));
     }
 
-    /** ٢٨-٢ (قرار ٧٨): «الفرع» يُختار من رؤوس الهيكل (المركز الرئيسي والفروع) */
+    /** ٢٨-٢ (قرار ٧٨): «الفرع» يُختار من رؤوس الهيكل — الجذر (المركز الرئيسي) والفروع (نوع «فرع») ولو كانت تحته (بكلمته: الفروع تحت المركز) */
     private function branchUnits()
     {
-        return \App\Modules\Governance\Models\OrganizationUnit::whereNull('parent_id')->where('is_active', true)->orderBy('order')->orderBy('id')->get(['id', 'name', 'unit_type']);
+        return \App\Modules\Governance\Models\OrganizationUnit::where('is_active', true)
+            ->where(fn ($q) => $q->whereNull('parent_id')->orWhere('unit_type', 'region'))
+            ->orderByRaw('CASE WHEN parent_id IS NULL THEN 0 ELSE 1 END')->orderBy('order')->orderBy('id')->get(['id', 'name', 'unit_type', 'parent_id']);
     }
 
     /** ٢٨-٢: المبنى يشير إلى وحدة الفرع، والنص `branch` يبقى اسمها للعرض وللنطاق حتى ٢٨-٥ */

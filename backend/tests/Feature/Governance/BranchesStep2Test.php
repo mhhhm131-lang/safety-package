@@ -48,8 +48,16 @@ class BranchesStep2Test extends TestCase
     public function test_building_form_offers_the_branch_from_structure_roots_and_saves_it(): void
     {
         $unit = $this->branchUnit();
+        // بكلمته: الفروع تحت المركز الرئيسي — فرع (نوع «فرع») تحت الجذر يظهر في القائمة، والإدارة العادية لا
+        $hq = OrganizationUnit::create(['code' => 'hq', 'name' => 'المركز الرئيسي', 'unit_type' => 'company']);
+        OrganizationUnit::create(['code' => 'br-mka', 'name' => 'فرع مكة', 'unit_type' => 'region', 'parent_id' => $hq->id]);
+        OrganizationUnit::create(['code' => 'mka-hr', 'name' => 'إدارة الموارد — مكة', 'unit_type' => 'department', 'parent_id' => $hq->id]);
         $this->actingAs($this->admin());
-        $this->get(route('emergency.buildings.create'))->assertOk()->assertSee('فرع الشرقية')->assertSee('نائب المدير العام للتدريب');
+        $h = $this->get(route('emergency.buildings.create'))->assertOk()->assertSee('فرع الشرقية')->assertSee('نائب المدير العام للتدريب')->getContent();
+        $sel = substr($h, strpos($h, 'name="branch_unit_id"'), 3000);
+        $this->assertStringContainsString('فرع مكة', $sel, 'فرع تحت المركز الرئيسي لا يظهر في قائمة الفرع');
+        $this->assertStringContainsString('المركز الرئيسي', $sel);
+        $this->assertStringNotContainsString('إدارة الموارد — مكة', $sel, 'إدارة عادية ظهرت في قائمة الفرع');
         $this->post(route('emergency.buildings.store'), [
             'name' => 'فرع الشرقية — المبنى الرئيسي', 'code' => 'DMM', 'building_type' => 'government', 'floors_count' => 2,
             'risk_level' => 'medium', 'branch_unit_id' => $unit->id,
