@@ -1,0 +1,250 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>من يعالج بلاغ الشاغل — مسودة الخطة</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap">
+<style>
+:root{--bg:#f6f5f0;--ink:#1a2a24;--mut:#66756e;--line:#d6ded9;--card:#fff;--g:#0f4c3a;--g2:#e5efe9;--gold:#c99a2e;--gold2:#fbf3dd;--red:#b43c2f;--red2:#fbe9e6}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101a16;--ink:#e6ede9;--mut:#9aaaa3;--line:#2a3a33;--card:#17241f;--g:#5cc19a;--g2:#1b2f27;--gold:#e0b65a;--gold2:#2e2716;--red:#e57a6c;--red2:#3a201c}}
+:root[data-theme="dark"]{--bg:#101a16;--ink:#e6ede9;--mut:#9aaaa3;--line:#2a3a33;--card:#17241f;--g:#5cc19a;--g2:#1b2f27;--gold:#e0b65a;--gold2:#2e2716;--red:#e57a6c;--red2:#3a201c}
+body{background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;direction:rtl;margin:0;padding-inline:16px;padding-block:24px 56px;line-height:1.7;font-variant-numeric:tabular-nums}
+.wrap{max-width:1000px;margin:0 auto;display:grid;gap:36px}
+h1{font-size:2rem;margin:0;line-height:1.2;text-wrap:balance}
+h2{font-size:1.25rem;margin:0 0 10px;color:var(--g);display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+h2 small{font-size:.8rem;color:var(--mut);font-weight:400}
+h3{font-size:1.02rem;margin:14px 0 6px}
+.eyebrow{font-size:.78rem;letter-spacing:.06em;color:var(--gold);font-weight:700}
+.lead{color:var(--mut);margin:6px 0 0;max-width:64ch}
+p{margin:0 0 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.card ul{margin:0;padding-inline-start:20px;display:grid;gap:4px}
+.card.bad{border-inline-start:4px solid var(--red)}
+.card.good{border-inline-start:4px solid var(--g)}
+.hero{background:var(--g);color:#fff;border-radius:14px;padding:18px 20px;display:grid;gap:8px}
+.hero b{font-size:1.15rem}
+.hero ul{margin:0;padding-inline-start:18px;display:grid;gap:4px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .hero{background:#0f4c3a}}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:.92rem}
+th,td{padding:9px 12px;text-align:right;vertical-align:top;border-bottom:1px solid var(--line)}
+th{background:var(--g2);color:var(--g);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.num{font-weight:700;color:var(--g);white-space:nowrap}
+.pill{display:inline-block;border-radius:999px;padding:0 9px;font-size:.75rem;font-weight:700;white-space:nowrap}
+.p-ok{background:var(--g2);color:var(--g)}.p-now{background:var(--gold2);color:var(--gold)}.p-q{background:var(--red2);color:var(--red)}
+.step{border:1px solid var(--line);border-inline-start:4px solid var(--g);border-radius:12px;padding:12px 16px;background:var(--card);display:grid;gap:6px}
+.step.mod{border-inline-start-color:var(--gold)}
+.step h3{margin:0;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.step .why{color:var(--mut);font-size:.92rem}
+.step ul{margin:0;padding-inline-start:20px;display:grid;gap:3px}
+.step .gate{font-size:.88rem;background:var(--g2);border-radius:8px;padding:6px 10px}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}h1{font-size:1.6rem}}
+.rules{margin:0;padding-inline-start:20px;display:grid;gap:4px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:2px}
+.kpi b{font-size:1.6rem;color:var(--g);line-height:1.1}
+.kpi span{font-size:.82rem;color:var(--mut)}
+.note{font-size:.88rem;color:var(--mut)}
+.qbox{background:var(--red2);border:1px solid var(--red);border-radius:12px;padding:14px 16px;display:grid;gap:6px}
+.qbox b{color:var(--red)}
+.gbox{background:var(--gold2);border:1px solid var(--gold);border-radius:12px;padding:14px 16px;display:grid;gap:6px}
+.gbox ul{margin:0;padding-inline-start:20px;display:grid;gap:4px}
+</style>
+<div class="wrap">
+
+<div class="qbox"><b>نُسخت.</b> <span>هذه مسودة ٢٠٢٦-١٠-٠٥. حلّت محلها <a href="plan-handler-2026-10-07.html">خطة ٢٠٢٦-١٠-٠٧</a> على كلماته: لا حذف لحقل، الإدارة المعالجة بالاسم، السجل بلا أطوار، ولا «سطر لكل صنف».</span></div>
+
+<header>
+  <div class="eyebrow">حزمة السلامة والصحة المهنية · معهد الإدارة العامة · معالج بلاغ الشاغل · ٢٠٢٦-١٠-٠٥ · مسودة — لم تُعتمد</div>
+  <h1>من يعالج بلاغ الشاغل؟ — مسودة الخطة</h1>
+  <p class="lead">ما الذي يتغيّر، بأي ترتيب، وكيف نعرف أن كل خطوة نجحت. كُتبت بعد قراءة النظام كله من الكود. لا كود قبل كلمتك.</p>
+</header>
+
+<section>
+  <h2>١ · الجواب أولاً <small>ما المشكلة وما الحل في جملة</small></h2>
+  <div class="hero">
+    <b>البلاغ يسأل الخطر: «من يعالجك؟» — لا إدارةَ المكان.</b>
+    <ul>
+      <li><b>اليوم (خلل):</b> اسم المعالج تكتبه إدارة المكان حين تفعّل الخطر في سجلها. فبلاطة مكسورة في ممر الموارد البشرية تذهب لمن سمّته الموارد البشرية.</li>
+      <li><b>المطلوب بكلماتك:</b> «الخطر يحتوي على الإدارة المعالجة إذا أُضيفت، وعلى المنفّذ».</li>
+      <li><b>والأغلب موجود:</b> الخانات في العام، و«فنيّي» بتخصصه وأماكنه، وآلية اختيار الفني. تنقصها وصلة واحدة.</li>
+    </ul>
+    <span style="opacity:.88;font-size:.92rem">معيار هذه الخطة كلمتك: «لا نريد تحديد كل إدارة الآن ولا كل مسؤول الآن؛ نريد نظاماً يستوعب كل ذلك ويقرأ ويحمي نفسه».</span>
+  </div>
+</section>
+
+<section>
+  <h2>٢ · أين نحن اليوم <small>بالقراءة من الكود — لم يُجرَّب على الشاشة</small></h2>
+  <div class="kpis">
+    <div class="kpi"><b>١٧٧</b><span>خطراً في كتاب المعهد</span></div>
+    <div class="kpi"><b>١٧٧</b><span>نصاً مختلفاً في خانة «الجهة»</span></div>
+    <div class="kpi"><b>٠</b><span>خطر ربطه الكتاب بإدارة من الهيكل</span></div>
+    <div class="kpi"><b>٨</b><span>أصناف للمخاطر</span></div>
+    <div class="kpi"><b>٦</b><span>تخصصات للفنيين، كلها لأنظمة</span></div>
+  </div>
+
+  <div class="grid2" style="margin-top:12px">
+    <div class="card good">
+      <h3 style="margin-top:0">✔ موجود ويبقى كما هو</h3>
+      <ul>
+        <li>البلاغ يحمل الخطر والمكان إلزاماً، والوحدة داخل المكان اختياراً.</li>
+        <li>في العام، في كل طبقة من الخطر: «الجهة» (إدارة من الهيكل أو نص) و«الشخص» (حساب أو نص). يكتبهما مسؤول السلامة وحده.</li>
+        <li>المعالج صفة لا دور: من سُمّي على البلاغ عالجه، فنياً كان أو إدارياً.</li>
+        <li>متى عُرف الاسم سار البلاغ وحده حتى «حُوّل للفني». والمهلة تُقاس حتى يستلمه.</li>
+        <li>«فنيّي»: لكل فني تخصص وأماكن يغطيها. وآلية «الفني بالتخصص والمكان» تعمل لجولات الفحص.</li>
+      </ul>
+    </div>
+    <div class="card bad">
+      <h3 style="margin-top:0">✘ خلل اليوم</h3>
+      <ul>
+        <li>اسم المعالج له مصدر واحد: خانة يكتبها من فعّل الخطر في سجل إدارة المكان.</li>
+        <li>قائمة «المعالج» عند التفعيل تعرض كل حساب في المعهد، ومعهم المقاول.</li>
+        <li>التفعيل دفعةً يفرض معالجاً واحداً للدفعة كلها.</li>
+        <li>بلاغ الشاغل لا يستعمل آلية «الفني بالتخصص والمكان».</li>
+        <li>قاعدة «من يعالج» مكتوبة مرة واحدة، في كود تعبئة التجربة. المسار الحقيقي لا يعرفها.</li>
+        <li>لا تخصص لصيانة عامة بين الستة.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>لماذا لا يُستخرج المعالج من نص الكتاب؟</h3>
+  <div class="card">
+    <p>نص «الجهة» في الكتاب جملة تسمّي عدة أدوار وما على كلٍّ منها. مثال من الكتاب:</p>
+    <p style="background:var(--g2);border-radius:8px;padding:8px 12px">«فني التكييف ونظام الدخان (الفحص والعمل بالحماية) · المنسق في المكان (النموذج) · مشرف النظافة (التنظيف)»</p>
+    <p>هذا يجيب <b>«من يطبّق الضوابط؟»</b> ولا يجيب <b>«من يعالج البلاغ؟»</b>. وكل خطر له جملته. فالإدارة المعالجة تُربط ربطاً، ولا تُقرأ من الجملة.</p>
+  </div>
+</section>
+
+<section>
+  <h2>٣ · الخطة <small>خمس خطوات بالترتيب؛ لا خطوة قبل نجاح بوابة سابقتها</small></h2>
+  <div style="display:grid;gap:12px">
+
+  <div class="step">
+    <h3><span class="pill p-ok">١ · إضافة بسيطة</span> الإدارة المعالجة تُربط في العام، ومعها «التخصص»</h3>
+    <div class="why">لماذا: خانتا «الجهة» و«الشخص» موجودتان وتقبلان الربط بالهيكل وبحساب. ينقصهما «التخصص» فقط.</div>
+    <ul>
+      <li>في الطبقة التشغيلية للخطر: إدارة من الهيكل، ثم تخصص من تخصصات الفنيين، أو شخص بعينه. كلها اختيارية.</li>
+      <li>يكتبها مسؤول السلامة وحده، كما اليوم.</li>
+      <li>نص الكتاب يبقى ظاهراً تحتها كما هو.</li>
+    </ul>
+    <div class="gate">البوابة: خطر في العام يُحفظ له «المرافق والصيانة — كهرباء»، ويظهر ذلك في صفحته.</div>
+  </div>
+
+  <div class="step">
+    <h3><span class="pill p-ok">٢ · إضافة بسيطة</span> سطر لكل صنف <span class="pill p-now">رأي مني</span></h3>
+    <div class="why">لماذا: ١٧٧ خطراً لا تُربط في يوم. وكلمتك: لا نحدد الكل الآن.</div>
+    <ul>
+      <li>ثمانية أسطر في شاشة واحدة، سطر لكل صنف: إدارته المعالجة وتخصصها. مثل: «الكهربائية ← المرافق والصيانة — كهرباء».</li>
+      <li>الخطر الذي لم يُكتب له شيء يأخذ سطر صنفه. والمكتوب على الخطر نفسه يغلب.</li>
+      <li>هذه القاعدة مكتوبة اليوم داخل كود تعبئة التجربة. تنتقل إلى شاشة يملكها مسؤول السلامة.</li>
+    </ul>
+    <div class="gate">البوابة: ثمانية أسطر تُملأ، وخطر بلا ربط يُظهر في صفحته «يعالجه: … (من صنفه)».</div>
+  </div>
+
+  <div class="step mod">
+    <h3><span class="pill p-now">٣ · تعديل</span> التوجيه يسأل الخطر</h3>
+    <div class="why">لماذا: هذه هي الوصلة الناقصة. موضع واحد في الكود.</div>
+    <div class="tbl">
+      <table>
+        <tr><th>الترتيب</th><th>إن وُجد</th><th>يذهب البلاغ إلى</th></tr>
+        <tr><td class="num">١</td><td>شخص مسمّى على الخطر</td><td>ذلك الشخص</td></tr>
+        <tr><td class="num">٢</td><td>تخصص</td><td>الفني بذلك التخصص الذي يغطي مكان البلاغ (الآلية القائمة)</td></tr>
+        <tr><td class="num">٣</td><td>تخصص ولا فني يغطي المكان، أو إدارة بلا تخصص</td><td>مدير الإدارة المعالجة</td></tr>
+        <tr><td class="num">٤</td><td>الخطر خالٍ</td><td>سطر صنفه، بالترتيب نفسه</td></tr>
+        <tr><td class="num">٥</td><td>الصنف خالٍ أيضاً</td><td>يقف عند المركز ببطاقة تقول السبب: «هذا الخطر بلا إدارة معالجة». والمركز يحيل بيده كما اليوم</td></tr>
+      </table>
+    </div>
+    <ul>
+      <li>يُقرأ من العام عند كل بلاغ. فتغيير مسؤول السلامة يسري على البلاغ التالي فوراً.</li>
+      <li>البلاغ لا ينتظر أن تفعّل الإدارة الخطر في سجلها. وتنبيه مديرها ومنسقها بالتفعيل يبقى كما اليوم.</li>
+      <li>المنسق يبقى كما اليوم: الاسم المكتوب في نسخة الخطر عند إدارة المكان.</li>
+    </ul>
+    <div class="gate">البوابة: خمسة بلاغات على جهاز التطوير، كل واحد ينتهي عند سطر من الجدول. ثم تجربتك بحساباتك.</div>
+  </div>
+
+  <div class="step mod">
+    <h3><span class="pill p-now">٤ · تعديل</span> خانة «المعالج» تخرج من التفعيل</h3>
+    <div class="why">لماذا: صار الخطر يعرف معالجه. وسؤال مدير الإدارة عنه هو أصل الخلل.</div>
+    <ul>
+      <li>تخرج من نموذج التفعيل، ومن التفعيل دفعةً، ومن نموذج الإضافة في الخاص. يبقى المنسق.</li>
+      <li>تزول معها قائمة «كل حسابات المعهد».</li>
+    </ul>
+    <div class="gate">البوابة: مدير إدارة يفعّل خطراً ولا يُسأل عن معالج.</div>
+  </div>
+
+  <div class="step">
+    <h3><span class="pill p-ok">٥ · إضافة بسيطة</span> غير المغطى يظهر</h3>
+    <div class="why">لماذا: كلمتك «ويحمي نفسه». النقص يُرى قبل أن يقع فيه بلاغ.</div>
+    <ul>
+      <li>سطر عند مسؤول السلامة في «ما ينتظرك»: «كذا خطراً بلا إدارة معالجة» و«كذا مكاناً بلا فني لتخصصٍ ما». يفتح القائمة.</li>
+    </ul>
+    <div class="gate">البوابة: إفراغ سطر صنف يرفع العدد، وملؤه ينزله.</div>
+  </div>
+
+  </div>
+</section>
+
+<section>
+  <h2>٤ · أمثلة من المبنى <small>اليوم، وبعد الخطة</small></h2>
+  <div class="tbl">
+    <table>
+      <tr><th>البلاغ</th><th>اليوم</th><th>بعد الخطة</th></tr>
+      <tr><td>غطاء مقبس مكسور في القاعة ٣١٢</td><td>لمن سمّته الإدارة المشغّلة للقاعات في نسختها</td><td>صنف «الكهربائية» ← فني الكهرباء الذي يغطي القاعات</td></tr>
+      <tr><td>بلاطة مكسورة في ممر الموارد البشرية</td><td>لمن سمّته الموارد البشرية</td><td>لا تخصص «صيانة عامة» بين الستة ← مدير المرافق والصيانة، والمركز يرى</td></tr>
+      <tr><td>بلاغ سري عن تنمّر</td><td>لمن سمّته الإدارة، أو يقف عند المركز</td><td>الخطر مربوط بالموارد البشرية ← مديرها. لا فني</td></tr>
+      <tr><td>مقبس يشرر</td><td colspan="2">ليس بلاغاً. هو طوارئ: الزر الأحمر. (كلمتك، ولا يتغيّر)</td></tr>
+    </table>
+  </div>
+  <p class="note" style="margin-top:8px">عمود «بعد الخطة» يفترض أن مسؤول السلامة ملأ سطر الصنف أو ربط الخطر. وإن لم يفعل: يقف البلاغ عند المركز بسببه.</p>
+</section>
+
+<section>
+  <h2>٥ · ما لا يُمس، وما أُجّل</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin-top:0">لا يُمس</h3>
+      <ul>
+        <li>التصريح والنموذج الرقمي والطوارئ: لا تقرأ خانة المعالج أصلاً.</li>
+        <li>المبلّغ والمركز، وبوابتا الإغلاق، والمهلة، والتصعيد.</li>
+        <li>نص «الجهة» في الكتاب.</li>
+        <li>ملفات المعهد.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">مؤجَّل — كلٌّ بكلمتك</h3>
+      <ul>
+        <li>التغطية بالوحدة داخل المكان (اليوم بالمكان فقط).</li>
+        <li>إضافة تخصص بلا كود. التخصصات اليوم ثابتة في الكود، وهذا أكبر الثلاثة.</li>
+        <li>ربط الحسابات والإدارات ببوابة المعهد.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>٦ · قواعد التنفيذ <small>كما في المراحل السابقة</small></h2>
+  <ul class="rules">
+    <li>كل خطوة: اختبار يسقط قبل البناء ويمرّ بعده، ثم تجربة على الشاشة.</li>
+    <li>التجربة كلها على جهاز التطوير. الموقع المنشور لا يُعبَّأ ببيانات تجريبية.</li>
+    <li>لا رفع إلى المنشور إلا بكلمتك «ارفع». وبعد الرفع تجربتك بحساباتك أنت، ثم كلمتك.</li>
+    <li>الأسماء والإدارات قرارك وقرار مسؤول السلامة: لا يُخترع ربط من عندي.</li>
+    <li>ما يظهر خارج هذه الخطوات يُكتب في المؤجلات بسطر، ولا يُبنى.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="gbox">
+    <b>ما في هذه المسودة من عندي، لا من كلماتك</b>
+    <ul>
+      <li><b>سطر الصنف</b> (الخطوة ٢). بدونه يقف كل بلاغ عند المركز حتى يُربط خطره. إن لم ترده حُذفت الخطوة، وبقي الباقي كما هو.</li>
+      <li><b>القراءة من الطبقة التشغيلية.</b> لأن البلاغ العادي والسري يعرضان اليوم هذه الطبقة، ومنها يُنسخ الإجراء التصحيحي.</li>
+      <li><b>البلاغ لا ينتظر التفعيل.</b> نتيجة لازمة لقراءة المعالج من العام. اليوم يقف عند المركز حتى تُفعَّل النسخة.</li>
+    </ul>
+  </div>
+  <div class="qbox" style="margin-top:12px">
+    <b>مسودة. لا كود قبل كلمتك.</b>
+    <span>صحّح ما تراه، أو قل «معتمدة» فأبدأ بالخطوة ١ وحدها.</span>
+  </div>
+</section>
+
+</div>
