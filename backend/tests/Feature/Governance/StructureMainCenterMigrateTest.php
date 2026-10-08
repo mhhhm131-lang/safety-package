@@ -36,7 +36,7 @@ class StructureMainCenterMigrateTest extends TestCase
         $this->assertNull($hq->parent_id);
         $this->assertSame([$hq->id], OrganizationUnit::whereNull('parent_id')->pluck('id')->all(), 'بقي رأس غير المركز الرئيسي');
         $this->assertSame(10, OrganizationUnit::where('parent_id', $hq->id)->whereIn('code', $roots)->count(), 'الرؤوس العشرة لم تنتقل تحت المركز الرئيسي');
-        $branches = OrganizationUnit::where('parent_id', $hq->id)->where('unit_type', 'branch')->whereIn('name', ['فرع الرياض', 'فرع الشرقية', 'فرع مكة', 'فرع عسير'])->pluck('name')->all();
+        $branches = OrganizationUnit::where('parent_id', $hq->id)->where('unit_type', 'region')->whereIn('name', ['فرع الرياض', 'فرع الشرقية', 'فرع مكة', 'فرع عسير'])->pluck('name')->all();
         $this->assertCount(4, $branches);
         $this->assertSame($fm->id, OrganizationUnit::where('code', 'uuf6npl')->value('id'));
         $this->assertSame(OrganizationUnit::where('code', 'adm-eng')->value('id'), $fm->fresh()->parent_id, 'ما أضافه المستخدم مُسّ');

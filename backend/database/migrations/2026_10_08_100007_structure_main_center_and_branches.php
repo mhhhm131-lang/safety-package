@@ -40,7 +40,7 @@ return new class extends Migration
             $exists = DB::table('organization_units')->where('name', $name)->exists() || DB::table('organization_units')->where('code', $code)->exists();
             if ($exists) continue;
             DB::table('organization_units')->insert([
-                'code' => $code, 'name' => $name, 'unit_type' => 'branch', 'parent_id' => $hq->id, 'place_id' => $hub,
+                'code' => $code, 'name' => $name, 'unit_type' => 'region', 'parent_id' => $hq->id, 'place_id' => $hub, // region = «فرع» في الشاشة
                 'order' => $order++, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now,
             ]);
         }

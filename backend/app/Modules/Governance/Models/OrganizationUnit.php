@@ -18,6 +18,15 @@ class OrganizationUnit extends Model
 
     public const TYPES = ['company', 'region', 'branch', 'department', 'section', 'team'];
 
+    /** الأسماء المعروضة: «فرع» (region) رأس يُعرض مطوياً في شاشة الهيكل بجانب المركز الرئيسي؛ «نائب» (branch) داخل المركز */
+    public const TYPE_LABELS = ['company' => 'المدير العام', 'region' => 'فرع', 'branch' => 'نائب', 'department' => 'إدارة', 'section' => 'قسم', 'team' => 'فريق'];
+
+    /** بكلمته (٢٠٢٦-١٠-٠٨): رؤوس شاشة الهيكل = الجذور والفروع (region) — كلٌّ يُطوى على إداراته وأقسامه */
+    public function isHead(): bool
+    {
+        return $this->parent_id === null || $this->unit_type === 'region';
+    }
+
     protected $fillable = ['code', 'parent_id', 'name', 'name_en', 'unit_type', 'place_id', 'manager_id', 'manager_name', 'order', 'is_active'];
 
     protected $casts = ['order' => 'integer', 'is_active' => 'boolean'];

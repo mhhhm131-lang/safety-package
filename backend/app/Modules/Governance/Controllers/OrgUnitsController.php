@@ -18,11 +18,17 @@ class OrgUnitsController extends Controller
 {
     public function __construct(private DeptSync $sync) {}
 
+    /**
+     * بكلمته (٢٠٢٦-١٠-٠٨): الشاشة تعرض الرؤوس وحدها مطوية — المركز الرئيسي (الجذر) والفروع (region) — وكل رأس يُفتح على
+     * إداراته وأقسامه. ما تحت فرع لا يظهر داخل المركز الرئيسي.
+     */
     public function index(): View
     {
-        $units = OrganizationUnit::with(['place', 'manager'])->orderBy('order')->get();
-        $tree = $this->tree($units, null, 0);
-        return view('governance.org.index', ['tree' => $tree, 'count' => $units->where('is_active', true)->count()]);
+        $units = OrganizationUnit::with(['place', 'manager'])->orderBy('order')->orderBy('id')->get();
+        $heads = $units->filter(fn (OrganizationUnit $u) => $u->isHead())->sortBy(fn (OrganizationUnit $u) => [$u->parent_id === null ? 0 : 1, $u->order, $u->id])->values();
+        $stop = $heads->pluck('id')->all();
+        $groups = $heads->map(fn (OrganizationUnit $h) => ['head' => $h, 'rows' => $this->tree($units, $h->id, 0, $stop)])->all();
+        return view('governance.org.index', ['groups' => $groups, 'count' => $units->where('is_active', true)->count()]);
     }
 
     public function create(): View
@@ -78,12 +84,14 @@ class OrgUnitsController extends Controller
         return redirect()->route('app.org.index')->with('ok', "حُذفت «{$name}»");
     }
 
-    private function tree($units, ?int $parentId, int $level): array
+    /** الشجرة مسطّحة بعمقها؛ $stop رؤوس لا يُدخل فيها (فرع داخل المركز الرئيسي له مجموعته) */
+    private function tree($units, ?int $parentId, int $level, array $stop = []): array
     {
         $out = [];
         foreach ($units->where('parent_id', $parentId) as $u) {
+            if (in_array($u->id, $stop, true)) continue;
             $out[] = ['unit' => $u, 'level' => $level];
-            $out = array_merge($out, $this->tree($units, $u->id, $level + 1));
+            $out = array_merge($out, $this->tree($units, $u->id, $level + 1, $stop));
         }
         return $out;
     }
@@ -95,7 +103,7 @@ class OrgUnitsController extends Controller
             'unit' => $unit,
             'parents' => OrganizationUnit::whereNotIn('id', $exclude)->orderBy('order')->get(),
             'places' => Place::orderBy('sort')->get(),
-            'types' => ['company' => 'المدير العام', 'branch' => 'نائب / فرع', 'department' => 'إدارة', 'section' => 'قسم', 'team' => 'فريق'],
+            'types' => OrganizationUnit::TYPE_LABELS,
         ];
     }
 
