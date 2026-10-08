@@ -60,10 +60,11 @@ class DeptSync
                     $u->save();
                 }
             }
-            // ٣) الحذف: ما لم يعد في الوثيقة (بلا أبناء وبلا موظفين)، وإلا يُعطَّل
+            // ٣) الحذف: ما لم يعد في الوثيقة (بلا أبناء وبلا موظفين وبلا أخطار تعالجها)، وإلا يُعطَّل
+            // خطة المعالج — الخطوة ١ (الملاحظة ٤٢): الوحدة المربوطة بخطر في العام تُعطَّل ولا تُحذف من هذا الباب أيضاً
             foreach ($byCode as $code => $u) {
                 if (isset($seen[$code])) continue;
-                if ($u->children()->exists() || $u->profiles()->exists()) {
+                if ($u->children()->exists() || $u->profiles()->exists() || $u->handledRisks()->exists()) {
                     $u->is_active = false;
                     $u->save();
                 } else {

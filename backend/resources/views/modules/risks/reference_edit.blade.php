@@ -182,11 +182,50 @@
             </div>
         </div>
 
+        {{-- 3-ب. من يعالج — خطة المعالج الخطوة ١ (٢٠٢٦-١٠-٠٨): الإدارة المعالجة يكتبها مسؤول السلامة وحده؛ المعالج يكتبه مدير تلك الإدارة من «إدارتي» --}}
+        @if($canSetHandlingUnit)
+        <div class="card mb-3" style="background:var(--bg-card);border:1px solid var(--border-color);">
+            <div class="card-header" style="background:transparent;border-bottom:1px solid var(--border-color);">
+                <h6 class="mb-0 fw-bold" style="color:var(--accent);"><i class="bi bi-person-check me-2"></i>من يعالج بلاغ هذا الخطر</h6>
+                <small style="color:var(--text-muted);">الإدارة المعالجة تختارها أنت من الهيكل، والمعالج يسمّيه مدير تلك الإدارة من «إدارتي»</small>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label" style="color:var(--text-main);">الإدارة المعالجة</label>
+                        <select name="handling_unit_id" id="handlingUnit" class="form-select">
+                            <option value="">— لم تُحدَّد بعد —</option>
+                            @foreach($unitTree as $u)
+                                <option value="{{ $u['id'] }}" @selected((int) old('handling_unit_id', $risk->handling_unit_id) === (int) $u['id'])>{{ str_repeat('— ', $u['depth']) }}{{ $u['name'] }}</option>
+                            @endforeach
+                        </select>
+                        @if($risk->handling_unit_id && !collect($unitTree)->contains('id', $risk->handling_unit_id))
+                            <small class="text-danger">الإدارة المحفوظة «{{ $risk->handling_unit_display }}» معطَّلة في الهيكل — اختر غيرها</small>
+                        @else
+                            <small style="color:var(--text-muted);">بلا إدارة معالجة يقف بلاغ هذا الخطر عند المركز</small>
+                        @endif
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" style="color:var(--text-main);">المعالج</label>
+                        <div class="form-control-plaintext">
+                            @if($risk->handler_label)
+                                <strong style="color:var(--text-main);">{{ $risk->handler_label }}</strong>
+                                @if($risk->handlerSetBy)<div class="small" style="color:var(--text-muted);">كتبه {{ $risk->handlerSetBy->name }}@if($risk->handler_set_at) · {{ $risk->handler_set_at->format('Y-m-d') }}@endif</div>@endif
+                            @else
+                                <span style="color:var(--text-muted);">لم يُكتب بعد — يكتبه مدير الإدارة المعالجة من «إدارتي»</span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
         {{-- 4. المراحل الثلاث --}}
         <div class="card mb-3" style="background:var(--bg-card);border:1px solid var(--border-color);">
             <div class="card-header" style="background:transparent;border-bottom:1px solid var(--border-color);">
                 <h6 class="mb-0 fw-bold" style="color:var(--accent);"><i class="bi bi-layers me-2"></i>مراحل الخطر</h6>
-                <small style="color:var(--text-muted);">لكل مرحلة: أسباب + متأثرون + إجراءات + مسؤولون</small>
+                <small style="color:var(--text-muted);">لكل مرحلة: أسباب + متأثرون + إجراءات</small>
             </div>
             <div class="card-body">
                 <ul class="nav nav-tabs mb-3" role="tablist">
@@ -305,34 +344,18 @@
                                           placeholder="ما مستوى الخطر المتبقي بعد تطبيق الإجراءات؟">{{ old("phases.{$phaseKey}.residual_assessment", $phase?->residual_assessment) }}</textarea>
                             </div>
 
-                            {{-- الجهة والشخص --}}
-                            <div class="row g-3 p-2 rounded" style="background:var(--bg-main);">
-                                <div class="col-12 mb-1"><strong style="color:var(--text-main);font-size:0.85rem;"><i class="bi bi-person-badge me-1"></i>الجهة والشخص المسؤول</strong></div>
-                                <div class="col-md-6">
-                                    <label class="form-label small" style="color:var(--text-muted);">الجهة (من الهيكل)</label>
-                                    <select name="phases[{{ $phaseKey }}][responsible_org_unit_id]" class="form-select form-select-sm">
-                                        <option value="">— اختر —</option>
-                                        @foreach($orgUnits as $unit)
-                                            <option value="{{ $unit->id }}" @selected(old("phases.{$phaseKey}.responsible_org_unit_id", $phase?->responsible_org_unit_id)==$unit->id)>{{ $unit->name }}</option>
-                                        @endforeach
-                                    </select>
-                                    <input type="text" name="phases[{{ $phaseKey }}][responsible_org_unit_text]"
-                                           class="form-control form-control-sm mt-1" placeholder="أو نص حر..."
-                                           value="{{ old("phases.{$phaseKey}.responsible_org_unit_text", $phase?->responsible_org_unit_text) }}">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label small" style="color:var(--text-muted);">الشخص المسؤول</label>
-                                    <select name="phases[{{ $phaseKey }}][responsible_user_id]" class="form-select form-select-sm">
-                                        <option value="">— اختر —</option>
-                                        @foreach($tenantUsers as $u)
-                                            <option value="{{ $u->id }}" @selected(old("phases.{$phaseKey}.responsible_user_id", $phase?->responsible_user_id)==$u->id)>{{ $u->name }}</option>
-                                        @endforeach
-                                    </select>
-                                    <input type="text" name="phases[{{ $phaseKey }}][responsible_user_text]"
-                                           class="form-control form-control-sm mt-1" placeholder="أو نص حر..."
-                                           value="{{ old("phases.{$phaseKey}.responsible_user_text", $phase?->responsible_user_text) }}">
-                                </div>
+                            {{-- خطة المعالج — الخطوة ١: خانتا «الجهة» و«الشخص» خرجتا من النموذج. نص الكتاب «من يطبّق الضوابط» يبقى مقروءاً لا يُمس --}}
+                            @php
+                                $bookWho = $phase?->notes && str_starts_with((string) $phase->notes, 'الجهة والشخص كاملاً: ')
+                                    ? mb_substr((string) $phase->notes, mb_strlen('الجهة والشخص كاملاً: '))
+                                    : trim(implode(' · ', array_filter([$phase?->responsible_org_unit_display, $phase?->responsible_user_display])));
+                            @endphp
+                            @if($bookWho !== '')
+                            <div class="p-2 rounded" style="background:var(--bg-main);">
+                                <strong style="color:var(--text-main);font-size:0.85rem;"><i class="bi bi-person-badge me-1"></i>من يطبّق الضوابط (من الكتاب)</strong>
+                                <div class="small mt-1" style="color:var(--text-muted);line-height:1.8;">{{ $bookWho }}</div>
                             </div>
+                            @endif
                         </div>
                     @endforeach
                 </div>

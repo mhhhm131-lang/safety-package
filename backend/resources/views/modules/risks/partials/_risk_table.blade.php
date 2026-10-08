@@ -39,9 +39,11 @@
                         <th>الوحدة</th>
                         <th>الحالة</th>
                         @endif
+                        {{-- خطة المعالج — الخطوة ١ (٢٠٢٦-١٠-٠٨): الإدارة المعالجة والمعالج من العام؛ «المسؤول» ← «المنسق»، «الفريق التنفيذي» ← «المعالج» --}}
+                        <th>الإدارة المعالجة</th>
+                        <th>المعالج</th>
                         <th>الإدارة</th>
-                        <th>المسؤول</th>
-                        <th>الفريق التنفيذي</th>
+                        <th>المنسق</th>
                         <th>الجهة / المفوّض</th>
                         <th>إجراءات</th>
                     </tr>
@@ -52,7 +54,7 @@
                         $score      = $risk->risk_score ?? 0;
                         $scoreColor = $score >= 15 ? '#ef4444' : ($score >= 7 ? '#f59e0b' : '#10b981');
                         $phasesByKey = $risk->phases->keyBy('phase');
-                        $totalCols = $isActive ? 16 : 14;
+                        $totalCols = $isActive ? 17 : 15;
                     @endphp
 
                     @foreach($phaseOrder as $phaseKey => $phaseMeta)
@@ -194,16 +196,24 @@
                         {{-- cells already covered by rowspan --}}
                         @endif
 
-                        {{-- الإدارة / المسؤول / الفريق التنفيذي --}}
+                        {{-- الإدارة المعالجة / المعالج / الإدارة / المنسق — خطة المعالج الخطوة ١ (الخاص يقرأ المعالج من العام في الخطوة ٤) --}}
                         @if($isFirst)
                         <td rowspan="3" class="align-middle" style="vertical-align:middle!important;">
-                            <small class="text-muted">{{ $risk->owner_department ?? '—' }}</small>
+                            <small class="{{ $risk->handling_unit_display ? 'fw-bold' : 'text-muted' }}">{{ $risk->handling_unit_display ?? '—' }}</small>
+                        </td>
+                        <td rowspan="3" class="align-middle" style="vertical-align:middle!important;">
+                            @if($isActive)
+                                <small class="text-muted">{{ $risk->assignedFieldTeam?->name ?? '—' }}</small>
+                            @else
+                                <small class="{{ $risk->handler_label ? 'fw-bold' : 'text-muted' }}">{{ $risk->handler_label ?? ($risk->handling_unit_display ? 'لم يُكتب بعد' : '—') }}</small>
+                                @if($risk->handlerSetBy)<div class="small text-muted">كتبه {{ $risk->handlerSetBy->name }}</div>@endif
+                            @endif
+                        </td>
+                        <td rowspan="3" class="align-middle" style="vertical-align:middle!important;">
+                            <small class="text-muted">{{ $risk->organizationUnit?->name ?? '—' }}</small>
                         </td>
                         <td rowspan="3" class="align-middle" style="vertical-align:middle!important;">
                             <small class="text-muted">{{ $risk->assignedCoordinator?->name ?? '—' }}</small>
-                        </td>
-                        <td rowspan="3" class="align-middle" style="vertical-align:middle!important;">
-                            <small class="text-muted">{{ $risk->assignedFieldTeam?->name ?? '—' }}</small>
                         </td>
                         @endif
 

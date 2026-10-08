@@ -72,6 +72,9 @@ Route::middleware(['web', 'auth'])->prefix('app/risk')->name('risk.')->group(fun
     });
 
     Route::middleware('permission:risk.approve')->group(function () {
+        // خطة المعالج — الخطوة ١: مدير الإدارة المعالجة يسمّي المعالج من «إدارتي» (الحارس في المتحكم: مدير وحدة مربوط بوحدة)
+        Route::get('/handlers', [\App\Modules\Risk\Controllers\HandlersController::class, 'index'])->name('handlers.index');
+        Route::post('/handlers/{risk}', [\App\Modules\Risk\Controllers\HandlersController::class, 'set'])->name('handlers.set')->whereNumber('risk');
         Route::get('/approval/queue', [RiskController::class, 'approvalQueue'])->name('approval.queue');
         Route::post('/{risk}/approve', [RiskController::class, 'approve'])->name('approve');
         // قرار ٧١: «اعتمدها كلها» — ما يملك اعتماده مما ينتظر

@@ -65,6 +65,13 @@ class OrgUnitsController extends Controller
         if ($unit->profiles()->exists()) {
             return back()->with('err', 'لهذه الوحدة موظفون مرتبطون — انقلهم أولاً');
         }
+        // خطة المعالج — الخطوة ١: وحدة هي الإدارة المعالجة لأخطار في العام لا تُحذف، والرسالة تسمّي أخطارها
+        $held = $unit->handledRisks()->orderBy('code')->get(['code', 'title']);
+        if ($held->isNotEmpty()) {
+            $names = $held->take(3)->map(fn ($r) => ($r->code ? $r->code.' ' : '').$r->title)->implode('، ');
+            $more = $held->count() > 3 ? ' و'.($held->count() - 3).' غيرها' : '';
+            return back()->with('err', "هذه الوحدة هي الإدارة المعالجة لأخطار في السجل العام ({$names}{$more}) — علّق أخطارها على إدارة أخرى أولاً");
+        }
         $name = $unit->name;
         $unit->delete();
         StoreController::refreshDeptsDocument($this->sync);

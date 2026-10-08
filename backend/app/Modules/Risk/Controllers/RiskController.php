@@ -195,7 +195,7 @@ class RiskController extends Controller
     {
         // قرار ٧٥: المقترح لا يظهر في السجل العام حتى يعتمده مسؤول السلامة
         $query = Risk::where('risk_type', 'reference')->adopted()->with([
-            'category', 'assignedCoordinator', 'assignedFieldTeam',
+            'category', 'assignedCoordinator', 'assignedFieldTeam', 'organizationUnit', 'handlingUnit', 'handlerUser', 'handlerSetBy',
             'phases', 'phases.causes', 'phases.affectedGroups', 'phases.responsibleOrgUnit', 'phases.responsibleUser',
         ]);
         $this->applyFilters($query, $request);
@@ -224,7 +224,7 @@ class RiskController extends Controller
 
     public function referenceStore(Request $request)
     {
-        $validated = $request->validate($this->referenceValidationRules());
+        $validated = $this->withHandlingUnit($request->validate($this->referenceValidationRules()));
         try {
             // قرار ٢١: العنوان حر في السجل العام (اسم الخطر الدقيق)؛ يُشتق من التصنيف فقط إن تُرك فارغاً
             $validated['title'] = trim((string) ($validated['title'] ?? '')) ?: $this->deriveTitle($validated['risk_type_category_id'] ?? null, $validated['sub_category_id'] ?? null);
@@ -254,7 +254,7 @@ class RiskController extends Controller
     public function referenceUpdate(Request $request, Risk $risk)
     {
         $this->authorizeGeneralEdit($risk);
-        $validated = $request->validate($this->referenceValidationRules());
+        $validated = $this->withHandlingUnit($request->validate($this->referenceValidationRules()));
         try {
             $typed = trim((string) ($validated['title'] ?? ''));
             if ($typed !== '') {
@@ -264,6 +264,10 @@ class RiskController extends Controller
                 $validated['title'] = $derived !== 'خطر غير محدد' ? $derived : ($risk->title ?: 'خطر غير محدد');
             }
             $validated['description'] = trim((string) ($validated['description'] ?? '')) ?: $validated['title'];
+            // خطة المعالج — الخطوة ١: تغيّرت الإدارة المعالجة ← معالج الإدارة السابقة لا ينتقل؛ مدير الإدارة الجديدة يسمّي من عنده
+            if (array_key_exists('handling_unit_id', $validated) && (int) $validated['handling_unit_id'] !== (int) $risk->handling_unit_id) {
+                foreach (Risk::HANDLER_FIELDS as $f) $validated[$f] = null;
+            }
             $this->riskService->updateRisk($risk, Auth::id(), collect($validated)->except(['phases'])->all());
             $this->riskService->persistAllPhases($risk, $validated['phases'] ?? []);
             $risk = $risk->fresh();
@@ -280,6 +284,24 @@ class RiskController extends Controller
         } catch (\Throwable $e) {
             return redirect()->back()->withInput()->with('error', 'فشل التحديث: '.$e->getMessage());
         }
+    }
+
+    /**
+     * خطة المعالج — الخطوة ١ (٢٠٢٦-١٠-٠٨): «الإدارة المعالجة» يكتبها مسؤول السلامة وحده، وتُحفظ باسمها
+     * (لتُوجد بالاسم داخل فرع مكان البلاغ حين تدخل الفروع). غيره لا تُقرأ منه هذه الخانة: مقترحه بلا إدارة معالجة.
+     * «المعالج» لا يُكتب من هذا النموذج أصلاً — يكتبه مدير الإدارة المعالجة من «إدارتي» (HandlersController).
+     */
+    private function withHandlingUnit(array $validated): array
+    {
+        if (Auth::user()->role() !== RiskApproval::GENERAL_APPROVER) {
+            unset($validated['handling_unit_id']);
+            return $validated;
+        }
+        if (!array_key_exists('handling_unit_id', $validated)) return $validated;
+        $unit = $validated['handling_unit_id'] ? OrganizationUnit::find((int) $validated['handling_unit_id']) : null;
+        $validated['handling_unit_id'] = $unit?->id;
+        $validated['handling_unit_name'] = $unit?->name;
+        return $validated;
     }
 
     /** قرار ٧٤: باب السجل العام لخطر عام وحده، ويعدّله مسؤول السلامة — ولغيره مقترحه ما دام مسودة */
@@ -608,6 +630,9 @@ class RiskController extends Controller
             'units' => \App\Modules\Governance\Models\PlaceUnit::where('is_active', true)->orderBy('type')->orderBy('sort')->orderBy('name')->get(), // ١٨-٣ (ج)
             'tenantUsers' => User::whereHas('profile', fn ($q) => $q->where('is_active', true))->orderBy('name')->get(),
             'masterAndTenantGroups' => AffectedGroup::orderBy('id')->get(),
+            // خطة المعالج — الخطوة ١: قائمة الهيكل بترتيب الشجرة لخانة «الإدارة المعالجة» (مسؤول السلامة وحده)
+            'unitTree' => OrganizationUnit::treeOptions(),
+            'canSetHandlingUnit' => Auth::user()->role() === RiskApproval::GENERAL_APPROVER,
         ];
     }
 
@@ -664,6 +689,8 @@ class RiskController extends Controller
             'place_id' => ['nullable', 'integer', 'exists:places,id'],
             // ١٨-٣ (ج): الوحدة اختيارية ومن المكان نفسه
             'place_unit_id' => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('place_units', 'id')->where('place_id', (int) request()->input('place_id'))->where('is_active', true)],
+            // خطة المعالج — الخطوة ١: الإدارة المعالجة من الهيكل (تُقرأ من مسؤول السلامة وحده: withHandlingUnit)
+            'handling_unit_id' => ['nullable', 'integer', 'exists:organization_units,id'],
         ], $this->phaseRules());
     }
 

@@ -49,6 +49,40 @@ class OrganizationUnit extends Model
         return $this->hasMany(UserProfile::class);
     }
 
+    /** خطة المعالج — الخطوة ١: أخطار السجل العام التي هذه الوحدة إدارتها المعالجة. وحدة لها أخطار لا تُحذف، تُعطَّل. */
+    public function handledRisks(): HasMany
+    {
+        return $this->hasMany(\App\Modules\Risk\Models\Risk::class, 'handling_unit_id')->where('risk_type', 'reference');
+    }
+
+    /**
+     * الهيكل مسطّحاً بترتيب الشجرة مع عمق كل وحدة — لقوائم الاختيار («الإدارة المعالجة»).
+     * @return array<int, array{id:int, name:string, depth:int}>
+     */
+    public static function treeOptions(bool $activeOnly = true): array
+    {
+        $all = static::query()->when($activeOnly, fn ($q) => $q->where('is_active', true))->orderBy('order')->orderBy('id')->get(['id', 'parent_id', 'name']);
+        $byParent = [];
+        foreach ($all as $u) $byParent[$u->parent_id ?? 0][] = $u;
+        $ids = $all->pluck('id')->all();
+        $out = [];
+        $walk = function (int $parent, int $depth) use (&$walk, &$out, $byParent) {
+            foreach ($byParent[$parent] ?? [] as $u) {
+                $out[] = ['id' => $u->id, 'name' => $u->name, 'depth' => $depth];
+                $walk($u->id, $depth + 1);
+            }
+        };
+        $walk(0, 0);
+        // وحدة أبوها معطَّل أو مفقود: تظهر في الجذر حتى لا تُخفى
+        foreach ($all as $u) {
+            if ($u->parent_id && !in_array($u->parent_id, $ids, true) && !collect($out)->contains('id', $u->id)) {
+                $out[] = ['id' => $u->id, 'name' => $u->name, 'depth' => 0];
+                $walk($u->id, 1);
+            }
+        }
+        return $out;
+    }
+
     /** المسار الكامل: «نائب … > الإدارة العامة … > القسم» */
     public function getFullPath(): string
     {

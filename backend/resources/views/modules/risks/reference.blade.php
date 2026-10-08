@@ -648,7 +648,7 @@
                 .join(`<span style="margin:0 4px;color:var(--text-muted);opacity:.5;">›</span>`);
             return `
                 <tr class="risk-title-row" data-risk-id="${r.id}" style="background:var(--bg-main);border-top:3px solid var(--border-color);">
-                    <td colspan="14" style="padding:6px 10px;font-size:.85rem;line-height:1.7;word-break:break-word;">
+                    <td colspan="15" style="padding:6px 10px;font-size:.85rem;line-height:1.7;word-break:break-word;">
                         ${crumbs ? crumbs + `<span style="margin:0 4px;color:var(--text-muted);opacity:.5;">›</span>` : ''}
                         <strong style="color:var(--text-main);">${escAttr(r.title || '')}</strong>
                     </td>
@@ -774,30 +774,41 @@
                         </td>`;
                 }
 
-                // الإدارة — rowspan=3
+                // خطة المعالج — الخطوة ١: الإدارة المعالجة (يكتبها مسؤول السلامة) — rowspan=3
+                let handlingUnitCell = '';
+                if (idx === 0) {
+                    handlingUnitCell = `
+                        <td rowspan="3" class="align-middle" style="vertical-align:middle!important;min-width:100px;">
+                            ${r.handling_unit ? `<span style="font-size:.78rem;color:var(--text-main);font-weight:600;">${escAttr(r.handling_unit)}</span>` : `<small style="color:var(--text-muted);">— لم تُحدَّد</small>`}
+                        </td>`;
+                }
+
+                // المعالج (يكتبه مدير الإدارة المعالجة من «إدارتي») — rowspan=3
+                let handlerCell = '';
+                if (idx === 0) {
+                    handlerCell = `
+                        <td rowspan="3" class="align-middle" style="vertical-align:middle!important;min-width:100px;">
+                            ${r.handler
+                                ? `<span style="font-size:.78rem;color:var(--text-main);font-weight:600;">${escAttr(r.handler)}</span>${r.handler_set_by ? `<div style="font-size:.65rem;color:var(--text-muted);">كتبه ${escAttr(r.handler_set_by)}${r.handler_set_at ? ' · ' + escAttr(r.handler_set_at) : ''}</div>` : ''}`
+                                : `<small style="color:var(--text-muted);">${r.handling_unit ? 'لم يُكتب بعد' : '—'}</small>`}
+                        </td>`;
+                }
+
+                // الإدارة (في الخاص: الوحدة التي فعّلت؛ في العام فارغة) — rowspan=3
                 let adminCell = '';
                 if (idx === 0) {
                     adminCell = `
                         <td rowspan="3" class="align-middle" style="vertical-align:middle!important;min-width:90px;">
-                            <small style="color:var(--text-muted);">${escAttr(r.owner_department || '—')}</small>
+                            <small style="color:var(--text-muted);">${escAttr(r.organization_unit || '—')}</small>
                         </td>`;
                 }
 
-                // المسؤول — rowspan=3
+                // المنسق (في الخاص: منسق الوحدة؛ في العام فارغ) — rowspan=3
                 let coordinatorCell = '';
                 if (idx === 0) {
                     coordinatorCell = `
                         <td rowspan="3" class="align-middle" style="vertical-align:middle!important;min-width:90px;">
                             <small style="color:var(--text-muted);">${escAttr(r.assigned_coordinator || '—')}</small>
-                        </td>`;
-                }
-
-                // الفريق التنفيذي — rowspan=3
-                let fieldTeamCell = '';
-                if (idx === 0) {
-                    fieldTeamCell = `
-                        <td rowspan="3" class="align-middle" style="vertical-align:middle!important;min-width:90px;">
-                            <small style="color:var(--text-muted);">${escAttr(r.assigned_field_team || '—')}</small>
                         </td>`;
                 }
 
@@ -818,9 +829,10 @@
                         <td>${correctiveHtml}</td>
                         <td>${residualHtml}</td>
                         <td>${responsibleHtml}</td>
+                        ${handlingUnitCell}
+                        ${handlerCell}
                         ${adminCell}
                         ${coordinatorCell}
-                        ${fieldTeamCell}
                         ${legalCell}
                         ${benefitCell}
                     </tr>`;
@@ -845,9 +857,10 @@
                             <th>الإجراء التصحيحي</th>
                             <th>التقييم بعد الإجراءات</th>
                             <th>الجهة والشخص</th>
+                            <th>الإدارة المعالجة</th>
+                            <th>المعالج</th>
                             <th>الإدارة</th>
-                            <th>المسؤول</th>
-                            <th>الفريق التنفيذي</th>
+                            <th>المنسق</th>
                             <th style="min-width:110px;">المرجع القانوني</th>
                             <th style="min-width:100px;">الفائدة</th>
                         </tr>

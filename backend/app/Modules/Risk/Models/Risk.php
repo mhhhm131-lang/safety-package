@@ -27,13 +27,18 @@ class Risk extends Model
         'approved_by_id', 'approved_at', 'approval_notes', 'notes', 'legal_reference',
         'created_by_id', 'assigned_coordinator_id', 'assigned_field_team_id',
         'incident_count', 'last_incident_at',
+        // خطة المعالج — الخطوة ١ (٢٠٢٦-١٠-٠٨): الإدارة المعالجة باسمها، والمعالج تخصصاً أو شخصاً، ومن كتبه
+        'handling_unit_id', 'handling_unit_name', 'handler_specialty', 'handler_user_id', 'handler_set_by_id', 'handler_set_at',
     ];
 
     protected $casts = [
         'severity' => 'integer', 'likelihood' => 'integer', 'risk_score' => 'integer',
         'incident_count' => 'integer', 'last_incident_at' => 'datetime',
-        'target_closure_date' => 'date', 'approved_at' => 'datetime',
+        'target_closure_date' => 'date', 'approved_at' => 'datetime', 'handler_set_at' => 'datetime',
     ];
+
+    /** خطة المعالج: الحقول التي يكتبها مدير الإدارة المعالجة وحدها — لا غيرها */
+    public const HANDLER_FIELDS = ['handler_specialty', 'handler_user_id', 'handler_set_by_id', 'handler_set_at'];
 
     protected $attributes = [
         'risk_type' => 'active', 'severity' => 1, 'likelihood' => 1, 'risk_score' => 1,
@@ -106,6 +111,25 @@ class Risk extends Model
     public function organizationUnit(): BelongsTo { return $this->belongsTo(OrganizationUnit::class, 'organization_unit_id'); }
     public function place(): BelongsTo { return $this->belongsTo(Place::class); }
     public function placeUnit(): BelongsTo { return $this->belongsTo(\App\Modules\Governance\Models\PlaceUnit::class); } // ١٨-٣ (ج)
+    // خطة المعالج — الخطوة ١
+    public function handlingUnit(): BelongsTo { return $this->belongsTo(OrganizationUnit::class, 'handling_unit_id'); }
+    public function handlerUser(): BelongsTo { return $this->belongsTo(User::class, 'handler_user_id'); }
+    public function handlerSetBy(): BelongsTo { return $this->belongsTo(User::class, 'handler_set_by_id'); }
+
+    /** الإدارة المعالجة كما تُعرض: الاسم المحفوظ (يبقى ولو عُطّلت الوحدة) */
+    public function getHandlingUnitDisplayAttribute(): ?string
+    {
+        return $this->handling_unit_name ?: $this->handlingUnit?->name;
+    }
+
+    /** المعالج كما يُعرض: اسم الشخص، أو اسم التخصص، أو لا شيء */
+    public function getHandlerLabelAttribute(): ?string
+    {
+        if ($this->handler_user_id) return $this->handlerUser?->name;
+        if ($this->handler_specialty) return \App\Core\Permissions\PermissionRegistry::ROLES[$this->handler_specialty] ?? $this->handler_specialty;
+        return null;
+    }
+
     public function approvedBy(): BelongsTo { return $this->belongsTo(User::class, 'approved_by_id'); }
     public function createdBy(): BelongsTo { return $this->belongsTo(User::class, 'created_by_id'); }
     public function notes(): HasMany { return $this->hasMany(RiskNote::class); }

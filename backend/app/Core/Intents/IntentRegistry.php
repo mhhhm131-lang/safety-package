@@ -119,6 +119,9 @@ class IntentRegistry
         // ── المخاطر ── «السجل العام» قراءة (الكتاب)، و«أفعّل خطراً» فعل من الكتاب إلى الإدارة — سؤالان مختلفان وإن فتحا الصفحة نفسها (قرار ٦٧-٥)
         $add($can('risk.list'), 'book', 'السجل العام للمعهد', route('risk.reference.index'), 'bi-bookmark', $gRisks, false, 'كتاب أخطار المعهد كاملاً');
         $add($can('risk.activate'), 'activate', 'أفعّل خطراً لإدارتي', route('risk.reference.index'), 'bi-lightning-charge', $gRisks, false, 'من كتاب المعهد');
+        // خطة المعالج — الخطوة ١ (٢٠٢٦-١٠-٠٨): مدير الإدارة المعالجة يسمّي من يعالج كل خطر عُلّق على إدارته — من «إدارتي» على مثال «فنيّي»
+        $add($active && in_array($role, \App\Modules\Risk\Support\RiskApproval::UNIT_MANAGERS, true) && (bool) $profile?->organization_unit_id,
+            'handlers', 'معالجو أخطار إدارتي', route('risk.handlers.index'), 'bi-person-check', $gRisks, false, 'أسمّي من يعالج كل خطر علّقه مسؤول السلامة على إدارتي');
         $add($can('risk.list') && $noPlace, 'risks_log', 'مخاطر الإدارات والأماكن', route('risk.active.index'), 'bi-lightning-charge', $gRisks); // لمن له مكان: ملف المكان، البند ٤
         // ٢٦-١٣: بمكانه — الصفحة تعرض أخطار مكانه من كتاب المعهد، والكتاب كله بضغطة منها
         $add(true, 'hazards', 'أعرف أخطار مكاني', route('hazards.index', $myPlace ? ['place' => $myPlace->code] : []), 'bi-book', $gRisks);
