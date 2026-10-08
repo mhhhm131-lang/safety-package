@@ -54,7 +54,8 @@ class IncidentObserver
         if ($incident->incident_coordinator_id === null && $risk->assigned_coordinator_id) {
             $incident->incident_coordinator_id = $risk->assigned_coordinator_id;
         }
-        if ($incident->incident_field_team_id === null && $risk->assigned_field_team_id) {
+        // خطة المعالج — الخطوة ٣: متى كتب السجل العام إدارةً معالجة فالمعالج منه (IncidentService عبر HandlerResolver)، لا من نسخة الإدارة
+        if ($incident->incident_field_team_id === null && $risk->assigned_field_team_id && !\App\Modules\Incident\Services\HandlerResolver::governs($risk)) {
             $incident->incident_field_team_id = $risk->assigned_field_team_id;
         }
         $proactive = $risk->phases()->where('phase', RiskPhase::PHASE_PROACTIVE)->first();

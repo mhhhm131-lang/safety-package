@@ -38,10 +38,10 @@ class IncidentTasks implements TaskSource
         // ٢٦-١١ (قرار ٦٦): بطاقات المركز والمنسق واللجنة لا عنوان فيها — لا يميّزها في المكان الواحد إلا الرقم، فتُدمج (Batch)؛
         // البند داخل الدفعة برقمه ووحدته وعنوانه. بطاقات الفني والمبلّغ تبقى مفردة
         $item = $i->code.($i->placeUnit ? ' · '.$i->placeUnit->type_label.' '.$i->placeUnit->name : '').' — '.\Illuminate\Support\Str::limit((string) $i->title, 70);
-        $mk = fn (string $who, string $q, array $primary, ?array $secondary = null, ?string $batch = null) => new Task(
+        $mk = fn (string $who, string $q, array $primary, ?array $secondary = null, ?string $batch = null, ?string $itemText = null) => new Task(
             key: "incident:{$i->id}:{$who}", module: 'بلاغات الشاغلين', question: $q, primary: $primary, secondary: $secondary,
             dueAt: $i->deadline_at, isOverdue: $i->isOverdue(), place: $place, detailsUrl: $show, createdAt: $i->created_at,
-            batch: $batch, item: $batch ? $item : null);
+            batch: $batch, item: $batch ? ($itemText ?? $item) : null);
 
         // الفني المعيَّن: فتح = استلام (١١-١ ب)؛ ثم «عولج» بصورة
         if ($i->incident_field_team_id === $user->id) {
@@ -63,7 +63,11 @@ class IncidentTasks implements TaskSource
         }
         // المركز
         if ($isCenter) {
-            if (in_array($i->status, ['new', 'received'], true)) return $mk('center', 'بلاغ '.$i->code.$where.': لا فني للمكان — أحله', ['label' => 'أحله', 'url' => $show], null, 'incident.refer');
+            // الخطوة ٣: البطاقة تقول العلّة إن عُرفت («هذا الخطر بلا إدارة معالجة في السجل العام»)، وإلا كما كانت؛ وداخل الدفعة يقولها بندها
+            if (in_array($i->status, ['new', 'received'], true)) {
+                return $mk('center', 'بلاغ '.$i->code.$where.': '.($i->center_reason ?: 'لا فني للمكان').' — أحله', ['label' => 'أحله', 'url' => $show], null, 'incident.refer',
+                    $i->center_reason ? $item.' — '.$i->center_reason : null);
+            }
             if ($i->status === 'referred') return $mk('center', 'بلاغ '.$i->code.$where.': عند المنسق بلا فني — حوّله', ['label' => 'حوّله', 'url' => $show], null, 'incident.forward');
             if ($i->status === 'resolved') {
                 // قواعد الإغلاق القائمة (IncidentClosureService::close): مبلّغ بحساب ← موافقته أولاً؛ وإلا ← تحقق شخص غير المنفّذ

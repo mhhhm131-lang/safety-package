@@ -61,7 +61,7 @@ class Incident extends Model
         'actor_id', 'reporter_name', 'reporter_phone',
         'assigned_to_id', 'assigned_by_id', 'assigned_at', 'received_by_id', 'received_at', 'referred_at', 'ref_received_at',
         'forwarded_at', 'field_received_at', 'field_opened_at', 'in_progress_at', 'resolved_at', 'escalated_at', 'closed_at',
-        'executor_id', 'risk_reference_id', 'risk_id', 'incident_coordinator_id', 'incident_field_team_id',
+        'executor_id', 'risk_reference_id', 'risk_id', 'incident_coordinator_id', 'incident_field_team_id', 'center_reason',
         'corrective_action', 'preventive_action', 'resolution_summary', 'escalation_reason', 'escalation_level',
         'coord_verified_at', 'coord_verified_by_id', 'pending_closure', 'reporter_approved_closure',
         'closure_requested_at', 'handled_at', 'secret_key', 'secret_tracking_code',
