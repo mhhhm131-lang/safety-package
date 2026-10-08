@@ -1,7 +1,12 @@
 @extends('layouts.app')
 @section('title', 'الأماكن')
 @section('content')
-<h1 class="h4 mb-1">الأماكن (٨+١) في كل مبنى</h1>
+<div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+  <h1 class="h4 m-0">الأماكن (٨+١) في كل مبنى</h1>
+  {{-- بكلمته «أين؟»: زر ظاهر لإضافة مبنى لفرع --}}
+  <a class="btn btn-sm btn-g ms-auto" href="{{ route('emergency.buildings.create') }}"><i class="bi bi-plus-lg"></i> إضافة مبنى لفرع</a>
+  <a class="btn btn-sm btn-o" href="{{ route('emergency.buildings.index') }}"><i class="bi bi-buildings"></i> قائمة المباني</a>
+</div>
 <div class="small text-muted mb-3">الأصناف التسعة ثابتة بالمرجعية SOURCE.md؛ الاسم فقط يُعدَّل. لكل مكان خطتا صنفه ونموذجه وملفه. الصنف الذي لا يوجد في مبنى يُعطَّل ولا يُحذف؛ وأماكن الملز ثابتة. أماكن مبنى جديد تُنشأ من <a href="{{ route('emergency.buildings.index') }}">شاشة المباني</a> بضغطة.</div>
 @foreach($groups as $buildingId => $places)
 @php($b = $places->first()->building)

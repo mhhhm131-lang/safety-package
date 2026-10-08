@@ -9,6 +9,9 @@
   <span class="ms-auto d-flex gap-1">
     <a class="btn btn-sm btn-{{ $building->isInEmergency() ? 'danger' : 'warning' }}" href="{{ route('emergency.buildings.control', $building) }}"><i class="bi bi-joystick"></i> لوحة التحكم</a>
     @if($canManage)<a class="btn btn-sm btn-outline-primary" href="{{ route('emergency.buildings.edit', $building) }}"><i class="bi bi-pencil"></i> تعديل</a>@endif
+    {{-- بكلمته «أين؟» (٢٠٢٦-١٠-٠٨): من صفحة المبنى باب إلى قائمة المباني وإضافة مبنى لفرع --}}
+    <a class="btn btn-sm btn-outline-secondary" href="{{ route('emergency.buildings.index') }}"><i class="bi bi-buildings"></i> المباني</a>
+    @if($canManage)<a class="btn btn-sm btn-g" href="{{ route('emergency.buildings.create') }}"><i class="bi bi-plus-lg"></i> إضافة مبنى</a>@endif
     <a class="btn btn-sm btn-outline-secondary" href="{{ route('emergency.dashboard') }}">مركز السلامة وإدارة الطوارئ</a>
   </span>
 </div>
