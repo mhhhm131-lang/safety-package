@@ -160,7 +160,7 @@ def add(page, cat, sub, title):
     page.fill('input[name=title]', title)
     page.select_option('#sevSelect', '2'); page.select_option('#likSelect', '3')
     # القائمتان تُحمَّلان بعد الاختيار، وخانة «جاري التحميل...» بلا قيمة فارغة: الحفظ قبل اكتمالها يُرفض (مسجَّل في المؤجلات) — ننتظرها كما ينتظر الإنسان
-    page.wait_for_function("() => !['subCatSelect','riskTypeSelect'].some(id => document.getElementById(id).innerHTML.includes('جاري'))")
+    page.wait_for_function("() => !document.getElementById('subCatSelect').innerHTML.includes('جاري')")  # «نوع الخطر» حُذفت من النموذج (٢٠٢٦-١٠-٠٨)
     with page.expect_navigation(wait_until='domcontentloaded') as nav:
         page.locator('form[action$="/app/risk/reference/create"] button[type=submit]').click()
     bad = page.locator('.alert-danger')

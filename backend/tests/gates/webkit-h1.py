@@ -142,7 +142,8 @@ try:
         sp.select_option('#sevSelect', '3'); sp.select_option('#likSelect', '2')
         sp.select_option('#handlingUnit', str(fac))
         sp.screenshot(path=os.path.join(SHOT, 'h1-1-salama-form.png'), full_page=True)
-        sp.wait_for_function("() => !['subCatSelect','riskTypeSelect'].some(id => document.getElementById(id).innerHTML.includes('جاري'))")
+        log('نموذج الإضافة بلا خانة «نوع الخطر»', f'عددها={sp.locator("#riskTypeSelect").count()}', sp.locator('#riskTypeSelect').count() == 0)
+        sp.wait_for_function("() => !document.getElementById('subCatSelect').innerHTML.includes('جاري')")
         with sp.expect_navigation(wait_until='domcontentloaded') as nav:
             sp.locator('form[action$="/app/risk/reference/create"] button[type=submit]').click()
         rid = db(f'{MINE}->value("id")')
@@ -198,8 +199,9 @@ try:
         sp.goto(BASE + f'/app/risk/reference/{rid}/edit', wait_until='networkidle')
         log('نموذج التعديل: الإدارة المعالجة مختارة، والمعالج معروضاً قراءةً', '', sp.locator('#handlingUnit').input_value() == str(fac) and 'فني الكهرباء G-H1' in sp.locator('body').inner_text())
         log('نموذج التعديل: نص الكتاب «من يطبّق الضوابط» موضعه باقٍ بلا خانات', f'خانات={sp.locator("[name*=responsible_]").count()}', sp.locator('[name*=responsible_]').count() == 0)
+        log('نموذج التعديل بلا خانة «نوع الخطر»، والفرعية محمّلة ومختارة', sp.locator('#subCatSelect').input_value(), sp.locator('#riskTypeSelect').count() == 0 and sp.locator('#subCatSelect').input_value() == str(sub))
         sp.select_option('#handlingUnit', str(sec))
-        sp.wait_for_function("() => !['subCatSelect','riskTypeSelect'].some(id => document.getElementById(id).innerHTML.includes('جاري'))")
+        sp.wait_for_function("() => !document.getElementById('subCatSelect').innerHTML.includes('جاري')")
         with sp.expect_navigation(wait_until='domcontentloaded'):
             sp.locator(f'form[action$="/reference/{rid}/edit"] button[type=submit]').click()
         row = hrow(rid)

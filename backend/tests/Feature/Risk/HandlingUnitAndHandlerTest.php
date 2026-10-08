@@ -114,6 +114,12 @@ class HandlingUnitAndHandlerTest extends TestCase
         $create = (string) $this->actingAs($this->salama)->get(route('risk.reference.create'))->assertOk()->getContent();
         $this->assertStringContainsString('name="handling_unit_id"', $create);
         $this->assertStringNotContainsString('responsible_org_unit_id', $create);
+        // بكلمته (٢٠٢٦-١٠-٠٨): خانة «نوع الخطر (المستوى الثالث)» خرجت من النموذجين — فئة ← فرعية ← خطر
+        foreach ([$create, $html] as $form) {
+            $this->assertStringNotContainsString('name="risk_type_category_id"', $form);
+            $this->assertStringNotContainsString('riskTypeSelect', $form);
+            $this->assertStringContainsString('id="subCatSelect"', $form);
+        }
     }
 
     /** الأعمدة في شاشة العام: الإدارة المعالجة والمعالج والمنسق — ولا «الفريق التنفيذي» */

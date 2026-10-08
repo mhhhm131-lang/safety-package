@@ -52,7 +52,7 @@
                     <div class="col-md-4">
                         <label class="form-label" style="color:var(--text-main);">الفئة الفرعية</label>
                         <div class="input-group">
-                            <select name="sub_category_id" id="subCatSelect" class="form-select" onchange="loadRiskTypes(this.value)">
+                            <select name="sub_category_id" id="subCatSelect" class="form-select">
                                 <option value="">اختر الفئة أولاً...</option>
                             </select>
                             <button type="button" class="btn btn-outline-secondary" title="إضافة فئة فرعية جديدة" data-bs-toggle="modal" data-bs-target="#modalAddSubCat">
@@ -60,18 +60,7 @@
                             </button>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label" style="color:var(--text-main);">نوع الخطر <small class="text-muted">(المستوى الثالث)</small></label>
-                        <div class="input-group">
-                            <select name="risk_type_category_id" id="riskTypeSelect" class="form-select">
-                                <option value="">اختر الفئة الفرعية أولاً...</option>
-                            </select>
-                            <button type="button" class="btn btn-outline-secondary" title="إضافة نوع جديد" data-bs-toggle="modal" data-bs-target="#modalAddCause">
-                                <i class="bi bi-plus"></i>
-                            </button>
-                        </div>
-                        <small style="color:var(--text-muted);">يُستخدم اسماً للخطر إن تُرك «اسم الخطر» فارغاً</small>
-                    </div>
+                    {{-- خانة «نوع الخطر (المستوى الثالث)» حُذفت بكلمته (٢٠٢٦-١٠-٠٨): طبقة من OHSMS لا يستعملها كتاب المعهد — فئة ← فرعية ← خطر --}}
                 </div>
             </div>
         </div>
@@ -89,7 +78,7 @@
                         <input type="text" name="title" class="form-control" maxlength="300"
                                placeholder="مثال: تراكم أول أكسيد الكربون من عوادم المركبات في مواقف القبو"
                                value="{{ old('title', '') }}">
-                        <small style="color:var(--text-muted);">إن تُرك فارغاً يُؤخذ من نوع الخطر (المستوى الثالث)</small>
+                        <small style="color:var(--text-muted);">إن تُرك فارغاً يُؤخذ من الفئة الفرعية</small>
                     </div>
                     <div class="col-md-8">
                         <label class="form-label" style="color:var(--text-main);">الوصف</label>
@@ -351,7 +340,6 @@ function updateScore() {
 
 function loadSubCats(catId, selSubId = null) {
     const sub = document.getElementById('subCatSelect');
-    document.getElementById('riskTypeSelect').innerHTML = '<option value="">اختر الفئة الفرعية أولاً...</option>';
     if (!catId) { sub.innerHTML = '<option value="">اختر الفئة أولاً...</option>'; return; }
     sub.innerHTML = '<option>جاري التحميل...</option>';
     fetch('/app/risk/ajax/subcategories?category_id=' + catId)
@@ -364,30 +352,8 @@ function loadSubCats(catId, selSubId = null) {
                 if (selSubId && String(s.id) === String(selSubId)) o.selected = true;
                 sub.appendChild(o);
             });
-            if (selSubId) loadRiskTypes(selSubId);
         }).catch(() => sub.innerHTML = '<option value="">غير متاح</option>');
 }
-
-function loadRiskTypes(subCatId, selTypeId = null) {
-    const sel = document.getElementById('riskTypeSelect');
-    if (!subCatId) { sel.innerHTML = '<option value="">اختر الفئة الفرعية أولاً...</option>'; return; }
-    sel.innerHTML = '<option>جاري التحميل...</option>';
-    fetch('/app/risk/ajax/causes?sub_category_id=' + subCatId)
-        .then(r => r.json())
-        .then(data => {
-            sel.innerHTML = '<option value="">— اختر نوع الخطر —</option>';
-            data.forEach(t => {
-                const o = document.createElement('option');
-                o.value = t.id; o.textContent = t.name;
-                if (selTypeId && String(t.id) === String(selTypeId)) o.selected = true;
-                sel.appendChild(o);
-            });
-        }).catch(() => sel.innerHTML = '<option value="">غير متاح</option>');
-}
-
-document.getElementById('subCatSelect').addEventListener('change', function() {
-    loadRiskTypes(this.value);
-});
 
 function addCauseRow(phaseKey) {
     document.getElementById('causes-' + phaseKey).insertAdjacentHTML('beforeend', `
@@ -400,9 +366,7 @@ function addCauseRow(phaseKey) {
 // Restore selections after validation error
 const oldCatId = @json(old('category_id'));
 const oldSubId  = @json(old('sub_category_id'));
-const oldTypeId = @json(old('risk_type_category_id'));
 if (oldCatId) loadSubCats(oldCatId, oldSubId);
-if (oldSubId && oldTypeId) setTimeout(() => loadRiskTypes(oldSubId, oldTypeId), 600);
 
 updateScore();
 </script>
