@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use App\Modules\Governance\Models\Place;
 use Illuminate\Database\Seeder;
 
-/** الأماكن التسعة (٨+١) بأسمائها المعتمدة — SOURCE.md §٢. */
+/** أماكن الملز التسعة (٨+١) بأسمائها المعتمدة — SOURCE.md §٢. ٢٨-١: صنف كل مكان رمزه؛ أماكن الفروع تُنشأ من شاشة المباني (٢٨-٢). */
 class PlacesSeeder extends Seeder
 {
     public const PLACES = [
@@ -23,7 +23,7 @@ class PlacesSeeder extends Seeder
     public function run(): void
     {
         foreach (self::PLACES as $i => [$code, $name]) {
-            Place::updateOrCreate(['code' => $code], ['name' => $name, 'sort' => $i]);
+            Place::updateOrCreate(['code' => $code], ['name' => $name, 'sort' => $i, 'category' => $code]);
         }
     }
 }

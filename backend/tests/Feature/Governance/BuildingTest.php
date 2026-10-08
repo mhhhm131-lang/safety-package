@@ -10,12 +10,12 @@ use App\Modules\Governance\Models\UserProfile;
 use Database\Seeders\OrganizationUnitsSeeder;
 use Database\Seeders\PlacesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
  * المرحلة ٢٠-١ (قرار ٥١): المبنى في البيانات — الملز المبنى الرئيسي وله فرع، وكل مكان وكل حساب يتبع مبناه.
  * لا شاشة جديدة؛ التوسع لاحقاً إضافة سطر لا إعادة بناء.
+ * ٢٨-١ (قرار ٧٨): اختبار الترحيل انتقل إلى BuildingMigrateTest (بلا معاملة) لأن ترحيل الفروع يقف على `building_id`.
  */
 class BuildingTest extends TestCase
 {
@@ -41,23 +41,5 @@ class BuildingTest extends TestCase
         // مكان يُنشأ بعد ذلك يتبع الرئيسي أيضاً
         $x = Place::create(['code' => 'HZ-09', 'name' => 'تجربة', 'sort' => 99]);
         $this->assertSame($main->id, $x->fresh()->building_id);
-    }
-
-    public function test_existing_rows_without_a_building_are_attached_to_the_main_building_on_migrate(): void
-    {
-        // بيانات قديمة (قبل ٢٠-١): مكان وحساب بلا مبنى — الترحيل يُلحقهما بالملز
-        $this->seed(PlacesSeeder::class);
-        DB::table('places')->update(['building_id' => null]);
-        $u = User::create(['username' => 'old', 'name' => 'قديم', 'password' => '1234']);
-        DB::table('user_profiles')->insert(['user_id' => $u->id, 'role' => 'employee', 'is_active' => true, 'building_id' => null, 'created_at' => now(), 'updated_at' => now()]);
-        DB::table('emergency_buildings')->update(['branch' => null]);
-
-        $this->artisan('migrate:refresh', ['--path' => 'database/migrations/2026_09_20_100001_add_building_to_places_and_profiles.php'])->assertSuccessful();
-
-        $main = EmergencyBuilding::main();
-        $this->assertSame(0, Place::whereNull('building_id')->count());
-        $this->assertSame($main->id, (int) DB::table('user_profiles')->where('user_id', $u->id)->value('building_id'));
-        $this->assertSame('الرياض', $main->fresh()->branch);
-        $this->assertSame(1, EmergencyBuilding::count(), 'الترحيل أنشأ مبنى ثانياً');
     }
 }

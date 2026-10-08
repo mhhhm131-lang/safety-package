@@ -18,7 +18,7 @@ class EmergencyBuilding extends Model
     protected $fillable = [
         'code', 'name', 'name_en', 'address', 'building_type', 'floors_count', 'basement_floors', 'total_capacity',
         'current_occupants', 'latitude', 'longitude', 'floor_plan_file', 'status', 'risk_level', 'last_audit_date',
-        'next_audit_date', 'emergency_status', 'created_by_id', 'fire_zones', 'branch',
+        'next_audit_date', 'emergency_status', 'created_by_id', 'fire_zones', 'branch', 'branch_unit_id',
     ];
 
     protected $casts = [
@@ -62,6 +62,9 @@ class EmergencyBuilding extends Model
             'building_type' => 'government', 'floors_count' => 1, 'basement_floors' => 0, 'status' => 'active', 'risk_level' => 'medium', 'emergency_status' => 'normal', 'address' => 'الرياض — الملز',
         ]);
     }
+
+    /** ٢٨-١ (قرار ٧٨): الفرع وحدة في الهيكل يشير إليها المبنى — النص `branch` يبقى للعرض */
+    public function branchUnit(): BelongsTo { return $this->belongsTo(\App\Modules\Governance\Models\OrganizationUnit::class, 'branch_unit_id'); }
 
     /** ٢٠-١: أماكن المبنى (الأصناف الثمانية + مركز) وحسابات من مبناهم هذا */
     public function places(): HasMany { return $this->hasMany(\App\Modules\Governance\Models\Place::class, 'building_id')->orderBy('sort'); }
