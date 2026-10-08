@@ -34,6 +34,8 @@
                         <thead>
                             <tr>
                                 <th>المبنى</th>
+                                <th>الفرع</th>
+                                <th>الأماكن</th>
                                 <th>النوع</th>
                                 <th>الأدوار</th>
                                 <th>نقاط التجمع</th>
@@ -54,6 +56,8 @@
                                         <br><small class="text-muted">{{ $building->code }}</small>
                                     @endif
                                 </td>
+                                <td>{{ $building->branchUnit?->name ?? $building->branch ?? '—' }}</td>
+                                <td><span class="badge bg-secondary">{{ $building->places_count }}</span></td>
                                 <td>{{ $building->getTypeLabel() }}</td>
                                 <td>
                                     <span class="badge bg-secondary">{{ $building->floors_count }}</span>

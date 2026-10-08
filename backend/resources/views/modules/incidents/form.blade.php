@@ -48,8 +48,13 @@
         <label class="form-label fw-bold">المكان <span class="text-danger">*</span></label>
         <select name="place_id" class="form-select" required>
           <option value="">— اختر المكان —</option>
-          @foreach($places as $p)
-            <option value="{{ $p->id }}" @selected(old('place_id', $preset && $p->code === $preset ? $p->id : null) == $p->id)>{{ $p->code }} — {{ $p->name }}</option>
+          {{-- ٢٨-٢ (قرار ٧٨): أكثر من مبنى ← الأماكن مجمَّعة بالمبنى --}}
+          @foreach($places->groupBy('building_id') as $list)
+            @if($places->pluck('building_id')->unique()->count() > 1)<optgroup label="{{ $list->first()->building?->name ?? 'بلا مبنى' }}">@endif
+            @foreach($list as $p)
+              <option value="{{ $p->id }}" @selected(old('place_id', $preset && $p->code === $preset ? $p->id : null) == $p->id)>{{ $p->code }} — {{ $p->name }}</option>
+            @endforeach
+            @if($places->pluck('building_id')->unique()->count() > 1)</optgroup>@endif
           @endforeach
         </select>
       </div>

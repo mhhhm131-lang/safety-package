@@ -107,13 +107,28 @@ class EmergencyController extends Controller
 
     public function buildingsIndex()
     {
-        $buildings = EmergencyBuilding::withCount(['floors', 'assemblyPoints', 'teams', 'equipment'])->orderBy('name')->paginate(20);
+        $buildings = EmergencyBuilding::with('branchUnit')->withCount(['floors', 'assemblyPoints', 'teams', 'equipment', 'places'])->orderBy('name')->paginate(20);
         return view('modules.emergency.buildings.index', compact('buildings'));
+    }
+
+    /** ٢٨-٢ (قرار ٧٨): «الفرع» يُختار من رؤوس الهيكل (المركز الرئيسي والفروع) */
+    private function branchUnits()
+    {
+        return \App\Modules\Governance\Models\OrganizationUnit::whereNull('parent_id')->where('is_active', true)->orderBy('order')->orderBy('id')->get(['id', 'name', 'unit_type']);
+    }
+
+    /** ٢٨-٢: المبنى يشير إلى وحدة الفرع، والنص `branch` يبقى اسمها للعرض وللنطاق حتى ٢٨-٥ */
+    private function withBranch(array $validated): array
+    {
+        if (!empty($validated['branch_unit_id'])) {
+            $validated['branch'] = \App\Modules\Governance\Models\OrganizationUnit::find($validated['branch_unit_id'])?->name;
+        }
+        return $validated;
     }
 
     public function buildingsCreate()
     {
-        return view('modules.emergency.buildings.create');
+        return view('modules.emergency.buildings.create', ['branchUnits' => $this->branchUnits()]);
     }
 
     public function buildingsStore(Request $request)
@@ -122,6 +137,7 @@ class EmergencyController extends Controller
             'name' => 'required|string|max:200',
             'name_en' => 'nullable|string|max:200',
             'code' => 'nullable|string|max:20|unique:emergency_buildings,code',
+            'branch_unit_id' => 'nullable|integer|exists:organization_units,id',
             'address' => 'nullable|string',
             'building_type' => 'required|in:'.implode(',', array_keys(EmergencyBuilding::TYPES)),
             'floors_count' => 'required|integer|min:1|max:200',
@@ -132,7 +148,7 @@ class EmergencyController extends Controller
             'risk_level' => 'required|in:low,medium,high,critical',
         ]);
         $validated['created_by_id'] = auth()->id();
-        $building = EmergencyBuilding::create($validated);
+        $building = EmergencyBuilding::create($this->withBranch($validated));
 
         for ($i = -($validated['basement_floors'] ?? 0); $i <= $validated['floors_count']; $i++) {
             if ($i === 0 && ($validated['basement_floors'] ?? 0) > 0) continue;
@@ -143,16 +159,17 @@ class EmergencyController extends Controller
 
     public function buildingsShow(EmergencyBuilding $building)
     {
-        $building->load(['floors.responsible', 'floors.exits', 'assemblyPoints.place', 'exits.floor', 'exits.assemblyPoint', 'teams.members', 'teams.place', 'contacts']);
+        $building->load(['floors.responsible', 'floors.exits', 'assemblyPoints.place', 'exits.floor', 'exits.assemblyPoint', 'teams.members', 'teams.place', 'contacts', 'branchUnit', 'places']);
         $status = $this->service->getBuildingStatus($building);
-        $places = Place::orderBy('sort')->get();
+        $places = $building->places; // ٢٨-٢: نقاط التجمع تخدم أماكن هذا المبنى
         $users = User::whereHas('profile', fn ($q) => $q->where('is_active', true))->orderBy('name')->get(['id', 'name']);
-        return view('modules.emergency.buildings.show', compact('building', 'status', 'places', 'users'));
+        $byCategory = $building->places->keyBy('category');
+        return view('modules.emergency.buildings.show', compact('building', 'status', 'places', 'users', 'byCategory'));
     }
 
     public function buildingsEdit(EmergencyBuilding $building)
     {
-        return view('modules.emergency.buildings.edit', compact('building'));
+        return view('modules.emergency.buildings.edit', ['building' => $building, 'branchUnits' => $this->branchUnits()]);
     }
 
     public function buildingsUpdate(Request $request, EmergencyBuilding $building)
@@ -161,6 +178,7 @@ class EmergencyController extends Controller
             'name' => 'required|string|max:200',
             'name_en' => 'nullable|string|max:200',
             'code' => 'nullable|string|max:20|unique:emergency_buildings,code,'.$building->id,
+            'branch_unit_id' => 'nullable|integer|exists:organization_units,id',
             'address' => 'nullable|string',
             'building_type' => 'required|in:'.implode(',', array_keys(EmergencyBuilding::TYPES)),
             'total_capacity' => 'nullable|integer|min:1',
@@ -169,8 +187,20 @@ class EmergencyController extends Controller
             'risk_level' => 'required|in:low,medium,high,critical',
             'status' => 'required|in:active,inactive,under_maintenance',
         ]);
-        $building->update($validated);
+        $validated['branch_unit_id'] = $validated['branch_unit_id'] ?? null;
+        $building->update($this->withBranch($validated));
         return redirect()->route('emergency.buildings.show', $building)->with('success', 'تم تحديث المبنى');
+    }
+
+    /** ٢٨-٢ (قرار ٧٨): «أماكن المبنى» بضغطة — الأصناف التسعة (٨+١) الناقصة تُنشأ؛ الموجود لا يُمس؛ الغائب يُعطَّل من شاشة الأماكن */
+    public function buildingPlacesStore(EmergencyBuilding $building)
+    {
+        try {
+            $created = Place::createCategoriesFor($building);
+        } catch (\InvalidArgumentException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+        return back()->with('success', $created ? 'أُنشئت أماكن المبنى: '.implode('، ', $created) : 'أماكن المبنى التسعة موجودة من قبل');
     }
 
     /** الطوابق والمخارج ونقاط التجمع تُملأ بالواقع من شاشة المبنى (الفجوتان ٣ و٦). */

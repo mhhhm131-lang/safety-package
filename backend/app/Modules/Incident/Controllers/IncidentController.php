@@ -39,7 +39,7 @@ class IncidentController extends Controller
     public function landing(Request $request)
     {
         // المرحلة ١٢ (قرار ٣٥) ثم ٢٦-٤ (قرار ٦٦): كتلة «أريد أن…» خرجت من صفحة البلاغ — غرضها البلاغ وحده
-        return view('modules.incidents.landing', ['places' => Place::orderBy('sort')->get(), 'place' => $request->query('place')]);
+        return view('modules.incidents.landing', ['places' => Place::active()->orderBy('sort')->get(), 'place' => $request->query('place')]);
     }
 
     public function form(Request $request, string $type)
@@ -54,7 +54,8 @@ class IncidentController extends Controller
         $presetRisk = $rid ? Risk::where('id', $rid)->where('risk_type', 'reference')->first() : null;
         return view('modules.incidents.form', [
             'type' => $type,
-            'places' => Place::orderBy('sort')->get(),
+            // ٢٨-٢: الأماكن الفعّالة بمبانيها (الملز أولاً)
+            'places' => Place::active()->with('building')->orderBy('building_id')->orderBy('sort')->get(),
             'units' => \App\Modules\Governance\Models\PlaceUnit::where('is_active', true)->orderBy('type')->orderBy('sort')->orderBy('name')->get(), // ١٨-٣ (ج)
             // ٢١-٧: المكان من الرمز (QR) ثم من حساب المبلّغ؛ وآخر مكان على الجهاز تملؤه الصفحة إن بقي فارغاً
             'preset' => $request->query('place') ?: Auth::user()?->profile?->myPlace()?->code,

@@ -25,9 +25,35 @@
         <dt class="col-5">الطوابق</dt><dd class="col-7">{{ $building->floors->count() }}</dd>
         <dt class="col-5">السعة</dt><dd class="col-7">{{ $building->total_capacity ?? '—' }}</dd>
         @if($building->address)<dt class="col-5">العنوان</dt><dd class="col-7">{{ $building->address }}</dd>@endif
+        <dt class="col-5">الفرع</dt><dd class="col-7">{{ $building->branchUnit?->name ?? $building->branch ?? '—' }}</dd>
         <dt class="col-5">الحالة</dt><dd class="col-7">{{ ['active' => 'نشط', 'inactive' => 'غير نشط', 'under_maintenance' => 'تحت الصيانة'][$building->status] ?? $building->status }}</dd>
       </dl>
     </div></div>
+
+    {{-- ٢٨-٢ (قرار ٧٨): أماكن المبنى — الأصناف التسعة (٨+١) بضغطة؛ الغائب يُعطَّل من شاشة الأماكن --}}
+    <div class="card mb-3">
+      <div class="card-header d-flex align-items-center"><strong>أماكن المبنى (٨+١)</strong>
+        @if($canManage && $byCategory->count() < count(\App\Modules\Governance\Models\Place::CATEGORIES))
+          <form method="post" action="{{ route('emergency.buildings.places.store', $building) }}" class="ms-auto">@csrf<button class="btn btn-sm btn-g"><i class="bi bi-plus"></i> أماكن المبنى</button></form>
+        @endif
+      </div>
+      <ul class="list-group list-group-flush small">
+        @foreach(\App\Modules\Governance\Models\Place::CATEGORIES as [$cat, $catName])
+          @php($p = $byCategory->get($cat))
+          <li class="list-group-item d-flex align-items-center gap-2 {{ $p && !$p->is_active ? 'text-muted' : '' }}">
+            <span dir="ltr" class="text-muted" style="min-width:4.5em">{{ $cat }}</span>
+            @if($p)
+              <a href="{{ route('app.places.units.file', $p) }}" class="text-decoration-none">{{ $p->name }}</a>
+              <span dir="ltr" class="badge text-bg-light border">{{ $p->code }}</span>
+              @if(!$p->is_active)<span class="badge text-bg-secondary">معطَّل</span>@endif
+            @else
+              <span>{{ $catName }}</span><span class="badge text-bg-warning text-dark ms-auto">غير منشأ</span>
+            @endif
+          </li>
+        @endforeach
+      </ul>
+      <div class="card-footer small text-muted">التعطيل والإعادة من <a href="{{ route('app.places.index') }}">شاشة الأماكن</a>.</div>
+    </div>
 
     <div class="card mb-3">
       <div class="card-header d-flex align-items-center"><strong>نقاط التجمع</strong>@if($canManage)<button class="btn btn-sm btn-outline-primary ms-auto" data-bs-toggle="modal" data-bs-target="#addPointModal"><i class="bi bi-plus"></i></button>@endif</div>

@@ -41,8 +41,20 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">رمز المبنى</label>
-                                <input type="text" name="code" class="form-control @error('code') is-invalid @enderror" value="{{ old('code', $building->code) }}">
+                                <input type="text" name="code" class="form-control @error('code') is-invalid @enderror" value="{{ old('code', $building->code) }}" dir="ltr">
+                                <small class="text-muted">يدخل في رموز أماكن المبنى: HZ-06/{{ $building->code ?: 'DMM' }}</small>
                                 @error('code')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">الفرع</label>
+                                <select name="branch_unit_id" class="form-select @error('branch_unit_id') is-invalid @enderror">
+                                    <option value="">— من رؤوس الهيكل —</option>
+                                    @foreach($branchUnits as $u)<option value="{{ $u->id }}" @selected((int) old('branch_unit_id', $building->branch_unit_id) === $u->id)>{{ $u->name }}</option>@endforeach
+                                </select>
+                                <small class="text-muted">{{ $building->branch ? 'اليوم: '.$building->branch : 'المركز الرئيسي أو أحد الفروع كما في الهيكل' }}</small>
+                                @error('branch_unit_id')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>

@@ -115,6 +115,8 @@ Route::middleware(['web', 'auth'])->prefix('app/emergency')->name('emergency.')-
     Route::middleware('permission:emergency.manage')->group(function () {
         Route::get('/buildings/create', [EmergencyController::class, 'buildingsCreate'])->name('buildings.create');
         Route::post('/buildings', [EmergencyController::class, 'buildingsStore'])->name('buildings.store');
+        // ٢٨-٢ (قرار ٧٨): أماكن المبنى (الأصناف التسعة) بضغطة
+        Route::post('/buildings/{building}/places', [EmergencyController::class, 'buildingPlacesStore'])->name('buildings.places.store')->whereNumber('building');
         Route::get('/buildings/{building}/edit', [EmergencyController::class, 'buildingsEdit'])->name('buildings.edit');
         Route::put('/buildings/{building}', [EmergencyController::class, 'buildingsUpdate'])->name('buildings.update');
         Route::post('/buildings/{building}/floors', [EmergencyController::class, 'floorsStore'])->name('buildings.floors.store');

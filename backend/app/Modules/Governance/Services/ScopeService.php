@@ -32,20 +32,21 @@ final class ScopeService
         $p = $user->profile;
         $role = $user->role();
         if (!$p || !$p->is_active) return new self('self', collect());
-        if (in_array($role, self::ALL, true)) return new self('all', Place::orderBy('sort')->get());
+        // ٢٨-٢: المكان المعطَّل (صنف لا يوجد في مبناه) خارج كل نطاق
+        if (in_array($role, self::ALL, true)) return new self('all', Place::active()->orderBy('building_id')->orderBy('sort')->get());
         if ($role === 'branch_manager') {
             $branch = $p->myBuilding()?->branch;
             $ids = EmergencyBuilding::query()->when($branch !== null, fn ($q) => $q->where('branch', $branch), fn ($q) => $q->whereKey($p->myBuilding()?->id))->pluck('id');
-            return new self('branch', Place::whereIn('building_id', $ids)->orderBy('sort')->get());
+            return new self('branch', Place::active()->whereIn('building_id', $ids)->orderBy('building_id')->orderBy('sort')->get());
         }
         if (in_array($role, self::UNIT, true)) {
             $ids = $p->organization_unit_id ? OrganizationUnit::descendantIdsOf($p->organization_unit_id) : [];
             $placeIds = OrganizationUnit::whereIn('id', array_merge($ids, [$p->organization_unit_id]))->whereNotNull('place_id')->pluck('place_id');
             if ($p->place_id) $placeIds->push($p->place_id);
-            return new self('unit', Place::whereIn('id', $placeIds->unique())->orderBy('sort')->get());
+            return new self('unit', Place::active()->whereIn('id', $placeIds->unique())->orderBy('sort')->get());
         }
         if (PermissionRegistry::isTech($role) || in_array($role, self::COVERAGE, true)) {
-            $cov = $p->coverage()->get();
+            $cov = $p->coverage()->where('is_active', true)->get();
             if ($cov->isEmpty() && ($mp = $p->myPlace())) $cov = collect([$mp]);
             return new self('coverage', $cov->values());
         }
