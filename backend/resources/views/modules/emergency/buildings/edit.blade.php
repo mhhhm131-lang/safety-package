@@ -48,8 +48,8 @@
                                 @enderror
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label">الفرع</label>
-                                <select name="branch_unit_id" class="form-select @error('branch_unit_id') is-invalid @enderror">
+                                <label class="form-label">الفرع <span class="text-danger">*</span></label>
+                                <select name="branch_unit_id" class="form-select @error('branch_unit_id') is-invalid @enderror" required>
                                     <option value="">— من رؤوس الهيكل —</option>
                                     @foreach($branchUnits as $u)<option value="{{ $u->id }}" @selected((int) old('branch_unit_id', $building->branch_unit_id) === $u->id)>{{ $u->name }}</option>@endforeach
                                 </select>

@@ -15,6 +15,10 @@
     <a class="btn btn-sm btn-outline-secondary" href="{{ route('emergency.dashboard') }}">مركز السلامة وإدارة الطوارئ</a>
   </span>
 </div>
+@if(!$building->branch_unit_id)
+  {{-- بكلمته (٢٠٢٦-١٠-٠٨): مبانٍ حُفظت بلا فرع لأن الخانة كانت اختيارية — تنبيه حتى يُختار --}}
+  <div class="alert alert-danger py-2 small" data-no-branch>هذا المبنى <b>بلا فرع</b>. اختر فرعه من «تعديل» ← «الفرع»، وإلا لم يرتبط بهيكل فرعه ولم يعمل توجيه بلاغاته داخل الفرع.</div>
+@endif
 @if($building->floors->isEmpty() || $building->assemblyPoints->isEmpty())
   <div class="alert alert-warning py-2 small">الطوابق والمخارج ونقاط التجمع تُملأ بالواقع (الفجوتان ٣ و٦ في BACKEND.md) — لا أرقام مفترضة. أدخلها هنا أو عبر مدير المرافق.</div>
 @endif
