@@ -76,8 +76,10 @@ class PlaceProfile
     {
         $buildingId ??= BuildingContext::id();
         $ids = DeptSync::scopeIds($buildingId);
+        // رؤوس المباني (ما يشير إليه مبنى: المركز الرئيسي ورؤوس الفروع) والفروع بلا مبنى بعد ليست إدارات تشغل المكاتب ولا فريق لها — تُستبعد من قائمة وحدات المكان
+        $heads = \App\Modules\Emergency\Models\EmergencyBuilding::whereNotNull('branch_unit_id')->pluck('branch_unit_id')->map(fn ($i) => (int) $i)->all();
         return OrganizationUnit::with('place', 'manager')->where('is_active', true)->when($ids !== null, fn ($q) => $q->whereIn('id', $ids))->orderBy('order')->orderBy('id')->get()
-            ->filter(fn (OrganizationUnit $u) => ($u->place?->category ?? self::HUB) === $hz && ($u->place === null || $u->place->building_id === $buildingId))
+            ->filter(fn (OrganizationUnit $u) => $u->unit_type !== 'region' && !in_array((int) $u->id, $heads, true) && ($u->place?->category ?? self::HUB) === $hz && ($u->place === null || $u->place->building_id === $buildingId))
             ->map(fn (OrganizationUnit $u) => ['id' => (string) $u->code, 'name' => $u->name, 'mgr' => $u->manager?->name ?? ($u->manager_name ?? '')])->values()->all();
     }
 

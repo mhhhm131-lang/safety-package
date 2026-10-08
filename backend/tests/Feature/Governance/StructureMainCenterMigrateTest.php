@@ -21,6 +21,31 @@ class StructureMainCenterMigrateTest extends TestCase
 
     private const MIGRATION = 'database/migrations/2026_10_08_100007_structure_main_center_and_branches.php';
 
+    /** كُشف على المنشور: وحدة الفرع كانت على مكاتب الملز فظهرت مكاتب الملز لمنسق الفرع — مكانها مكاتب مبناها، وبلا مبنى فارغ */
+    public function test_branch_unit_place_is_its_building_offices_or_empty(): void
+    {
+        $this->seed([PlacesSeeder::class, OrganizationUnitsSeeder::class, EmergencySeeder::class]);
+        $this->artisan('migrate:refresh', ['--path' => 'database/migrations/2026_10_08_100007_structure_main_center_and_branches.php'])->assertSuccessful();
+        $dmm = OrganizationUnit::where('code', 'br-dmm')->firstOrFail();
+        $this->assertSame(\App\Modules\Governance\Models\Place::idByCode('HZ-06'), $dmm->place_id, 'الحالة قبل الإصلاح: مكاتب الملز');
+        $b = EmergencyBuilding::create(['code' => 'DMM', 'name' => 'فرع الدمام', 'branch' => 'فرع الشرقية', 'branch_unit_id' => $dmm->id]);
+        \App\Modules\Governance\Models\Place::createCategoriesFor($b);
+
+        $this->artisan('migrate:refresh', ['--path' => 'database/migrations/2026_10_08_100011_branch_units_place_is_their_building_offices.php'])->assertSuccessful();
+        $this->assertSame(\App\Modules\Governance\Models\Place::where('building_id', $b->id)->where('category', 'HZ-06')->value('id'), $dmm->fresh()->place_id, 'مكان الفرع ليس مكاتب مبناه');
+        $this->assertNull(OrganizationUnit::where('code', 'br-mka')->value('place_id'), 'فرع بلا مبنى بقي على مكاتب الملز');
+
+        // منسق الفرع: نطاقه مبناه، لا مكاتب الملز
+        $u = \App\Models\User::create(['username' => 'usf', 'name' => 'منسق', 'password' => '1234']);
+        \App\Modules\Governance\Models\UserProfile::create(['user_id' => $u->id, 'role' => 'safety_coordinator', 'is_active' => true, 'organization_unit_id' => $dmm->id, 'building_id' => $b->id, 'place_id' => \App\Modules\Governance\Models\Place::where('building_id', $b->id)->where('category', 'HZ-00')->value('id')]);
+        $codes = \App\Modules\Governance\Services\ScopeService::forUser($u)->codes();
+        $this->assertNotContains('HZ-06', $codes, 'منسق الفرع يرى مكاتب الملز');
+        $this->assertContains('HZ-06/DMM', $codes);
+        // ورأس الفرع ليس إدارة في قائمة وحدات مكاتب مبناه
+        $list = \App\Modules\Emergency\Services\PlaceProfile::unitList('HZ-06', [], $b->id);
+        $this->assertNotContains('br-dmm', array_column($list, 'dept'));
+    }
+
     public function test_main_center_becomes_the_single_root_with_the_four_branches_under_it(): void
     {
         $this->seed([PlacesSeeder::class, OrganizationUnitsSeeder::class, EmergencySeeder::class]);
