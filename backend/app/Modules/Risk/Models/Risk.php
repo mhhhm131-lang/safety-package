@@ -116,18 +116,42 @@ class Risk extends Model
     public function handlerUser(): BelongsTo { return $this->belongsTo(User::class, 'handler_user_id'); }
     public function handlerSetBy(): BelongsTo { return $this->belongsTo(User::class, 'handler_set_by_id'); }
 
-    /** الإدارة المعالجة كما تُعرض: الاسم المحفوظ (يبقى ولو عُطّلت الوحدة) */
-    public function getHandlingUnitDisplayAttribute(): ?string
+    /**
+     * خطة المعالج — الخطوة ٤ (٢٠٢٦-١٠-٠٨): الخاص يقرأ الإدارة المعالجة والمعالج من العام قراءةً (أصل النسخة)، لا ينسخهما.
+     * فتغيير مسؤول السلامة أو مدير الإدارة المعالجة في العام يظهر في كل نسخة فوراً.
+     */
+    public function generalSource(): ?self
     {
-        return $this->handling_unit_name ?: $this->handlingUnit?->name;
+        if ($this->risk_type !== 'active') return $this;
+        return $this->parent_reference_id ? $this->parentReference : null;
     }
 
-    /** المعالج كما يُعرض: اسم الشخص، أو اسم التخصص، أو لا شيء */
+    /** الإدارة المعالجة كما تُعرض: الاسم المحفوظ في العام (يبقى ولو عُطّلت الوحدة) */
+    public function getHandlingUnitDisplayAttribute(): ?string
+    {
+        $g = $this->generalSource();
+        return $g ? ($g->handling_unit_name ?: $g->handlingUnit?->name) : null;
+    }
+
+    /** المعالج كما يُعرض من العام: اسم الشخص، أو اسم التخصص، أو لا شيء */
     public function getHandlerLabelAttribute(): ?string
     {
-        if ($this->handler_user_id) return $this->handlerUser?->name;
-        if ($this->handler_specialty) return \App\Core\Permissions\PermissionRegistry::ROLES[$this->handler_specialty] ?? $this->handler_specialty;
+        $g = $this->generalSource();
+        if (!$g) return null;
+        if ($g->handler_user_id) return $g->handlerUser?->name;
+        if ($g->handler_specialty) return \App\Core\Permissions\PermissionRegistry::ROLES[$g->handler_specialty] ?? $g->handler_specialty;
         return null;
+    }
+
+    /** من كتب المعالج في العام، ومتى */
+    public function getHandlerSetByNameAttribute(): ?string
+    {
+        return $this->generalSource()?->handlerSetBy?->name;
+    }
+
+    public function getHandlerSetAtDateAttribute(): ?string
+    {
+        return $this->generalSource()?->handler_set_at?->format('Y-m-d');
     }
 
     public function approvedBy(): BelongsTo { return $this->belongsTo(User::class, 'approved_by_id'); }

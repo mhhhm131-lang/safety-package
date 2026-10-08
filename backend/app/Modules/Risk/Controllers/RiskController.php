@@ -53,6 +53,7 @@ class RiskController extends Controller
     {
         $query = Risk::where('risk_type', 'active')->with([
             'category', 'organizationUnit', 'place', 'createdBy', 'assignedCoordinator', 'assignedFieldTeam',
+            'parentReference.handlingUnit', 'parentReference.handlerUser', 'parentReference.handlerSetBy', // الخطوة ٤: النسخة تقرأ المعالج من أصلها
             'phases', 'phases.causes', 'phases.affectedGroups', 'phases.responsibleOrgUnit', 'phases.responsibleUser',
         ]);
         $this->scopeToUserOrgUnit($query);
@@ -356,7 +357,7 @@ class RiskController extends Controller
     }
 
     /**
-     * قرار ٧١: تفعيل المحدَّد من السجل العام دفعةً — وحدة واحدة ومعالج واحد، ومنسقها منسق سلامة الوحدة تلقائياً.
+     * قرار ٧١: تفعيل المحدَّد من السجل العام دفعةً — وحدة واحدة، ومنسقها منسق سلامة الوحدة تلقائياً (الخطوة ٤: المعالج من السجل العام لا من الدفعة).
      * النطاق والاعتماد كالتفعيل المفرد (قرار ٧٠). يعيد JSON لنافذة الشاشة (ترسل على دفعات)، أو يعود برسالة.
      */
     public function activateBulk(Request $request)
@@ -366,7 +367,7 @@ class RiskController extends Controller
             'risk_ids.*' => ['integer'],
             'scope_type' => ['required', 'string', 'in:general,org_unit'],
             'organization_unit_id' => ['nullable', 'required_if:scope_type,org_unit', 'integer', 'exists:organization_units,id'],
-            'assigned_field_team_id' => ['required', 'integer', 'exists:users,id'],
+            'assigned_field_team_id' => ['nullable', 'integer', 'exists:users,id'], // الخطوة ٤: لا معالج في الدفعة — من السجل العام
             'assigned_coordinator_id' => ['nullable', 'integer', 'exists:users,id'],
             // الشاشة ترسل الدفعة الكبيرة أجزاءً: التنبيه يُمسك حتى الجزء الأخير ويحمل المجموع
             'hold_notify' => ['nullable', 'boolean'],
@@ -384,10 +385,10 @@ class RiskController extends Controller
 
         $await = !RiskApproval::activatesDirectly(Auth::user(), $unitId);
         try {
-            $result = $this->riskService->activateManyFromReference($validated['risk_ids'], Auth::id(), [
+            $result = $this->riskService->activateManyFromReference($validated['risk_ids'], Auth::id(), array_filter([
                 'scope_type' => $validated['scope_type'], 'organization_unit_id' => $unitId,
-                'assigned_coordinator_id' => (int) $coordinator, 'assigned_field_team_id' => (int) $validated['assigned_field_team_id'],
-            ], $await);
+                'assigned_coordinator_id' => (int) $coordinator, 'assigned_field_team_id' => !empty($validated['assigned_field_team_id']) ? (int) $validated['assigned_field_team_id'] : null,
+            ], fn ($v) => $v !== null), $await);
         } catch (\Throwable $e) {
             return $refuse('حدث خطأ: '.$e->getMessage());
         }
@@ -696,16 +697,17 @@ class RiskController extends Controller
 
     private function assignMessages(): array
     {
-        return ['assigned_coordinator_id.required' => 'سمِّ منسق السلامة لهذا الخطر — إليه يصل بلاغ الشاغل أولاً.',
-            'assigned_field_team_id.required' => 'سمِّ المعالج المختص (فنياً أو إدارياً) — إليه يُحوَّل بلاغ الشاغل.'];
+        return ['assigned_coordinator_id.required' => 'سمِّ منسق السلامة لهذا الخطر — إليه يصل بلاغ الشاغل أولاً.'];
     }
 
     private function activeExtraRules(): array
     {
         return [
-            // ٢١-٤ (قرار ٥٤): شرط في الإعداد لا احتياط وقت التشغيل — من الخطر الفعلي يصل بلاغ الشاغل إلى منسقه ومعالجه
+            // ٢١-٤ (قرار ٥٤): المنسق شرط في الإعداد — إليه يصل بلاغ الشاغل أولاً
             'assigned_coordinator_id' => ['required', 'integer', 'exists:users,id'],
-            'assigned_field_team_id' => ['required', 'integer', 'exists:users,id'],
+            // خطة المعالج — الخطوة ٤ (٢٠٢٦-١٠-٠٨): خانة «المعالج» خرجت من نماذج الخاص؛ المعالج يُقرأ من السجل العام (HandlerResolver).
+            // تبقى مقبولة اختيارياً للكود القديم (تعبئة التجربة) حتى تُنقل — لا تُعرض ولا تُطلب
+            'assigned_field_team_id' => ['nullable', 'integer', 'exists:users,id'],
             'target_closure_date' => ['nullable', 'date'],
             'notes' => ['nullable', 'string', 'max:5000'],
         ];

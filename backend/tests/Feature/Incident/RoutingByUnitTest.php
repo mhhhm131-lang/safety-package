@@ -145,14 +145,16 @@ class RoutingByUnitTest extends TestCase
         $this->assertSame($risk->id, $i->risk_id);
     }
 
-    public function test_a_risk_cannot_be_activated_without_naming_its_coordinator_and_handler(): void
+    /** خطة المعالج — الخطوة ٤ (٢٠٢٦-١٠-٠٨): المنسق شرط التفعيل؛ والمعالج لم يعد يُسأل عنه — يُقرأ من السجل العام */
+    public function test_a_risk_cannot_be_activated_without_naming_its_coordinator_and_the_handler_is_not_asked(): void
     {
         $mgr = $this->user('fin.m', 'department_manager', 'fin');
         $coord = $this->user('fin.c', 'safety_coordinator', 'fin');
         $base = ['scope_type' => 'org_unit', 'organization_unit_id' => $this->unitId('fin'), 'place_id' => Place::idByCode('HZ-06'), 'severity' => 3, 'likelihood' => 3];
-        $this->actingAs($mgr)->post("/app/risk/{$this->bully->id}/activate", $base)->assertSessionHasErrors(['assigned_coordinator_id', 'assigned_field_team_id']);
+        $this->actingAs($mgr)->post("/app/risk/{$this->bully->id}/activate", $base)->assertSessionHasErrors(['assigned_coordinator_id'])->assertSessionDoesntHaveErrors(['assigned_field_team_id']);
         $this->assertSame(0, Risk::where('risk_type', 'active')->count());
-        $this->actingAs($mgr)->post("/app/risk/{$this->bully->id}/activate", $base + ['assigned_coordinator_id' => $coord->id, 'assigned_field_team_id' => $mgr->id])->assertSessionHasNoErrors();
-        $this->assertSame(1, Risk::where('risk_type', 'active')->where('assigned_coordinator_id', $coord->id)->where('assigned_field_team_id', $mgr->id)->count());
+        $this->assertStringNotContainsString('name="assigned_field_team_id"', (string) $this->actingAs($mgr)->get("/app/risk/{$this->bully->id}/activate")->assertOk()->getContent());
+        $this->actingAs($mgr)->post("/app/risk/{$this->bully->id}/activate", $base + ['assigned_coordinator_id' => $coord->id])->assertSessionHasNoErrors();
+        $this->assertSame(1, Risk::where('risk_type', 'active')->where('assigned_coordinator_id', $coord->id)->whereNull('assigned_field_team_id')->count());
     }
 }

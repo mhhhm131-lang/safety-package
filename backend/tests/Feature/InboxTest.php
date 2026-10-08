@@ -171,7 +171,9 @@ class InboxTest extends TestCase
         $this->assertSame(1, $this->pending($this->salama));
         $this->actingAs($this->mudir)->get('/app')->assertOk()->assertDontSee('انسكاب وقود المولد');
         $this->actingAs($this->salama)->post("/app/risk/{$general->id}/approve")->assertSessionHas('success');
-        $this->assertSame(0, $this->pending($this->salama));
+        // خطة المعالج — الخطوة ٥: خطر معتمد في العام بلا إدارة معالجة ← بطاقة عدّاد واحدة عند مسؤول السلامة (لا بطاقة اعتماد)
+        $this->assertSame(1, $this->pending($this->salama));
+        $this->actingAs($this->salama)->get('/app')->assertOk()->assertDontSee('ينتظر اعتمادك')->assertSee('بلا إدارة معالجة');
     }
 
     public function test_permit_awaiting_review_is_a_task_for_reviewers_and_final_approval_for_center(): void
@@ -181,11 +183,13 @@ class InboxTest extends TestCase
         $type = PermitType::where('code', 'hot_work')->firstOrFail();
         $permit = app(PermitService::class)->create($type, ['title' => 'لحام دعامة في غرفة الكهرباء', 'place_id' => Place::idByCode('HZ-02'),
             'workers_count' => 2, 'starts_at' => now(), 'expires_at' => now()->addDays(3), 'requested_by_id' => $this->coord->id]);
-        $this->assertSame(0, $this->pending($this->salama)); // مسودة: لا شيء ينتظر أحداً
+        // خطة المعالج — الخطوة ٥: كتاب المعهد المبذور بلا إدارات معالجة بعد ← بطاقة عدّاد واحدة ثابتة عند مسؤول السلامة
+        $base = $this->pending($this->salama);
+        $this->assertSame(1, $base); // مسودة التصريح: لا شيء ينتظر أحداً غير عدّاد العام
         $permit->update(['status' => Permit::STATUS_SUBMITTED, 'submitted_at' => now()]);
 
         $this->actingAs($this->coord)->get('/app')->assertOk()->assertSee($permit->code)->assertSee('ينتظر مراجعتك')->assertSee('data-target="'.url("/app/permits/{$permit->id}/review").'"', false);
-        $this->assertSame(1, $this->pending($this->salama));
+        $this->assertSame($base + 1, $this->pending($this->salama));
         $this->assertSame(0, $this->pending($this->fani));
         $this->assertSame(0, $this->pending($this->idara)); // لا يملك permit.review
         // شاشة الطابور تعرض الاستعلام نفسه
@@ -196,16 +200,16 @@ class InboxTest extends TestCase
         $this->actingAs($this->salama)->get('/app')->assertOk()->assertSee('ينتظر اعتمادك النهائي');
         // ٢٧-ب (قرار ٦٧): المعتمد لا يسقط من «ما ينتظرك» — ينتظر التفعيل الميداني عند من يفعّل، ثم يختفي حين يُفعَّل
         $permit->update(['status' => Permit::STATUS_APPROVED]);
-        $this->assertSame(1, $this->pending($this->salama));
+        $this->assertSame($base + 1, $this->pending($this->salama));
         $this->actingAs($this->salama)->get('/app')->assertOk()->assertSee('فعّله ميدانياً')->assertSee('data-target="'.url("/app/permits/{$permit->id}/activate").'"', false);
         $this->assertSame(1, $this->pending($this->coord)); // المنسق يفعّل
         // ٢٧-ج (قرار ٦٧): حين يُفعَّل تختفي «فعّله»، وتبقى للنشط بطاقة واحدة ما دامت نهايته خلال سبعة أيام: «أغلقه حين ينتهي العمل»؛ تختفي بإغلاقه
         $permit->update(['status' => Permit::STATUS_ACTIVE]);
         $this->actingAs($this->salama)->get('/app')->assertOk()->assertDontSee('فعّله ميدانياً')->assertSee('أغلقه حين ينتهي العمل');
-        $this->assertSame(1, $this->pending($this->salama));
+        $this->assertSame($base + 1, $this->pending($this->salama));
         $this->assertSame(1, $this->pending($this->coord));
         $permit->update(['status' => Permit::STATUS_COMPLETED, 'metadata' => ['evaluation' => ['overall_rating' => 4]]]);
-        $this->assertSame(0, $this->pending($this->salama));
+        $this->assertSame($base, $this->pending($this->salama));
         $this->assertSame(0, $this->pending($this->coord));
     }
 

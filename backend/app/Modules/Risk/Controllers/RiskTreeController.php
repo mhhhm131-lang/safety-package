@@ -69,7 +69,7 @@ class RiskTreeController extends Controller
     public function registryRiskDetail(string $type, $riskId): JsonResponse
     {
         $q = Risk::with(['category', 'subCategory', 'organizationUnit', 'place', 'assignedCoordinator', 'assignedFieldTeam',
-            'handlingUnit', 'handlerUser', 'handlerSetBy',
+            'handlingUnit', 'handlerUser', 'handlerSetBy', 'parentReference.handlingUnit', 'parentReference.handlerUser', 'parentReference.handlerSetBy',
             'phases.causes', 'phases.affectedGroups', 'phases.affectedGroupDetails.affectedGroup'])->where('risk_type', $type);
         if ($type === 'reference') $q->adopted(); // قرار ٧٥
         if ($type === 'active') $this->scopeToUserOrgUnit($q);
@@ -124,8 +124,8 @@ class RiskTreeController extends Controller
             'benefit' => $risk->benefit, 'legal_reference' => $risk->legal_reference, 'contact_channel' => $risk->contact_channel,
             'assigned_coordinator' => $risk->assignedCoordinator?->name, 'assigned_field_team' => $risk->assignedFieldTeam?->name,
             // خطة المعالج — الخطوة ١: الإدارة المعالجة والمعالج ومن كتبه (في العام)
-            'handling_unit' => $risk->handling_unit_display, 'handler' => $risk->handler_label,
-            'handler_set_by' => $risk->handlerSetBy?->name, 'handler_set_at' => $risk->handler_set_at?->format('Y-m-d'),
+            'handling_unit' => $risk->handling_unit_display, 'handler' => $risk->handler_label, // الخطوة ٤: النسخة تقرؤهما من أصلها في العام
+            'handler_set_by' => $risk->handler_set_by_name, 'handler_set_at' => $risk->handler_set_at_date,
             'phases' => $phases,
         ];
     }

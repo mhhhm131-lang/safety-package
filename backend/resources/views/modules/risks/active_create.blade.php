@@ -184,14 +184,10 @@
                             @endforeach
                         </select>
                     </div>
+                    {{-- خطة المعالج — الخطوة ٤ (٢٠٢٦-١٠-٠٨): خانة «المعالج» خرجت؛ المعالج من السجل العام للخطر المختار --}}
                     <div class="col-md-6">
-                        <label class="form-label" style="color:var(--text-main);">المعالج المختص (فني أو إداري) <span class="text-danger">*</span></label>
-                        <select name="assigned_field_team_id" class="form-select" required>
-                            <option value="">— اختر —</option>
-                            @foreach($tenantUsers as $u)
-                                <option value="{{ $u->id }}" @selected(old('assigned_field_team_id')==$u->id)>{{ $u->name }}</option>
-                            @endforeach
-                        </select>
+                        <label class="form-label" style="color:var(--text-main);">المعالج <small style="color:var(--text-muted);">(من السجل العام)</small></label>
+                        <div class="form-control-plaintext" style="color:var(--text-muted);">يُقرأ من الخطر المختار في السجل العام: إدارته المعالجة ومن سمّاه مديرها. لا يُكتب هنا.</div>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label" style="color:var(--text-main);">تاريخ الإغلاق المستهدف</label>

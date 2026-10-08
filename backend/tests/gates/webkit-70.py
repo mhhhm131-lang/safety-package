@@ -125,7 +125,7 @@ def activate_by_form(page, ref, title, coord, handler):
     """يملأ نموذج التفعيل المفتوح ويضغط «تفعيل» — يعيد الحالة والمسار ونص الرسالة"""
     page.fill('input[name=title]', title)
     page.select_option('select[name=assigned_coordinator_id]', str(coord))
-    page.select_option('select[name=assigned_field_team_id]', str(handler))
+    if page.locator('select[name=assigned_field_team_id]').count(): page.select_option('select[name=assigned_field_team_id]', str(handler))  # خرجت (خطة المعالج، الخطوة ٤)
     btn = page.locator(f'form[action$="/app/risk/{ref}/activate"] button[type=submit]')
     btn.scroll_into_view_if_needed()
     with page.expect_navigation(wait_until='domcontentloaded') as nav:

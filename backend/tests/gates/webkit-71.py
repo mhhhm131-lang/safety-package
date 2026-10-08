@@ -95,7 +95,7 @@ def activate_selected(page, handler, shot=None):
     page.click('#bulkGo')
     page.wait_for_selector('#bulkModal.show')
     if handler:
-        page.select_option('#bulkHandler', str(handler))
+        if page.locator('#bulkHandler').count(): page.select_option('#bulkHandler', str(handler))  # خانة المعالج خرجت من الدفعة (خطة المعالج، الخطوة ٤)
     t = time.time()
     page.click('#bulkSubmit')
     page.wait_for_selector('#bulkResult', state='visible', timeout=600000)
@@ -153,7 +153,7 @@ try:
         cpage.click('#bulkCancel'); cpage.wait_for_selector('#bulkModal', state='hidden')
 
         r = activate_selected(cpage, S['m'], '71-coord-result.png')
-        mine = int(db(f'{RISK}::where("risk_type","active")->where("organization_unit_id",{U})->where("assigned_coordinator_id",{S["c"]})->where("assigned_field_team_id",{S["m"]})->count()') or 0)
+        mine = int(db(f'{RISK}::where("risk_type","active")->where("organization_unit_id",{U})->where("assigned_coordinator_id",{S["c"]})->count()') or 0)  # الخطوة ٤: المعالج من العام لا من الدفعة
         log('المنسق: الفئة كلها بضغطة ← بانتظار الاعتماد، منسقها هو ومعالجها المسمّى', [r, count('pending_approval'), mine, notes()],
             r['created'] == str(K) and r['existing'] == '0' and 'ليعتمدها' in r['text'] and count('pending_approval') == K and mine == K and notes() == 1)
         cpage.click('#bulkCancel'); cpage.wait_for_selector('#bulkModal', state='hidden')

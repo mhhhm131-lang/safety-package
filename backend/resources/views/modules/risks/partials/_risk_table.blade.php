@@ -202,12 +202,9 @@
                             <small class="{{ $risk->handling_unit_display ? 'fw-bold' : 'text-muted' }}">{{ $risk->handling_unit_display ?? '—' }}</small>
                         </td>
                         <td rowspan="3" class="align-middle" style="vertical-align:middle!important;">
-                            @if($isActive)
-                                <small class="text-muted">{{ $risk->assignedFieldTeam?->name ?? '—' }}</small>
-                            @else
-                                <small class="{{ $risk->handler_label ? 'fw-bold' : 'text-muted' }}">{{ $risk->handler_label ?? ($risk->handling_unit_display ? 'لم يُكتب بعد' : '—') }}</small>
-                                @if($risk->handlerSetBy)<div class="small text-muted">كتبه {{ $risk->handlerSetBy->name }}</div>@endif
-                            @endif
+                            {{-- الخطوة ٤: المعالج من العام للسجلين (النسخة تقرأ أصلها)؛ معالج النسخة القديم يُذكر حتى تُعلَّق الإدارة --}}
+                            <small class="{{ $risk->handler_label ? 'fw-bold' : 'text-muted' }}">{{ $risk->handler_label ?? ($risk->handling_unit_display ? 'لم يُكتب بعد' : ($isActive && $risk->assignedFieldTeam ? $risk->assignedFieldTeam->name.' (مسمّى قديماً)' : '—')) }}</small>
+                            @if($risk->handler_set_by_name)<div class="small text-muted">كتبه {{ $risk->handler_set_by_name }}</div>@endif
                         </td>
                         <td rowspan="3" class="align-middle" style="vertical-align:middle!important;">
                             <small class="text-muted">{{ $risk->organizationUnit?->name ?? '—' }}</small>

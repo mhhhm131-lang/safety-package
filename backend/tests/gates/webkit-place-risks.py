@@ -97,7 +97,7 @@ try:
         page.wait_for_selector(f'#ref-categories-list .cat-bulk-cb[value="{S["cat"]}"]')
         page.check(f'#ref-categories-list .cat-bulk-cb[value="{S["cat"]}"]')
         page.click('#bulkGo'); page.wait_for_selector('#bulkModal.show')
-        page.select_option('#bulkHandler', str(S['m']))
+        if page.locator('#bulkHandler').count(): page.select_option('#bulkHandler', str(S['m']))  # خانة المعالج خرجت من الدفعة (خطة المعالج، الخطوة ٤)
         page.click('#bulkSubmit'); page.wait_for_selector('#bulkResult', state='visible', timeout=600000)
         created = page.locator('#bulkResult').get_attribute('data-created')
         noplace = int(val(f'{RISK}::where("organization_unit_id",{U})->whereNull("place_id")->where("status","active")->count()') or 0)

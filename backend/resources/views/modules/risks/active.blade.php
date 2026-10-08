@@ -514,13 +514,15 @@
                             ${statusBadge(r.status, r.status_label)}
                         </td>
                         <td rowspan="3" class="align-middle" style="vertical-align:middle!important;">
-                            <small class="text-muted">${escAttr(r.owner_department||'—')}</small>
+                            ${r.handling_unit ? `<small class="fw-bold">${escAttr(r.handling_unit)}</small>` : `<small class="text-muted">— لم تُحدَّد في العام</small>`}
                         </td>
                         <td rowspan="3" class="align-middle" style="vertical-align:middle!important;">
                             <small class="text-muted">${escAttr(r.assigned_coordinator||'—')}</small>
                         </td>
                         <td rowspan="3" class="align-middle" style="vertical-align:middle!important;">
-                            <small class="text-muted">${escAttr(r.assigned_field_team||'—')}</small>
+                            ${r.handler
+                                ? `<small class="fw-bold">${escAttr(r.handler)}</small>${r.handler_set_by ? `<div class="small text-muted">كتبه ${escAttr(r.handler_set_by)}</div>` : ''}`
+                                : `<small class="text-muted">${r.handling_unit ? 'لم يُكتب بعد' : (r.assigned_field_team ? escAttr(r.assigned_field_team) + ' (مسمّى قديماً)' : '—')}</small>`}
                         </td>
                         ` : ''}
                         <td>${responsibleHtml}</td>
@@ -553,9 +555,10 @@
                         <th>الإجراء الوقائي</th>
                         <th>الوحدة</th>
                         <th>الحالة</th>
-                        <th>الإدارة</th>
-                        <th>المسؤول</th>
-                        <th>الفريق التنفيذي</th>
+                        {{-- خطة المعالج — الخطوة ٤: الإدارة المعالجة والمعالج من العام قراءةً؛ «المسؤول» ← «المنسق» --}}
+                        <th>الإدارة المعالجة</th>
+                        <th>المنسق</th>
+                        <th>المعالج</th>
                         <th>الجهة / المفوّض</th>
                         <th>إجراءات</th>
                     </tr></thead>

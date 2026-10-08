@@ -138,7 +138,8 @@
     </div>
 </div>
 
-{{-- قرار ٧١: نافذة الدفعة — خانتان: الوحدة والمعالج. منسق الخطر منسق سلامة الوحدة تلقائياً (وللنطاق العام يُسمّى) --}}
+{{-- قرار ٧١: نافذة الدفعة — خانة واحدة: الوحدة. منسق الخطر منسق سلامة الوحدة تلقائياً (وللنطاق العام يُسمّى).
+     خطة المعالج — الخطوة ٤ (٢٠٢٦-١٠-٠٨): خانة «المعالج» خرجت من الدفعة؛ المعالج من السجل العام --}}
 @if(!empty($bulk))
 <div class="modal fade" id="bulkModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
@@ -151,16 +152,7 @@
                 <div id="bulkForm" class="row g-3">
                     @include('modules.risks.partials._scope', ['scopeUnits' => $bulk['scopeUnits'], 'myUnitId' => $bulk['myUnitId'], 'orgUnits' => $bulk['orgUnits'],
                         'col' => 'col-12', 'scopeLabel' => 'النطاق', 'scopeDefault' => null, 'unitDefault' => null])
-                    <div class="col-12">
-                        <label class="form-label" style="color:var(--text-main);">المعالج المختص (فني أو إداري) <span class="text-danger">*</span></label>
-                        <select name="assigned_field_team_id" id="bulkHandler" class="form-select">
-                            <option value="">— اختر —</option>
-                            @foreach($bulk['users'] as $u)
-                                <option value="{{ $u->id }}">{{ $u->name }}</option>
-                            @endforeach
-                        </select>
-                        <small style="color:var(--text-muted);">شخص واحد للدفعة كلها — إليه يُحوَّل بلاغ الشاغل. لمعالج مختلف حدّد فئته وحدها وفعّلها به.</small>
-                    </div>
+                    <div class="col-12"><small style="color:var(--text-muted);"><i class="bi bi-person-check"></i> المعالج لكل خطر من السجل العام: إدارته المعالجة ومن سمّاه مديرها. لا يُسمّى هنا.</small></div>
                     @if($bulk['scopeUnits'] === null)
                     <div class="col-12" id="bulkCoordDiv">
                         <label class="form-label" style="color:var(--text-main);">منسق السلامة <span class="text-danger" id="bulkCoordStar">*</span></label>
@@ -519,11 +511,9 @@
         const scopeEl = modal.querySelector('[name=scope_type]');
         const unitEl = modal.querySelector('[name=organization_unit_id]');
         const scope = scopeEl ? scopeEl.value : 'org_unit';
-        const handler = el('bulkHandler').value;
         const coord = el('bulkCoord') ? el('bulkCoord').value : '';
         if (!ids.length) return bulkFail('حدّد خطراً واحداً على الأقل.');
         if (scope === 'org_unit' && !(unitEl && unitEl.value)) return bulkFail('اختر الوحدة التنظيمية.');
-        if (!handler) return bulkFail('سمِّ المعالج المختص — إليه يُحوَّل بلاغ الشاغل.');
         el('bulkSubmit').disabled = true;
         el('bulkResult').style.display = 'none';
         const prog = el('bulkProgress');
@@ -539,7 +529,7 @@
                 res = await fetch(BULK_URL, { method: 'POST', credentials: 'same-origin',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': token, 'X-Requested-With': 'XMLHttpRequest' },
                     body: JSON.stringify({ risk_ids: part, scope_type: scope, organization_unit_id: scope === 'org_unit' ? unitEl.value : null,
-                        assigned_field_team_id: handler, assigned_coordinator_id: coord || null, hold_notify: !last, created_before: total.created }) });
+                        assigned_coordinator_id: coord || null, hold_notify: !last, created_before: total.created }) });
                 data = await res.json();
             } catch (e) {
                 prog.style.display = 'none';

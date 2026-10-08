@@ -74,6 +74,10 @@ class RiskTasks implements TaskSource
                 }
             }
         }
+        // خطة المعالج — الخطوة ٥ (٢٠٢٦-١٠-٠٨، بكلمته «ويحمي نفسه»): النقص يُرى قبل أن يقع فيه بلاغ.
+        // مسؤول السلامة: أخطار العام بلا إدارة معالجة، وأماكن بلا فني لتخصص سُمّي على خطر. مدير الإدارة المعالجة: أخطار إدارته بلا معالج.
+        $out = $out->merge($this->uncovered($user, $profile));
+
         if (!PermissionRegistry::hasPermission($profile->role, 'risk.approve')) return $out;
 
         // قرار ٦٩: البطاقة لمن يعتمد هذا الخطر — مدير وحدته (أو ما فوقها)، ومسؤول السلامة للسجل العام وما بلا وحدة
@@ -92,5 +96,65 @@ class RiskTasks implements TaskSource
             batch: 'risk.approve',
             item: $r->title,
         ))->values());
+    }
+
+    /** الخطوة ٥: بطاقات «غير المغطى» — عدّاد يرتفع بإفراغ الخانة وينزل بملئها؛ كل بطاقة تفتح الشاشة التي تملؤه */
+    private function uncovered(User $user, UserProfile $profile): Collection
+    {
+        $out = collect();
+        $general = Risk::where('risk_type', 'reference')->adopted();
+        if ($profile->role === RiskApproval::GENERAL_APPROVER) {
+            $n = (clone $general)->whereNull('handling_unit_id')->whereNull('handling_unit_name')->count();
+            if ($n > 0) {
+                $out->push(new Task(
+                    key: 'risk:uncovered:units', module: 'المخاطر',
+                    question: self::count($n, 'خطر', 'خطران', 'أخطار', 'خطراً').' في السجل العام بلا إدارة معالجة — بلاغها يقف عند المركز',
+                    primary: ['label' => 'علّق الإدارات', 'url' => route('risk.reference.index')],
+                    detailsUrl: route('risk.reference.index'),
+                ));
+            }
+            // أماكن بلا فني لتخصص سُمّي على خطر: لكل تخصص مسمّى، الأماكن التي لا يغطيها فني مفعّل به (تغطيةً أو مكان حسابه بلا تغطية)
+            $specs = (clone $general)->whereNotNull('handler_specialty')->distinct()->pluck('handler_specialty');
+            if ($specs->isNotEmpty()) {
+                $places = \App\Modules\Governance\Models\Place::orderBy('sort')->get(['id', 'name', 'code']);
+                $gaps = [];
+                foreach ($specs as $spec) {
+                    $covered = UserProfile::where('role', $spec)->where('is_active', true)->with('coverage')->get()
+                        ->flatMap(fn (UserProfile $p) => $p->coverage->isNotEmpty() ? $p->coverage->pluck('id') : collect([$p->place_id]))->filter()->unique();
+                    foreach ($places as $pl) {
+                        if (!$covered->contains($pl->id)) $gaps[] = (PermissionRegistry::ROLES[$spec] ?? $spec).' في '.$pl->name;
+                    }
+                }
+                if ($gaps) {
+                    $out->push(new Task(
+                        key: 'risk:uncovered:places', module: 'المخاطر',
+                        question: self::count(count($gaps), 'مكان', 'مكانان', 'أماكن', 'مكاناً').' بلا فني لتخصص مسمّى على خطر — بلاغه يذهب لمدير الإدارة المعالجة: '.implode('، ', array_slice($gaps, 0, 3)).(count($gaps) > 3 ? '…' : ''),
+                        primary: ['label' => 'الحسابات', 'url' => route('app.users.index')],
+                        detailsUrl: route('app.users.index'),
+                    ));
+                }
+            }
+        }
+        if (in_array($profile->role, RiskApproval::UNIT_MANAGERS, true) && $profile->organization_unit_id) {
+            $ids = OrganizationUnit::descendantIdsOf($profile->organization_unit_id);
+            $n = (clone $general)->whereIn('handling_unit_id', $ids)->whereNull('handler_specialty')->whereNull('handler_user_id')->count();
+            if ($n > 0) {
+                $out->push(new Task(
+                    key: 'risk:uncovered:handlers', module: 'المخاطر',
+                    question: self::count($n, 'خطر', 'خطران', 'أخطار', 'خطراً').' على إدارتك بلا معالج — بلاغه يصلك أنت حتى تسمّي',
+                    primary: ['label' => 'سمِّ المعالجين', 'url' => route('risk.handlers.index')],
+                    detailsUrl: route('risk.handlers.index'),
+                ));
+            }
+        }
+        return $out;
+    }
+
+    /** «خطر واحد» · «خطران» · «٣ أخطار» · «١١ خطراً» */
+    private static function count(int $n, string $one, string $two, string $few, string $many): string
+    {
+        if ($n === 1) return $one.' واحد';
+        if ($n === 2) return $two;
+        return $n.' '.($n <= 10 ? $few : $many);
     }
 }

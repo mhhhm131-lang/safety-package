@@ -182,14 +182,24 @@
                             @endforeach
                         </select>
                     </div>
+                    {{-- خطة المعالج — الخطوة ٤ (٢٠٢٦-١٠-٠٨): خانة «المعالج» خرجت؛ النسخة تقرأ المعالج من أصلها في السجل العام --}}
                     <div class="col-md-6">
-                        <label class="form-label" style="color:var(--text-main);">المعالج المختص (فني أو إداري) <span class="text-danger">*</span></label>
-                        <select name="assigned_field_team_id" class="form-select" required>
-                            <option value="">— اختر —</option>
-                            @foreach($tenantUsers as $u)
-                                <option value="{{ $u->id }}" @selected(old('assigned_field_team_id', $risk->assigned_field_team_id)==$u->id)>{{ $u->name }}</option>
-                            @endforeach
-                        </select>
+                        <label class="form-label" style="color:var(--text-main);">المعالج <small style="color:var(--text-muted);">(من السجل العام)</small></label>
+                        <div class="form-control-plaintext" style="line-height:1.5;">
+                            @if(!$risk->parent_reference_id)
+                                <span style="color:var(--text-muted);">خطر بلا أصل في السجل العام — يصل بلاغه إلى المركز@if($risk->assigned_field_team_id)، أو إلى {{ $risk->assignedFieldTeam?->name }} المسمّى قديماً@endif</span>
+                            @elseif($risk->handling_unit_display)
+                                <div class="small" style="color:var(--text-muted);">الإدارة المعالجة: <b style="color:var(--text-main);">{{ $risk->handling_unit_display }}</b></div>
+                                @if($risk->handler_label)
+                                    <b style="color:var(--text-main);">{{ $risk->handler_label }}</b>
+                                    @if($risk->handler_set_by_name)<div class="small" style="color:var(--text-muted);">كتبه {{ $risk->handler_set_by_name }}</div>@endif
+                                @else
+                                    <span style="color:var(--text-muted);">لم يُكتب بعد — يكتبه مدير الإدارة المعالجة من «إدارتي»، وحتى ذلك يصله البلاغ</span>
+                                @endif
+                            @else
+                                <span style="color:var(--text-muted);">الخطر بلا إدارة معالجة في السجل العام — يعلّقها مسؤول السلامة@if($risk->assigned_field_team_id)؛ وحتى ذلك يصل البلاغ إلى {{ $risk->assignedFieldTeam?->name }} المسمّى قديماً@endif</span>
+                            @endif
+                        </div>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label" style="color:var(--text-main);">تاريخ الإغلاق المستهدف</label>
