@@ -85,3 +85,9 @@ Route::middleware(['web', 'auth'])->prefix('app/risk')->name('risk.')->group(fun
         Route::post('/{risk}/request-modification', [RiskController::class, 'requestModification'])->name('requestModification');
     });
 });
+
+// قرار ٨٠: بديل الإدارة المعالجة في نسخة الفرع — يقترحه منسق الفرع (لا يملك risk.approve) ويعتمده مديره؛ الصلاحية داخل المتحكم
+Route::middleware(array_merge(['web', 'auth'], ['permission:risk.list']))->prefix('app/risk')->name('risk.')->group(function () {
+    Route::post('/{risk}/handling-override', [\App\Modules\Risk\Controllers\HandlingOverrideController::class, 'set'])->name('handling.override')->whereNumber('risk');
+    Route::post('/{risk}/handling-override/approve', [\App\Modules\Risk\Controllers\HandlingOverrideController::class, 'approve'])->name('handling.override.approve')->whereNumber('risk');
+});

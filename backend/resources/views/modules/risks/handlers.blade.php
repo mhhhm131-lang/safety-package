@@ -18,7 +18,9 @@
 @php $cur = $r->handler_user_id ? 'user:'.$r->handler_user_id : ($r->handler_specialty ? 'spec:'.$r->handler_specialty : ''); @endphp
 <div class="card {{ $cur === '' ? 'border-warning' : '' }}" data-risk="{{ $r->id }}" style="{{ $cur === '' ? 'background:#fff8e6;' : '' }}">
   <div class="card-body py-2">
-    <div class="fw-bold">{{ $r->title }}</div>
+    <div class="fw-bold">{{ $r->title }}
+      @if($r->risk_type === 'active')<span class="badge text-bg-info fw-normal" data-branch-copy="{{ $r->id }}">نسخة «{{ $r->branchUnit?->name ?? 'الفرع' }}» — المعالج لفرعك وحده</span>@endif
+    </div>
     <div class="small text-muted mb-2">@if($r->code)<code dir="ltr">{{ $r->code }}</code> · @endif{{ $r->category?->name }}@if($r->subCategory) › {{ $r->subCategory->name }}@endif · الإدارة المعالجة: {{ $r->handling_unit_display }}</div>
     <form method="post" action="{{ route('risk.handlers.set', $r) }}">@csrf
       <label class="form-label small mb-1" for="h{{ $r->id }}">المعالج</label>

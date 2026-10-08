@@ -126,6 +126,46 @@
                     'response'    => ['label' => 'استجابة', 'icon' => 'bi-bandaid',          'color' => '#ef4444'],
                 ];
             @endphp
+            {{-- قرار ٨٠ (بكلمته «موافق» ٢٠٢٦-١٠-٠٨): الإدارة المعالجة في نسخة الفرع — بديل يقترحه منسق الفرع ويعتمده مديره؛ المعالج من «إدارتي» --}}
+            @php
+                $BH = \App\Modules\Risk\Support\BranchHandling::class;
+                $bhShow = $risk->risk_type === 'active' && $BH::inBranch($risk) && !$BH::isMainCenter($risk);
+                $bhEff = $bhShow ? $risk->effectiveHandling() : null;
+                $bhState = $bhShow ? $risk->handling_override_state : null;
+            @endphp
+            @if($bhShow)
+            <div class="card mb-4" data-branch-handling style="background: var(--bg-card); border: 1px solid var(--border-color);">
+                <div class="card-header" style="background: transparent; border-bottom: 1px solid var(--border-color);">
+                    <h6 class="mb-0 fw-bold" style="color: var(--text-main);"><i class="bi bi-geo-alt me-2"></i>الإدارة المعالجة في «{{ $risk->branchUnit?->name }}»</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">النافذة الآن: <b>{{ $bhEff['name'] ?? '—' }}</b>
+                        <span class="badge {{ $bhEff['source'] === 'branch' ? 'text-bg-info' : 'text-bg-light border' }}">{{ $bhEff['source'] === 'branch' ? 'بديل الفرع' : 'افتراض السجل العام' }}</span>
+                        <span class="small text-muted">· المعالج: {{ $risk->handler_label ?? 'لم يُكتب بعد' }}</span>
+                    </div>
+                    @if($bhState === 'pending')
+                    <div class="alert alert-warning py-2 small d-flex align-items-center gap-2 flex-wrap">
+                        <span>مقترح «{{ $risk->handling_unit_name }}» إدارةً معالجة لهذا الفرع — اقترحه {{ $risk->handlingOverrideBy?->name }} — ينتظر اعتماد مدير الفرع.</span>
+                        @if($BH::canApprove(auth()->user(), $risk))
+                        <form method="post" action="{{ route('risk.handling.override.approve', $risk) }}" class="m-0 ms-auto">@csrf<button class="btn btn-sm btn-g">اعتمد</button></form>
+                        @endif
+                    </div>
+                    @endif
+                    @if($BH::canPropose(auth()->user(), $risk))
+                    <form method="post" action="{{ route('risk.handling.override', $risk) }}" class="d-flex gap-2 align-items-center flex-wrap">@csrf
+                        <select name="handling_unit_id" class="form-select form-select-sm" style="max-width:320px">
+                            <option value="">— افتراض السجل العام ({{ $risk->generalSource()?->handling_unit_name ?? '—' }}) —</option>
+                            @foreach($BH::unitChoices($risk) as $u)<option value="{{ $u->id }}" @selected($bhState && (int) $risk->handling_unit_id === $u->id)>{{ $u->name }}</option>@endforeach
+                        </select>
+                        <button class="btn btn-sm btn-o">{{ $BH::canApprove(auth()->user(), $risk) ? 'بدّل' : 'اقترح' }}</button>
+                        <span class="small text-muted">{{ $BH::canApprove(auth()->user(), $risk) ? 'يُعتمد فوراً' : 'يعتمده مدير الفرع' }}</span>
+                    </form>
+                    @else
+                    <div class="small text-muted">يبدّلها منسق سلامة الفرع، ويعتمدها مدير الفرع. المعالج يسمّيه مدير الإدارة المعالجة في الفرع من «إدارتي».</div>
+                    @endif
+                </div>
+            </div>
+            @endif
             <div class="card mb-4" style="background: var(--bg-card); border: 1px solid var(--border-color);">
                 <div class="card-header" style="background: transparent; border-bottom: 1px solid var(--border-color);">
                     <h6 class="mb-0 fw-bold" style="color: var(--text-main);"><i class="bi bi-list-check me-2"></i>الأسباب والإجراءات</h6>

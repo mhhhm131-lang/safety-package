@@ -192,6 +192,9 @@
                         @if($isFirst)
                         <td rowspan="1" class="align-middle" style="vertical-align:middle!important;">
                             <small class="{{ $risk->handling_unit_display ? 'fw-bold' : 'text-muted' }}">{{ $risk->handling_unit_display ?? '—' }}</small>
+                            {{-- قرار ٨٠: بديل الفرع المعتمد أو المقترح --}}
+                            @if($risk->handling_override_state === 'approved')<div><span class="badge text-bg-info">بديل الفرع</span></div>
+                            @elseif($risk->handling_override_state === 'pending')<div><span class="badge text-bg-warning text-dark">مقترح «{{ $risk->handling_unit_name }}» ينتظر مدير الفرع</span></div>@endif
                         </td>
                         <td rowspan="1" class="align-middle" style="vertical-align:middle!important;">
                             {{-- الخطوة ٤: المعالج من العام للسجلين (النسخة تقرأ أصلها)؛ معالج النسخة القديم يُذكر حتى تُعلَّق الإدارة --}}

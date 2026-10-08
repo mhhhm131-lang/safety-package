@@ -27,6 +27,16 @@ class OrganizationUnit extends Model
         return $this->parent_id === null || $this->unit_type === 'region';
     }
 
+    /** قرار ٨٠: رأس الوحدة — أقرب فرع فوقها (أو هي)، وإلا الجذر (المركز الرئيسي) */
+    public function headOf(): ?self
+    {
+        for ($u = $this, $n = 0; $u && $n < 12; $n++) {
+            if ($u->isHead()) return $u;
+            $u = $u->parent_id ? static::find($u->parent_id) : null;
+        }
+        return null;
+    }
+
     protected $fillable = ['code', 'parent_id', 'name', 'name_en', 'unit_type', 'place_id', 'manager_id', 'manager_name', 'order', 'is_active'];
 
     protected $casts = ['order' => 'integer', 'is_active' => 'boolean'];

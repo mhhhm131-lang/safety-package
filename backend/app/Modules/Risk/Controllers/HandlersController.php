@@ -5,12 +5,14 @@ namespace App\Modules\Risk\Controllers;
 use App\Core\Permissions\PermissionRegistry;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Modules\Emergency\Models\EmergencyBuilding;
 use App\Modules\Governance\Models\OrganizationUnit;
 use App\Modules\Governance\Models\UserProfile;
 use App\Modules\Risk\Models\Risk;
 use App\Modules\Risk\Support\RiskApproval;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
@@ -19,6 +21,8 @@ use Illuminate\View\View;
  * مسؤول السلامة يعلّق على الخطر في السجل العام «الإدارة المعالجة»؛ ومدير تلك الإدارة يدخل من حسابه («إدارتي»، على مثال «فنيّي»)
  * فيرى الأخطار المعلَّقة على إدارته وما تحتها، ويكتب أمام كل خطر «المعالج»: تخصصاً من الستة، أو شخصاً من إدارته.
  * يكتب هذه الخانة وحدها في العام ولا يمسّ غيرها (Risk::HANDLER_FIELDS). بكلمته ٢٠٢٦-١٠-٠٤: «مديرها يدخل ويكلّف أمام كل خطر فنياً».
+ * قرار ٨٠: مدير الإدارة المعالجة في فرع يرى أيضاً نسخ الفرع التي إدارتها المعالجة النافذة إدارته (بالاسم أو بالبديل المعتمد)
+ * ويسمّي معالجها لفرعه على النسخة — لا في العام.
  */
 class HandlersController extends Controller
 {
@@ -38,11 +42,30 @@ class HandlersController extends Controller
         return Risk::where('risk_type', 'reference')->adopted()->whereIn('handling_unit_id', $unitIds);
     }
 
+    /** قرار ٨٠: نسخ فرع المدير (لا المركز الرئيسي) التي إدارتها المعالجة النافذة وحدته أو ما تحتها */
+    private function branchCopies(array $unitIds): Collection
+    {
+        $head = Auth::user()->profile?->organizationUnit?->headOf();
+        $mainHead = EmergencyBuilding::main()?->branch_unit_id;
+        if (!$head || ($mainHead !== null && (int) $head->id === (int) $mainHead)) return collect();
+        $names = OrganizationUnit::whereIn('id', $unitIds)->pluck('name')->map(fn ($n) => mb_strtolower(trim($n)))->all();
+        return Risk::where('risk_type', 'active')->inEffect()->where('branch_unit_id', $head->id)
+            ->with(['category', 'subCategory', 'parentReference.handlingUnit', 'handlingUnit', 'handlerUser', 'handlerSetBy', 'branchUnit', 'organizationUnit'])
+            ->orderBy('code')->get()
+            ->filter(function (Risk $r) use ($unitIds, $names) {
+                $e = $r->effectiveHandling();
+                if ($e['source'] === 'branch') return $e['id'] && in_array((int) $e['id'], $unitIds, true);
+                return $e['name'] !== null && in_array(mb_strtolower(trim($e['name'])), $names, true);
+            })->values();
+    }
+
     public function index(): View
     {
         $unitIds = $this->unitIds();
-        $risks = $this->mine($unitIds)->with(['category', 'subCategory', 'handlingUnit', 'handlerUser', 'handlerSetBy'])
+        $general = $this->mine($unitIds)->with(['category', 'subCategory', 'handlingUnit', 'handlerUser', 'handlerSetBy'])
             ->orderBy('category_id')->orderBy('code')->get();
+        $copies = $this->branchCopies($unitIds);
+        $risks = $general->concat($copies);
         return view('modules.risks.handlers', [
             'risks' => $risks,
             'unitName' => Auth::user()->profile?->organizationUnit?->name,
@@ -67,11 +90,12 @@ class HandlersController extends Controller
         return $q;
     }
 
-    /** الكتابة: خانة «المعالج» وحدها — «spec:<تخصص>» أو «user:<حساب>» أو فارغ (يمحو) */
+    /** الكتابة: خانة «المعالج» وحدها — «spec:<تخصص>» أو «user:<حساب>» أو فارغ (يمحو) — في العام أو في نسخة الفرع */
     public function set(Request $request, int $risk): RedirectResponse
     {
         $unitIds = $this->unitIds();
-        $r = $this->mine($unitIds)->findOrFail($risk);
+        $r = $this->mine($unitIds)->find($risk) ?? $this->branchCopies($unitIds)->firstWhere('id', $risk);
+        abort_unless($r, 404);
         $people = $this->people($unitIds)->pluck('id')->map(fn ($id) => (int) $id)->all();
         $v = $request->validate([
             'handler' => ['nullable', 'string', 'max:60', function ($attr, $value, $fail) use ($people) {
@@ -97,6 +121,7 @@ class HandlersController extends Controller
         }
         $r->forceFill($data)->save(); // الحقول الأربعة فقط — لا يمسّ غيرها
         $label = $r->fresh()->handler_label;
-        return redirect()->route('risk.handlers.index')->with('ok', $label ? "حُفظ: «{$r->title}» يعالجه {$label}." : "مُحي معالج «{$r->title}».");
+        $where = $r->risk_type === 'active' ? ' في «'.($r->branchUnit?->name ?? 'الفرع').'»' : '';
+        return redirect()->route('risk.handlers.index')->with('ok', $label ? "حُفظ: «{$r->title}» يعالجه {$label}{$where}." : "مُحي معالج «{$r->title}»{$where}.");
     }
 }

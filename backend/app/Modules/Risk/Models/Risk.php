@@ -29,12 +29,14 @@ class Risk extends Model
         'incident_count', 'last_incident_at',
         // خطة المعالج — الخطوة ١ (٢٠٢٦-١٠-٠٨): الإدارة المعالجة باسمها، والمعالج تخصصاً أو شخصاً، ومن كتبه
         'handling_unit_id', 'handling_unit_name', 'handler_specialty', 'handler_user_id', 'handler_set_by_id', 'handler_set_at',
+        'branch_unit_id', 'handling_override_by_id', 'handling_override_at', 'handling_override_approved_by_id', 'handling_override_approved_at', // قرار ٨٠
     ];
 
     protected $casts = [
         'severity' => 'integer', 'likelihood' => 'integer', 'risk_score' => 'integer',
         'incident_count' => 'integer', 'last_incident_at' => 'datetime',
         'target_closure_date' => 'date', 'approved_at' => 'datetime', 'handler_set_at' => 'datetime',
+        'handling_override_at' => 'datetime', 'handling_override_approved_at' => 'datetime',
     ];
 
     /** خطة المعالج: الحقول التي يكتبها مدير الإدارة المعالجة وحدها — لا غيرها */
@@ -86,6 +88,10 @@ class Risk extends Model
     {
         static::creating(function (Risk $risk) {
             $risk->risk_score = $risk->severity * $risk->likelihood;
+            // قرار ٨٠: «الفرع» كـ«الإدارة» — يتعبّأ تلقائياً عند التفعيل من رأس وحدة التفعيل
+            if ($risk->risk_type === 'active' && $risk->organization_unit_id && !$risk->branch_unit_id) {
+                $risk->branch_unit_id = OrganizationUnit::find($risk->organization_unit_id)?->headOf()?->id;
+            }
             if (empty($risk->code) && $risk->risk_type === 'active' && $risk->parent_reference_id
                 && ($parent = self::find($risk->parent_reference_id)) && $parent->code) {
                 // قرار ٢٩: كود النسخة = كود الأصل/رمز الوحدة
@@ -119,6 +125,7 @@ class Risk extends Model
     /**
      * خطة المعالج — الخطوة ٤ (٢٠٢٦-١٠-٠٨): الخاص يقرأ الإدارة المعالجة والمعالج من العام قراءةً (أصل النسخة)، لا ينسخهما.
      * فتغيير مسؤول السلامة أو مدير الإدارة المعالجة في العام يظهر في كل نسخة فوراً.
+     * قرار ٨٠: نسخة الفرع قد تبدّل الإدارة المعالجة لفرعها (بعد اعتماد مدير الفرع) وتحمل معالجها الخاص — فتُقدَّم على العام.
      */
     public function generalSource(): ?self
     {
@@ -126,32 +133,58 @@ class Risk extends Model
         return $this->parent_reference_id ? $this->parentReference : null;
     }
 
-    /** الإدارة المعالجة كما تُعرض: الاسم المحفوظ في العام (يبقى ولو عُطّلت الوحدة) */
-    public function getHandlingUnitDisplayAttribute(): ?string
+    public function branchUnit(): BelongsTo { return $this->belongsTo(OrganizationUnit::class, 'branch_unit_id'); }
+    public function handlingOverrideBy(): BelongsTo { return $this->belongsTo(User::class, 'handling_override_by_id'); }
+    public function handlingOverrideApprovedBy(): BelongsTo { return $this->belongsTo(User::class, 'handling_override_approved_by_id'); }
+
+    /** قرار ٨٠: حال تبديل الفرع للإدارة المعالجة في هذه النسخة: approved | pending | null */
+    public function getHandlingOverrideStateAttribute(): ?string
     {
-        $g = $this->generalSource();
-        return $g ? ($g->handling_unit_name ?: $g->handlingUnit?->name) : null;
+        if ($this->risk_type !== 'active' || !$this->handling_override_by_id || !($this->handling_unit_id || $this->handling_unit_name)) return null;
+        return $this->handling_override_approved_at ? 'approved' : 'pending';
     }
 
-    /** المعالج كما يُعرض من العام: اسم الشخص، أو اسم التخصص، أو لا شيء */
+    /** الإدارة المعالجة النافذة: بديل الفرع المعتمد، وإلا العام. @return array{id: ?int, name: ?string, source: string} */
+    public function effectiveHandling(): array
+    {
+        if ($this->handling_override_state === 'approved') {
+            return ['id' => $this->handling_unit_id, 'name' => $this->handling_unit_name ?: $this->handlingUnit?->name, 'source' => 'branch'];
+        }
+        $g = $this->generalSource();
+        return ['id' => $g?->handling_unit_id, 'name' => $g ? ($g->handling_unit_name ?: $g->handlingUnit?->name) : null, 'source' => 'general'];
+    }
+
+    /** الإدارة المعالجة كما تُعرض: بديل الفرع المعتمد، وإلا الاسم المحفوظ في العام (يبقى ولو عُطّلت الوحدة) */
+    public function getHandlingUnitDisplayAttribute(): ?string
+    {
+        return $this->effectiveHandling()['name'];
+    }
+
+    /** هل لهذه النسخة معالج خاص بفرعها (قرار ٨٠)؟ */
+    public function hasOwnHandler(): bool
+    {
+        return $this->risk_type === 'active' && ($this->handler_user_id || $this->handler_specialty);
+    }
+
+    /** المعالج كما يُعرض: معالج نسخة الفرع إن كُتب، وإلا من العام: اسم الشخص، أو اسم التخصص، أو لا شيء */
     public function getHandlerLabelAttribute(): ?string
     {
-        $g = $this->generalSource();
+        $g = $this->hasOwnHandler() ? $this : $this->generalSource();
         if (!$g) return null;
         if ($g->handler_user_id) return $g->handlerUser?->name;
         if ($g->handler_specialty) return \App\Core\Permissions\PermissionRegistry::ROLES[$g->handler_specialty] ?? $g->handler_specialty;
         return null;
     }
 
-    /** من كتب المعالج في العام، ومتى */
+    /** من كتب المعالج (في نسخة الفرع أو في العام)، ومتى */
     public function getHandlerSetByNameAttribute(): ?string
     {
-        return $this->generalSource()?->handlerSetBy?->name;
+        return ($this->hasOwnHandler() ? $this : $this->generalSource())?->handlerSetBy?->name;
     }
 
     public function getHandlerSetAtDateAttribute(): ?string
     {
-        return $this->generalSource()?->handler_set_at?->format('Y-m-d');
+        return ($this->hasOwnHandler() ? $this : $this->generalSource())?->handler_set_at?->format('Y-m-d');
     }
 
     public function approvedBy(): BelongsTo { return $this->belongsTo(User::class, 'approved_by_id'); }

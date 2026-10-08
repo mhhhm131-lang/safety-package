@@ -78,6 +78,21 @@ class RiskTasks implements TaskSource
         // مسؤول السلامة: أخطار العام بلا إدارة معالجة، وأماكن بلا فني لتخصص سُمّي على خطر. مدير الإدارة المعالجة: أخطار إدارته بلا معالج.
         $out = $out->merge($this->uncovered($user, $profile));
 
+        // قرار ٨٠: بديل الإدارة المعالجة في فرعه ينتظر اعتماد مدير الفرع — بطاقة بضغطة
+        if ($profile->role === 'branch_manager' && $profile->organization_unit_id) {
+            $ids = \App\Modules\Governance\Models\OrganizationUnit::descendantIdsOf($profile->organization_unit_id);
+            $pending = Risk::where('risk_type', 'active')->whereIn('branch_unit_id', $ids)->whereNotNull('handling_override_by_id')->whereNull('handling_override_approved_at')->with('branchUnit', 'handlingOverrideBy')->get();
+            foreach ($pending as $r) {
+                $out->push(new Task(
+                    key: "risk:{$r->id}:override", module: 'المخاطر',
+                    question: 'بديل الإدارة المعالجة «'.$r->handling_unit_name.'» لـ«'.$r->title.'» في «'.($r->branchUnit?->name ?? 'فرعك').'» — اقترحه '.($r->handlingOverrideBy?->name ?? 'منسق الفرع').' وينتظر اعتمادك',
+                    primary: ['label' => 'اعتمد', 'url' => route('risk.handling.override.approve', $r), 'method' => 'POST'],
+                    secondary: ['label' => 'التفاصيل', 'url' => route('risk.show', $r)],
+                    detailsUrl: route('risk.show', $r), createdAt: $r->handling_override_at,
+                ));
+            }
+        }
+
         if (!PermissionRegistry::hasPermission($profile->role, 'risk.approve')) return $out;
 
         // قرار ٦٩: البطاقة لمن يعتمد هذا الخطر — مدير وحدته (أو ما فوقها)، ومسؤول السلامة للسجل العام وما بلا وحدة
