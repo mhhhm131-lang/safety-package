@@ -105,9 +105,10 @@ final class HandlerResolver
     {
         $u = $ref->handling_unit_id ? OrganizationUnit::find($ref->handling_unit_id) : null;
         $name = $ref->handling_unit_name ?: $u?->name;
-        $root = $placeId ? Place::find($placeId)?->building?->branch_unit_id : null;
-        if ($root && $name) {
-            $ids = OrganizationUnit::descendantIdsOf($root);
+        // نطاق مبنى المكان (DeptSync::scopeIds): فرعه بلا ما تحته من فروع مبانٍ أخرى — الملز هو المركز الرئيسي والفروع تحته
+        $place = $placeId ? Place::find($placeId) : null;
+        $ids = $place?->building_id ? \App\Modules\Governance\Services\DeptSync::scopeIds((int) $place->building_id) : null;
+        if ($ids !== null && $name) {
             $inBranch = OrganizationUnit::whereIn('id', $ids)->where('name', $name)->where('is_active', true)->orderBy('id')->first();
             if ($inBranch) return $inBranch;
         }

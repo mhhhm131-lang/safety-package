@@ -16,11 +16,18 @@ use Illuminate\Support\Facades\DB;
  */
 class DeptSync
 {
-    /** وحدات المبنى: فرعه وما تحته، أو null = الشجرة كلها (مبنى بلا وحدة فرع) */
+    /**
+     * وحدات المبنى: فرعه وما تحته، أو null = الشجرة كلها (مبنى بلا وحدة فرع).
+     * بكلمته (٢٠٢٦-١٠-٠٨): الملز هو المركز الرئيسي والفروع تحته — فما تحت فرع يشير إليه مبنى آخر يخرج من نطاق هذا المبنى.
+     */
     public static function scopeIds(int $buildingId): ?array
     {
         $root = EmergencyBuilding::find($buildingId)?->branch_unit_id;
-        return $root ? OrganizationUnit::descendantIdsOf($root) : null;
+        if (!$root) return null;
+        $ids = OrganizationUnit::descendantIdsOf($root);
+        $nested = EmergencyBuilding::where('id', '!=', $buildingId)->whereNotNull('branch_unit_id')->where('branch_unit_id', '!=', $root)->whereIn('branch_unit_id', $ids)->pluck('branch_unit_id');
+        foreach ($nested as $o) $ids = array_diff($ids, OrganizationUnit::descendantIdsOf((int) $o));
+        return array_values(array_map('intval', $ids));
     }
 
     /** ipa-depts من الجدول — لمبنى بعينه. */

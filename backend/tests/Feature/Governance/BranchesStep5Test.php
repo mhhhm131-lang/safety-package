@@ -140,6 +140,37 @@ class BranchesStep5Test extends TestCase
         $this->assertCount(2, array_filter(app(\App\Modules\Emergency\Inbox\EmergencyTasks::class)->tasksFor($salama)->map(fn ($t) => $t->key)->all(), fn ($k) => str_starts_with($k, 'aarmissing:')));
     }
 
+    /** بكلمته (٢٠٢٦-١٠-٠٨): الملز هو المركز الرئيسي، والفروع الأربعة تحته — نطاق الملز لا يشمل ما تحت فروعه */
+    public function test_branches_nested_under_the_main_center_keep_their_scopes_apart(): void
+    {
+        $this->branchB->update(['parent_id' => $this->hq->id]);
+        // «المرافق والصيانة» في المركز تُعاد بمعرّف أعلى من نظيرتها في الشرقية — الترتيب بالمعرّف لا يكفي
+        $this->ref->update(['handling_unit_id' => null]);
+        $this->hqFm->delete();
+        $this->hqFm = OrganizationUnit::create(['code' => 'hq-fm', 'name' => 'المرافق والصيانة', 'unit_type' => 'department', 'parent_id' => $this->hq->id, 'place_id' => Place::idByCode('HZ-06')]);
+        $this->ref->update(['handling_unit_id' => $this->hqFm->id]);
+
+        $mainIds = \App\Modules\Governance\Services\DeptSync::scopeIds($this->main->id);
+        $this->assertContains($this->hqFm->id, $mainIds);
+        $this->assertNotContains($this->dmmFm->id, $mainIds, 'نطاق الملز يشمل إدارة الشرقية');
+        $this->assertNotContains($this->branchB->id, $mainIds, 'نطاق الملز يشمل وحدة فرع الشرقية');
+        $this->assertSame(['dmm', 'dmm-fm'], array_column(app(\App\Modules\Governance\Services\DeptSync::class)->toDocument($this->b->id), 'id'));
+        $this->assertNotContains('dmm-fm', array_column(app(\App\Modules\Governance\Services\DeptSync::class)->toDocument($this->main->id), 'id'), 'لوحة الملز تعرض إدارات الشرقية');
+
+        $faniM = $this->user('fani.m', 'tech_electrical', $this->main, Place::find(Place::idByCode('HZ-01')), null, [Place::idByCode('HZ-01')]);
+        $mudirM = $this->user('mudir.m', 'department_manager', $this->main, null, $this->hqFm);
+        $mudirB = $this->user('mudir.b', 'department_manager', $this->b, null, $this->dmmFm);
+        $this->assertSame($faniM->id, HandlerResolver::resolve($this->ref, Place::idByCode('HZ-01'))['user_id']);
+        $this->assertSame($mudirB->id, HandlerResolver::resolve($this->ref, $this->bp('HZ-01')->id)['user_id'], 'بلاغ الشرقية لم يجد وحدتها تحت المركز الرئيسي');
+        $faniM->profile->update(['is_active' => false]);
+        $this->assertSame($mudirM->id, HandlerResolver::resolve($this->ref, Place::idByCode('HZ-01'))['user_id'], 'بلاغ الملز ذهب إلى مدير الشرقية');
+
+        // مدير الفرع المتداخل يرى مبنى فرعه وحده، ومدير المركز الرئيسي (وحدته الجذر) يرى الكل
+        $fareaB = $this->user('farea.b', 'branch_manager', null, null, $this->branchB);
+        $this->assertSame([$this->b->id], BuildingContext::choices($fareaB)->pluck('id')->all());
+        $this->assertSame([$this->main->id, $this->b->id], BuildingContext::choices($this->user('farea.hq', 'branch_manager', null, null, $this->hq))->pluck('id')->sort()->values()->all());
+    }
+
     public function test_activation_form_lists_the_places_of_the_unit_building(): void
     {
         $mudirB = $this->user('mudir.b', 'department_manager', $this->b, null, $this->dmmFm);
