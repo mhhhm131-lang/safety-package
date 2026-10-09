@@ -159,14 +159,14 @@ final class HandlerResolver
         return $u;
     }
 
-    /** رأس شجرة الوحدة (الفرع أو المركز الرئيسي) */
+    /**
+     * رأس الوحدة للاحقة الخط الزمني: أقرب فرع فوقها، وإلا الجذر (المركز الرئيسي). كُشف على المنشور (٢٠٢٦-١٠-٠٨، ش-0043):
+     * الصعود إلى الجذر كتب «فرع الشرقية — المركز الرئيسي» لأن الفروع صارت تحت المركز. الوحدة التي هي رأس بنفسها بلا لاحقة.
+     */
     private static function rootOf(OrganizationUnit $unit): ?OrganizationUnit
     {
-        for ($u = $unit, $n = 0; $u && $n < 10; $n++) {
-            if (!$u->parent_id) return $u->id === $unit->id ? null : $u;
-            $u = OrganizationUnit::find($u->parent_id);
-        }
-        return null;
+        $head = $unit->headOf();
+        return $head && $head->id !== $unit->id ? $head : null;
     }
 
     /** فنيون مفعَّلون بهذا التخصص يغطون المكان (أو مكان حسابهم هو وبلا تغطية) — كما في ScopeService::techniciansFor */

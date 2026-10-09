@@ -155,4 +155,27 @@ class BranchHandlerOverrideTest extends TestCase
         $mudirHq = $this->user('mudir.hq', 'department_manager', $this->main, null, $this->hqFm);
         $this->actingAs($mudirHq)->get(route('risk.handlers.index'))->assertOk()->assertDontSee('data-branch-copy="'.$copy->id.'"', false);
     }
+
+    /** كُشف على المنشور (٢٠٢٦-١٠-٠٨، بلاغ ش-0043): الخط الزمني كتب «فرع الشرقية — المركز الرئيسي» — اللاحقة رأس الفرع (headOf) لا الجذر، ورأس الفرع نفسه بلا لاحقة */
+    public function test_timeline_suffix_is_the_branch_head_not_the_main_center(): void
+    {
+        $salama = $this->user('salama', 'system_admin');
+        $farea = $this->user('farea.b', 'branch_manager', $this->b, null, $this->branchB);
+        $mudirFm = $this->user('mudir.fm', 'department_manager', $this->b, null, $this->dmmFm);
+        $copy = $this->activate($this->dmmFm, $salama->id);
+        $place = $this->bp('HZ-01')->id;
+
+        // الاسم نفسه داخل الفرع ← «المرافق والصيانة — فرع الشرقية» لا «— المركز الرئيسي»
+        $r = HandlerResolver::resolve($this->ref, $place);
+        $this->assertSame($mudirFm->id, $r['user_id']);
+        $this->assertStringContainsString('«المرافق والصيانة — فرع الشرقية»', $r['note']);
+        $this->assertStringNotContainsString('المركز الرئيسي', $r['note']);
+
+        // البديل هو رأس الفرع نفسه ← «فرع الشرقية» بلا لاحقة، والبلاغ لمدير الفرع
+        $this->actingAs($salama)->post(route('risk.handling.override', $copy), ['handling_unit_id' => $this->branchB->id])->assertRedirect();
+        $r = HandlerResolver::resolve($this->ref, $place);
+        $this->assertSame($farea->id, $r['user_id']);
+        $this->assertStringContainsString('«فرع الشرقية»', $r['note']);
+        $this->assertStringNotContainsString('المركز الرئيسي', $r['note']);
+    }
 }
