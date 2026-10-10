@@ -75,7 +75,9 @@ class PermitDashboardService
     /** سعة الأماكن التسعة الآن. @return array<int, array<string, mixed>> */
     public function placeCapacities(): array
     {
-        return Place::orderBy('sort')->get()
+        // قرار ٨٤: أماكن مباني الحساب (المركز كلها)؛ بلا مستخدم كلها
+        $places = auth()->user() ? \App\Modules\Governance\Services\BuildingContext::placesFor(auth()->user()) : Place::orderBy('sort')->get();
+        return $places
             ->map(fn (Place $p) => $this->conflicts->placeSnapshot($p))
             ->all();
     }

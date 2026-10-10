@@ -159,7 +159,8 @@ class IsolationInOnePlaceTest extends TestCase
         $this->get('/app/emergency/visitors')->assertOk()->assertSee('زائر الدمام')->assertDontSee('زائر الملز')->assertDontSee($this->main->name);
         $this->get('/app/emergency/visitors/kiosk')->assertOk()->assertSee($this->b->name)->assertDontSee($this->main->name)->assertDontSee('HZ-01 —');
         $this->get('/app/emergency/iot')->assertOk()->assertSee($this->b->name)->assertDontSee($this->main->name);
-        $this->get('/app/permits/dashboard')->assertOk()->assertSee('HZ-01/DMM')->assertDontSee('HZ-01 —');
+        // لوحة التصاريح: سعات الأماكن (data-place) من مباني الحساب وحدها — كانت تقرأ Place كلها في PermitDashboardService::placeCapacities
+        $this->get('/app/permits/dashboard')->assertOk()->assertSee('data-place="HZ-01/DMM"', false)->assertDontSee('data-place="HZ-01"', false);
         $this->get('/app/permits/gate')->assertOk()->assertSee('HZ-01/DMM')->assertDontSee('HZ-01 —');
         $this->get('/app/permits/gate/logs')->assertOk()->assertDontSee('HZ-01 —');
         $accounts = $this->get('/api/team-accounts')->assertOk()->getContent();
