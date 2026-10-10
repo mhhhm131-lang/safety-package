@@ -46,6 +46,7 @@ class PlaceUnitsController extends Controller
 
     public function index(Place $place): View
     {
+        PlaceFileController::guardBuilding($place); // قرار ٨٣: وحدات المكان لمن المكان في مبانيه
         $user = Auth::user();
         $types = PlaceUnit::typesFor($place->code);
         $units = PlaceUnit::where('place_id', $place->id)->where('is_active', true)->orderBy('type')->orderBy('sort')->orderBy('name')->get();

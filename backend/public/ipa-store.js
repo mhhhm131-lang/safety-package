@@ -164,11 +164,15 @@
     if (stillPending[k]) return; /* كتابة محلية لم تصل بعد: لا تُكتب فوقها */
     origSet(k, docs[k].data);
   });
-  /* مفاتيح على هذا الجهاز ليست في الخادم بعد (أول ربط): تُرفع — إلا بعد تبديل المبنى */
-  if (!switched) for (var i = 0; i < LS.length; i++) {
+  /* قرار ٨٣ (٢٠٢٦-١٠-١٠): الخادم هو المصدر. ما على هذا الجهاز وليس في الخادم ولا معلّقاً يُمسح ولا يُرفع.
+     كان يُرفع «أول ربط» (هجرة المرحلة ٠ وانتهى غرضها)، فجهازٌ جلسته المخزَّنة بلا رقم مبنى (من قبل ٢٨-٣) لم يُعدّ تبديلَ
+     الحساب تبديلاً للمبنى ورفع وثائق الملز المخزَّنة فيه إلى مبنى الدمام — ثبت على المنشور وأُعيد إنتاجه بمتصفح حقيقي. */
+  var orphans = [];
+  for (var i = 0; i < LS.length; i++) {
     var k0 = LS.key(i);
-    if (isKey(k0) && !(k0 in docs)) queue(k0);
+    if (isKey(k0) && !(k0 in docs) && !stillPending[k0]) orphans.push(k0);
   }
+  orphans.forEach(function (k) { origRemove(k); });
   if (Object.keys(stillPending).length) { Object.keys(stillPending).forEach(function (k) { queue(k, stillPending[k].op === 'del'); }); }
 
   /* ---------- ٢) اعتراض الكتابة ---------- */

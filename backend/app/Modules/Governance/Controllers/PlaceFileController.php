@@ -20,8 +20,19 @@ use Illuminate\View\View;
 class PlaceFileController extends Controller
 {
     /** المرحلة ١٩-٢: ملف النظام — ما كان يعرضه `renderSystem` في dashboard.html:715-740. */
+    /**
+     * قرار ٨٣ (بكلمته ٢٠٢٦-١٠-١٠ «لا يرى فرع آخر في أي شيء»): الملف لكل حساب (قرار ٤٨) **في مبناه** —
+     * المكان يُفتح لمن هو في مبانيه (نطاق القوائم نفسه)؛ مسؤول السلامة ومن يرى الكل كما هم.
+     * كان يُفتح لأي حساب فرأى حساب الدمام بلاغات فحص الملز وبلاغات شاغليه.
+     */
+    public static function guardBuilding(Place $place): void
+    {
+        abort_unless(\App\Modules\Governance\Services\BuildingContext::choices(Auth::user())->contains('id', (int) $place->building_id), 403, 'هذا المكان في مبنى آخر.');
+    }
+
     public function system(Place $place, string $form, string $sys): View
     {
+        self::guardBuilding($place);
         $s = R::systemOf($place->category, $form, $sys, $place->building_id); // ٢٨-٣: بالمبنى والصنف
         abort_unless($s, 404, 'لا نظام بهذا الرمز في نماذج هذا المكان.');
         return view('governance.places.system', ['place' => $place, 's' => $s,
@@ -30,6 +41,7 @@ class PlaceFileController extends Controller
 
     public function show(Place $place): View
     {
+        self::guardBuilding($place); // قرار ٨٣
         $user = Auth::user();
         $hz = $place->category; // ٢٨-٣: الصنف، والوثائق بمبنى المكان لا مبنى الجلسة
         $bid = (int) $place->building_id;
