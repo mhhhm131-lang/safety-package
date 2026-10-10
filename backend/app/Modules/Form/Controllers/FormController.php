@@ -56,7 +56,7 @@ class FormController extends Controller
             'facets'     => FormTemplate::selectRaw('form_type, COUNT(*) as n')->where('is_active', true)
                 ->groupBy('form_type')->pluck('n', 'form_type')->all(),
             'activeType' => $type,
-            'places'     => Place::orderBy('sort')->get(['id', 'code', 'name']),
+            'places'     => \App\Modules\Governance\Services\BuildingContext::placesFor(Auth::user()), // قرار ٨٤
         ]);
     }
 
@@ -81,7 +81,7 @@ class FormController extends Controller
         return view('modules.forms.form', [
             'form'     => new FormTemplate(),
             'units'    => OrganizationUnit::orderBy('name')->get(['id', 'name']),
-            'places'   => Place::orderBy('sort')->get(['id', 'code', 'name']),
+            'places'   => \App\Modules\Governance\Services\BuildingContext::placesFor(Auth::user()), // قرار ٨٤
         ]);
     }
 
@@ -113,7 +113,7 @@ class FormController extends Controller
         return view('modules.forms.form', [
             'form'   => $form,
             'units'  => OrganizationUnit::orderBy('name')->get(['id', 'name']),
-            'places' => Place::orderBy('sort')->get(['id', 'code', 'name']),
+            'places' => \App\Modules\Governance\Services\BuildingContext::placesFor(Auth::user()), // قرار ٨٤
         ]);
     }
 
@@ -187,7 +187,7 @@ class FormController extends Controller
 
         return view('modules.forms.generate', [
             'risks'  => $risks,
-            'places' => Place::orderBy('sort')->get(['id', 'code', 'name']),
+            'places' => \App\Modules\Governance\Services\BuildingContext::placesFor(Auth::user()), // قرار ٨٤
         ]);
     }
 
@@ -232,7 +232,7 @@ class FormController extends Controller
                 ->values(),
             'roles'  => \App\Core\Permissions\PermissionRegistry::ROLES,
             'units'  => OrganizationUnit::orderBy('name')->get(['id', 'name']),
-            'places' => Place::orderBy('sort')->get(['id', 'code', 'name']),
+            'places' => \App\Modules\Governance\Services\BuildingContext::placesFor(Auth::user()), // قرار ٨٤
             'stats'  => $form->assignmentStats(),
         ]);
     }

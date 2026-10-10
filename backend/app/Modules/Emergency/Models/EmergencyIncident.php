@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class EmergencyIncident extends Model
 {
     use HasAuditLog;
+    use \App\Core\Traits\BelongsToBuilding; // قرار ٨٤: الحالة بمبناها
 
     protected $fillable = [
         'building_id', 'place_id', 'incident_code', 'incident_type', 'severity', 'status', 'is_drill',

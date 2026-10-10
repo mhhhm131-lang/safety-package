@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 
 class AfterActionReport extends Model
 {
+    use \App\Core\Traits\BelongsToBuilding; // قرار ٨٤
 
     protected $fillable = [
         'incident_id',

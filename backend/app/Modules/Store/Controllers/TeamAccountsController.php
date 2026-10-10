@@ -21,7 +21,12 @@ class TeamAccountsController extends Controller
             return response()->json(['message' => 'اقتراح الحسابات لمن يرشّح الفريق الأولي أو يعتمده'], 403);
         }
 
-        return response()->json(User::query()->with('profile')->whereHas('profile', fn ($q) => $q->where('is_active', true))->orderBy('name')->get()
+        // قرار ٨٤: حسابات مباني الحساب (بمبنى حسابها، أو بمكانها إن كانت بلا مبنى)؛ من يرى الكل: الكل
+        $bIds = \App\Modules\Governance\Services\BuildingScope::buildingIds();
+        $pIds = \App\Modules\Governance\Services\BuildingScope::placeIds();
+        return response()->json(User::query()->with('profile')->whereHas('profile', fn ($q) => $q->where('is_active', true)
+                ->when($bIds !== null, fn ($q) => $q->where(fn ($w) => $w->whereIn('building_id', $bIds)->orWhere(fn ($x) => $x->whereNull('building_id')->whereIn('place_id', $pIds ?? [])))))
+            ->orderBy('name')->get()
             ->map(fn (User $u) => ['u' => $u->username, 'n' => $u->name, 'r' => PermissionRegistry::getRoleDisplayName($u->profile->role)])
             ->values());
     }

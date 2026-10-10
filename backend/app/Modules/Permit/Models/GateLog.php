@@ -11,7 +11,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /** سجل فحص جاهزية عامل قبل السماح بالعمل (من WorkPermit في OHSMS — «جاهزية البوابة»). */
 class GateLog extends Model
 {
+    use \App\Core\Traits\BelongsToBuilding;
+
     public const UPDATED_AT = null;
+
+    /** قرار ٨٤: سجل البوابة بمبنى مكانه؛ وبلا مكان عامّ */
+    protected static function buildingScope(): array
+    {
+        return ['column' => 'place_id', 'null_general' => true, 'via' => null];
+    }
 
     public const DENIAL_LABELS = [
         'worker_not_found'            => 'العامل غير مسجَّل',

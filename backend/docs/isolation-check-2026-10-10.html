@@ -1,0 +1,196 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>العزل بين الفروع — نتيجة الفحص</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap">
+<style>
+:root{--bg:#f6f5f0;--ink:#1a2a24;--mut:#66756e;--line:#d6ded9;--card:#fff;--g:#0f4c3a;--g2:#e5efe9;--gold:#c99a2e;--gold2:#fbf3dd;--red:#b43c2f;--red2:#fbe9e6}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101a16;--ink:#e6ede9;--mut:#9aaaa3;--line:#2a3a33;--card:#17241f;--g:#5cc19a;--g2:#1b2f27;--gold:#e0b65a;--gold2:#2e2716;--red:#e57a6c;--red2:#3a201c}}
+:root[data-theme="dark"]{--bg:#101a16;--ink:#e6ede9;--mut:#9aaaa3;--line:#2a3a33;--card:#17241f;--g:#5cc19a;--g2:#1b2f27;--gold:#e0b65a;--gold2:#2e2716;--red:#e57a6c;--red2:#3a201c}
+body{background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;direction:rtl;margin:0;padding-inline:16px;padding-block:24px 56px;line-height:1.75;font-variant-numeric:tabular-nums}
+.wrap{max-width:1000px;margin:0 auto;display:grid;gap:36px}
+h1{font-size:2rem;margin:0;line-height:1.2;text-wrap:balance}
+h2{font-size:1.25rem;margin:0 0 10px;color:var(--g);display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+h2 small{font-size:.8rem;color:var(--mut);font-weight:400}
+h3{font-size:1.02rem;margin:14px 0 6px}
+.eyebrow{font-size:.78rem;letter-spacing:.06em;color:var(--gold);font-weight:700}
+.lead{color:var(--mut);margin:6px 0 0;max-width:64ch}
+p{margin:0 0 8px}
+code{font-family:Consolas,"Courier New",monospace;font-size:.9em;background:var(--g2);border-radius:4px;padding:0 4px;direction:ltr;unicode-bidi:embed}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.card ul{margin:0;padding-inline-start:20px;display:grid;gap:4px}
+.card.bad{border-inline-start:4px solid var(--red)}
+.card.good{border-inline-start:4px solid var(--g)}
+.card.warn{border-inline-start:4px solid var(--gold)}
+.hero{background:var(--g);color:#fff;border-radius:14px;padding:18px 20px;display:grid;gap:8px}
+.hero b{font-size:1.15rem}
+.hero ul{margin:0;padding-inline-start:18px;display:grid;gap:4px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .hero{background:#0f4c3a}}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:.92rem}
+th,td{padding:9px 12px;text-align:right;vertical-align:top;border-bottom:1px solid var(--line)}
+th{background:var(--g2);color:var(--g);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td.k{font-weight:700;white-space:nowrap}
+.pill{display:inline-block;border-radius:999px;padding:0 9px;font-size:.75rem;font-weight:700;white-space:nowrap}
+.p-ok{background:var(--g2);color:var(--g)}.p-now{background:var(--gold2);color:var(--gold)}.p-q{background:var(--red2);color:var(--red)}
+.step{border:1px solid var(--line);border-inline-start:4px solid var(--g);border-radius:12px;padding:12px 16px;background:var(--card);display:grid;gap:6px}
+.step h3{margin:0;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.step .why{color:var(--mut);font-size:.92rem}
+.step ul{margin:0;padding-inline-start:20px;display:grid;gap:3px}
+.step .gate{font-size:.88rem;background:var(--g2);border-radius:8px;padding:6px 10px}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}h1{font-size:1.6rem}}
+.note{font-size:.88rem;color:var(--mut)}
+.qbox{background:var(--red2);border:1px solid var(--red);border-radius:12px;padding:14px 16px;display:grid;gap:6px}
+.qbox b{color:var(--red)}
+.gbox{background:var(--gold2);border:1px solid var(--gold);border-radius:12px;padding:14px 16px;display:grid;gap:6px}
+.gbox ul{margin:0;padding-inline-start:20px;display:grid;gap:4px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.kpi b{display:block;font-size:1.5rem;color:var(--g);line-height:1.2}
+.kpi.bad b{color:var(--red)}
+.kpi span{font-size:.85rem;color:var(--mut)}
+@media(max-width:760px){.kpis{grid-template-columns:repeat(2,1fr)}}
+</style>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">حزمة السلامة والصحة المهنية · معهد الإدارة العامة · مرحلة الفروع · ٢٠٢٦-١٠-١٠ · فحص قراءةً فقط على المنشور <code>2be26e5</code> · ينتظر كلمتك</div>
+  <h1>العزل بين الفروع — نتيجة الفحص الكامل</h1>
+  <p class="lead">أربعة حسابات على المنشور: المركز، وحمد مدير فرع الشرقية، ويوسف منسق الفرع، وناصر مدير إدارة التشغيل في الدمام. نحو مئة وثمانين صفحة ورابطاً لكل حساب، قراءةً بلا أي كتابة. ما يعمل، وما يتسرّب، ولماذا، وما أقترحه. لا كود قبل كلمتك.</p>
+</header>
+
+<section>
+  <h2>١ · الجواب أولاً</h2>
+  <div class="hero">
+    <b>العزل يعمل في القوائم التي رُشّحت بقرار ٨٢، لكن أي رابط يحمل رقم مبنى أو رقم كائن من الملز يُفتح لحسابات الدمام الثلاثة.</b>
+    <ul>
+      <li><b>الموجود ✔:</b> التقارير وتصديرها، البلاغات وتصديرها، القوائم السبع، البحث، المخزن، السجل الفعلي بنسخ الإدارات. كلها بالدمام وحدها.</li>
+      <li><b>الخلل ✘:</b> ثلاث فئات: رابط بمبنى يُفتح لأي مبنى؛ صفحة الكائن الواحد بلا نطاق مع أن قائمته مرشّحة؛ قوائم ولوحات لم يشملها قرار ٨٢.</li>
+      <li><b>السبب واحد:</b> العزل أُضيف شاشةً شاشة. لا موضع واحد يمرّ عليه كل طلب فيسأل: هل هذا من مبانيك؟</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>٢ · بالأرقام</h2>
+  <div class="kpis">
+    <div class="kpi"><b>٤</b><span>حسابات على المنشور</span></div>
+    <div class="kpi"><b>١٨٠</b><span>صفحة ورابطاً لكل حساب</span></div>
+    <div class="kpi"><b>١٥</b><span>شاشة وقائمة سليمة</span></div>
+    <div class="kpi bad"><b>٣٠</b><span>رابطاً يُفتح على بيانات الملز</span></div>
+  </div>
+  <p class="note">مباني المنشور: الملز ١، الدمام ٢، مكة ٣، عسير ٤. الفحص في مسودة الجلسة بسكربتين قراءةً فقط، وتفصيله كله في BACKEND.md ٧-٣ بتاريخ اليوم.</p>
+</section>
+
+<section>
+  <h2>٣ · ما يعمل <small>حسابات الدمام الثلاثة ترى الدمام وحدها</small></h2>
+  <div class="tbl">
+    <table>
+      <tr><th>الشاشة</th><th>ما رآه حساب الدمام</th></tr>
+      <tr><td class="k">التقارير الثلاثة وتصديرها</td><td>أماكن الدمام التسعة، وبلاغات ش-0042 إلى ش-0044 وحدها.</td></tr>
+      <tr><td class="k">سجل البلاغات وتصديره</td><td>بلاغات الدمام الثلاثة. بلاغات الملز 403.</td></tr>
+      <tr><td class="k">القوائم السبع (قرار ٨٢)</td><td>التصاريح، الفريق الأولي، الذعر، جهات الاتصال، المباني، خطط الاستجابة، المرشّحات: الدمام وحدها.</td></tr>
+      <tr><td class="k">البحث</td><td>«لا نتائج» على ش-0041 وعلى «الملز» وعلى «طارق».</td></tr>
+      <tr><td class="k">المخزن</td><td>مفاتيح وثائق الملز 404، حتى مع <code>?b=1</code>. وثيقتا الدمام وحدهما.</td></tr>
+      <tr><td class="k">السجل الفعلي</td><td>نسخ إدارات الملز 403 للثلاثة. ونسخة الصيانة 403 لناصر لأنها ليست إدارته. شجرة الفعلي فئات الفرع وحدها.</td></tr>
+      <tr><td class="k">الحسابات والإعدادات</td><td>تعديل حسابات الملز 403. المبنى وجهات الاتصال والفرق والأجهزة والمعدات 403 بالصلاحية.</td></tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>٤ · الثغرات <small>كلها 200 لحمد ويوسف وناصر على بيانات الملز</small></h2>
+
+  <h3><span class="pill p-q">أ</span> رابط بمبنى يُفتح لأي مبنى</h3>
+  <div class="tbl">
+    <table>
+      <tr><th>الرابط</th><th>ما رآه حساب الدمام</th><th>السبب في الكود</th></tr>
+      <tr><td class="k">صفحة مبنى الملز</td><td>أماكنه التسعة وطوابقه ومخارجه ونقاط تجمعه وزر «انتهى الخطر».</td><td><code>EmergencyController::buildingsShow</code> يقرأ المبنى من الرابط بلا سؤال.</td></tr>
+      <tr><td class="k">لوحة تحكم مبنى الملز</td><td>اللوحة كاملة وقائمة أماكن بها ٣٧ مكاناً.</td><td><code>buildingControl</code>، والأماكن <code>Place::orderBy('sort')->get()</code>.</td></tr>
+      <tr><td class="k">زوار مبنى الملز</td><td>ثلاثة زوار بأسمائهم وجوالاتهم وشركاتهم، في الشاشة وفي الواجهة البرمجية.</td><td><code>visitorsBuilding</code> و<code>VisitorController::inBuilding/todayVisitors/evacuationStats</code>.</td></tr>
+      <tr><td class="k">نقاط التجمع والخريطة والإغلاق</td><td>بيانات الملز.</td><td><code>EmergencyApiController::assemblyPoints/mapData/lockdownStatus</code>.</td></tr>
+      <tr><td class="k">واجهة الأجهزة كلها</td><td>حالة لوحة الحريق ومناطقها، الأبواب، الحضور، المصاعد، التكييف، الشاشات، الكاميرات لمبنى الملز. البيانات اليوم فارغة لكن الباب مفتوح.</td><td><code>IoTController</code> و<code>DeviceController::camerasByBuilding</code>: المعرّف من الرابط فقط.</td></tr>
+    </table>
+  </div>
+
+  <h3><span class="pill p-q">ب</span> صفحة الكائن الواحد بلا نطاق، مع أن قائمته رُشّحت بقرار ٨٢</h3>
+  <div class="tbl">
+    <table>
+      <tr><th>الكائن</th><th>ما رآه حساب الدمام</th><th>السبب في الكود</th></tr>
+      <tr><td class="k">تصريح الملز ت-2026-0001</td><td>الصفحة كاملة ومراجعتها: المكان، المعتمِد، التسلسل الزمني.</td><td><code>PermitPolicy::view</code> تسأل عن الصلاحية والطرف الخارجي لا عن المبنى.</td></tr>
+      <tr><td class="k">فرق الملز الأولية</td><td>فرق المكاتب ومركز البيانات والقبو بأعضائها.</td><td><code>teamsShow</code> بلا حارس.</td></tr>
+      <tr><td class="k">تنبيهات ذعر الملز</td><td>المبلّغ ونوع التنبيه والمستجيبون السبعة، في الشاشة والواجهة.</td><td><code>panicDetails</code> و<code>PanicAlertController::show</code>.</td></tr>
+      <tr><td class="k">الذعر النشط (واجهة)</td><td>تنبيهات الملز الأربعة النشطة تعود للثلاثة.</td><td><code>PanicAlertController::active</code> يقرأ <code>getActiveAlerts()</code> بلا مبنى. الشاشة رُشّحت والواجهة لا.</td></tr>
+    </table>
+  </div>
+
+  <h3><span class="pill p-q">ج</span> قوائم ولوحات لم يشملها قرار ٨٢</h3>
+  <div class="tbl">
+    <table>
+      <tr><th>الشاشة</th><th>ما رآه حساب الدمام</th><th>السبب في الكود</th></tr>
+      <tr><td class="k">سجل الحالات الطارئة</td><td>حالات الملز ط-0018 وط-0001 بأسماء من فعّلها، ومرشّح مكان فيه ٣٧ مكاناً.</td><td><code>incidentsIndex</code> بلا مبنى.</td></tr>
+      <tr><td class="k">التحليلات</td><td>أرقام المباني الأربعة.</td><td><code>EmergencyAnalyticsService::getDashboardMetrics</code> بلا مبنى.</td></tr>
+      <tr><td class="k">لوحة الزوار وكشكهم</td><td>«الزوار حسب المبنى» للأربعة، وجدول آخر عشرين زائراً فيه زوار الملز بالاسم والجوال. والكشك يسجّل زائراً في الملز من الدمام.</td><td><code>visitorsDashboard</code> و<code>visitorsKiosk</code>.</td></tr>
+      <tr><td class="k">لوحة الأجهزة والكاميرات</td><td>قائمة المباني الأربعة.</td><td><code>IotDevicesController::dashboard</code> و<code>DeviceController::camerasDashboard</code>.</td></tr>
+      <tr><td class="k">لوحة التصاريح والبوابة وسجلها</td><td>قوائم أماكن بها ٣٧ مكاناً.</td><td><code>PermitDashboardController</code> و<code>GateController</code>.</td></tr>
+      <tr><td class="k">اقتراح حسابات الفريق</td><td>كل حسابات المعهد بأسمائها وأسماء دخولها.</td><td><code>TeamAccountsController</code>. يقرأه ملف المكان في اللوحة.</td></tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>٥ · الوحدات الأربع <small>بلا بيانات على المنشور، فحُكمت بالكود</small></h2>
+  <div class="grid2">
+    <div class="card warn"><b>المشاريع والأطراف والعمال</b><ul><li>القوائم تُرشَّح للطرف الخارجي وحده، ولا تعرف المبنى.</li><li>قوائم «المكان» في نماذجها كل الأماكن.</li></ul></div>
+    <div class="card warn"><b>النماذج الرقمية</b><ul><li>«نماذجي» بالمكلَّف: صحيح.</li><li>قوائم المكان في الإنشاء والتعديل والتوليد والإرسال كل الأماكن.</li></ul></div>
+    <div class="card good"><b>تقريرا البلاغات والمخاطر</b><ul><li>مرشّحان بقرار ٨٢. سليمان.</li></ul></div>
+    <div class="card warn"><b>إنترنت الأشياء</b><ul><li>الشاشات والواجهة في الفئتين أ وج أعلاه.</li></ul></div>
+  </div>
+</section>
+
+<section>
+  <h2>٦ · ما تأكّد وما ليس خللاً</h2>
+  <div class="grid2">
+    <div class="card bad"><b>المؤجَّل (ج) تأكّد وزاد</b><ul><li>النسختان العامتان بلا إدارة <code>ER-04-01/GEN</code> و<code>ER-02-01/GEN</code> تُفتحان للثلاثة تفصيلاً وشجرةً.</li><li>ونموذج تعديلهما يُفتح أيضاً. الإرسال لم يُجرَّب.</li><li>السبب: ما وحدته فارغة يظهر للجميع.</li></ul></div>
+    <div class="card good"><b>ليس خللاً</b><ul><li>اسم سعود الدوسري في قائمة بلاغات حمد: هو معالج ش-0042 قبل بديل الفرع (قرار ٨٠).</li><li>تصدير المخاطر لحساب الفرع: العام كله وثلاث نسخ الفرع. صحيح بالتصميم.</li><li>شاشة نماذج الفحص تسمّي الأصناف برموز الملز لحسابات الدمام: تسمية لا بيانات.</li></ul></div>
+  </div>
+</section>
+
+<section>
+  <h2>٧ · رأيي <small>القاعدة في موضع واحد، لا ترقيع ثلاثين مساراً</small></h2>
+  <div style="display:grid;gap:12px">
+    <div class="step">
+      <h3><span class="pill p-now">١</span> حارس واحد على المسار</h3>
+      <div class="why">كل مسار يحمل مبنى أو كائناً له مبنى (تصريح، فريق، تنبيه ذعر، حالة طارئة، زائر، جهاز) يمرّ بحارس يقارن مبناه بمباني الحساب، وإلا 403. المركز ومن يرى الكل لا يتغيّران.</div>
+      <div class="gate">البوابة: حساب فرع يفتح الروابط المسمّاة في الفئتين أ وب فيردّه 403، والمركز يفتحها 200.</div>
+    </div>
+    <div class="step">
+      <h3><span class="pill p-now">٢</span> نطاق أساس على النماذج المرتبطة بمبنى</h3>
+      <div class="why">الحالات الطارئة والذعر والزوار والفرق والتصاريح والأجهزة تُقيَّد بمباني الحساب تلقائياً، فتصحّ القوائم والتحليلات والواجهات من غير أن نلمس كل شاشة.</div>
+      <div class="gate">البوابة: الفئة ج بلا أي رمز ملز لحساب فرع.</div>
+    </div>
+    <div class="step">
+      <h3><span class="pill p-now">٣</span> قوائم «المكان» من مصدر واحد</h3>
+      <div class="why">تسعة مواضع تقرأ كل الأماكن. تصير كلها تقرأ أماكن مباني الحساب، واقتراح حسابات الفريق كذلك.</div>
+      <div class="gate">البوابة: لا قائمة مكان فيها أكثر من ٩ خيارات لحساب فرع.</div>
+    </div>
+    <div class="step">
+      <h3><span class="pill p-now">٤</span> الاختبار ثم الحزمة ثم المنشور</h3>
+      <div class="why">اختبار واحد يمرّ على الروابط كلها بحساب فرع قبل التعديل فيسقط، وبعده فيمرّ. ثم الحزمة الكاملة. ثم الفحص نفسه على المنشور بالحسابات الأربعة.</div>
+      <div class="gate">نحو يوم عمل. لا كود قبل كلمتك.</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>٨ · ما لا يُمس</h2>
+  <div class="card"><ul>
+    <li>صفحات المعهد ونماذج الفحص العشرة واللوحة.</li>
+    <li>ما يراه المركز ومن يرى الكل.</li>
+    <li>قرارات ٧٨ إلى ٨٣ كما هي. هذا إتمام لها لا تغيير فيها.</li>
+    <li>المؤجلات الأخرى: تنظيف التجارب بيدك، قرارك في المخاطر العامة السبع، عدّادات الذعر، و٢٨-٦ بيدك.</li>
+  </ul></div>
+</section>
+
+</div>

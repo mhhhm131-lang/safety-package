@@ -15,6 +15,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Project extends Model
 {
     use HasFactory;
+    use \App\Core\Traits\BelongsToBuilding;
+
+    /** قرار ٨٤: المشروع بمبنى مكان تنفيذه؛ وبلا مكان عامّ */
+    protected static function buildingScope(): array
+    {
+        return ['column' => 'place_id', 'null_general' => true, 'via' => null];
+    }
 
     protected static function newFactory()
     {

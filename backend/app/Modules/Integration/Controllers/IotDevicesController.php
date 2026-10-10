@@ -20,8 +20,10 @@ class IotDevicesController extends Controller
 {
     public function dashboard(Request $request)
     {
-        $buildings = EmergencyBuilding::active()->orderBy('name')->get(['id', 'name', 'address', 'fire_zones']);
+        // قرار ٨٤: مباني الحساب (المركز كلها)؛ الأجهزة والأحداث بنطاق النموذج
+        $buildings = \App\Modules\Governance\Services\BuildingContext::choices(auth()->user())->where('status', EmergencyBuilding::STATUS_ACTIVE)->sortBy('name')->values();
         $selectedBuilding = (int) $request->input('building', $buildings->first()?->id);
+        if (!$buildings->contains('id', $selectedBuilding)) $selectedBuilding = (int) ($buildings->first()?->id);
         $devices = IotDevice::with('building', 'place')->orderBy('kind')->get();
         $recentEvents = IotEvent::with('device', 'incident')->orderByDesc('received_at')->limit(15)->get();
         return view('modules.emergency.iot.dashboard', compact('buildings', 'selectedBuilding', 'devices', 'recentEvents'));
@@ -36,7 +38,8 @@ class IotDevicesController extends Controller
 
     public function create()
     {
-        return view('modules.emergency.iot.device_form', ['device' => new IotDevice(['protocol' => 'webhook', 'scheme' => 'http']), 'buildings' => EmergencyBuilding::orderBy('name')->get(), 'places' => Place::orderBy('sort')->get()]);
+        $user = auth()->user(); // قرار ٨٤
+        return view('modules.emergency.iot.device_form', ['device' => new IotDevice(['protocol' => 'webhook', 'scheme' => 'http']), 'buildings' => \App\Modules\Governance\Services\BuildingContext::choices($user)->sortBy('name')->values(), 'places' => \App\Modules\Governance\Services\BuildingContext::placesFor($user)]);
     }
 
     public function store(Request $request)

@@ -44,6 +44,17 @@ class EmergencyBuilding extends Model
         'residential' => 'سكني', 'commercial' => 'تجاري', 'government' => 'حكومي', 'other' => 'أخرى',
     ];
 
+    /**
+     * قرار ٨٤: حارس الرابط — مبنى ليس من مباني الحساب يردّ 403 قبل أي كود (الشاشات والواجهات والأجهزة والزوار).
+     * لا نطاق عام على المباني نفسها: `BuildingContext::choices` يقرأ هذا الجدول ليعرف مباني الحساب.
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        $b = parent::resolveRouteBinding($value, $field);
+        if ($b && !\App\Modules\Governance\Services\BuildingScope::allowsBuilding((int) $b->id)) abort(403, 'هذا ليس من مبانيك');
+        return $b;
+    }
+
     /** المبنى الأول (المعهد مبنى واحد). */
     /** ٢٠-١ (قرار ٥١): المبنى الرئيسي = الملز، فرعه الرياض. القيم كما في EmergencySeeder. */
     public const MAIN_CODE = 'IPA-MAIN';

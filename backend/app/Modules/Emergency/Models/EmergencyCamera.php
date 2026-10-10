@@ -7,6 +7,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class EmergencyCamera extends Model
 {
+    use \App\Core\Traits\BelongsToBuilding; // قرار ٨٤
+
+    protected static function buildingScope(): array
+    {
+        return ['column' => 'building_id', 'null_general' => true, 'via' => null];
+    }
     protected $fillable = [
         'building_id', 'place_id', 'name', 'camera_id', 'location',
         'stream_url', 'snapshot_url', 'type', 'status',

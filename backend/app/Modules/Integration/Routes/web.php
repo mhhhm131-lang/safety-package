@@ -51,7 +51,7 @@ Route::middleware(['web', 'auth'])->prefix('api/iot')->name('api.iot.')->group(f
         Route::get('/signage/buildings/{building}/displays', [IoTController::class, 'getDisplays'])->name('signage.displays');
         Route::get('/lockdown/buildings/{building}/status', [IoTController::class, 'getLockdownStatus'])->name('lockdown.status');
         Route::get('/cameras', [DeviceController::class, 'cameras'])->name('cameras.index');
-        Route::get('/cameras/building/{buildingId}', [DeviceController::class, 'camerasByBuilding'])->name('cameras.by-building');
+        Route::get('/cameras/building/{building}', [DeviceController::class, 'camerasByBuilding'])->name('cameras.by-building')->whereNumber('building'); // قرار ٨٤: ربط المبنى
         Route::get('/wearables', [DeviceController::class, 'wearables'])->name('wearables.index');
         Route::get('/wearables/alerts', [DeviceController::class, 'wearableAlerts'])->name('wearables.alerts.index');
     });

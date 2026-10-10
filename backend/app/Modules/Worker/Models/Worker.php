@@ -26,6 +26,13 @@ class Worker extends Model
     public function getStatusLabel(): string { return self::STATUSES[$this->status] ?? $this->status; }
 
     use HasFactory;
+    use \App\Core\Traits\BelongsToBuilding;
+
+    /** قرار ٨٤: العامل بمبنى مكان عمله؛ وبلا مكان عامّ */
+    protected static function buildingScope(): array
+    {
+        return ['column' => 'place_id', 'null_general' => true, 'via' => null];
+    }
 
     protected static function newFactory()
     {

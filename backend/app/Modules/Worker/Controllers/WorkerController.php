@@ -172,7 +172,7 @@ class WorkerController extends Controller
             'trades' => Trade::where('is_active', true)->orderBy('code')->get(),
             'externalParties' => $pid ? ExternalParty::whereKey($pid)->get() : ExternalParty::orderBy('name')->get(),
             'projects' => $pid ? Project::whereHas('projectContractors', fn ($q) => $q->where('external_party_id', $pid))->orderBy('name')->get() : Project::orderBy('name')->get(),
-            'places' => Place::orderBy('sort')->get(),
+            'places' => \App\Modules\Governance\Services\BuildingContext::placesFor(auth()->user()), // قرار ٨٤
             'topics' => \App\Modules\Worker\Models\TrainingTopic::where('is_active', true)->orderBy('code')->get(),
         ];
     }

@@ -19,6 +19,13 @@ use Illuminate\Support\Str;
 class IotDevice extends Model
 {
     use HasAuditLog;
+    use \App\Core\Traits\BelongsToBuilding;
+
+    /** قرار ٨٤: جهاز بلا مبنى يخدم أي مبنى (كما في forBuilding) فيبقى عامّاً */
+    protected static function buildingScope(): array
+    {
+        return ['column' => 'building_id', 'null_general' => true, 'via' => null];
+    }
 
     protected $fillable = [
         'kind', 'name', 'building_id', 'place_id', 'protocol', 'host', 'port', 'base_path', 'scheme', 'unit_id',

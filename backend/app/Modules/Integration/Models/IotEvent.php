@@ -9,7 +9,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /** ما وصل من جهاز (Webhook أو MQTT أو استطلاع) وما فُعل به. المرفوض توقيعاً يُسجَّل أيضاً (signature_valid=false). */
 class IotEvent extends Model
 {
+    use \App\Core\Traits\BelongsToBuilding;
+
     public $timestamps = false;
+
+    /** قرار ٨٤: الحدث بمبنى جهازه */
+    protected static function buildingScope(): array
+    {
+        return ['column' => 'device_id', 'null_general' => false, 'via' => IotDevice::class];
+    }
 
     protected $fillable = ['device_id', 'kind', 'event_type', 'source', 'payload', 'signature_valid', 'source_ip', 'incident_id', 'action_taken', 'note', 'received_at'];
 

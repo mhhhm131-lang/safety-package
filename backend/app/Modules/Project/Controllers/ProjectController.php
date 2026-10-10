@@ -207,7 +207,7 @@ class ProjectController extends Controller
     private function formData(): array
     {
         return [
-            'places' => Place::orderBy('sort')->get(),
+            'places' => \App\Modules\Governance\Services\BuildingContext::placesFor(auth()->user()), // قرار ٨٤
             'units' => OrganizationUnit::where('is_active', true)->orderBy('order')->get(),
             'coordinators' => User::whereHas('profile', fn ($q) => $q->whereIn('role', ['safety_coordinator', 'system_admin', 'system_staff'])->where('is_active', true))->orderBy('name')->get(['id', 'name']),
             'statuses' => Project::STATUSES,

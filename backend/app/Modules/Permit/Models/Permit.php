@@ -20,6 +20,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Permit extends Model
 {
+    use \App\Core\Traits\BelongsToBuilding;
+
+    /** قرار ٨٤: التصريح بمبنى مكانه؛ وبلا مكان (مسودة لم تُحدَّد) يبقى ظاهراً لصاحبه */
+    protected static function buildingScope(): array
+    {
+        return ['column' => 'place_id', 'null_general' => true, 'via' => null];
+    }
+
     public const STATUS_DRAFT           = 'draft';
     public const STATUS_SUBMITTED       = 'submitted';
     public const STATUS_UNDER_REVIEW    = 'under_review';

@@ -21,7 +21,7 @@ class GateController extends Controller
     {
         return view('modules.permits.gate', [
             'stats'  => $this->gate->statsToday(),
-            'places' => Place::orderBy('sort')->get(['id', 'code', 'name']),
+            'places' => \App\Modules\Governance\Services\BuildingContext::placesFor(auth()->user()), // قرار ٨٤
         ]);
     }
 
@@ -80,7 +80,7 @@ class GateController extends Controller
 
         return view('modules.permits.gate_logs', [
             'logs'   => $query->paginate(50)->withQueryString(),
-            'places' => Place::orderBy('sort')->get(['id', 'code', 'name']),
+            'places' => \App\Modules\Governance\Services\BuildingContext::placesFor(auth()->user()), // قرار ٨٤
         ]);
     }
 }

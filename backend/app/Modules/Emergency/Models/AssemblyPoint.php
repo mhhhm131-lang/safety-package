@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class AssemblyPoint extends Model
 {
     use HasAuditLog;
+    use \App\Core\Traits\BelongsToBuilding; // قرار ٨٤
 
     public $timestamps = false;
 

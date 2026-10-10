@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class BuildingFloor extends Model
 {
+    use \App\Core\Traits\BelongsToBuilding; // قرار ٨٤
+
     public $timestamps = false;
 
     protected $fillable = [

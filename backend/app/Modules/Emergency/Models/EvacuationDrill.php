@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class EvacuationDrill extends Model
 {
     use \App\Core\Traits\HasAuditLog;
+    use \App\Core\Traits\BelongsToBuilding; // قرار ٨٤
 
     protected $fillable = [
         'building_id',

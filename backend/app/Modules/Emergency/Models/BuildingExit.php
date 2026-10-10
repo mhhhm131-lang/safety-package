@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class BuildingExit extends Model
 {
+    use \App\Core\Traits\BelongsToBuilding; // قرار ٨٤
+
     public $timestamps = false;
 
     protected $fillable = [

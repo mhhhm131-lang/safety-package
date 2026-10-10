@@ -353,7 +353,7 @@ class EmergencyController extends Controller
         $activeIncident = $building->getActiveIncident();
         $stats = $activeIncident ? $this->musteringService->getLiveStats($activeIncident) : null;
         if ($activeIncident) $activeIncident->load('eventLogs.user', 'place');
-        $places = Place::orderBy('sort')->get();
+        $places = $this->accountPlaces(); // قرار ٨٤
         $lockdown = $building->activeLockdown();
         $user = auth()->user();
         // ٢٢-٨: ما يعرفه النظام لا يُسأل — المكان من الرمز (جاء من ملف مكان) ثم من حساب المفعِّل.
@@ -392,8 +392,8 @@ class EmergencyController extends Controller
         if ($request->filled('type')) $q->where('incident_type', $request->type);
         if ($request->filled('place')) $q->whereHas('place', fn ($w) => $w->where('code', $request->place));
         if ($request->filled('drill')) $q->where('is_drill', $request->drill === '1');
-        $incidents = $q->paginate(20)->withQueryString();
-        $places = Place::orderBy('sort')->get();
+        $incidents = $q->paginate(20)->withQueryString(); // الصفوف بمباني الحساب عبر نطاق النموذج (قرار ٨٤)
+        $places = $this->accountPlaces();
         return view('modules.emergency.incidents.index', compact('incidents', 'places'));
     }
 
@@ -985,7 +985,7 @@ class EmergencyController extends Controller
     public function visitorsDashboard()
     {
         $visitorService = app(VisitorService::class);
-        $buildings = EmergencyBuilding::with(['visitors' => fn ($q) => $q->currentlyIn()])->orderBy('name')->get();
+        $buildings = EmergencyBuilding::with(['visitors' => fn ($q) => $q->currentlyIn()])->whereIn('id', $this->accountBuildingIds())->orderBy('name')->get(); // قرار ٨٤
         $stats = $visitorService->getStats('today');
         $recentVisitors = \App\Modules\Emergency\Models\EmergencyVisitor::with(['building', 'host', 'place'])->orderByDesc('checked_in_at')->limit(20)->get();
         return view('modules.emergency.visitors.dashboard', compact('buildings', 'stats', 'recentVisitors'));
@@ -993,8 +993,8 @@ class EmergencyController extends Controller
 
     public function visitorsKiosk()
     {
-        $buildings = EmergencyBuilding::orderBy('name')->get(['id', 'name', 'code']);
-        $places = Place::orderBy('sort')->get();
+        $buildings = EmergencyBuilding::whereIn('id', $this->accountBuildingIds())->orderBy('name')->get(['id', 'name', 'code']); // قرار ٨٤
+        $places = $this->accountPlaces();
         return view('modules.emergency.visitors.kiosk', compact('buildings', 'places'));
     }
 

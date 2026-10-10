@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Lockdown extends Model
 {
     use HasAuditLog;
+    use \App\Core\Traits\BelongsToBuilding; // قرار ٨٤
 
     protected $fillable = [
         'building_id', 'incident_id', 'level', 'state', 'zones', 'options', 'results', 'reason',

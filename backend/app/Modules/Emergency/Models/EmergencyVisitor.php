@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 
 class EmergencyVisitor extends Model
 {
+    use \App\Core\Traits\BelongsToBuilding; // قرار ٨٤: الزائر بمبنى من سجّله (٢٨-٤)
 
     protected $fillable = [
         'building_id',

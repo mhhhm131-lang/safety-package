@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class EmergencyEquipment extends Model
 {
     use \App\Core\Traits\HasAuditLog;
+    use \App\Core\Traits\BelongsToBuilding; // قرار ٨٤
 
     protected $table = 'emergency_equipment';
 

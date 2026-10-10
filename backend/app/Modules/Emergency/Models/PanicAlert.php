@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PanicAlert extends Model
 {
+    use \App\Core\Traits\BelongsToBuilding; // قرار ٨٤: التنبيه بمبنى صاحبه (٢٨-٤)
 
     protected $fillable = [
         'user_id',

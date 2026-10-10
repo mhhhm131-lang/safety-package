@@ -16,7 +16,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Equipment extends Model
 {
+    use \App\Core\Traits\BelongsToBuilding;
+
     protected $table = 'equipment';
+
+    /** قرار ٨٤: المعدة بمبنى مكانها؛ وبلا مكان عامّة */
+    protected static function buildingScope(): array
+    {
+        return ['column' => 'place_id', 'null_general' => true, 'via' => null];
+    }
 
     public const STATUS_LABELS = [
         'active'         => 'صالحة',

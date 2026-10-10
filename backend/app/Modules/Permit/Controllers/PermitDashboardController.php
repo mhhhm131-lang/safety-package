@@ -53,7 +53,7 @@ class PermitDashboardController extends Controller
     public function settings()
     {
         return view('modules.permits.settings', [
-            'places' => Place::orderBy('sort')->get(),
+            'places' => \App\Modules\Governance\Services\BuildingContext::placesFor(auth()->user()), // قرار ٨٤
             'rules'  => PermitTypeConflictRule::with(['permitTypeA', 'permitTypeB', 'place'])->orderByDesc('is_active')->get(),
             'types'  => PermitType::where('is_active', true)->orderBy('name')->get(['id', 'name', 'code']),
         ]);

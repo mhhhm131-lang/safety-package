@@ -10,8 +10,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class EmergencyContact extends Model
 {
     use HasAuditLog;
+    use \App\Core\Traits\BelongsToBuilding;
 
     public $timestamps = false;
+
+    /** قرار ٨٤ على قرار ٨٢: جهة بلا مبنى (الدفاع المدني، الهلال الأحمر…) عامّة لكل المباني */
+    protected static function buildingScope(): array
+    {
+        return ['column' => 'building_id', 'null_general' => true, 'via' => null];
+    }
 
     protected $fillable = [
         'building_id', 'contact_type', 'name', 'role', 'organization', 'phone', 'phone_alt', 'email', 'priority',

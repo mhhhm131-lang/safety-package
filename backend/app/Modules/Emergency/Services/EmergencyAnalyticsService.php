@@ -187,7 +187,10 @@ class EmergencyAnalyticsService
     public function getBuildingRiskScores(): array
     {
         $scores = [];
-        foreach (EmergencyBuilding::all() as $building) {
+        // قرار ٨٤: مباني الحساب الحالي؛ بلا مستخدم أو لمن يرى الكل: كلها
+        $ids = \App\Modules\Governance\Services\BuildingScope::buildingIds();
+        $buildings = $ids === null ? EmergencyBuilding::all() : EmergencyBuilding::whereIn('id', $ids)->get();
+        foreach ($buildings as $building) {
             $incidentCount = EmergencyIncident::where('building_id', $building->id)->where('is_drill', false)->where('triggered_at', '>=', now()->subYear())->count();
             $hasTeams = EmergencyTeam::where('building_id', $building->id)->where('is_active', true)->exists();
             $hasAssemblyPoints = $building->assemblyPoints()->where('status', 'active')->exists();

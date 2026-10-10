@@ -65,10 +65,11 @@ class DeviceController extends Controller
         return response()->json(['success' => true, 'message' => 'تم إضافة الكاميرا', 'data' => ['id' => $camera->id]], 201);
     }
 
-    public function camerasByBuilding(int $buildingId): JsonResponse
+    /** قرار ٨٤: المبنى يُربط بالرابط فيحرسه `EmergencyBuilding::resolveRouteBinding` (403 لمبنى خارج الحساب) */
+    public function camerasByBuilding(EmergencyBuilding $building): JsonResponse
     {
         $cameras = EmergencyCamera::query()
-            ->where('building_id', $buildingId)
+            ->where('building_id', $building->id)
             ->online()
             ->orderBy('is_emergency_priority', 'desc')
             ->get();
@@ -227,7 +228,7 @@ class DeviceController extends Controller
     public function camerasDashboard()
     {
         $cameras = EmergencyCamera::with('building', 'place')->orderBy('is_emergency_priority', 'desc')->orderBy('name')->get();
-        $buildings = EmergencyBuilding::orderBy('name')->get(['id', 'name']);
+        $buildings = \App\Modules\Governance\Services\BuildingContext::choices(auth()->user())->sortBy('name')->values(); // قرار ٨٤
         $stats = ['total' => $cameras->count(), 'online' => $cameras->where('status', 'online')->count(), 'offline' => $cameras->where('status', 'offline')->count(),
             'maintenance' => $cameras->where('status', 'maintenance')->count(), 'priority' => $cameras->where('is_emergency_priority', true)->count()];
         return view('modules.emergency.cameras.dashboard', compact('cameras', 'buildings', 'stats'));

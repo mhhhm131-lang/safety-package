@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class EmergencyTeam extends Model
 {
     use HasAuditLog;
+    use \App\Core\Traits\BelongsToBuilding; // قرار ٨٤: الفريق بمبناه (٢٨-٣)
 
     public $timestamps = false;
 
