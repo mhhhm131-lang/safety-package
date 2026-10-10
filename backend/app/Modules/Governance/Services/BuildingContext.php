@@ -11,7 +11,7 @@ use Illuminate\Support\Collection;
  * تُقرأ وتُكتب داخل مبنى واحد:
  *   - من له مبنى واحد (الفني، الموظف، مدير الإدارة…): مبنى حسابه، وإلا مبنى مكانه، وإلا الملز.
  *   - من يرى الكل (مسؤول السلامة، المناوب، القيادة، المديرون الثلاثة): مبدّل «المبنى» في الشريط، والافتراض مبنى حسابه.
- *   - مدير الفرع: مباني فرعه.
+ *   - مدير الفرع ومنسق سلامة الفرع (قرار ٨١): مباني فرعه.
  * صفحات المعهد لا تعرف المبنى؛ الخادم يقدّم لها وثائق مبنى الجلسة (ipa-store.js يحمل `b` ويمسح المحلي عند تغيّره).
  */
 final class BuildingContext
@@ -28,7 +28,8 @@ final class BuildingContext
         if ($active && ScopeService::seesAllFor($p)) {
             return EmergencyBuilding::query()->orderByRaw('CASE WHEN code = ? THEN 0 ELSE 1 END', [EmergencyBuilding::MAIN_CODE])->orderBy('id')->get();
         }
-        if ($active && $role === 'branch_manager') {
+        // قرار ٨١: منسق سلامة الفرع كمدير الفرع — مباني فرعه
+        if ($active && ($role === 'branch_manager' || ScopeService::isBranchCoordinator($p))) {
             $list = EmergencyBuilding::whereIn('id', ScopeService::branchBuildingIds($p))->orderBy('id')->get();
             if ($list->isNotEmpty()) return $list;
         }

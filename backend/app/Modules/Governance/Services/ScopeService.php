@@ -14,8 +14,8 @@ use Illuminate\Support\Collection;
  * المرحلة ٢٠-٥ (قرار ٥١): النطاق يُشتق من الحساب عند الدخول — لا يُسأل أحد شيئاً.
  *   all      المعهد كله: مسؤول السلامة، الإدارة العليا، اللجنة، مدير الشؤون، مدير المرافق، رئيس الأمن
  *   building المناوب (٢٨-٥، س١ بكلمته): أماكن مبنى حسابه
- *   branch   مدير الفرع: أماكن مباني فرعه (المباني التي تشير إلى وحدته أو ما تحتها؛ وإلا بالنص القديم)
- *   unit     مدير الإدارة/القسم (والرئيس التنفيذي بدور مدير إدارة)، منسق السلامة، المكتب: مكان وحدته وما تحتها
+ *   branch   مدير الفرع، ومنسق سلامة الفرع (قرار ٨١: وحدته من نوع «فرع»): أماكن مباني فرعه (المباني التي تشير إلى وحدته أو ما تحتها؛ وإلا بالنص القديم)
+ *   unit     مدير الإدارة/القسم (والرئيس التنفيذي بدور مدير إدارة)، منسق إدارة، المكتب: مكان وحدته وما تحتها
  *   coverage الفنيون والإسناد والفريق الأولي: الأماكن التي يغطونها (وإلا مكان الحساب)
  *   self     الموظف والمقاولون والأطراف: مكانه وحده
  * الدور يقول ماذا تفعل (PermissionRegistry)، وهذا يقول أين.
@@ -40,7 +40,17 @@ final class ScopeService
         return $p !== null && (self::seesAll($p->role) || (bool) $p->sees_all_buildings);
     }
 
-    /** ٢٨-٥: مباني فرع مدير الفرع — التي تشير إلى وحدته أو ما تحتها؛ وإلا بنص الفرع على مبناه؛ وإلا مبناه */
+    /**
+     * قرار ٨١ (بكلمته ٢٠٢٦-١٠-١٠): منسق سلامة الفرع يرى فرعه كله «لأنه يشبه دور مسؤول السلامة في فرعه».
+     * المعيار بالنوع لا بالاسم: منسق سلامة وحدته من نوع «فرع» (region). منسق وحدته إدارة (الملز أو الفرع) يبقى على وحدته ومكانه.
+     * «فرع» حصراً لا «رأس هيكل»: رأس المركز الرئيسي ليس فرعاً، وإلا رأى منسق عليه المعهد كله.
+     */
+    public static function isBranchCoordinator(?UserProfile $p): bool
+    {
+        return $p !== null && $p->role === 'safety_coordinator' && $p->organizationUnit?->unit_type === 'region';
+    }
+
+    /** ٢٨-٥: مباني فرع مدير الفرع (وقرار ٨١: منسق سلامة الفرع) — التي تشير إلى وحدته أو ما تحتها؛ وإلا بنص الفرع على مبناه؛ وإلا مبناه */
     public static function branchBuildingIds(UserProfile $p): array
     {
         $unitIds = $p->organization_unit_id ? OrganizationUnit::descendantIdsOf($p->organization_unit_id) : [];
@@ -64,7 +74,8 @@ final class ScopeService
             return $b ? new self('building', Place::active()->where('building_id', $b->id)->orderBy('sort')->get())
                 : new self('all', Place::active()->orderBy('building_id')->orderBy('sort')->get());
         }
-        if ($role === 'branch_manager') {
+        // قرار ٨١: منسق سلامة الفرع بنطاق مدير الفرع
+        if ($role === 'branch_manager' || self::isBranchCoordinator($p)) {
             return new self('branch', Place::active()->whereIn('building_id', self::branchBuildingIds($p))->orderBy('building_id')->orderBy('sort')->get());
         }
         if (in_array($role, self::UNIT, true)) {
