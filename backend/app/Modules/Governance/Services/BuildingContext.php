@@ -4,6 +4,7 @@ namespace App\Modules\Governance\Services;
 
 use App\Models\User;
 use App\Modules\Emergency\Models\EmergencyBuilding;
+use App\Modules\Governance\Models\Place;
 use Illuminate\Support\Collection;
 
 /**
@@ -39,6 +40,24 @@ final class BuildingContext
     public static function canSwitch(?User $user): bool
     {
         return self::choices($user)->count() > 1;
+    }
+
+    /**
+     * قرار ٨٢ (بكلمته «كمل القوائم» ٢٠٢٦-١٠-١٠): أماكن مباني الحساب لقوائم القراءة (التصاريح، التقارير، مرشّحات المكان).
+     * null لمن يرى الكل = بلا قيد (فلا يُحجب عنه ما بلا مكان)؛ وإلا معرّفات أماكن مبانيه.
+     * @return int[]|null
+     */
+    public static function placeIdsFor(?User $user): ?array
+    {
+        $p = $user?->profile;
+        if ($p && $p->is_active && ScopeService::seesAllFor($p)) return null;
+        return Place::whereIn('building_id', self::choices($user)->pluck('id'))->pluck('id')->map(fn ($i) => (int) $i)->all();
+    }
+
+    /** قرار ٨٢: الأماكن التي تعرضها قوائم القراءة ومرشّحاتها — مباني الحساب، الملز أولاً ثم ترتيب المكان */
+    public static function placesFor(?User $user): Collection
+    {
+        return Place::whereIn('building_id', self::choices($user)->pluck('id'))->orderBy('building_id')->orderBy('sort')->get();
     }
 
     /** مبنى الجلسة: ما اختاره من الشريط إن كان من مبانيه، وإلا مبنى حسابه، وإلا أول مبانيه */

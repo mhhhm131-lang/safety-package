@@ -63,7 +63,12 @@ class RiskController extends Controller
         $this->applyFilters($query, $request);
         $risks = $query->latest()->paginate(25);
         $categories = RiskCategory::where('is_active', true)->orderBy('name')->get();
-        return view('modules.risks.active', compact('risks', 'categories'));
+        // قرار ٨٢: مرشّح «الإدارة» يعرض وحدات نطاق الحساب (وحدته وما تحتها) لا المعهد كله؛ من نطاقه السجل كله يرى الكل
+        $p = $this->userProfile();
+        $orgUnits = OrganizationUnit::where('is_active', true)->orderBy('order')
+            ->when($p && !in_array($p->role, $this->globalScopeRoles, true), fn ($q) => $q->whereIn('id', $p->organization_unit_id ? OrganizationUnit::descendantIdsOf($p->organization_unit_id) : []))
+            ->get(['id', 'code', 'name', 'unit_type']);
+        return view('modules.risks.active', compact('risks', 'categories', 'orgUnits'));
     }
 
     private function applyFilters($query, Request $request): void

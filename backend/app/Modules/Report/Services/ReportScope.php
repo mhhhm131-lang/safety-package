@@ -20,20 +20,24 @@ class ReportScope
     /** الأدوار التي ترى كل الوحدات (مطابقة لـAppliesOrgUnitScope). */
     private const GLOBAL_ROLES = ['system_admin', 'system_staff', 'top_management', 'safety_committee', 'safety_coordinator'];
 
-    /** @param array<int>|null $unitIds null = بلا تقييد بالوحدة */
+    /**
+     * @param array<int>|null $unitIds null = بلا تقييد بالوحدة
+     * @param array<int>|null $placeIds قرار ٨٢: أماكن مباني الحساب؛ null = يرى الكل بلا قيد
+     */
     private function __construct(
         public readonly Carbon $from,
         public readonly Carbon $to,
         public readonly ?int $placeId,
         public readonly ?array $unitIds,
         public readonly bool $global,
+        public readonly ?array $placeIds = null,
     ) {}
 
     /**
      * المدة الافتراضية **الشهر الجاري** — من تقويم الشهر لا رقماً مخترعاً،
      * والمستخدم يغيّرها من شريط المرشّحات.
      */
-    public static function fromRequest(?string $from, ?string $to, ?int $placeId, ?int $userId): self
+    public static function fromRequest(?string $from, ?string $to, ?int $placeId, ?int $userId, ?array $placeIds = null): self
     {
         $start = $from ? Carbon::parse($from)->startOfDay() : Carbon::now()->startOfMonth();
         $end   = $to ? Carbon::parse($to)->endOfDay() : Carbon::now()->endOfDay();
@@ -51,7 +55,10 @@ class ReportScope
                 : [];
         }
 
-        return new self($start, $end, $placeId ?: null, $unitIds, (bool) $global);
+        // قرار ٨٢: مكان مطلوب من خارج مباني الحساب يُهمل
+        if ($placeIds !== null && $placeId && !in_array((int) $placeId, $placeIds, true)) $placeId = null;
+
+        return new self($start, $end, $placeId ?: null, $unitIds, (bool) $global, $placeIds);
     }
 
     /** نطاق مفتوح بلا مستخدم — للأوامر والاختبارات. */
@@ -77,6 +84,8 @@ class ReportScope
 
         if ($this->placeId && $placeColumn) {
             $query->where($placeColumn, $this->placeId);
+        } elseif ($this->placeIds !== null && $placeColumn) {
+            $query->whereIn($placeColumn, $this->placeIds); // قرار ٨٢: أماكن مباني الحساب
         }
 
         if ($this->unitIds !== null && $unitColumn) {

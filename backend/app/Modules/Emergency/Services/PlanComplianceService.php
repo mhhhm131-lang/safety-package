@@ -63,14 +63,18 @@ class PlanComplianceService
      * لكل مكان: عدد الحالات ذات خطوات، ومتوسط ثواني الخطوات الثلاث الأولى (المسار الطبي ١، ٢، ٣) لما تمّ منها، ونسبة الالتزام.
      * التمارين تدخل (تُقاس بالمسطرة نفسها) وتُعدّ على حدة.
      */
-    public function placeStats(Carbon $from, Carbon $to, ?int $placeId = null): array
+    /** @param int[]|null $placeIds قرار ٨٢: أماكن مباني الحساب؛ null = الكل */
+    public function placeStats(Carbon $from, Carbon $to, ?int $placeId = null, ?array $placeIds = null): array
     {
         $incidents = EmergencyIncident::whereBetween('triggered_at', [$from, $to])
             ->when($placeId, fn ($q) => $q->where('place_id', $placeId))
+            ->when(!$placeId && $placeIds !== null, fn ($q) => $q->whereIn('place_id', $placeIds))
             ->whereHas('planSteps')->with('planSteps')->get();
         $byPlace = $incidents->groupBy('place_id');
 
-        return Place::orderBy('sort')->get(['id', 'code', 'name'])
+        return Place::orderBy('building_id')->orderBy('sort')
+            ->when($placeIds !== null, fn ($q) => $q->whereIn('id', $placeIds))
+            ->get(['id', 'code', 'name'])
             ->when($placeId, fn ($p) => $p->where('id', $placeId))
             ->map(function (Place $p) use ($byPlace) {
                 $list = $byPlace->get($p->id, collect());
@@ -100,12 +104,14 @@ class PlanComplianceService
     }
 
     /** الاتجاه شهراً بشهر: متوسط ثواني «التدخل الأولي» (الخطوة ١ الطبية) ونسبة الالتزام. */
-    public function monthlyTrend(Carbon $from, Carbon $to, ?int $placeId = null): array
+    /** @param int[]|null $placeIds قرار ٨٢: أماكن مباني الحساب؛ null = الكل */
+    public function monthlyTrend(Carbon $from, Carbon $to, ?int $placeId = null, ?array $placeIds = null): array
     {
         $steps = EmergencyIncidentStep::query()
             ->join('emergency_incidents as ei', 'ei.id', '=', 'emergency_incident_steps.incident_id')
             ->whereBetween('ei.triggered_at', [$from, $to])
             ->when($placeId, fn ($q) => $q->where('ei.place_id', $placeId))
+            ->when(!$placeId && $placeIds !== null, fn ($q) => $q->whereIn('ei.place_id', $placeIds))
             ->whereNotNull('emergency_incident_steps.window_to_sec')
             ->get(['emergency_incident_steps.*', 'ei.triggered_at as t0', 'ei.is_drill as drill']);
         $out = [];

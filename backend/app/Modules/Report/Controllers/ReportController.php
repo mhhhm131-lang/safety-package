@@ -3,7 +3,7 @@
 namespace App\Modules\Report\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Modules\Governance\Models\Place;
+use App\Modules\Governance\Services\BuildingContext;
 use App\Modules\Report\Services\DashboardService;
 use App\Modules\Report\Services\KpiService;
 use App\Modules\Report\Services\ReportScope;
@@ -32,7 +32,14 @@ class ReportController extends Controller
             $request->query('to'),
             (int) $request->query('place_id') ?: null,
             Auth::id(),
+            BuildingContext::placeIdsFor(Auth::user()), // قرار ٨٢: أماكن مباني الحساب؛ من يرى الكل بلا قيد
         );
+    }
+
+    /** قرار ٨٢: مرشّح المكان وجدول الأماكن بمباني الحساب */
+    private function places()
+    {
+        return BuildingContext::placesFor(Auth::user());
     }
 
     public function dashboard(Request $request)
@@ -43,7 +50,7 @@ class ReportController extends Controller
             'data'   => $this->dashboard->overview($scope),
             'kpi'    => $this->kpi->all($scope),
             'scope'  => $scope,
-            'places' => Place::orderBy('sort')->get(['id', 'code', 'name']),
+            'places' => $this->places(),
         ]);
     }
 
@@ -54,7 +61,7 @@ class ReportController extends Controller
         return view('modules.reports.incidents', [
             'data'   => $this->dashboard->incidentReport($scope),
             'scope'  => $scope,
-            'places' => Place::orderBy('sort')->get(['id', 'code', 'name']),
+            'places' => $this->places(),
         ]);
     }
 
@@ -65,7 +72,7 @@ class ReportController extends Controller
         return view('modules.reports.risks', [
             'data'   => $this->dashboard->riskReport($scope),
             'scope'  => $scope,
-            'places' => Place::orderBy('sort')->get(['id', 'code', 'name']),
+            'places' => $this->places(),
         ]);
     }
 

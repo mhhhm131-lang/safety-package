@@ -83,9 +83,13 @@ class PermitController extends Controller
 
         // حساب الطرف الخارجي يرى تصاريح طرفه فقط.
         $this->scopeToExternalParty($query);
+        // قرار ٨٢: القائمة وعدّاداتها ومرشّح المكان بمباني الحساب — من يرى الكل بلا قيد
+        $placeIds = \App\Modules\Governance\Services\BuildingContext::placeIdsFor(Auth::user());
+        if ($placeIds !== null) $query->whereIn('place_id', $placeIds);
 
         $facets = Permit::query()
             ->when($this->contractorPartyId(), fn ($q, $pid) => $q->where('external_party_id', $pid))
+            ->when($placeIds !== null, fn ($q) => $q->whereIn('place_id', $placeIds))
             ->selectRaw('permit_category, COUNT(*) as n')
             ->groupBy('permit_category')
             ->pluck('n', 'permit_category')
@@ -99,7 +103,7 @@ class PermitController extends Controller
             'activeStatus'   => $status,
             'activeScope'    => $scope,
             'activePlace'    => $placeId,
-            'places'         => Place::orderBy('sort')->get(['id', 'code', 'name']),
+            'places'         => \App\Modules\Governance\Services\BuildingContext::placesFor(Auth::user()), // قرار ٨٢
         ]);
     }
 

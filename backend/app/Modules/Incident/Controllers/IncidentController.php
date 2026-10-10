@@ -199,7 +199,8 @@ class IncidentController extends Controller
             $q->where(fn ($x) => $x->where('code', 'like', "%$search%")->orWhere('title', 'like', "%$search%")->orWhere('description', 'like', "%$search%"));
         }
         $incidents = $q->latest()->paginate(25);
-        return view('modules.incidents.dashboard', ['counts' => $counts, 'incidents' => $incidents, 'places' => Place::orderBy('sort')->get()]);
+        // قرار ٨٢: مرشّح المكان بمباني الحساب (الصفوف محصورة أصلاً بالرؤية)
+        return view('modules.incidents.dashboard', ['counts' => $counts, 'incidents' => $incidents, 'places' => \App\Modules\Governance\Services\BuildingContext::placesFor(Auth::user())]);
     }
 
     /** ٢٦-٨ (قرار ٦٧): «أتابع بلاغاتي» — بلاغات صاحب الحساب وحالة كل واحد؛ الرؤية بالمبلّغ نفسه (actor_id) لا بصلاحية السجل */
@@ -223,13 +224,18 @@ class IncidentController extends Controller
         }
         // ٢١-٥ (قرار ٥١): الإحالة لأي حساب مفعَّل — أهل الإدارة المعنية أولاً ثم الفنيون ثم البقية
         $canRefer = $user->can('refer', $incident);
-        $fieldWorkers = !$canRefer ? collect() : User::whereHas('profile', fn ($q) => $q->where('is_active', true))->with('profile.place', 'profile.organizationUnit')->orderBy('name')->get()
+        // قرار ٨٢: قوائم الإحالة بمبنى مكان البلاغ — من بلا مبنى (مسؤول السلامة ومن مثله) يبقى؛ كانت تعرض أهل الملز لبلاغ الفرع
+        $bid = $incident->place_id ? Place::find($incident->place_id)?->building_id : null;
+        $inBuilding = fn (User $u) => $bid === null || ($b = $u->profile?->myBuilding()) === null || (int) $b->id === (int) $bid;
+        $fieldWorkers = !$canRefer ? collect() : User::whereHas('profile', fn ($q) => $q->where('is_active', true))->with('profile.place.building', 'profile.building', 'profile.organizationUnit.place')->orderBy('name')->get()
+            ->filter($inBuilding)
             ->sortBy(fn ($u) => match (true) {
                 $incident->organization_unit_id && $u->profile?->organization_unit_id === $incident->organization_unit_id => 0,
                 \App\Core\Permissions\PermissionRegistry::isTech((string) $u->profile?->role) => 1,
                 default => 2,
             })->values();
-        $coordinators = User::whereHas('profile', fn ($q) => $q->where('is_active', true)->where('role', 'safety_coordinator'))->orderBy('name')->get();
+        $coordinators = User::whereHas('profile', fn ($q) => $q->where('is_active', true)->where('role', 'safety_coordinator'))->with('profile.place.building', 'profile.building', 'profile.organizationUnit.place')->orderBy('name')->get()
+            ->filter($inBuilding)->values();
         $role = $user->role();
         $bridge = app(IncidentEmergencyBridge::class);
         return view('modules.incidents.detail', [

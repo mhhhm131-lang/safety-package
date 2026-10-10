@@ -118,8 +118,9 @@ class EmergencyTasks implements TaskSource
             ));
         }
         // تنبيهات الذعر والأساور المفتوحة — لمن يستجيب
+        // قرار ٨٢: الذعر بمباني الحساب — كان يصل حساب الفرع ذعرُ الملز بأسماء أماكن تطابق أماكنه فيظنه عنده
         if (PermissionRegistry::hasPermission($role, 'emergency.respond')) {
-            foreach (PanicAlert::active()->with(['user', 'place'])->get() as $a) {
+            foreach (PanicAlert::active()->whereIn('building_id', $bids)->with(['user', 'place'])->get() as $a) {
                 $out->push(new Task(
                     key: "panic:{$a->id}", module: 'الطوارئ',
                     question: 'تنبيه ذعر من «'.($a->user?->name ?? '—').'»'.($a->place ? ' في '.$a->place->name : '').' — عالجه',

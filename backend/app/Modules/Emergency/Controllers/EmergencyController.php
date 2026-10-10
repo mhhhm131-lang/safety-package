@@ -129,8 +129,21 @@ class EmergencyController extends Controller
 
     public function buildingsIndex()
     {
-        $buildings = EmergencyBuilding::with('branchUnit')->withCount(['floors', 'assemblyPoints', 'teams', 'equipment', 'places'])->orderBy('name')->paginate(20);
+        // قرار ٨٢: مباني الحساب
+        $buildings = EmergencyBuilding::with('branchUnit')->withCount(['floors', 'assemblyPoints', 'teams', 'equipment', 'places'])->whereIn('id', $this->accountBuildingIds())->orderBy('name')->paginate(20);
         return view('modules.emergency.buildings.index', compact('buildings'));
+    }
+
+    /** قرار ٨٢ (بكلمته «كمل القوائم» ٢٠٢٦-١٠-١٠): قوائم القراءة تمرّ بمباني الحساب كما تمرّ صفحة المركز (`dashboard`) */
+    private function accountBuildingIds(): \Illuminate\Support\Collection
+    {
+        return \App\Modules\Governance\Services\BuildingContext::choices(auth()->user())->pluck('id');
+    }
+
+    /** قرار ٨٢: أماكن مباني الحساب لمرشّحات المكان */
+    private function accountPlaces(): \Illuminate\Support\Collection
+    {
+        return \App\Modules\Governance\Services\BuildingContext::placesFor(auth()->user());
     }
 
     /** ٢٨-٢ (قرار ٧٨): «الفرع» يُختار من رؤوس الهيكل — الجذر (المركز الرئيسي) والفروع (نوع «فرع») ولو كانت تحته (بكلمته: الفروع تحت المركز) */
@@ -585,7 +598,7 @@ class EmergencyController extends Controller
 
     public function drillsIndex()
     {
-        $drills = EvacuationDrill::with(['building', 'place', 'conductedBy', 'incident.planSteps'])->orderByDesc('scheduled_at')->paginate(20);
+        $drills = EvacuationDrill::with(['building', 'place', 'conductedBy', 'incident.planSteps'])->whereIn('building_id', $this->accountBuildingIds())->orderByDesc('scheduled_at')->paginate(20); // قرار ٨٢
         $stats = app(DrillService::class)->getDrillStats();
         // المرحلة ١٠-٤: التمرين يُقاس بمسطرة الخطة نفسها
         $compliance = app(PlanComplianceService::class);
@@ -654,11 +667,11 @@ class EmergencyController extends Controller
 
     public function equipmentIndex(Request $request)
     {
-        $q = EmergencyEquipment::with(['building', 'floor', 'place'])->orderBy('next_inspection_date');
+        $q = EmergencyEquipment::with(['building', 'floor', 'place'])->whereIn('building_id', $this->accountBuildingIds())->orderBy('next_inspection_date'); // قرار ٨٢
         if ($request->filled('place')) $q->whereHas('place', fn ($w) => $w->where('code', $request->place));
         if ($request->filled('status')) $q->where('status', $request->status);
         $equipment = $q->paginate(20)->withQueryString();
-        $places = Place::orderBy('sort')->get();
+        $places = $this->accountPlaces();
         return view('modules.emergency.equipment.index', compact('equipment', 'places'));
     }
 
@@ -708,10 +721,10 @@ class EmergencyController extends Controller
     {
         // المرحلة ١٦ الدفعة ٦: طلب قراءة لا يكتب. الاشتقاق من ملف المكان يقع عند حفظ الوثيقة
         // (StoreController::put → TeamSync) وبزر «مزامنة من اللوحة» (POST teams.sync).
-        $q = EmergencyTeam::with(['building', 'place', 'members'])->orderByDesc('source')->orderBy('place_id')->orderBy('name');
+        $q = EmergencyTeam::with(['building', 'place', 'members'])->whereIn('building_id', $this->accountBuildingIds())->orderByDesc('source')->orderBy('place_id')->orderBy('name'); // قرار ٨٢
         if ($request->filled('place')) $q->whereHas('place', fn ($w) => $w->where('code', $request->place));
         $teams = $q->paginate(30)->withQueryString();
-        $places = Place::orderBy('sort')->get();
+        $places = $this->accountPlaces();
         return view('modules.emergency.teams.index', compact('teams', 'places'));
     }
 
@@ -820,8 +833,10 @@ class EmergencyController extends Controller
     {
         // الوثيقة هي الحقيقة: تُعاد قراءتها عند كل فتح إن تغيّرت بصمتها (رخيصة: sha1 لثمانية ملفات)
         $summary = app(ResponsePlanSync::class)->sync();
-        $plans = ResponsePlan::with(['place', 'steps'])->get()->keyBy(fn ($p) => $p->place->code);
-        $places = Place::where('category', '!=', 'HZ-00')->orderBy('building_id')->orderBy('sort')->get(); // ٢٨-٣: بالصنف، كل المباني
+        // قرار ٨٢: الخطط وأماكنها بمباني الحساب (كانت كل المباني لكل حساب)
+        $bids = $this->accountBuildingIds();
+        $plans = ResponsePlan::with(['place', 'steps'])->whereHas('place', fn ($q) => $q->whereIn('building_id', $bids))->get()->keyBy(fn ($p) => $p->place->code);
+        $places = Place::where('category', '!=', 'HZ-00')->whereIn('building_id', $bids)->orderBy('building_id')->orderBy('sort')->get(); // ٢٨-٣: بالصنف
         $cards = RoleCards::byCategory();
         return view('modules.emergency.plans.index', compact('summary', 'plans', 'places', 'cards'));
     }
@@ -848,7 +863,9 @@ class EmergencyController extends Controller
 
     public function contactsIndex()
     {
-        $contacts = EmergencyContact::with('building')->orderBy('contact_type')->orderBy('priority')->paginate(30);
+        // قرار ٨٢: جهات مباني الحساب، وما بلا مبنى عام للجميع
+        $bids = $this->accountBuildingIds();
+        $contacts = EmergencyContact::with('building')->where(fn ($q) => $q->whereIn('building_id', $bids)->orWhereNull('building_id'))->orderBy('contact_type')->orderBy('priority')->paginate(30);
         return view('modules.emergency.contacts.index', compact('contacts'));
     }
 
@@ -947,11 +964,13 @@ class EmergencyController extends Controller
     public function panicDashboard()
     {
         $panicService = app(PanicAlertService::class);
-        $activeAlerts = PanicAlert::active()->with(['user', 'building', 'place', 'responders.user'])->orderByDesc('created_at')->get();
-        $recentAlerts = PanicAlert::whereNotIn('status', ['triggered', 'acknowledged', 'responding'])->with(['user', 'building', 'place', 'acknowledgedBy', 'resolvedBy'])->orderByDesc('created_at')->limit(20)->get();
+        // قرار ٨٢: التنبيهات بمباني الحساب (العدّادات الشهرية في `getStats` أرقام عامة لم تُلمس)
+        $bids = $this->accountBuildingIds();
+        $activeAlerts = PanicAlert::active()->whereIn('building_id', $bids)->with(['user', 'building', 'place', 'responders.user'])->orderByDesc('created_at')->get();
+        $recentAlerts = PanicAlert::whereNotIn('status', ['triggered', 'acknowledged', 'responding'])->whereIn('building_id', $bids)->with(['user', 'building', 'place', 'acknowledgedBy', 'resolvedBy'])->orderByDesc('created_at')->limit(20)->get();
         $stats = $panicService->getStats('month');
-        $buildings = EmergencyBuilding::active()->orderBy('name')->get(['id', 'name']);
-        $places = Place::orderBy('sort')->get();
+        $buildings = EmergencyBuilding::active()->whereIn('id', $bids)->orderBy('name')->get(['id', 'name']);
+        $places = $this->accountPlaces();
         return view('modules.emergency.panic.dashboard', compact('activeAlerts', 'recentAlerts', 'stats', 'buildings', 'places'));
     }
 

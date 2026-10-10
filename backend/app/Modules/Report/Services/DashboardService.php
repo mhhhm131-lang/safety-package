@@ -53,8 +53,8 @@ class DashboardService
     {
         $svc = app(\App\Modules\Emergency\Services\PlanComplianceService::class);
         return [
-            'places' => $svc->placeStats($scope->from, $scope->to, $scope->placeId),
-            'trend' => $svc->monthlyTrend($scope->from, $scope->to, $scope->placeId),
+            'places' => $svc->placeStats($scope->from, $scope->to, $scope->placeId, $scope->placeIds), // قرار ٨٢: أماكن مباني الحساب
+            'trend' => $svc->monthlyTrend($scope->from, $scope->to, $scope->placeId, $scope->placeIds),
         ];
     }
 
@@ -254,7 +254,9 @@ class DashboardService
             ->where('status', Permit::STATUS_ACTIVE)
             ->selectRaw('place_id, COUNT(*) as c')->groupBy('place_id')->pluck('c', 'place_id')->all();
 
-        return Place::orderBy('sort')->get(['id', 'code', 'name'])
+        return Place::orderBy('building_id')->orderBy('sort')
+            ->when($scope->placeIds !== null, fn ($q) => $q->whereIn('id', $scope->placeIds)) // قرار ٨٢: أماكن مباني الحساب
+            ->get(['id', 'code', 'name'])
             ->when($scope->placeId, fn ($places) => $places->where('id', $scope->placeId))
             ->map(fn (Place $p) => [
                 'code'      => $p->code,

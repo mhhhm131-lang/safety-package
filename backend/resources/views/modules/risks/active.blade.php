@@ -6,7 +6,8 @@
     $placeFilter = request('place') ? \App\Modules\Governance\Models\Place::where('code', request('place'))->first() : null;
     // ?unit=<كود> يحصر السجل بإدارة أو قسم وأبنائه (مسؤول السلامة والإدارة العليا يرون الكل، فيحتاجون الحصر)
     $unitFilter = request('unit') ? \App\Modules\Governance\Models\OrganizationUnit::where('code', request('unit'))->first() : null;
-    $orgUnits = \App\Modules\Governance\Models\OrganizationUnit::where('is_active', true)->orderBy('order')->get(['id', 'code', 'name', 'unit_type']);
+    // قرار ٨٢: المتحكم يمرّر وحدات نطاق الحساب؛ الاحتياط للقالب إن فُتح من غير `activeIndex`
+    $orgUnits = $orgUnits ?? \App\Modules\Governance\Models\OrganizationUnit::where('is_active', true)->orderBy('order')->get(['id', 'code', 'name', 'unit_type']);
     $qs = array_filter(['place' => $placeFilter?->code, 'unit' => $unitFilter?->code]);
     $placeQ = $qs ? '?'.http_build_query($qs) : '';
 @endphp
