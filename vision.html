@@ -330,9 +330,27 @@ body {
   }
 }
 
+/* قرار ٨٦ (٢٠٢٦-١٠-١١): الزر الأحمر «طوارئ الآن» للجميع بلا دخول — اتصال بمركز السلامة، في موضعه نفسه في كل صفحات النظام (قرار ٦٦):
+   على الحاسب زر ثابت في الزاوية السفلية، وعلى الجوال شريط بعرض الشاشة ثابت في أسفلها */
+.sos-bar { position: fixed; bottom: 18px; inset-inline-start: 18px; z-index: 1030; }
+.sos-bar .sos-btn {
+  display: flex; align-items: center; gap: 10px;
+  height: 52px; padding: 0 22px; border-radius: 14px;
+  background: #c62828; color: #fff;
+  font-family: 'Noto Kufi Arabic', sans-serif; font-size: 17px; font-weight: 900; text-decoration: none;
+  box-shadow: 0 4px 14px rgba(198,40,40,0.35);
+}
+.sos-bar .sos-btn:hover { background: #b71c1c; color: #fff; }
+@media (max-width: 768px) {
+  body { padding-bottom: 96px; }
+  .sos-bar { bottom: 0; inset-inline: 0; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: rgba(10,20,16,0.94); border-top: 1px solid rgba(255,255,255,0.15); }
+  .sos-bar .sos-btn { width: 100%; height: 56px; justify-content: center; font-size: 18px; border-radius: 12px; }
+}
+
 @media print {
   body { background: white; }
   .vision-container { color: #1A1A1A; }
+  .sos-bar { display: none; }
   .vision-main {
     background: none;
     -webkit-text-fill-color: #1E3329;
@@ -382,6 +400,9 @@ body {
 
   </div>
 </div>
+
+<!-- قرار ٨٦ (٢٠٢٦-١٠-١١): الزر الأحمر للجميع بلا دخول — ضغطة واحدة تتصل بمركز السلامة (الرقم = Place::CENTER_PHONE في الخلفية) -->
+<div class="sos-bar" id="sosBar"><a class="sos-btn" href="tel:0505498966" data-intent="emergency-call"><span>☎</span><span>طوارئ الآن</span></a></div>
 
 </body>
 </html>

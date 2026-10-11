@@ -25,6 +25,9 @@ class EntryDoorTest extends TestCase
         $this->assertMatchesRegularExpression('~<a href="/login"[^>]*class="enter-btn[^"]*"~', $v, 'لا زر دخول إلى /login في الرؤية');
         $this->assertMatchesRegularExpression('~<a href="/incident"[^>]*>~', $v, 'لا زر «أبلغ عن خطر» في الرؤية');
         $this->assertMatchesRegularExpression('~<a href="index.html"[^>]*>[^<]*الوثائق~u', $v, 'لا رابط «الوثائق» إلى الغلاف في الرؤية');
+        // قرار ٨٦ (٢٠٢٦-١٠-١١): الزر الأحمر «طوارئ الآن» للجميع بلا دخول — اتصال بمركز السلامة برقمه الواحد (كما في الصفحات العامة، قرار ٦٦)
+        $this->assertStringContainsString('href="tel:'.\App\Modules\Governance\Models\Place::CENTER_PHONE.'"', $v, 'لا زر «طوارئ الآن» يتصل بالمركز في الرؤية، أو رقمه يخالف Place::CENTER_PHONE');
+        $this->assertStringContainsString('طوارئ الآن', $v);
     }
 
     /**
