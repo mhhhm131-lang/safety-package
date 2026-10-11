@@ -106,7 +106,8 @@ class DashboardHiddenTest extends TestCase
         }
         $i = file_get_contents($root.'/index.html');
         $this->assertStringNotContainsString("href='dashboard.html'", $i);
-        $this->assertStringContainsString("enterBtn').textContent='فتح المنظومة ←';document.getElementById('enterBtn').href='/app';", $i);
+        // قرار ٨٥ (٢٠٢٦-١٠-١١): صفحة الوثائق بلا زر دخول — الدخول من الرؤية، والجلسة القائمة يحوّلها /login إلى /app
+        $this->assertStringNotContainsString('enterBtn', $i);
         // اللوحة نفسها لم تُمس: باقية في المستودع
         $this->assertFileExists($root.'/dashboard.html');
     }
