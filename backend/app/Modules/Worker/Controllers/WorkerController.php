@@ -2,6 +2,7 @@
 
 namespace App\Modules\Worker\Controllers;
 
+use App\Core\Rules\InAccountBuildings;
 use App\Core\Traits\AppliesOrgUnitScope;
 use App\Http\Controllers\Controller;
 use App\Modules\Governance\Models\Place;
@@ -184,7 +185,7 @@ class WorkerController extends Controller
             'full_name' => 'required|string|max:200', 'full_name_en' => 'nullable|string|max:200', 'national_id' => $nationalIdRule,
             'phone' => 'nullable|string|max:20', 'trade_id' => 'required|exists:trades,id',
             'external_party_id' => 'required|exists:external_parties,id', 'project_id' => 'nullable|exists:projects,id',
-            'place_id' => 'nullable|exists:places,id', 'medical_expiry' => 'nullable|date', 'iqama_expiry' => 'nullable|date', 'joined_date' => 'nullable|date',
+            'place_id' => InAccountBuildings::placeRules('nullable'), 'medical_expiry' => 'nullable|date', // حارس الكتابة (تتمة قرار ٨٤): المكان من مبانيك 'iqama_expiry' => 'nullable|date', 'joined_date' => 'nullable|date',
         ]);
         // مشرف المقاول لا يسجّل عاملاً لطرف آخر
         if ($pid = $this->contractorPartyId()) {

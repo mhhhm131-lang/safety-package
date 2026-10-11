@@ -2,6 +2,7 @@
 
 namespace App\Modules\Governance\Controllers;
 
+use App\Core\Rules\InAccountBuildings;
 use App\Http\Controllers\Controller;
 use App\Modules\Governance\Models\OrganizationUnit;
 use App\Modules\Governance\Models\Place;
@@ -114,7 +115,7 @@ class OrgUnitsController extends Controller
             'name' => 'required|string|max:200',
             'unit_type' => ['required', Rule::in(OrganizationUnit::TYPES)],
             'parent_id' => 'nullable|exists:organization_units,id',
-            'place_id' => 'nullable|exists:places,id',
+            'place_id' => InAccountBuildings::placeRules('nullable'), // حارس الكتابة (تتمة قرار ٨٤): من مبانيك
             'manager_name' => 'nullable|string|max:200',
             'is_active' => 'nullable|boolean',
         ]);

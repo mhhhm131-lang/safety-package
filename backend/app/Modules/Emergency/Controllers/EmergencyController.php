@@ -2,6 +2,7 @@
 
 namespace App\Modules\Emergency\Controllers;
 
+use App\Core\Rules\InAccountBuildings;
 use App\Core\StateMachine\Exceptions\TransitionException;
 use App\Core\Permissions\PermissionRegistry;
 use App\Http\Controllers\Controller;
@@ -308,7 +309,7 @@ class EmergencyController extends Controller
     public function assemblyPointsStore(Request $request, EmergencyBuilding $building)
     {
         $validated = $request->validate([
-            'code' => 'required|string|max:10', 'name' => 'required|string|max:100', 'place_id' => 'nullable|exists:places,id',
+            'code' => 'required|string|max:10', 'name' => 'required|string|max:100', 'place_id' => InAccountBuildings::placeRules('nullable'), // حارس الكتابة (تتمة قرار ٨٤): من مبانيك
             'latitude' => 'nullable|numeric', 'longitude' => 'nullable|numeric', 'capacity' => 'nullable|integer|min:1',
             'is_primary' => 'nullable|boolean', 'is_accessible' => 'nullable|boolean', 'directions' => 'nullable|string',
             'responsible_id' => 'nullable|exists:users,id',
@@ -327,7 +328,7 @@ class EmergencyController extends Controller
     {
         abort_unless($point->building_id === $building->id, 404);
         $v = $request->validate([
-            'name' => 'nullable|string|max:100', 'place_id' => 'nullable|exists:places,id', 'capacity' => 'nullable|integer|min:1',
+            'name' => 'nullable|string|max:100', 'place_id' => InAccountBuildings::placeRules('nullable'), 'capacity' => 'nullable|integer|min:1',
             'is_primary' => 'nullable|boolean', 'directions' => 'nullable|string', 'status' => 'nullable|in:active,inactive',
         ]);
         if ($request->boolean('is_primary')) {
@@ -369,7 +370,7 @@ class EmergencyController extends Controller
         $validated = $request->validate([
             'incident_type' => 'required|in:'.implode(',', array_diff(array_keys(EmergencyIncident::TYPES), ['lockdown'])),
             'severity' => 'required|in:low,medium,high,critical',
-            'place_id' => 'required|exists:places,id', // المعهد: الحالة تُربط بالمكان
+            'place_id' => InAccountBuildings::placeRules('required'), // المعهد: الحالة تُربط بالمكان — ومن مبانيك (حارس الكتابة)
             'is_drill' => 'nullable|boolean',
             'description' => 'nullable|string|max:2000',
         ]);
@@ -574,7 +575,7 @@ class EmergencyController extends Controller
     public function lockdownInitiate(Request $request, EmergencyBuilding $building)
     {
         $this->authorize('trigger', EmergencyIncident::class);
-        $v = $request->validate(['level' => 'required|in:soft,modified,full,shelter', 'reason' => 'nullable|string|max:500', 'place_id' => 'nullable|exists:places,id']);
+        $v = $request->validate(['level' => 'required|in:soft,modified,full,shelter', 'reason' => 'nullable|string|max:500', 'place_id' => InAccountBuildings::placeRules('nullable')]);
         try {
             $lockdown = app(LockdownService::class)->initiateLockdown($building, auth()->user(), $v['level'], ['reason' => $v['reason'] ?? null, 'place_id' => $v['place_id'] ?? null]);
         } catch (\RuntimeException $e) {
@@ -616,8 +617,8 @@ class EmergencyController extends Controller
     public function drillsStore(Request $request)
     {
         $validated = $request->validate([
-            'building_id' => 'required|exists:emergency_buildings,id',
-            'place_id' => 'nullable|exists:places,id',
+            'building_id' => InAccountBuildings::buildingRules('required'),
+            'place_id' => InAccountBuildings::placeRules('nullable'),
             'drill_type' => 'required|in:fire,evacuation,earthquake,chemical,full_scale,tabletop,announced,unannounced',
             'scheduled_at' => 'required|date',
             'scenario' => 'nullable|string', 'objectives' => 'nullable|string',
@@ -685,9 +686,9 @@ class EmergencyController extends Controller
     public function equipmentStore(Request $request)
     {
         $validated = $request->validate([
-            'building_id' => 'required|exists:emergency_buildings,id',
+            'building_id' => InAccountBuildings::buildingRules('required'),
             'floor_id' => 'nullable|exists:building_floors,id',
-            'place_id' => 'nullable|exists:places,id',
+            'place_id' => InAccountBuildings::placeRules('nullable'),
             'equipment_type' => 'required|in:fire_extinguisher,fire_hose,smoke_detector,heat_detector,alarm_bell,exit_sign,emergency_light,first_aid_kit,aed,fire_blanket,spill_kit,eyewash,other',
             'code' => 'nullable|string|max:50', 'brand' => 'nullable|string|max:100', 'model' => 'nullable|string|max:100',
             'serial_number' => 'nullable|string|max:100', 'location_description' => 'nullable|string|max:255',
@@ -738,7 +739,7 @@ class EmergencyController extends Controller
     public function teamsStore(Request $request)
     {
         $validated = $request->validate([
-            'building_id' => 'required|exists:emergency_buildings,id', 'place_id' => 'nullable|exists:places,id',
+            'building_id' => InAccountBuildings::buildingRules('required'), 'place_id' => InAccountBuildings::placeRules('nullable'),
             'name' => 'required|string|max:100',
             'team_type' => 'required|in:command,fire_warden,first_aid,evacuation,search_rescue,communication,security',
             'description' => 'nullable|string|max:500', 'shift' => 'required|in:morning,evening,night,all', 'is_active' => 'nullable|boolean',
@@ -773,7 +774,7 @@ class EmergencyController extends Controller
             return back()->with('error', 'الفريق الأولي يُحرَّر من ملف المكان في اللوحة');
         }
         $validated = $request->validate([
-            'building_id' => 'required|exists:emergency_buildings,id', 'place_id' => 'nullable|exists:places,id',
+            'building_id' => InAccountBuildings::buildingRules('required'), 'place_id' => InAccountBuildings::placeRules('nullable'),
             'name' => 'required|string|max:100',
             'team_type' => 'required|in:command,fire_warden,first_aid,evacuation,search_rescue,communication,security',
             'description' => 'nullable|string|max:500', 'shift' => 'required|in:morning,evening,night,all', 'is_active' => 'nullable|boolean',
@@ -908,7 +909,7 @@ class EmergencyController extends Controller
     private function validateContact(Request $request): array
     {
         return $request->validate([
-            'building_id' => 'nullable|exists:emergency_buildings,id', 'name' => 'required|string|max:200', 'role' => 'nullable|string|max:100',
+            'building_id' => InAccountBuildings::buildingRules('nullable'), 'name' => 'required|string|max:200', 'role' => 'nullable|string|max:100',
             'organization' => 'nullable|string|max:200', 'phone' => 'required|string|max:20', 'phone_alt' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255', 'contact_type' => 'required|in:internal,external', 'priority' => 'required|integer|min:1|max:100',
             'auto_notify' => 'nullable|boolean', 'is_active' => 'nullable|boolean', 'notes' => 'nullable|string|max:500',

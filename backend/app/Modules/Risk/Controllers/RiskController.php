@@ -2,6 +2,7 @@
 
 namespace App\Modules\Risk\Controllers;
 
+use App\Core\Rules\InAccountBuildings;
 use App\Core\Traits\AppliesOrgUnitScope;
 use App\Http\Controllers\Controller;
 use App\Models\User;
@@ -342,7 +343,7 @@ class RiskController extends Controller
             'contact_channel' => ['nullable', 'string', 'max:200'],
             'scope_type' => ['required', 'string', 'in:general,org_unit'],
             'organization_unit_id' => ['nullable', 'required_if:scope_type,org_unit', 'integer', 'exists:organization_units,id'],
-            'place_id' => ['nullable', 'integer', 'exists:places,id'],
+            'place_id' => InAccountBuildings::placeRules('nullable'), // حارس الكتابة (تتمة قرار ٨٤): من مبانيك
             'severity' => ['required', 'integer', 'min:1', 'max:5'],
             'likelihood' => ['required', 'integer', 'min:1', 'max:5'],
             'legal_reference' => ['nullable', 'string', 'max:500'],
@@ -693,7 +694,7 @@ class RiskController extends Controller
             'legal_reference' => ['nullable', 'string', 'max:500'],
             'scope_type' => ['nullable', 'string', 'in:general,org_unit'],
             'organization_unit_id' => ['nullable', 'integer', 'exists:organization_units,id'],
-            'place_id' => ['nullable', 'integer', 'exists:places,id'],
+            'place_id' => InAccountBuildings::placeRules('nullable'), // حارس الكتابة (تتمة قرار ٨٤): من مبانيك
             // ١٨-٣ (ج): الوحدة اختيارية ومن المكان نفسه
             'place_unit_id' => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('place_units', 'id')->where('place_id', (int) request()->input('place_id'))->where('is_active', true)],
             // خطة المعالج — الخطوة ١: الإدارة المعالجة من الهيكل (تُقرأ من مسؤول السلامة وحده: withHandlingUnit)

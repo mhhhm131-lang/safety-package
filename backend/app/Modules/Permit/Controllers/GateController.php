@@ -2,6 +2,7 @@
 
 namespace App\Modules\Permit\Controllers;
 
+use App\Core\Rules\InAccountBuildings;
 use App\Http\Controllers\Controller;
 use App\Modules\Governance\Models\Place;
 use App\Modules\Permit\Models\GateLog;
@@ -29,7 +30,7 @@ class GateController extends Controller
     {
         $data = $request->validate([
             'worker_identifier' => ['required', 'string', 'max:100'],
-            'place_id'          => ['nullable', 'integer', 'exists:places,id'],
+            'place_id'          => InAccountBuildings::placeRules('nullable'), // حارس الكتابة (تتمة قرار ٨٤): من مبانيك
             'gate_name'         => ['nullable', 'string', 'max:100'],
         ], [], ['worker_identifier' => 'رقم الهوية أو رقم العامل']);
 

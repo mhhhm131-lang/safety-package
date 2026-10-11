@@ -2,6 +2,7 @@
 
 namespace App\Modules\Integration\Controllers;
 
+use App\Core\Rules\InAccountBuildings;
 use App\Http\Controllers\Controller;
 use App\Core\Services\NotificationService;
 use App\Modules\Emergency\Models\EmergencyBuilding;
@@ -48,7 +49,7 @@ class DeviceController extends Controller
     public function storeCamera(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'building_id' => 'nullable|exists:emergency_buildings,id',
+            'building_id' => InAccountBuildings::buildingRules('nullable'), // حارس الكتابة (تتمة قرار ٨٤): من مبانيك
             'name' => 'required|string|max:100',
             'camera_id' => 'nullable|string|max:50',
             'location' => 'nullable|string|max:200',
@@ -244,7 +245,7 @@ class DeviceController extends Controller
     public function camerasStore(Request $request)
     {
         $validated = $request->validate([
-            'building_id' => 'nullable|exists:emergency_buildings,id', 'place_id' => 'nullable|exists:places,id', 'name' => 'required|string|max:100',
+            'building_id' => InAccountBuildings::buildingRules('nullable'), 'place_id' => InAccountBuildings::placeRules('nullable'), 'name' => 'required|string|max:100',
             'camera_id' => 'nullable|string|max:50', 'location' => 'nullable|string|max:200', 'stream_url' => 'nullable|url|max:500', 'snapshot_url' => 'nullable|url|max:500',
             'type' => 'required|in:fixed,ptz,dome,thermal', 'is_emergency_priority' => 'nullable|boolean', 'has_audio' => 'nullable|boolean', 'floor_number' => 'nullable|integer',
         ]);

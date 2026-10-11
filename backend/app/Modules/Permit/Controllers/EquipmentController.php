@@ -2,6 +2,7 @@
 
 namespace App\Modules\Permit\Controllers;
 
+use App\Core\Rules\InAccountBuildings;
 use App\Http\Controllers\Controller;
 use App\Modules\Governance\Models\Place;
 use App\Modules\Permit\Models\Equipment;
@@ -134,7 +135,7 @@ class EquipmentController extends Controller
             'manufacturer'              => ['nullable', 'string', 'max:120'],
             'model_number'              => ['nullable', 'string', 'max:120'],
             'status'                    => ['required', 'in:active,maintenance,out_of_service,retired'],
-            'place_id'                  => ['nullable', 'integer', 'exists:places,id'],
+            'place_id'                  => InAccountBuildings::placeRules('nullable'), // حارس الكتابة (تتمة قرار ٨٤): من مبانيك
             'project_id'                => ['nullable', 'integer', 'exists:projects,id'],
             'external_party_id'         => ['nullable', 'integer', 'exists:external_parties,id'],
             'inspection_frequency_days' => ['nullable', 'integer', 'min:1', 'max:3650'],

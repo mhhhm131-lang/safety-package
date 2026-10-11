@@ -2,6 +2,7 @@
 
 namespace App\Modules\Emergency\Controllers;
 
+use App\Core\Rules\InAccountBuildings;
 use App\Http\Controllers\Controller;
 use App\Modules\Emergency\Events\IncidentUpdated;
 use App\Modules\Emergency\Events\PersonCheckedIn;
@@ -237,7 +238,7 @@ class EmergencyApiController extends Controller
     public function nearestExit(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'building_id' => 'nullable|exists:emergency_buildings,id', 'floor_id' => 'nullable|exists:building_floors,id',
+            'building_id' => InAccountBuildings::buildingRules('nullable'), 'floor_id' => 'nullable|exists:building_floors,id', // حارس الكتابة (تتمة قرار ٨٤): كان findOrFail يعيد مخارج أي مبنى
             'latitude' => 'nullable|numeric|between:-90,90', 'longitude' => 'nullable|numeric|between:-180,180',
         ]);
         $building = !empty($validated['building_id']) ? EmergencyBuilding::findOrFail($validated['building_id']) : \App\Modules\Governance\Services\BuildingContext::current($request->user()); // ٢٨-٤

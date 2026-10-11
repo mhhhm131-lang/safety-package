@@ -2,6 +2,7 @@
 
 namespace App\Modules\Project\Controllers;
 
+use App\Core\Rules\InAccountBuildings;
 use App\Core\Traits\AppliesOrgUnitScope;
 use App\Http\Controllers\Controller;
 use App\Models\User;
@@ -219,7 +220,7 @@ class ProjectController extends Controller
         return $request->validate([
             'name' => 'required|string|max:200', 'name_en' => 'nullable|string|max:200', 'code' => 'nullable|string|max:50', 'description' => 'nullable|string',
             'status' => 'nullable|in:'.implode(',', array_keys(Project::STATUSES)),
-            'place_id' => 'required|exists:places,id', // المعهد: مكان التنفيذ إلزامي
+            'place_id' => InAccountBuildings::placeRules('required'), // المعهد: مكان التنفيذ إلزامي — ومن مبانيك (حارس الكتابة، تتمة قرار ٨٤)
             'organization_unit_id' => 'nullable|exists:organization_units,id',
             'assigned_coordinator_id' => 'nullable|exists:users,id',
             'start_date' => 'nullable|date', 'end_date' => 'nullable|date|after_or_equal:start_date',

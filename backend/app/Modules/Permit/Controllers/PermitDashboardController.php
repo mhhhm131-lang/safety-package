@@ -2,6 +2,7 @@
 
 namespace App\Modules\Permit\Controllers;
 
+use App\Core\Rules\InAccountBuildings;
 use App\Http\Controllers\Controller;
 use App\Modules\Governance\Models\Place;
 use App\Modules\Permit\Models\PermitType;
@@ -80,7 +81,7 @@ class PermitDashboardController extends Controller
         $data = $request->validate([
             'permit_type_a_id' => ['required', 'integer', 'exists:permit_types,id'],
             'permit_type_b_id' => ['required', 'integer', 'exists:permit_types,id', 'different:permit_type_a_id'],
-            'place_id'         => ['nullable', 'integer', 'exists:places,id'],
+            'place_id'         => InAccountBuildings::placeRules('nullable'), // حارس الكتابة (تتمة قرار ٨٤): من مبانيك
             'severity'         => ['required', 'in:block,warn'],
             'reason'           => ['nullable', 'string', 'max:500'],
         ], ['permit_type_b_id.different' => 'لا يتعارض النوع مع نفسه.']);

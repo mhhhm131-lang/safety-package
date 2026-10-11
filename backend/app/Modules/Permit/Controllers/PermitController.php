@@ -2,6 +2,7 @@
 
 namespace App\Modules\Permit\Controllers;
 
+use App\Core\Rules\InAccountBuildings;
 use App\Core\StateMachine\Exceptions\TransitionException;
 use App\Core\Traits\AppliesOrgUnitScope;
 use App\Http\Controllers\Controller;
@@ -640,7 +641,7 @@ class PermitController extends Controller
             'project_id'           => ['nullable', 'integer', 'exists:projects,id'],
             'external_party_id'    => ['nullable', 'integer', 'exists:external_parties,id'],
             'organization_unit_id' => ['nullable', 'integer', 'exists:organization_units,id'],
-            'place_id'             => ['nullable', 'integer', 'exists:places,id'],
+            'place_id'             => InAccountBuildings::placeRules('nullable'), // حارس الكتابة (تتمة قرار ٨٤): من مبانيك
             'subject_type'         => ['nullable', 'in:Worker,Equipment,OrganizationUnit,ExternalParty,Project'],
             'subject_id'           => ['nullable', 'integer'],
             'workers_count'        => ['nullable', 'integer', 'min:0', 'max:9999'],

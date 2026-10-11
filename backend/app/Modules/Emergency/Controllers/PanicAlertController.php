@@ -2,6 +2,7 @@
 
 namespace App\Modules\Emergency\Controllers;
 
+use App\Core\Rules\InAccountBuildings;
 use App\Http\Controllers\Controller;
 use App\Modules\Emergency\Models\PanicAlert;
 use App\Modules\Emergency\Services\PanicAlertService;
@@ -27,8 +28,8 @@ class PanicAlertController extends Controller
             'longitude' => 'nullable|numeric|between:-180,180',
             'accuracy_meters' => 'nullable|numeric|min:0',
             'location_description' => 'nullable|string|max:255',
-            'building_id' => 'nullable|exists:emergency_buildings,id',
-            'place_id' => 'nullable|exists:places,id',
+            'building_id' => InAccountBuildings::buildingRules('nullable'), // حارس الكتابة (تتمة قرار ٨٤): من مبانيك
+            'place_id' => InAccountBuildings::placeRules('nullable'),
             'voice_recording' => 'nullable|file|mimes:mp3,wav,m4a,ogg|max:10240',
             'photo' => 'nullable|image|max:10240',
         ]);

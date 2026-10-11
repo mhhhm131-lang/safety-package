@@ -2,6 +2,7 @@
 
 namespace App\Modules\Integration\Controllers;
 
+use App\Core\Rules\InAccountBuildings;
 use App\Http\Controllers\Controller;
 use App\Modules\Emergency\Models\EmergencyBuilding;
 use App\Modules\Governance\Models\Place;
@@ -132,8 +133,8 @@ class IotDevicesController extends Controller
         $v = $request->validate([
             'kind' => 'required|in:'.implode(',', array_keys(IotDevice::KINDS)),
             'name' => 'required|string|max:120',
-            'building_id' => 'nullable|exists:emergency_buildings,id',
-            'place_id' => 'nullable|exists:places,id',
+            'building_id' => InAccountBuildings::buildingRules('nullable'), // حارس الكتابة (تتمة قرار ٨٤): من مبانيك (ويحمي تحديث fire_zones على المبنى)
+            'place_id' => InAccountBuildings::placeRules('nullable'),
             'protocol' => 'required|in:'.implode(',', array_keys(IotDevice::PROTOCOLS)),
             'scheme' => 'nullable|in:http,https',
             'host' => 'nullable|string|max:255',

@@ -2,6 +2,7 @@
 
 namespace App\Modules\Emergency\Controllers;
 
+use App\Core\Rules\InAccountBuildings;
 use App\Http\Controllers\Controller;
 use App\Modules\Emergency\Models\AssemblyPoint;
 use App\Modules\Emergency\Models\EmergencyBuilding;
@@ -22,8 +23,8 @@ class VisitorController extends Controller
     public function checkIn(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'building_id' => 'nullable|exists:emergency_buildings,id',
-            'place_id' => 'nullable|exists:places,id',
+            'building_id' => InAccountBuildings::buildingRules('nullable'), // حارس الكتابة (تتمة قرار ٨٤): من مبانيك
+            'place_id' => InAccountBuildings::placeRules('nullable'),
             'name' => 'required|string|max:100',
             'phone' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:100',
@@ -281,7 +282,7 @@ class VisitorController extends Controller
     {
         $validated = $request->validate([
             'q' => 'required|string|min:2|max:100',
-            'building_id' => 'nullable|exists:emergency_buildings,id',
+            'building_id' => InAccountBuildings::buildingRules('nullable'),
         ]);
 
         $visitors = $this->visitorService->search(

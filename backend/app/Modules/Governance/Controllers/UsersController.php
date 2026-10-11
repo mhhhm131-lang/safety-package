@@ -2,6 +2,7 @@
 
 namespace App\Modules\Governance\Controllers;
 
+use App\Core\Rules\InAccountBuildings;
 use App\Core\Permissions\PermissionRegistry;
 use App\Http\Controllers\Controller;
 use App\Models\User;
@@ -244,10 +245,10 @@ class UsersController extends Controller
             'organization_unit_id' => $this->scope() === 'own' && !$this->ownsTechs()
                 ? ['required', Rule::in($this->ownUnitIds())] // ٢١-١ (قرار ٥٣): منسق السلامة يُرشَّح لوحدة المدير وما تحتها
                 : 'nullable|exists:organization_units,id',
-            'place_id' => 'nullable|exists:places,id',
+            'place_id' => InAccountBuildings::placeRules('nullable'), // حارس الكتابة (تتمة قرار ٨٤): مدير الفرع لا يسجّل حساباً على مكان خارج مبانيه
             'external_party_id' => 'nullable|exists:external_parties,id', // المرحلة ٦: حساب مقاول/مشرف مقاول/مكتب استشاري → طرفه
             // ٢٠-١/٢٠-٢ (قرار ٥١): المبنى (بلا تحديد = الرئيسي)، المسمى (مؤقت حتى البوابة)، والتغطية من أماكن مبنى الحساب
-            'building_id' => 'nullable|exists:emergency_buildings,id',
+            'building_id' => InAccountBuildings::buildingRules('nullable'), // ولا على مبنى خارج مبانيه
             'sees_all_buildings' => 'nullable|boolean', // بكلمته «نعم» (٢٠٢٦-١٠-٠٨): «يرى كل الفروع» — يمنحها مسؤول السلامة وحده
             'job_title' => 'nullable|string|max:120',
             // ٢٠-٦ (قرار ٥١): الدور ذو البطاقات المتعددة (فريق الإسناد) يحمل حسابُه بطاقته بالاسم

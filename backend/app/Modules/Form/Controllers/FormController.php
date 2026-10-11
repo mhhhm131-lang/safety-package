@@ -2,6 +2,7 @@
 
 namespace App\Modules\Form\Controllers;
 
+use App\Core\Rules\InAccountBuildings;
 use App\Http\Controllers\Controller;
 use App\Modules\Form\Models\FormAnswer;
 use App\Modules\Form\Models\FormAssignment;
@@ -247,7 +248,7 @@ class FormController extends Controller
             'user_ids.*' => ['integer', 'exists:users,id'],
             'role'       => ['required_if:mode,role', 'nullable', 'string', 'max:60'],
             'unit_id'    => ['required_if:mode,unit', 'nullable', 'integer', 'exists:organization_units,id'],
-            'place_id'   => ['required_if:mode,place', 'nullable', 'integer', 'exists:places,id'],
+            'place_id'   => InAccountBuildings::placeRules('required_if:mode,place', 'nullable'), // حارس الكتابة (تتمة قرار ٨٤): من مبانيك
             'due_date'   => ['nullable', 'date', 'after_or_equal:today'],
         ], [], ['due_date' => 'المهلة', 'user_ids' => 'المكلَّفون']);
 
@@ -423,7 +424,7 @@ class FormController extends Controller
             'intro'                => ['nullable', 'string', 'max:8000'],
             'form_type'            => ['required', 'in:'.implode(',', array_keys(FormTemplate::TYPE_LABELS))],
             'organization_unit_id' => ['nullable', 'integer', 'exists:organization_units,id'],
-            'place_id'             => ['nullable', 'integer', 'exists:places,id'],
+            'place_id'             => InAccountBuildings::placeRules('nullable'), // حارس الكتابة (تتمة قرار ٨٤): من مبانيك
         ], [], ['title' => 'عنوان النموذج', 'form_type' => 'نوع النموذج']);
     }
 

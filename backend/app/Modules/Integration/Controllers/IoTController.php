@@ -2,6 +2,7 @@
 
 namespace App\Modules\Integration\Controllers;
 
+use App\Core\Rules\InAccountBuildings;
 use App\Http\Controllers\Controller;
 use App\Modules\Emergency\Models\EmergencyBuilding;
 use App\Modules\Emergency\Models\EmergencyIncident;
@@ -136,7 +137,7 @@ class IoTController extends Controller
     public function initiateLockdown(Request $request, EmergencyBuilding $building): JsonResponse
     {
         $this->authorize('trigger', EmergencyIncident::class);
-        $v = $request->validate(['level' => 'required|in:soft,modified,full,shelter', 'reason' => 'nullable|string|max:500', 'place_id' => 'nullable|exists:places,id']);
+        $v = $request->validate(['level' => 'required|in:soft,modified,full,shelter', 'reason' => 'nullable|string|max:500', 'place_id' => InAccountBuildings::placeRules('nullable')]); // حارس الكتابة (تتمة قرار ٨٤)
         try {
             $l = $this->lockdown->initiateLockdown($building, auth()->user(), $v['level'], ['reason' => $v['reason'] ?? null, 'place_id' => $v['place_id'] ?? null]);
             return response()->json(['success' => true, 'lockdown_id' => $l->id, 'incident_id' => $l->incident_id, 'level' => $l->level, 'results' => $l->results]);
