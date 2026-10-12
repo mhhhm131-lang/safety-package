@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>الغلاف (مسودة موحدة) — منظومة السلامة والصحة المهنية</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'IBM Plex Sans Arabic', sans-serif;
+  direction: rtl;
+  background: #1A2E23;
+  min-height: 100vh;
+}
+.kufi { font-family: 'Noto Kufi Arabic', sans-serif; }
+
+.cover {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 48px;
+  background: linear-gradient(180deg, #1E3329 0%, #162620 100%);
+  min-height: 100vh;
+  color: #FFFFFF;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.logo {
+  width: 52px;
+  height: 52px;
+  background: #FFFFFF;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo span {
+  color: #1E3329;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.org-info {
+  text-align: right;
+}
+
+.org-name {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.org-sub {
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 2px;
+}
+
+.regulation {
+  background: rgba(255,255,255,0.08);
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+/* العنوان الرئيسي */
+.title-section {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.title-label {
+  font-size: 14px;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 8px;
+}
+
+.title-main {
+  font-size: 42px;
+  font-weight: 900;
+  line-height: 1.3;
+  margin-bottom: 10px;
+}
+
+.title-sub {
+  font-size: 15px;
+  opacity: 0.8;
+}
+
+/* سطر الطبقتين */
+.layers-line {
+  display: inline-block;
+  background: linear-gradient(135deg, rgba(201,162,39,0.18) 0%, rgba(201,162,39,0.08) 100%);
+  border: 1px solid rgba(201,162,39,0.35);
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 15px;
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+.layers-line .lead { color: #C9A227; font-weight: 800; }
+
+/* الأقسام */
+.section-box {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 16px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.section-num {
+  width: 26px;
+  height: 26px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.section-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #C9A227;
+}
+
+.section-content {
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.why-row {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.why-row + .why-row { margin-top: 10px; }
+.why-row .note { opacity: 0.7; font-size: 14px; }
+
+/* التحويلات */
+.transforms {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.transform-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.transform-from {
+  color: rgba(255,255,255,0.5);
+  font-weight: 500;
+}
+
+.transform-arrow {
+  color: #C9A227;
+  font-size: 16px;
+}
+
+.transform-to {
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+/* Footer */
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  font-size: 13px;
+  color: rgba(255,255,255,0.7);
+}
+
+@media (max-width: 600px) {
+  .cover { padding: 28px 18px; }
+  .title-main { font-size: 32px; }
+  .header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .footer { flex-direction: column; align-items: flex-start; gap: 8px; }
+}
+
+@media print {
+  body { background: white; }
+  .cover {
+    max-width: 100%;
+    min-height: 100vh;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <!-- Header -->
+  <div class="header">
+    <div class="logo-section">
+      <div class="logo">
+        <span>IPA</span>
+      </div>
+      <div class="org-info">
+        <div class="org-name">معهد الإدارة العامة</div>
+        <div class="org-sub">مبنى الملز — الرياض · ويُعمَّم على بقية المباني والفروع</div>
+      </div>
+    </div>
+    <div class="regulation">لائحة رقم ٥-٤٦-٢ · ISO 45001</div>
+  </div>
+
+  <!-- العنوان -->
+  <div class="title-section" style="text-align: right;">
+    <div class="kufi" style="font-size: 42px; font-weight: 900; color: rgba(255,255,255,0.6); line-height: 1.3;">المنتج</div>
+    <div class="kufi" style="font-size: 42px; font-weight: 900; line-height: 1.3; margin-bottom: 4px;">منظومة السلامة</div>
+    <h1 class="kufi title-main">والصحة المهنية</h1>
+    <div class="title-sub" style="margin-bottom: 14px;">صُممت خصيصاً لمعهد الإدارة العامة</div>
+
+    <!-- سطر الطبقتين -->
+    <div class="layers-line">
+      <span class="lead">أمانٌ وإيمان:</span>
+      <span>بُعد مادي يحمي الأرواح والممتلكات، وخمسة أبعاد غير مادية تحمي الأثر.</span>
+    </div>
+
+    <div style="font-size: 14px; color: rgba(255,255,255,0.85); margin-bottom: 12px;">
+      <span style="color: #C9A227; font-weight: 700;">تحوّل السلامة</span>
+      <span style="margin: 0 8px;">من مركز <span style="color: #C9A227;">←</span> <strong>شبكة</strong></span>
+      <span style="opacity: 0.5;">|</span>
+      <span style="margin: 0 8px;">من تخصص <span style="color: #C9A227;">←</span> <strong>سلوك</strong></span>
+      <span style="opacity: 0.5;">|</span>
+      <span style="margin: 0 8px;">من استدعاء <span style="color: #C9A227;">←</span> <strong>وجود</strong></span>
+    </div>
+    <div style="font-size: 14px; color: rgba(255,255,255,0.75); line-height: 1.7;">
+      لسد الفجوة الزمنية بين الاكتشاف والاستجابة، والفجوة بين ما يُعلَن وما يُطبَّق.<br>
+      <span style="color: #C9A227;">لتكون ثانية الاكتشاف الأولى هي ثانية التدخل، وليكون ما يُعلَن هو ما يُطبَّق.</span>
+    </div>
+  </div>
+
+  <!-- ① لماذا -->
+  <div class="section-box">
+    <div class="section-header">
+      <div class="section-num">١</div>
+      <div class="section-label">لماذا المنظومة</div>
+    </div>
+    <div class="section-content">
+      <div class="why-row">
+        <span class="kufi" style="font-size: 18px; font-weight: 800;">لأن اللائحة إلزامية.</span>
+        <span class="note">لائحة مسؤول السلامة — المديرية العامة للدفاع المدني</span>
+      </div>
+      <div class="why-row">
+        <span class="kufi" style="font-size: 18px; font-weight: 800;">ولأن منتجات المعهد غير مادية.</span>
+        <span class="note">فالحادث المهني فيه غير مرئي: أثر لا يتحقق، وقرار يتراجع، وثقة تهتز</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ② لماذا الآن -->
+  <div class="section-box">
+    <div class="section-header">
+      <div class="section-num">٢</div>
+      <div class="section-label">لماذا الآن</div>
+    </div>
+    <div class="section-content">
+      <span class="kufi" style="font-size: 18px; font-weight: 800;">لأن المعهد في تحوّل استراتيجي ترتفع فيه حالة التقبّل للتغيير.</span>
+      <span style="opacity: 0.7; margin-right: 16px; font-size: 14px;">فرصة لتوثيق نقاط القوة في ثقافته القائمة والبناء عليها</span>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div>
+      <span style="opacity: 0.6;">المُعد</span>
+      <span style="margin-right: 8px; font-weight: 600; color: #FFFFFF;">مسؤول السلامة بالمعهد / محمد سويد الرشيدي</span>
+    </div>
+    <div>١٤٤٨/٥/١ هـ — ٢٠٢٦/١٠/١٢ م</div>
+  </div>
+</div>
+
+</body>
+</html>
