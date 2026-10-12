@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>الملخص التنفيذي (مسودة ٢) — حزمة السلامة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;500;600;700;800;900&family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: Arial, sans-serif;
+  direction: rtl;
+  background: #FBFAF6;
+  color: #16261F;
+  line-height: 1.6;
+}
+.kufi { font-family: 'Noto Kufi Arabic', sans-serif; }
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 48px;
+  background: #FFFFFF;
+  min-height: 100vh;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #16261F;
+  margin-bottom: 24px;
+}
+
+.header-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #2D4A3E;
+}
+
+.header-meta {
+  font-size: 12px;
+  color: #55503F;
+  display: flex;
+  gap: 16px;
+}
+
+/* صندوق القرار */
+.decision-box {
+  background: linear-gradient(135deg, #2D4A3E 0%, #1E3329 100%);
+  border-radius: 14px;
+  padding: 24px 28px;
+  color: #FFFFFF;
+  margin-bottom: 24px;
+}
+
+.decision-intro {
+  font-size: 13px;
+  opacity: 0.85;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.decision-main {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.decision-main .gold { color: #C9A227; }
+
+.decision-cta {
+  display: inline-block;
+  background: #C9A227;
+  color: #1A1A1A;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* الأقسام */
+.section {
+  margin-bottom: 20px;
+}
+
+.section-header {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 16px;
+  align-items: baseline;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #16261F;
+  margin-bottom: 12px;
+}
+
+.section-label {
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.section-label.problem { color: #A32020; }
+.section-label.solution { color: #1E5620; }
+.section-label.decision { color: #8A6D10; }
+
+.section-title {
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.section-content {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 16px;
+}
+
+.section-content > div:first-child { }
+
+/* شريط المقارنة */
+.compare-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 1fr 70px 200px 160px;
+  align-items: center;
+  gap: 12px;
+}
+
+.bar-label {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.bar-label .accent { color: #8A6D10; }
+
+.bar-percent {
+  font-size: 12px;
+  font-weight: 700;
+  color: #55503F;
+  text-align: left;
+}
+
+.bar-track {
+  height: 20px;
+  background: #EDE9DE;
+  position: relative;
+}
+
+.bar-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  background: #16261F;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bar-fill span {
+  font-size: 12px;
+  font-weight: 900;
+  color: #C9A227;
+}
+
+.bar-fill.low {
+  background: #16261F;
+}
+
+.bar-note {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.bar-note.success { color: #1E5620; font-weight: 600; }
+.bar-note.danger { color: #A32020; font-weight: 600; }
+
+/* الأرقام */
+.numbers-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  background: #F5F3ED;
+  padding: 14px;
+  border-radius: 10px;
+  margin: 16px 0;
+}
+
+.number-item {
+  text-align: center;
+}
+
+.number-value {
+  font-size: 22px;
+  font-weight: 900;
+  color: #1E5620;
+}
+
+.number-label {
+  font-size: 12px;
+  color: #55503F;
+  margin-top: 2px;
+}
+
+/* البطاقات الأربع */
+.four-cards {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+  gap: 0;
+  align-items: stretch;
+  margin: 20px 0;
+}
+
+.card-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #C9A227;
+  font-size: 20px;
+  font-weight: 900;
+  padding: 0 4px;
+}
+
+.card {
+  background: #FFFFFF;
+  border: 1px solid #DCD5C4;
+  border-radius: 10px;
+  padding: 12px 10px;
+  border-top: 4px solid #2D4A3E;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+}
+
+.card:last-child {
+  background: #2D4A3E;
+  color: #FFFFFF;
+  border: none;
+}
+
+.card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* الهرم */
+.pyramid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.pyramid-level {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #FFFFFF;
+  padding: 5px 8px;
+}
+
+.pyramid-level.l1 { width: 65px; background: #1E3329; }
+.pyramid-level.l2 { width: 80px; background: #2D4A3E; }
+.pyramid-level.l3 { width: 95px; background: #3D6A5E; }
+.pyramid-level.l4 { width: 115px; background: #C9A227; color: #1A1A1A; font-weight: 800; }
+
+.pyramid-arrow {
+  color: #C9A227;
+  font-size: 9px;
+  line-height: 1;
+}
+
+/* شبكة الأصناف */
+.zones-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 2px;
+}
+
+.zone-item {
+  background: #F5F3ED;
+  border: 1px solid #E2DBCB;
+  border-radius: 3px;
+  padding: 4px 3px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #33373E;
+  text-align: center;
+}
+
+.zone-item.center {
+  background: #1E5620;
+  color: #FFFFFF;
+  border: none;
+  font-weight: 700;
+}
+
+.card-number {
+  font-size: 24px;
+  font-weight: 900;
+  color: #2D4A3E;
+  margin-bottom: 4px;
+}
+
+.card:last-child .card-number {
+  color: #C9A227;
+}
+
+.card-title {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.card-text {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #5A5A5A;
+}
+
+.card:last-child .card-text {
+  color: rgba(255,255,255,0.85);
+}
+
+/* الكلفة */
+.cost-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.cost-box {
+  border: 1px solid #DCD5C4;
+  padding: 14px;
+  background: #FFFFFF;
+}
+
+.cost-box.needs { border-top: 3px solid #8A6D10; }
+.cost-box.free { border-top: 3px solid #1E5620; }
+
+.cost-title {
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.cost-title.gold { color: #8A6D10; }
+.cost-title.green { color: #1E5620; }
+
+.cost-item {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+  margin-bottom: 6px;
+}
+
+.cost-item span:first-child {
+  font-weight: 700;
+}
+
+/* جدول القرار */
+.decision-table {
+  margin: 16px 0;
+}
+
+.decision-table-header {
+  display: grid;
+  grid-template-columns: 90px 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.decision-table-header span {
+  font-size: 12px;
+  font-weight: 800;
+  color: #8A6D10;
+}
+
+.decision-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.decision-row-label {
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+}
+
+.decision-row-label.success { color: #1E5620; }
+.decision-row-label.danger { color: #A32020; }
+
+.decision-cell {
+  border: 1px solid #DCD5C4;
+  padding: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.decision-cell.success { border-right: 3px solid #1E5620; }
+.decision-cell.danger { border-right: 3px solid #A32020; }
+
+.decision-cell-title {
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.decision-cell.success .decision-cell-title { color: #1E5620; }
+.decision-cell.danger .decision-cell-title { color: #A32020; }
+
+/* مسار الاعتماد */
+.timeline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  margin: 20px 0;
+  padding: 0 20px;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  top: 18px;
+  right: 50px;
+  left: 50px;
+  height: 3px;
+  background: #E5E7EB;
+}
+
+.timeline-step {
+  text-align: center;
+  z-index: 1;
+  flex: 1;
+}
+
+.timeline-dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.timeline-dot.done { background: #2D4A3E; }
+.timeline-dot.current { background: #C9A227; color: #1A1A1A; }
+.timeline-dot.pending { background: #E5E7EB; color: #9CA3AF; }
+.timeline-dot.final { background: linear-gradient(135deg, #DC2626, #B91C1C); }
+
+.timeline-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  max-width: 100px;
+  margin: 0 auto;
+  line-height: 1.4;
+}
+
+.timeline-sub {
+  font-size: 9px;
+  color: #9CA3AF;
+  margin-top: 2px;
+}
+
+/* الاعتماد */
+.approval-box {
+  background: #FFFFFF;
+  border: 2px solid #16261F;
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin-top: 20px;
+}
+
+.approval-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #16261F;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #16261F;
+}
+
+.approval-content {
+  margin-bottom: 16px;
+}
+
+.approval-section {
+  margin-bottom: 12px;
+}
+
+.approval-section-title {
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.approval-section-title.green { color: #1E5620; }
+.approval-section-title.gold { color: #8A6D10; }
+
+.approval-text {
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.approval-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding-top: 14px;
+  border-top: 1px solid #DCD5C4;
+}
+
+.approval-signatory .label {
+  font-size: 12px;
+  color: #55503F;
+  margin-bottom: 4px;
+}
+
+.approval-signatory .name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #16261F;
+}
+
+.approval-signatures {
+  display: flex;
+  gap: 24px;
+}
+
+.signature-field {
+  text-align: center;
+}
+
+.signature-field .label {
+  font-size: 12px;
+  color: #55503F;
+  margin-bottom: 4px;
+}
+
+.signature-line {
+  width: 100px;
+  border-bottom: 1.5px solid #16261F;
+  height: 20px;
+}
+
+/* Footer */
+.page-footer {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 12px;
+  margin-top: 20px;
+  border-top: 1px solid #DCD5C4;
+  font-size: 12px;
+  color: #6B6656;
+}
+
+/* الجوال: البطاقات الأربع عمود واحد والأسهم إلى الأسفل — لا يمس المحتوى */
+@media (max-width: 700px) {
+  .four-cards { grid-template-columns: 1fr; }
+  .card-arrow { transform: rotate(90deg); padding: 4px 0; }
+  .section-content { grid-template-columns: 1fr; }
+  .section-content > div { min-width: 0; }
+  .section-content [style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+  .bar-row { grid-template-columns: 1fr; gap: 6px; }
+  .bar-percent { text-align: right; }
+}
+
+@media print {
+  .page {
+    max-width: 100%;
+    padding: 24px 32px;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-title kufi">الملخص التنفيذي</div>
+    <div class="header-meta">
+      <span>لائحة مسؤول السلامة ٥-٤٦-٢</span>
+      <span>الإصدار ٢ · التاريخ [ ]</span>
+    </div>
+  </div>
+
+  <!-- صندوق القرار -->
+  <div class="decision-box">
+    <div class="decision-main kufi">
+      المشكلة حُدِّدت، والحل أُعِدَّ واكتمل.<br>
+      والمطلوب الآن <span class="gold">قرار اعتماد — لا يُلزم بتمويل</span>.
+    </div>
+  </div>
+
+  <!-- المشكلة -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-label problem">المشكلة</div>
+      <div class="section-title kufi">حين يُكتشف خطر أو تقع حالة طارئة، من أي نوع: حريق أو طبي أو كهربائي أو كيميائي أو فيزيائي أو إنشائي أو تنظيمي أو بشري، فلا سياسة ولا سجل مخاطر ولا خطط ولا إجراءات معتمدة ومعلنة في المعهد تحدد مَن يفعل ماذا ومتى. وهذه متطلبات إلزامية بلائحة مسؤول السلامة لجميع مباني المعهد وفروعه، يُسأل عنها عند التفتيش وعند التحقيق في الحوادث.</div>
+    </div>
+    <div class="section-content">
+      <div></div>
+      <div>
+        <div style="font-size: 13px; font-weight: 700; color: #24312A; margin-bottom: 10px;">السلامة والصحة المهنية عمل استباقي، يقوم على مكوّنين لا يعمل أحدهما بغياب الآخر:</div>
+        <div class="compare-bars">
+          <div class="bar-row">
+            <div class="bar-label"><span class="accent">المكوّن الأول</span> · الموارد المادية والبشرية</div>
+            <div class="bar-percent">نسبة الموجود</div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width: 70%;"><span>٧٠٪</span></div>
+            </div>
+            <div class="bar-note success">الأكثر كلفةً — قائم<br>يُستكمل</div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label"><span class="accent">المكوّن الثاني</span> · إدارة المخاطر، والسياسة والخطط والإجراءات الاستباقية والتشغيلية وإجراءات الاستجابة</div>
+            <div class="bar-percent">نسبة الموجود</div>
+            <div class="bar-track">
+              <div class="bar-fill low" style="width: 10%;"><span>١٠٪</span></div>
+            </div>
+            <div class="bar-note danger">المنخفض كلفةً — غائب<br>وهو الأداة التي تشغّل القائم</div>
+          </div>
+        </div>
+        <div style="font-size: 13px; line-height: 1.8; color: #24312A;">
+          <strong>الأدلة التي تؤكد ذلك:</strong><br>
+          • الفجوات الظاهرة عند مقارنة اللائحة بالوضع الراهن<br>
+          • تقارير مسؤول السلامة وخطابات الدفاع المدني — لم تُعالَج منذ أكثر من عام
+          <span style="display: inline-flex; align-items: center; gap: 6px; margin-right: 8px;">
+            <span style="border: 1px solid #1E5620; background: rgba(30,86,32,0.07); border-radius: 999px; padding: 2px 11px; font-size: 12px; font-weight: 800; color: #1E5620;">تُرفع</span>
+            <span style="width: 12px; height: 1.5px; background: #C9A227;"></span>
+            <span style="border: 1px solid #1E5620; background: rgba(30,86,32,0.07); border-radius: 999px; padding: 2px 11px; font-size: 12px; font-weight: 800; color: #1E5620;">تصل</span>
+            <span style="width: 12px; height: 1.5px; background: #C9A227;"></span>
+            <span style="border: 1px dashed #A32020; background: rgba(163,32,32,0.06); border-radius: 999px; padding: 2px 11px; font-size: 12px; font-weight: 800; color: #A32020;">تنقطع</span>
+          </span>
+        </div>
+        <!-- السبب الجذري -->
+        <div style="margin-top: 16px; padding: 16px 18px; background: #FFFFFF; border: 1px solid #DCD5C4; border-top: 3px solid #8A6D10;">
+          <div style="font-size: 14px; line-height: 1.7; color: #24312A; margin-bottom: 12px;">
+            <strong>السبب الجذري ليس غياب دعم الإدارة العليا، ولا إدارة محددة، ولا أفراد.</strong>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <span style="border: 1px solid #16261F; background: rgba(22,38,31,0.05); border-radius: 999px; padding: 5px 14px; font-size: 13px; font-weight: 700; color: #16261F;">لم يكن في المعهد مسؤول سلامة</span>
+            <span style="width: 14px; height: 2px; background: #C9A227;"></span>
+            <span style="border: 1px solid #16261F; background: rgba(22,38,31,0.05); border-radius: 999px; padding: 5px 14px; font-size: 13px; font-weight: 700; color: #16261F;">فلم يُبنَ نظام للسلامة</span>
+            <span style="width: 14px; height: 2px; background: #C9A227;"></span>
+            <span style="border: 1px solid #16261F; background: rgba(22,38,31,0.05); border-radius: 999px; padding: 5px 14px; font-size: 13px; font-weight: 700; color: #16261F;">فحُصرت في تجهيزات وحراسة بلا نظام يشغّلها</span>
+          </div>
+          <div style="font-size: 13px; color: #55503F; margin-top: 12px; line-height: 1.6;">
+            كُلّف مسؤول السلامة في ١٦/٤/٢٠٢٦م، وهذه أول حزمة متكاملة تُرفع منذ التكليف.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- الحل -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-label solution">الحل</div>
+      <div class="section-title kufi">طُبّقت اللائحة وحُوّلت إلى نظام رقمي لإدارة السلامة والصحة المهنية: سياسة وسجل مخاطر وخطط وإجراءات، أُعدّت كاملة وجاهزة للاعتماد والتفعيل، بطريقة مبتكرة تحقق الاستجابة من ثانية الاكتشاف الأولى بلا توظيف ولا إنشاء إدارات وهياكل جديدة.</div>
+    </div>
+    <div class="section-content">
+      <div></div>
+      <div>
+        <div style="font-size: 13px; line-height: 1.8; color: #24312A; margin-bottom: 10px;"><strong style="color: #1E5620;">النطاق:</strong> نظام واحد لجميع مباني المعهد وفروعه، ولأنواع الخطر كلها. أُعدّ على مبنى الملز نموذجاً، ويُعمَّم على البقية بلا إعادة بناء، وفق خطة تعتمدها الإدارة العليا.</div>
+        <div style="font-size: 13px; font-weight: 700; color: #24312A;">كيف؟</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- لماذا تجاوزنا التقليدي -->
+  <div style="margin: 20px 0; padding: 20px; background: #FFFFFF; border: 1px solid #DCD5C4; border-radius: 10px;">
+    <div style="font-family: 'Noto Kufi Arabic', sans-serif; font-size: 14px; font-weight: 800; color: #16261F; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #16261F;">
+      النموذج التقليدي — نموذج المعهد
+    </div>
+
+    <!-- الفجوة -->
+    <div style="display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 18px;">
+      <div style="text-align: center;">
+        <div style="width: 32px; height: 32px; border-radius: 50%; background: #A32020; margin: 0 auto 6px;"></div>
+        <span style="font-size: 12px; font-weight: 700; color: #55503F;">الحدث</span>
+      </div>
+      <div style="text-align: center;">
+        <div style="width: 70px; height: 2px; background: repeating-linear-gradient(90deg, #C9A227 0 5px, transparent 5px 10px);"></div>
+        <span style="background: #C9A227; color: #1A1A1A; padding: 3px 10px; border-radius: 10px; font-size: 12px; font-weight: 800; margin-top: 4px; display: inline-block;">الفجوة</span>
+      </div>
+      <div style="text-align: center;">
+        <div style="width: 32px; height: 32px; border-radius: 50%; background: #1E5620; margin: 0 auto 6px;"></div>
+        <span style="font-size: 12px; font-weight: 700; color: #55503F;">التدخل</span>
+      </div>
+    </div>
+
+    <!-- المقارنة -->
+    <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center;">
+      <!-- التقليدي -->
+      <div style="text-align: center;">
+        <div style="font-size: 12px; font-weight: 800; color: #FFFFFF; background: #55503F; border-radius: 4px; padding: 4px 10px; display: inline-block; margin-bottom: 10px;">التقليدي</div>
+        <svg viewBox="0 0 96 64" style="width: 85px; height: 57px; display: block; margin: 0 auto 8px;">
+          <rect x="1" y="1" width="94" height="62" rx="6" fill="#ffffff" stroke="#d5cdb8"></rect>
+          <circle cx="31" cy="14" r="3.4" fill="#c7c2b4"></circle>
+          <circle cx="48" cy="14" r="3.4" fill="#c7c2b4"></circle>
+          <circle cx="65" cy="14" r="3.4" fill="#c7c2b4"></circle>
+          <circle cx="82" cy="14" r="3.4" fill="#c7c2b4"></circle>
+          <circle cx="14" cy="32" r="3.4" fill="#c7c2b4"></circle>
+          <circle cx="31" cy="32" r="3.4" fill="#c7c2b4"></circle>
+          <circle cx="48" cy="32" r="3.4" fill="#c7c2b4"></circle>
+          <circle cx="65" cy="32" r="3.4" fill="#c7c2b4"></circle>
+          <circle cx="82" cy="32" r="3.4" fill="#c7c2b4"></circle>
+          <circle cx="14" cy="50" r="3.4" fill="#c7c2b4"></circle>
+          <circle cx="31" cy="50" r="3.4" fill="#c7c2b4"></circle>
+          <circle cx="48" cy="50" r="3.4" fill="#c7c2b4"></circle>
+          <circle cx="65" cy="50" r="3.4" fill="#c7c2b4"></circle>
+          <line x1="84" y1="52" x2="24" y2="21" stroke="#9a9484" stroke-width="1.4" stroke-dasharray="3 3"></line>
+          <circle cx="14" cy="14" r="7" fill="none" stroke="#c62828" stroke-width="2.4"></circle>
+          <circle cx="84" cy="52" r="4.6" fill="#3f9e46"></circle>
+        </svg>
+        <div style="font-size: 13px; font-weight: 800; color: #55503F; margin-bottom: 6px;">انتظار الوصول</div>
+        <div style="font-size: 12px; color: #55503F; line-height: 1.6;">+ تجهيزات أكثر · + فريق أكبر · + تكلفة أكثر</div>
+        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #55503F; font-size: 12px; font-weight: 800; color: #A32020;">والفجوة باقية</div>
+      </div>
+      <!-- دليل الرموز - في الوسط -->
+      <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12px; color: #55503F;">
+        <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 10px; height: 10px; border-radius: 50%; border: 2px solid #c62828;"></span> الحدث</span>
+        <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #3f9e46;"></span> تغطية</span>
+        <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #c7c2b4;"></span> بلا تغطية</span>
+      </div>
+      <!-- النموذج -->
+      <div style="text-align: center;">
+        <div style="font-size: 12px; font-weight: 800; color: #FFFFFF; background: #1E5620; border-radius: 4px; padding: 4px 10px; display: inline-block; margin-bottom: 10px;">النموذج</div>
+        <svg viewBox="0 0 96 64" style="width: 85px; height: 57px; display: block; margin: 0 auto 8px;">
+          <rect x="1" y="1" width="94" height="62" rx="6" fill="#ffffff" stroke="#cfd8cf"></rect>
+          <circle cx="31" cy="14" r="3.6" fill="#3f9e46"></circle>
+          <circle cx="48" cy="14" r="3.6" fill="#3f9e46"></circle>
+          <circle cx="65" cy="14" r="3.6" fill="#3f9e46"></circle>
+          <circle cx="82" cy="14" r="3.6" fill="#3f9e46"></circle>
+          <circle cx="14" cy="32" r="3.6" fill="#3f9e46"></circle>
+          <circle cx="31" cy="32" r="3.6" fill="#3f9e46"></circle>
+          <circle cx="48" cy="32" r="3.6" fill="#3f9e46"></circle>
+          <circle cx="65" cy="32" r="3.6" fill="#3f9e46"></circle>
+          <circle cx="82" cy="32" r="3.6" fill="#3f9e46"></circle>
+          <circle cx="14" cy="50" r="3.6" fill="#3f9e46"></circle>
+          <circle cx="31" cy="50" r="3.6" fill="#3f9e46"></circle>
+          <circle cx="48" cy="50" r="3.6" fill="#3f9e46"></circle>
+          <circle cx="65" cy="50" r="3.6" fill="#3f9e46"></circle>
+          <circle cx="82" cy="50" r="3.6" fill="#3f9e46"></circle>
+          <circle cx="14" cy="14" r="7" fill="none" stroke="#c62828" stroke-width="2.4"></circle>
+          <circle cx="14" cy="14" r="4.2" fill="#3f9e46"></circle>
+        </svg>
+        <div style="font-size: 13px; font-weight: 800; color: #1E5620; margin-bottom: 6px;">الوجود المسبق</div>
+        <div style="font-size: 12px; color: #16261F; line-height: 1.6;">✓ تكليف الموجودين · ✓ التدخل من الثانية ١ · ✓ بلا كلفة</div>
+        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #1E5620; font-size: 12px; font-weight: 800; color: #1E5620;">الفجوة تُغلق</div>
+      </div>
+    </div>
+
+    <!-- التحولات -->
+    <div style="display: flex; justify-content: center; gap: 28px; margin-top: 16px; padding-top: 14px; border-top: 1px solid #DCD5C4;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 13px; font-weight: 700; color: #9A9484; text-decoration: line-through;">قسم</span>
+        <span style="color: #C9A227; font-size: 16px;">←</span>
+        <span style="font-size: 14px; font-weight: 800; color: #16261F;">شبكة</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 13px; font-weight: 700; color: #9A9484; text-decoration: line-through;">تخصص</span>
+        <span style="color: #C9A227; font-size: 16px;">←</span>
+        <span style="font-size: 14px; font-weight: 800; color: #16261F;">سلوك</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 13px; font-weight: 700; color: #9A9484; text-decoration: line-through;">استدعاء</span>
+        <span style="color: #C9A227; font-size: 16px;">←</span>
+        <span style="font-size: 14px; font-weight: 800; color: #16261F;">وجود</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- عنوان البطاقات -->
+  <div style="text-align:center;margin:16px 0 10px;">
+    <span class="kufi" style="font-size:13px;font-weight:800;color:#1E5620;">مخرجات الحل — نظام</span>
+  </div>
+
+  <!-- البطاقات الأربع -->
+  <div class="four-cards">
+    <!-- البطاقة ١: البنية -->
+    <div class="card">
+      <div class="card-title kufi">مبني على:</div>
+      <div class="card-content">
+        <div class="pyramid">
+          <div class="pyramid-level l1">سياسة</div>
+          <div class="pyramid-arrow">▼</div>
+          <div class="pyramid-level l2">٣ مبادئ</div>
+          <div class="pyramid-arrow">▼</div>
+          <div class="pyramid-level l3">٣ أهداف</div>
+          <div class="pyramid-arrow">▼</div>
+          <div class="pyramid-level l4">٨ معايير</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-arrow">←</div>
+
+    <!-- البطاقة ٢: التقسيم -->
+    <div class="card">
+      <div class="card-title kufi">نتج عنه تقسيم كل مبنى إلى ٨ أصناف رئيسية + مركز سلامة</div>
+      <div class="card-content">
+        <div class="zones-grid">
+          <div class="zone-item">القاعات التدريبية</div>
+          <div class="zone-item">المكاتب الإدارية</div>
+          <div class="zone-item">القبو والمواقف</div>
+          <div class="zone-item">مركز البيانات</div>
+          <div class="zone-item center">مركز السلامة</div>
+          <div class="zone-item">المطاعم</div>
+          <div class="zone-item">غرف الكهرباء</div>
+          <div class="zone-item">غرف التكييف</div>
+          <div class="zone-item">المخازن</div>
+        </div>
+        <div style="font-size:11px;color:#8A6D10;text-align:center;margin-top:4px;">لكل صنف تفرعات</div>
+      </div>
+    </div>
+
+    <div class="card-arrow">←</div>
+
+    <!-- البطاقة ٣: التفاصيل -->
+    <div class="card">
+      <div class="card-title kufi">لكل تفرع:</div>
+      <div class="card-content">
+        <div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center;margin-bottom:6px;">
+          <div style="background:#F5F3ED;border:1px solid #E2DBCB;border-radius:3px;padding:4px 6px;font-size:11px;font-weight:600;color:#1E3329;">خطة سلامة</div>
+          <div style="background:#F5F3ED;border:1px solid #E2DBCB;border-radius:3px;padding:4px 6px;font-size:11px;font-weight:600;color:#1E3329;">خطة استجابة</div>
+          <div style="background:#F5F3ED;border:1px solid #E2DBCB;border-radius:3px;padding:4px 6px;font-size:11px;font-weight:600;color:#1E3329;">نماذج فحص</div>
+          <div style="background:#F5F3ED;border:1px solid #E2DBCB;border-radius:3px;padding:4px 6px;font-size:11px;font-weight:600;color:#1E3329;">مسؤول</div>
+          <div style="background:#F5F3ED;border:1px solid #E2DBCB;border-radius:3px;padding:4px 6px;font-size:11px;font-weight:600;color:#1E3329;">فريق استجابة أولي</div>
+        </div>
+        <div style="text-align:center;font-size:11px;color:#8A6D10;margin:6px 0;">↓ يسنده ↓</div>
+        <div style="display:flex;justify-content:center;gap:4px;margin-bottom:6px;">
+          <div style="background:#2D4A3E;border-radius:3px;padding:4px 8px;font-size:11px;font-weight:700;color:#FFF;">أمني</div>
+          <div style="background:#2D4A3E;border-radius:3px;padding:4px 8px;font-size:11px;font-weight:700;color:#FFF;">طبي</div>
+          <div style="background:#2D4A3E;border-radius:3px;padding:4px 8px;font-size:11px;font-weight:700;color:#FFF;">فني</div>
+        </div>
+        <div style="text-align:center;font-size:11px;color:#5A5548;line-height:1.4;">وبدعم وتنسيق قيادي وإداري من<br><strong style="color:#1E5620;">مركز السلامة</strong></div>
+      </div>
+    </div>
+
+    <div class="card-arrow">←</div>
+
+    <!-- البطاقة ٤: النتيجة -->
+    <div class="card">
+      <div class="card-title kufi">أصبح لدينا</div>
+      <div class="card-content">
+        <div style="font-size:11px;line-height:1.5;margin-bottom:10px;">
+          نظام سلامة يغطي كامل المبنى ويضمن جاهزيته ويوفر لكل فرد تحت مظلة المعهد — أياً كانت صفته — أن يعرف مسبقاً دوره بالسلامة، <strong>يشغّله نظام رقمي</strong> يُبلِّغ ويُصعِّد ويوثّق
+        </div>
+        <div style="display:inline-block;background:#C9A227;color:#1A1A1A;padding:5px 12px;border-radius:4px;font-size:11px;font-weight:800;" class="kufi">ماذا يعمل · من يُبلغ · كيف · متى</div>
+        <div style="display:inline-block;background:#1E5620;color:#FFF;padding:4px 10px;border-radius:3px;font-size:10px;font-weight:700;margin-top:8px;">جاهز للتفعيل</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ما أُنجز: المنظومة الرقمية -->
+  <div style="margin: 20px 0; padding: 18px 20px; background: #FFFFFF; border: 1px solid #DCD5C4; border-top: 3px solid #1E5620; border-radius: 10px;">
+    <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #DCD5C4;">
+      <div class="kufi" style="font-size: 14px; font-weight: 800; color: #1E5620;">ما أُنجز: المنظومة الرقمية تعمل اليوم</div>
+      <a href="https://ipa-safety.onrender.com" style="font-size: 13px; font-weight: 700; color: #1E3329; direction: ltr; font-family: Consolas, monospace; text-decoration: none; border-bottom: 1px solid #C9A227;">ipa-safety.onrender.com</a>
+    </div>
+    <div style="display: grid; grid-template-columns: 22px 1fr; gap: 6px 8px; font-size: 13px; line-height: 1.7; color: #24312A;">
+      <span style="font-weight: 800; color: #8A6D10;">١</span><span>من يرى خطراً يبلّغ من جواله فوراً بلا حساب، باسمه أو بلا اسم، فيصل المركز في اللحظة نفسها ويُعالج كغيره.</span>
+      <span style="font-weight: 800; color: #8A6D10;">٢</span><span>عند الطارئ تظهر لكل مكلَّف خطوته باسمه، ومن تأخر ظهر تأخره للقيادة.</span>
+      <span style="font-weight: 800; color: #8A6D10;">٣</span><span>كل ملاحظة لها مهلة، فإن مرّت بلا معالجة ارتفعت وحدها إلى المسؤول الأعلى.</span>
+      <span style="font-weight: 800; color: #8A6D10;">٤</span><span>سجل مخاطر واحد للمعهد، لكل خطر فيه تقييمه وأسبابه وإجراءاته ومن يتولاه. يكتبه مسؤول السلامة، وتأخذ منه كل إدارة ما يخص مكانها، فلا تكتب من الصفر وتتعلم قبل الوقوع.</span>
+      <span style="font-weight: 800; color: #8A6D10;">٥</span><span>كل ما جرى محفوظ باسم فاعله ووقته، وهو ما يُسأل عنه في التفتيش والتحقيق.</span>
+      <span style="font-weight: 800; color: #8A6D10;">٦</span><span>وللقيادة لوحة تبدأ بفجوة الاستجابة وما ينتظر قراراً، ومعها المقاولون والعمال وتصاريح العمل والإقرارات.</span>
+      <span style="font-weight: 800; color: #8A6D10;">٧</span><span>والسياسة والخطط وبطاقات الأدوار منشورة فيه للجميع بلا دخول، وكل مبنى بحساباته وبياناته مستقلاً.</span>
+    </div>
+    <div style="font-size: 12px; color: #55503F; margin-top: 10px; padding-top: 8px; border-top: 1px dashed #DCD5C4;">يعمل على استضافة مؤقتة ببيانات تجريبية، ونقله إلى أجهزة المعهد ضمن تكليف تقنية المعلومات.</div>
+  </div>
+
+  <!-- الكلفة -->
+  <div class="cost-grid">
+    <div class="cost-box needs">
+      <div class="cost-title gold">بنود تحتاج كلفة مالية</div>
+      <div class="cost-item"><span style="color: #8A6D10;">١</span><span>التقييم الهندسي للمبنى من مكتب مرخَّص، تشترطه اللائحة — واستكمال النواقص التي يحددها</span></div>
+      <div class="cost-item"><span style="color: #8A6D10;">٢</span><span>توفير تقارير فنية عن جاهزية وصلاحية الأنظمة الحالية</span></div>
+      <div class="cost-item"><span style="color: #8A6D10;">٣</span><span>إنشاء مركز السلامة (٨٠٪ من عناصره متوفرة)</span></div>
+      <div style="font-size: 12px; color: #55503F; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #DCD5C4;">ما يحتاج كلفة: متطلب لائحة قائم — المشروع كشفه لا أنشأه</div>
+    </div>
+    <div class="cost-box free">
+      <div class="cost-title green">بلا كلفة — جوهر النموذج</div>
+      <div class="cost-item"><span style="color: #1E5620;">✓</span><span>التكليف من الموظفين الحاليين</span></div>
+      <div class="cost-item"><span style="color: #1E5620;">✓</span><span>التدريب: المعهد · الدفاع المدني · الهلال الأحمر</span></div>
+      <div class="cost-item"><span style="color: #1E5620;">✓</span><span>الخطط المعدّة والمكتملة</span></div>
+      <div class="cost-item"><span style="color: #1E5620;">✓</span><span>المنظومة الرقمية — مبنية وتعمل</span></div>
+    </div>
+  </div>
+
+  <!-- القرار -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-label decision">القرار</div>
+      <div class="section-title kufi">أمامنا خياران — تصحيح أو بقاء الحال</div>
+    </div>
+    <div class="section-content">
+      <div></div>
+      <div>
+        <div style="text-align: center; margin-bottom: 14px; padding: 10px 16px; background: linear-gradient(135deg, #2D4A3E 0%, #1E3329 100%); border-radius: 8px;">
+          <span class="kufi" style="font-size: 14px; font-weight: 800; color: #C9A227;">ما يُوثَّق في التفتيش — يظهر في الاستجابة — يُستدعى في التحقيق</span>
+        </div>
+        <div class="decision-table">
+          <div class="decision-table-header">
+            <span></span>
+            <span>عند التفتيش</span>
+            <span>عند الاستجابة</span>
+            <span>عند التحقيق</span>
+          </div>
+          <div class="decision-row">
+            <div class="decision-row-label success">إن اعتُمد</div>
+            <div class="decision-cell success">
+              <div class="decision-cell-title">اكتمال يُسجَّل</div>
+              تقرير يُثبت الالتزام
+            </div>
+            <div class="decision-cell success">
+              <div class="decision-cell-title">ريادة تُنقَل</div>
+              جودة وفاعلية في استجابة تسبق الخارجية
+            </div>
+            <div class="decision-cell success">
+              <div class="decision-cell-title">تصريح مطابقة</div>
+              وثيقة تشهد للمعهد
+            </div>
+          </div>
+          <div class="decision-row">
+            <div class="decision-row-label danger">إن بقي الحال</div>
+            <div class="decision-cell danger">
+              <div class="decision-cell-title">قصور يُسجَّل</div>
+              ملاحظات تتراكم
+            </div>
+            <div class="decision-cell danger">
+              <div class="decision-cell-title">ارتباك يوسّع الضرر</div>
+              تفاقم كان يمكن تجنّبه
+            </div>
+            <div class="decision-cell danger">
+              <div class="decision-cell-title">ملاحظات تنقلب إدانة</div>
+              أُبلِغ بها ولم يعالجها
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- مسار الاعتماد -->
+  <div class="timeline">
+    <div class="timeline-step">
+      <div class="timeline-dot done">✓</div>
+      <div class="timeline-label">الإعداد</div>
+      <div class="timeline-sub">مسؤول السلامة</div>
+    </div>
+    <div class="timeline-step">
+      <div class="timeline-dot current">●</div>
+      <div class="timeline-label">العرض على الإدارة التنفيذية</div>
+      <div class="timeline-sub" style="color: #C9A227;">مسؤول السلامة · [التاريخ]</div>
+    </div>
+    <div class="timeline-step">
+      <div class="timeline-dot pending">٣</div>
+      <div class="timeline-label">استيفاء مرئيات الإدارة التنفيذية</div>
+      <div class="timeline-sub">مسؤول السلامة · خلال [ ]</div>
+    </div>
+    <div class="timeline-step">
+      <div class="timeline-dot pending">٤</div>
+      <div class="timeline-label">العرض على الإدارة العليا</div>
+      <div class="timeline-sub">مدير الشؤون الإدارية والهندسية</div>
+    </div>
+    <div class="timeline-step">
+      <div class="timeline-dot pending">٥</div>
+      <div class="timeline-label">استكمال النواقص</div>
+      <div class="timeline-sub">الإدارات المعنية</div>
+    </div>
+    <div class="timeline-step">
+      <div class="timeline-dot final">◆</div>
+      <div class="timeline-label">الاعتماد النهائي للخطط</div>
+      <div class="timeline-sub">الدفاع المدني</div>
+    </div>
+  </div>
+
+  <!-- الاعتماد -->
+  <div class="approval-box">
+    <div class="approval-title kufi">الاعتماد</div>
+    <div class="approval-content">
+      <div class="approval-section">
+        <div class="approval-section-title green kufi">بهذا التوقيع يُعتمد:</div>
+        <div class="approval-text">
+          <strong>سياسة السلامة · الأهداف · سجل المخاطر · الخطط · التكليف · التدريب · المنظومة الرقمية لإدارة السلامة والصحة المهنية قناةً رسمية للبلاغ والتصعيد والتوثيق</strong><br>
+          <span style="color: #55503F;">(بلا توظيف · بلا هياكل جديدة · التدريب مجاني)</span>
+        </div>
+      </div>
+      <div class="approval-section">
+        <div class="approval-section-title gold kufi">ويُكلَّف:</div>
+        <div class="approval-text">
+          <strong>١.</strong> مالك للمشروع &nbsp;&nbsp;&nbsp;
+          <strong>٢.</strong> إدارة المشاريع — بتقدير كلفة البنود الإلزامية خلال [    ] يوماً<br>
+          <strong>٣.</strong> تقنية المعلومات — باستضافة المنظومة القائمة في بيئة المعهد، وربطها بحسابات الموظفين وبريد المعهد وأنظمة الإنذار (التفصيل في وثيقة الربط)
+        </div>
+      </div>
+    </div>
+    <div class="approval-footer">
+      <div class="approval-signatory">
+        <div class="label">معالي المدير العام لمعهد الإدارة العامة</div>
+        <div class="name">د. بندر بن عبدالله السجان</div>
+      </div>
+      <div class="approval-signatures">
+        <div class="signature-field">
+          <div class="label">التوقيع</div>
+          <div class="signature-line"></div>
+        </div>
+        <div class="signature-field">
+          <div class="label">التاريخ</div>
+          <div class="signature-line" style="width: 80px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="page-footer">
+    <span>إعداد: محمد سويد الرشيدي — مسؤول السلامة</span>
+    <span>صفحة القرار</span>
+  </div>
+</div>
+
+</body>
+</html>
