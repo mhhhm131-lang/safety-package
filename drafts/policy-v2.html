@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="./support.js"></script>
+<script src="../support.js"></script>
 </head>
 <body>
 <x-dc>
@@ -457,7 +457,7 @@
   <button onClick="{{ resetDoc }}" style="background:#EFE9DC;color:#5A5548;border:none;font-family:inherit;font-size:13px;font-weight:600;padding:0 14px;height:34px;border-radius:7px;cursor:pointer;">استعادة الأصل</button>
   <button title="إنهاء التحرير" onClick="{{ lock }}" style="background:#2b2e34;color:#9a9ea6;border:none;font-family:inherit;font-size:13px;font-weight:600;padding:0 14px;height:34px;border-radius:7px;cursor:pointer;"> قفل</button>
 </div>
-<x-import component-from-global-scope="doc-page" from="./doc-page.js" size="a4" margin="0" hint-size="100%,100%">
+<x-import component-from-global-scope="doc-page" from="../doc-page.js" size="a4" margin="0" hint-size="100%,100%">
 <div slot="footer" dir="rtl" style="display:none;font-family:'IBM Plex Sans Arabic',sans-serif;font-size:11px;color:#8A8578;border-top:1px solid #E2DBCB;padding-top:6px;">
   <span style="float:right;">حزمة السلامة — معهد الإدارة العامة · مسودة موحدة</span>
   <span style="float:left;" class="pgnum"></span>
