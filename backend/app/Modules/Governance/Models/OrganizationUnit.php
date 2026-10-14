@@ -37,6 +37,19 @@ class OrganizationUnit extends Model
         return null;
     }
 
+    /**
+     * ٢٩-٠ (قرار ٨٧): مبنى الوحدة — المبنى الذي يشير إلى رأسها (فرعها، أو المركز الرئيسي)، وإلا مبنى مكانها، وإلا المبنى الرئيسي.
+     * يقرؤه ما يُعبَّأ في النماذج (`OwnerScope`) وحارس الكتابة «الوحدة من مبانيك» (`InAccountBuildings::unit`).
+     */
+    public function buildingId(): ?int
+    {
+        $head = $this->headOf();
+        if ($head && ($b = \App\Modules\Emergency\Models\EmergencyBuilding::where('branch_unit_id', $head->id)->orderBy('id')->value('id'))) return (int) $b;
+        if ($this->place_id && ($pb = Place::where('id', $this->place_id)->value('building_id'))) return (int) $pb;
+        $main = \App\Modules\Emergency\Models\EmergencyBuilding::main();
+        return $main ? (int) $main->id : null;
+    }
+
     protected $fillable = ['code', 'parent_id', 'name', 'name_en', 'unit_type', 'place_id', 'manager_id', 'manager_name', 'order', 'is_active'];
 
     protected $casts = ['order' => 'integer', 'is_active' => 'boolean'];

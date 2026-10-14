@@ -59,6 +59,7 @@ class FormTemplate extends Model
     ];
 
     public function fields(): HasMany           { return $this->hasMany(FormField::class, 'form_id')->orderBy('order'); }
+    /** ٢٩-٠: التعبئات والتكليفات تُقرأ داخل مباني الحساب تلقائياً (`BelongsToBuilding` عليهما) */
     public function submissions(): HasMany      { return $this->hasMany(FormSubmission::class, 'form_id'); }
     public function assignments(): HasMany      { return $this->hasMany(FormAssignment::class, 'form_id'); }
     public function sourceRisk(): BelongsTo     { return $this->belongsTo(Risk::class, 'source_risk_id'); }
@@ -94,10 +95,12 @@ class FormTemplate extends Model
         return in_array($this->form_type, [self::TYPE_DECLARATION, self::TYPE_DECLARATION_WITNESSED], true);
     }
 
-    /** إحصاء التكليفات: مكلَّف، مكتمل، متأخر. */
-    public function assignmentStats(): array
+    /** إحصاء التكليفات: مكلَّف، مكتمل، متأخر — ممّا يراه الحساب (٢٩-٠: قاعدة الرؤية)؛ بلا حساب: الكل في مبانيه. */
+    public function assignmentStats(?User $viewer = null): array
     {
-        $rows = $this->assignments()->get(['status']);
+        $q = $this->assignments();
+        if ($viewer) app(\App\Modules\Form\Services\FormVisibilityService::class)->apply($q, $viewer);
+        $rows = $q->get(['status']);
 
         return [
             'total'     => $rows->count(),

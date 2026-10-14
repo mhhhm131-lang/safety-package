@@ -2,7 +2,10 @@
 
 namespace App\Modules\Form\Models;
 
+use App\Core\Traits\BelongsToBuilding;
 use App\Models\User;
+use App\Modules\Form\Support\OwnerScope;
+use App\Modules\Governance\Models\OrganizationUnit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -11,9 +14,14 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * تكليف شخص بتعبئة نموذج، بمهلة اختيارية.
  * `source` يحفظ كيف كُلّف: فرداً، أو ضمن دور، أو وحدة، أو مكان — فيُعاد الإرسال لمن تأخر بالمعيار نفسه.
  * حالة «متأخر» يضبطها الأمر المجدول `forms:check-overdue` (في OHSMS كانت الحالة معرَّفة ولا يضبطها شيء).
+ *
+ * ٢٩-٠ (قرار ٨٧): يحمل إدارة المكلَّف ومبناه (`OwnerScope`) فيُقرأ بالمبنى تلقائياً (`BelongsToBuilding`، قرار ٨٤)
+ * وبالوحدة في `FormVisibilityService`. الكتابة تملؤهما من حساب المكلَّف إن لم يُعطَيا.
  */
 class FormAssignment extends Model
 {
+    use BelongsToBuilding;
+
     public const UPDATED_AT = null;
 
     public const STATUS_PENDING   = 'pending';
@@ -34,7 +42,7 @@ class FormAssignment extends Model
     ];
 
     protected $fillable = [
-        'form_id', 'assigned_to_id', 'status', 'due_date', 'source', 'source_value',
+        'form_id', 'assigned_to_id', 'building_id', 'organization_unit_id', 'status', 'due_date', 'source', 'source_value',
         'reminded_at', 'completed_at', 'assigned_by_id', 'created_at',
     ];
 
@@ -47,10 +55,22 @@ class FormAssignment extends Model
 
     protected $attributes = ['status' => self::STATUS_PENDING, 'source' => 'user'];
 
+    protected static function booted(): void
+    {
+        static::creating(function (FormAssignment $a) {
+            if ($a->building_id === null || $a->organization_unit_id === null) {
+                $scope = OwnerScope::of($a->assigned_to_id ? (int) $a->assigned_to_id : null);
+                $a->building_id ??= $scope['building_id'];
+                $a->organization_unit_id ??= $scope['organization_unit_id'];
+            }
+        });
+    }
+
     public function form(): BelongsTo       { return $this->belongsTo(FormTemplate::class, 'form_id'); }
     public function assignedTo(): BelongsTo { return $this->belongsTo(User::class, 'assigned_to_id'); }
     public function assignedBy(): BelongsTo { return $this->belongsTo(User::class, 'assigned_by_id'); }
     public function submission(): HasOne    { return $this->hasOne(FormSubmission::class, 'assignment_id'); }
+    public function organizationUnit(): BelongsTo { return $this->belongsTo(OrganizationUnit::class); }
 
     public function getStatusLabel(): string { return self::STATUS_LABELS[$this->status] ?? $this->status; }
     public function getSourceLabel(): string { return self::SOURCE_LABELS[$this->source] ?? $this->source; }

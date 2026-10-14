@@ -34,10 +34,10 @@ class FormPolicy
         return $this->can($user, 'form.edit');
     }
 
-    /** لا تُعدَّل حقول نموذج بدأت تعبئته: يفسد مقارنة النتائج. */
+    /** لا تُعدَّل حقول نموذج بدأت تعبئته (في أي مبنى — ٢٩-٠): يفسد مقارنة النتائج. */
     public function editFields(User $user, FormTemplate $form): bool
     {
-        return $this->can($user, 'form.edit') && $form->submissions()->doesntExist();
+        return $this->can($user, 'form.edit') && $form->submissions()->withoutGlobalScope('building')->doesntExist();
     }
 
     public function send(User $user, FormTemplate $form): bool

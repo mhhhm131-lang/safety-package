@@ -11,6 +11,7 @@ use App\Modules\Form\Models\FormSubmission;
 use App\Modules\Form\Models\FormTemplate;
 use App\Modules\Form\Services\FormNotifier;
 use App\Modules\Form\Services\FormService;
+use App\Modules\Form\Services\FormVisibilityService;
 use App\Modules\Governance\Models\OrganizationUnit;
 use App\Modules\Governance\Models\Place;
 use App\Modules\Governance\Models\UserProfile;
@@ -24,6 +25,7 @@ use Illuminate\Support\Facades\Auth;
  * النماذج الرقمية: القائمة، البناء، التوليد من المخاطر، التكليف، التعبئة، التتبع، النتائج.
  *
  * المسارات محمية بصلاحيات `form.*`، والتعبئة بـ`FormPolicy::fill` (مكلَّف، مرة واحدة).
+ * ٢٩-٠ (قرار ٨٧): القوالب عامة، وما يُعبَّأ يُقرأ بقاعدة الرؤية (`FormVisibilityService`) في العدّادات والمتابعة والنتائج والتصدير.
  */
 class FormController extends Controller
 {
@@ -32,13 +34,19 @@ class FormController extends Controller
     public function __construct(
         private readonly FormService $forms,
         private readonly FormNotifier $notifier,
+        private readonly FormVisibilityService $visibility,
     ) {}
 
     // ── القائمة ──
 
     public function index(Request $request)
     {
-        $query = FormTemplate::query()->withCount(['fields', 'submissions', 'assignments'])->latest('id');
+        $viewer = Auth::user();
+        $query = FormTemplate::query()->withCount([
+            'fields',
+            'submissions' => fn ($q) => $this->visibility->apply($q, $viewer), // ٢٩-٠: ما يراه الحساب
+            'assignments' => fn ($q) => $this->visibility->apply($q, $viewer),
+        ])->latest('id');
 
         if (($type = $request->query('type')) && isset(FormTemplate::TYPE_LABELS[$type])) {
             $query->where('form_type', $type);
@@ -101,7 +109,7 @@ class FormController extends Controller
 
         return view('modules.forms.show', [
             'form'        => $form,
-            'stats'       => $form->assignmentStats(),
+            'stats'       => $form->assignmentStats(Auth::user()),
             'fieldTypes'  => FormField::TYPE_LABELS,
             'canEditFields' => Auth::user()->can('editFields', $form),
         ]);
@@ -234,7 +242,7 @@ class FormController extends Controller
             'roles'  => \App\Core\Permissions\PermissionRegistry::ROLES,
             'units'  => OrganizationUnit::orderBy('name')->get(['id', 'name']),
             'places' => \App\Modules\Governance\Services\BuildingContext::placesFor(Auth::user()), // قرار ٨٤
-            'stats'  => $form->assignmentStats(),
+            'stats'  => $form->assignmentStats(Auth::user()),
         ]);
     }
 
@@ -247,7 +255,7 @@ class FormController extends Controller
             'user_ids'   => ['required_if:mode,users', 'array'],
             'user_ids.*' => ['integer', 'exists:users,id'],
             'role'       => ['required_if:mode,role', 'nullable', 'string', 'max:60'],
-            'unit_id'    => ['required_if:mode,unit', 'nullable', 'integer', 'exists:organization_units,id'],
+            'unit_id'    => InAccountBuildings::unitRules('required_if:mode,unit', 'nullable'), // ٢٩-٠ حارس الكتابة: الوحدة من مبانيك
             'place_id'   => InAccountBuildings::placeRules('required_if:mode,place', 'nullable'), // حارس الكتابة (تتمة قرار ٨٤): من مبانيك
             'due_date'   => ['nullable', 'date', 'after_or_equal:today'],
         ], [], ['due_date' => 'المهلة', 'user_ids' => 'المكلَّفون']);
@@ -272,14 +280,17 @@ class FormController extends Controller
     {
         $this->authorize('track', $form);
 
+        $viewer = Auth::user();
+        $assignments = $form->assignments()->with(['assignedTo.profile', 'submission']);
+        $this->visibility->apply($assignments, $viewer); // ٢٩-٠: ما يراه الحساب من التكليفات
+
         return view('modules.forms.tracking', [
             'form'        => $form,
-            'assignments' => $form->assignments()
-                ->with(['assignedTo.profile', 'submission'])
+            'assignments' => $assignments
                 ->orderByRaw("CASE status WHEN 'overdue' THEN 1 WHEN 'pending' THEN 2 ELSE 3 END")
                 ->orderBy('due_date')
                 ->paginate(50),
-            'stats'       => $form->assignmentStats(),
+            'stats'       => $form->assignmentStats($viewer),
         ]);
     }
 
@@ -296,7 +307,7 @@ class FormController extends Controller
     public function remindAll(FormTemplate $form)
     {
         $this->authorize('send', $form);
-        $n = $this->forms->remindAllPending($form);
+        $n = $this->forms->remindAllPending($form, Auth::user());
 
         return back()->with($n > 0 ? 'ok' : 'err', $n > 0 ? "أُرسل التذكير إلى {$n} مكلَّفاً." : 'لا أحد متأخر.');
     }
@@ -382,11 +393,13 @@ class FormController extends Controller
         $this->authorize('results', $form);
         $form->load('fields');
 
+        $viewer = Auth::user();
+
         return view('modules.forms.results', [
             'form'        => $form,
-            'submissions' => $this->forms->results($form),
-            'summary'     => $this->forms->resultsSummary($form),
-            'stats'       => $form->assignmentStats(),
+            'submissions' => $this->forms->results($form, $viewer),
+            'summary'     => $this->forms->resultsSummary($form, $viewer),
+            'stats'       => $form->assignmentStats($viewer),
         ]);
     }
 
@@ -394,16 +407,17 @@ class FormController extends Controller
     {
         $this->authorize('results', $form);
 
-        return $this->forms->exportCsv($form);
+        return $this->forms->exportCsv($form, Auth::user());
     }
 
-    /** عرض ملف رد (توقيع أو صورة) — لمن يرى النتائج، أو لصاحب التعبئة. */
+    /** عرض ملف رد (توقيع أو صورة) — لمن يرى النتائج (ويرى وحدة التعبئة — ٢٩-٠)، أو لصاحب التعبئة. */
     public function answerFile(FormTemplate $form, FormAnswer $answer)
     {
-        $submission = $answer->submission;
+        $submission = $answer->submission; // النطاق العام بالمبنى يحجب تعبئة مبنى آخر فتصير 404
         abort_if(!$submission || $submission->form_id !== $form->id, 404);
         abort_unless(
-            Auth::user()->can('results', $form) || $submission->submitted_by_id === Auth::id(),
+            (Auth::user()->can('results', $form) && $this->visibility->canSeeSubmission(Auth::user(), $submission))
+            || $submission->submitted_by_id === Auth::id(),
             403,
         );
         abort_unless($answer->hasFile(), 404, 'لا ملف.');

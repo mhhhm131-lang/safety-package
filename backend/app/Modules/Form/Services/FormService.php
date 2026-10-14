@@ -2,6 +2,7 @@
 
 namespace App\Modules\Form\Services;
 
+use App\Models\User;
 use App\Modules\Form\Models\FormAnswer;
 use App\Modules\Form\Models\FormAssignment;
 use App\Modules\Form\Models\FormField;
@@ -20,10 +21,15 @@ use Illuminate\Support\Facades\DB;
  * **الإصلاح الجوهري (٥-٨):** التعبئة في OHSMS كانت لا تعمل إطلاقاً — الشاشة ترسل `fields[]`
  * والخدمة تقرأ `answers[]`، ثم يكتب النموذج `submitted_at` بلا عمود له. هنا مفتاح واحد
  * (`fields`) وعمود حقيقي، وكل تعبئة تتحقق من التكليف وتُغلقه.
+ *
+ * ٢٩-٠ (قرار ٨٧): النتائج والمتابعة والتصدير والتذكير تمرّ بقاعدة الرؤية `FormVisibilityService` حين يُعطى الحساب القارئ.
  */
 class FormService
 {
-    public function __construct(private readonly FormNotifier $notifier) {}
+    public function __construct(
+        private readonly FormNotifier $notifier,
+        private readonly FormVisibilityService $visibility,
+    ) {}
 
     // ── القالب وحقوله ──
 
@@ -95,7 +101,8 @@ class FormService
             return 0;
         }
 
-        $existing = FormAssignment::where('form_id', $form->id)
+        // ٢٩-٠: التكليف القائم يُسأل عنه في المعهد كله لا في مباني المرسل — وإلا تكرّر التكليف وسقط القيد الفريد
+        $existing = FormAssignment::withoutGlobalScope('building')->where('form_id', $form->id)
             ->whereIn('assigned_to_id', $userIds)
             ->pluck('assigned_to_id')
             ->all();
@@ -106,7 +113,7 @@ class FormService
                 if (in_array($userId, $existing, true)) {
                     // تكليف قائم: تُحدَّث المهلة فقط، ولا يُنشأ تكليف ثانٍ
                     if ($dueDate) {
-                        FormAssignment::where('form_id', $form->id)
+                        FormAssignment::withoutGlobalScope('building')->where('form_id', $form->id)
                             ->where('assigned_to_id', $userId)
                             ->where('status', '!=', FormAssignment::STATUS_COMPLETED)
                             ->update(['due_date' => $dueDate]);
@@ -169,11 +176,13 @@ class FormService
         return true;
     }
 
-    /** تذكير كل من لم يعبّئ. يعيد عددهم. */
-    public function remindAllPending(FormTemplate $form): int
+    /** تذكير كل من لم يعبّئ — ممن يراهم المذكِّر (٢٩-٠: قاعدة الرؤية). يعيد عددهم. */
+    public function remindAllPending(FormTemplate $form, ?User $actor = null): int
     {
         $count = 0;
-        foreach ($form->assignments()->whereIn('status', [FormAssignment::STATUS_PENDING, FormAssignment::STATUS_OVERDUE])->get() as $a) {
+        $q = $form->assignments()->whereIn('status', [FormAssignment::STATUS_PENDING, FormAssignment::STATUS_OVERDUE]);
+        if ($actor) $this->visibility->apply($q, $actor);
+        foreach ($q->get() as $a) {
             $count += $this->remind($a) ? 1 : 0;
         }
 
@@ -384,13 +393,18 @@ class FormService
 
     // ── النتائج ──
 
-    /** @return Collection<int, FormSubmission> */
-    public function results(FormTemplate $form): Collection
+    /**
+     * التعبئات التي يراها هذا الحساب (٢٩-٠: المبنى من النطاق العام، والوحدة من `FormVisibilityService`)؛ بلا حساب: الكل.
+     * @return Collection<int, FormSubmission>
+     */
+    public function results(FormTemplate $form, ?User $viewer = null): Collection
     {
-        return FormSubmission::where('form_id', $form->id)
+        $q = FormSubmission::where('form_id', $form->id)
             ->with(['answers.field', 'submittedBy'])
-            ->latest('submitted_at')
-            ->get();
+            ->latest('submitted_at');
+        if ($viewer) $this->visibility->apply($q, $viewer);
+
+        return $q->get();
     }
 
     /**
@@ -398,9 +412,9 @@ class FormService
      *
      * @return array<int, array{field: FormField, answered: int, distribution: array<string, int>}>
      */
-    public function resultsSummary(FormTemplate $form): array
+    public function resultsSummary(FormTemplate $form, ?User $viewer = null): array
     {
-        $submissions = $this->results($form);
+        $submissions = $this->results($form, $viewer);
         $out = [];
 
         foreach ($form->fields as $field) {
@@ -426,10 +440,10 @@ class FormService
     }
 
     /** تصدير النتائج CSV (بعلامة الترتيب حتى يفتحها Excel بالعربية صحيحة). */
-    public function exportCsv(FormTemplate $form): \Symfony\Component\HttpFoundation\StreamedResponse
+    public function exportCsv(FormTemplate $form, ?User $viewer = null): \Symfony\Component\HttpFoundation\StreamedResponse
     {
         $form->load('fields');
-        $submissions = $this->results($form);
+        $submissions = $this->results($form, $viewer);
         $filename = 'form-'.$form->id.'-'.now()->format('Ymd-His').'.csv';
 
         return response()->streamDownload(function () use ($form, $submissions) {
