@@ -53,7 +53,7 @@
                   @php
                     $def = $field->tableDef();
                     $oldRows = (array) old('fields.'.$field->id, []);
-                    $n = $def['rows'] ? count($def['rows']) : max(2, count($oldRows));
+                    $n = $def['rows'] ? count($def['rows']) : max($def['min_rows'], count($oldRows));
                   @endphp
                   <div class="table-responsive">
                     <table class="table table-sm table-bordered align-middle mb-1 form-table @error($key) border-danger @enderror" data-table="{{ $field->id }}">

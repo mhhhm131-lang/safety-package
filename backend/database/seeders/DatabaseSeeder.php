@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             PermitConflictRulesSeeder::class,
             RiskRequiredPermitTypesSeeder::class,
             QualificationChecklistSeeder::class,
+            NonMaterialFormsSeeder::class,   // المرحلة ٢٩-٣: القوالب الثمانية للطبقة الثانية من الواجهة حرفاً — مرة واحدة بالرمز
         ]);
     }
 }

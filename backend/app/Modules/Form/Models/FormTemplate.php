@@ -46,8 +46,15 @@ class FormTemplate extends Model
         25 => self::TYPE_DECLARATION_WITNESSED, // ١٥ فأكثر: إقرار بشاهد
     ];
 
+    /** ٢٩-٣: من يعبّئ القالب — مدير الوحدة عن إدارته (حزمة الطبقة الثانية)، أو كل مكلَّف (القوالب القائمة) */
+    public const FILLS_UNIT = 'unit';
+    public const FILLS_USER = 'user';
+
+    /** ٢٩-٣: رمز الإقرار السري المولَّد (٢٩-٥) في الحزمة */
+    public const PACKAGE_ACK = 'ack';
+
     protected $fillable = [
-        'title', 'description', 'intro', 'form_type', 'source_risk_id',
+        'title', 'description', 'intro', 'form_type', 'package_code', 'fills_as', 'source_risk_id',
         'organization_unit_id', 'place_id', 'is_active', 'created_by_id',
     ];
 
@@ -56,7 +63,19 @@ class FormTemplate extends Model
     protected $attributes = [
         'form_type' => self::TYPE_CUSTOM,
         'is_active' => true,
+        'fills_as'  => self::FILLS_USER,
     ];
+
+    /** ٢٩-٣: من حزمة الطبقة الثانية (الثمانية أو إقرارها السري)؟ */
+    public function isPackage(): bool
+    {
+        return $this->package_code !== null;
+    }
+
+    public function fillsAsUnit(): bool
+    {
+        return $this->fills_as === self::FILLS_UNIT;
+    }
 
     public function fields(): HasMany           { return $this->hasMany(FormField::class, 'form_id')->orderBy('order'); }
     /** ٢٩-٠: التعبئات والتكليفات تُقرأ داخل مباني الحساب تلقائياً (`BelongsToBuilding` عليهما) */

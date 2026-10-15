@@ -67,12 +67,13 @@ class FormField extends Model
     public const TABLE_COLUMN_TYPES = ['text' => 'نص', 'select' => 'اختيار', 'fixed' => 'ثابت'];
 
     protected $fillable = [
-        'form_id', 'label', 'help_text', 'placeholder', 'field_type', 'is_required', 'order', 'options',
+        'form_id', 'label', 'help_text', 'placeholder', 'field_type', 'is_required', 'feeds_ack', 'order', 'options',
     ];
 
     protected $casts = [
         'options'     => 'array',
         'is_required' => 'boolean',
+        'feeds_ack'   => 'boolean', // ٢٩-٣: يدخل في توليد الإقرار السري (٢٩-٥)
         'order'       => 'integer',
     ];
 
@@ -118,15 +119,15 @@ class FormField extends Model
     }
 
     /**
-     * تعريف الجدول مطبَّعاً.
-     * @return array{columns: array<int, array{label: string, type: string, options: string[]}>, rows: string[], can_add: bool}
+     * تعريف الجدول مطبَّعاً. `min_rows` عدد الصفوف الابتدائية للجدول الحر، و`esc` زر «فتح بلاغ» على الصف (٢٩-٣ من الواجهة؛ يُرسم في ٢٩-٧).
+     * @return array{columns: array<int, array{label: string, type: string, options: string[]}>, rows: string[], can_add: bool, min_rows: int, esc: bool}
      */
     public function tableDef(): array
     {
         return self::normalizeTableDef(is_array($this->options) ? $this->options : []);
     }
 
-    /** @return array{columns: array<int, array{label: string, type: string, options: string[]}>, rows: string[], can_add: bool} */
+    /** @return array{columns: array<int, array{label: string, type: string, options: string[]}>, rows: string[], can_add: bool, min_rows: int, esc: bool} */
     public static function normalizeTableDef(array $raw): array
     {
         $columns = [];
@@ -142,8 +143,9 @@ class FormField extends Model
         }
         $rows = array_values(array_filter(array_map(fn ($r) => trim((string) $r), (array) ($raw['rows'] ?? [])), fn ($r) => $r !== ''));
         $canAdd = array_key_exists('can_add', $raw) ? (bool) $raw['can_add'] : $rows === [];
+        $minRows = $rows !== [] ? count($rows) : max(1, min(10, (int) ($raw['min_rows'] ?? 2)));
 
-        return ['columns' => $columns, 'rows' => $rows, 'can_add' => $canAdd];
+        return ['columns' => $columns, 'rows' => $rows, 'can_add' => $canAdd, 'min_rows' => $minRows, 'esc' => (bool) ($raw['esc'] ?? false)];
     }
 
     /**
