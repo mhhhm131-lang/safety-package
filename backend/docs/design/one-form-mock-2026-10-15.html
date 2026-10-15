@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>شكل النموذج الواحد — تصميم قبل التنفيذ</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--g:#0f4c3a;--g2:#166a4f;--gold:#d9b25a;--red:#c62828;--ink:#1a2a24;--mut:#6b7a74;--line:#d9e2de;--bg:#f3f6f4;--tint:#e3ede8;--gold2:#fbf3dd;--red2:#fbe9e6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Cairo,"Segoe UI",Tahoma,sans-serif;line-height:1.7}
+.top{background:var(--g);color:#fff;border-bottom:3px solid var(--gold);padding:14px 20px}
+.top h1{margin:0;font-size:1.25rem}
+.top p{margin:4px 0 0;opacity:.9;font-size:.9rem}
+.wrap{max-width:1100px;margin:0 auto;padding:20px 16px 80px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}
+.tabs button{font:inherit;font-weight:700;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 16px;cursor:pointer}
+.tabs button[aria-selected=true]{background:var(--g);color:#fff;border-color:var(--g)}
+.screen{display:none}.screen.on{display:block}
+.note{background:var(--gold2);border:1px solid #e8d9a8;border-radius:10px;padding:10px 14px;margin:0 0 16px;font-size:.92rem}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;margin:0 0 14px;overflow:hidden}
+.card>.h{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);background:#fff}
+.card>.h .n{width:30px;height:30px;border-radius:50%;background:var(--g);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;flex:none}
+.card>.h b{font-size:1.02rem}
+.card>.h small{color:var(--mut);margin-inline-start:auto}
+.stage{display:grid;grid-template-columns:120px 150px 1fr;gap:10px;align-items:start;padding:10px 16px;border-bottom:1px solid var(--line)}
+.stage:last-child{border-bottom:0}
+.stage .lbl{font-weight:700}
+.stage .lbl small{display:block;color:var(--mut);font-weight:400;font-size:.8rem}
+.yn{display:flex;gap:6px}
+.yn label{border:1px solid var(--line);border-radius:8px;padding:4px 14px;cursor:pointer;background:#fff}
+.yn input{display:none}
+.yn input:checked+span{font-weight:800}
+.yn label:has(input[value=y]:checked){background:var(--tint);border-color:var(--g);color:var(--g)}
+.yn label:has(input[value=n]:checked){background:var(--red2);border-color:var(--red);color:var(--red)}
+.ev{display:none}
+.stage:has(input[value=y]:checked) .ev{display:block}
+.ev input,.ev textarea{width:100%;font:inherit;font-size:.9rem;border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.ev .att{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.ev .att span{border:1px dashed var(--g);color:var(--g);border-radius:8px;padding:2px 10px;font-size:.85rem}
+.foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+.btn{font:inherit;font-weight:700;border:0;border-radius:10px;padding:10px 20px;cursor:pointer;background:var(--g);color:#fff}
+.btn.ghost{background:#fff;color:var(--g);border:1px solid var(--g)}
+.phone{width:390px;max-width:100%;margin:0 auto;background:#fff;border:10px solid #16181c;border-radius:34px;padding:14px 12px 20px;box-shadow:0 10px 40px rgba(0,0,0,.2)}
+.phone .bar{background:var(--g);color:#fff;border-radius:12px;padding:8px 12px;font-weight:700;font-size:.95rem}
+.q{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:10px 0}
+.q b{display:block;margin-bottom:6px}
+.q .st{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px dashed var(--line);font-size:.92rem}
+.q .st:first-of-type{border-top:0}
+.q .st span{flex:1}
+.q .st .yn label{padding:3px 12px;font-size:.9rem}
+.q .why{display:none;margin-top:6px}
+.q .st:has(input[value=n]:checked)+.why{display:block}
+.q .why textarea{width:100%;font:inherit;font-size:.88rem;border:1px solid var(--red);border-radius:8px;padding:6px 10px}
+.seen{background:var(--tint);border-radius:8px;padding:6px 10px;font-size:.85rem;color:var(--g);margin:4px 0 8px}
+table{border-collapse:collapse;width:100%;background:#fff;font-size:.92rem}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:center}
+th{background:var(--tint);color:var(--g)}
+td.r{text-align:right;font-weight:700}
+.bad{background:var(--red2);color:var(--red);font-weight:800}
+.warn{background:var(--gold2);font-weight:700}
+.ok{color:var(--g);font-weight:700}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.88rem;margin:10px 0}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:16px;height:16px;border-radius:4px;display:inline-block}
+.dims{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
+.dim{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}
+.dim b{display:block;font-size:1.6rem;color:var(--g)}
+.dim small{color:var(--mut)}
+@media(max-width:700px){.stage{grid-template-columns:1fr}.dims{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>النموذج الواحد — «بطاقة الإدارة» · تصميم قبل التنفيذ</h1>
+  <p>ثلاث شاشات: المدير يعبّئ، الموظف يصدّق سرياً، اللجنة ترى الأرقام. الأزرار هنا تعمل للتجربة ولا تحفظ شيئاً.</p>
+</div>
+<div class="wrap">
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-s="s1">١ · شاشة المدير</button>
+    <button role="tab" data-s="s2">٢ · شاشة الموظف (سري)</button>
+    <button role="tab" data-s="s3">٣ · شاشة اللجنة والإدارة العليا</button>
+  </div>
+
+  <!-- ===== ١ المدير ===== -->
+  <section class="screen on" id="s1">
+    <div class="note">
+      <b>إدارة المرافق والصيانة · جولة ٢٠٢٦ · المدير: أحمد العتيبي · ٣٢ موظفاً</b> — يملؤه النظام من الهيكل والحسابات.
+      لكل بند أربعة أسئلة. «نعم» تعني: أرني. «لا» جواب مقبول بلا تبعة. يُحفظ آلياً، وتكمل متى شئت.
+    </div>
+    <div id="items"></div>
+    <div class="foot">
+      <small style="color:var(--mut)">حُفظ آلياً قبل دقيقة · أجبتَ عن ٠ من ٢٨</small>
+      <div><button class="btn ghost">أكمل لاحقاً</button> <button class="btn">البيانات صحيحة وأعتمدها</button></div>
+    </div>
+    <div class="note" style="margin-top:14px">بعد الاعتماد: تُقفل التعبئة بالاسم والوقت، ويُرسل النظام إلى موظفي الإدارة البنود التي قلتَ فيها «نعم» ليصدّقوها سرياً.</div>
+  </section>
+
+  <!-- ===== ٢ الموظف ===== -->
+  <section class="screen" id="s2">
+    <div class="note">يصل الموظف على جواله بعد اعتماد المدير. ٢٨ ضغطة على الأكثر؛ البنود التي قالت فيها إدارته «لا» لا تُعرض. سري افتراضاً، وله أن يُعلن اسمه. «ما الواقع» إلزامية عند «لا» على «أطبّقه فعلاً» وحدها.</div>
+    <div class="phone">
+      <div class="bar">إقرارك السري · إدارة المرافق والصيانة · ٢٠٢٦</div>
+      <div style="font-size:.85rem;color:var(--mut);margin:8px 0">لا يُنسب جوابك إليك. إدارتك قالت «نعم» في هذه البنود وأرَتنا ما عندها. قل ما وصلك أنت.</div>
+      <div id="emp"></div>
+      <div style="margin:10px 0;font-size:.9rem"><label><input type="checkbox"> أُعلن اسمي مع إجاباتي (اختياري)</label></div>
+      <button class="btn" style="width:100%">إرسال الإقرار</button>
+    </div>
+  </section>
+
+  <!-- ===== ٣ اللجنة ===== -->
+  <section class="screen" id="s3">
+    <div class="note"><b>مثال توضيحي بأرقام مفترضة.</b> لكل إدارة ولكل بند ولكل مرحلة: ما قالته الإدارة، ونسبة الموظفين الذين قالوا «نعم»، وعددهم. الفجوات مرتبة: «مفهوم عندهم وغير مطبَّق» أولاً. لا يُعرض شيء تحت خمسة مجيبين.</div>
+    <div class="dims">
+      <div class="dim"><b>٧١٪</b><small>المعرفي · البنود ١ ٢ ٣ ٧</small></div>
+      <div class="dim"><b>٧١٪</b><small>النفسي · البنود ٢ ٦</small></div>
+      <div class="dim"><b>٣٥٪</b><small>الفكري · البنود ٥ ٦</small></div>
+      <div class="dim"><b>٤٩٪</b><small>الاجتماعي · البنود ٢ ٣ ٥ ٦</small></div>
+    </div>
+    <div class="note"><b>كيف يُحسب رقم البُعد (مقترح، بكلمته):</b> لكل بند متوسط نسب «نعم» عند الموظفين في مراحله الأربع؛ وبند قالت فيه الإدارة «لا» يُحسب صفراً لأن غيابه يضرّ البُعد؛ ورقم البُعد متوسط بنوده. الأرقام أعلاه محسوبة بهذه الطريقة من الجدول أدناه: المعرفي = (٨٩ + ٧٢ + ٥٦ + ٦٨) ÷ ٤ = ٧١٪، والفكري = (٠ + ٦٩) ÷ ٢ = ٣٥٪.</div>
+    <div class="legend"><span><i style="background:var(--red2)"></i> مفهوم وغير مطبَّق — الأخطر</span><span><i style="background:var(--gold2)"></i> معلن وغير مفهوم</span><span><i style="background:var(--tint)"></i> قالت الإدارة «لا»</span></div>
+    <div style="overflow-x:auto">
+    <table>
+      <thead><tr><th rowspan="2" style="min-width:220px">البند</th><th colspan="2">موثّق</th><th colspan="2">معلن</th><th colspan="2">مفهوم</th><th colspan="2">مطبَّق</th><th rowspan="2">ما قاله الموظفون</th></tr>
+      <tr><th>الإدارة</th><th>الموظفون</th><th>الإدارة</th><th>الموظفون</th><th>الإدارة</th><th>الموظفون</th><th>الإدارة</th><th>الموظفون</th></tr></thead>
+      <tbody>
+        <tr><td class="r">٢ · دور كل موظف</td><td>نعم</td><td>٩٠٪</td><td>نعم</td><td>٨٤٪</td><td>نعم</td><td>٨١٪</td><td>نعم</td><td class="bad">٣٤٪</td><td class="r" style="font-weight:400">«الصلاحيات في الورقة غير التي نُمارسها» (٧)</td></tr>
+        <tr><td class="r">٦ · القنوات</td><td>نعم</td><td>٨٨٪</td><td>نعم</td><td>٧٥٪</td><td>نعم</td><td>٧٢٪</td><td>نعم</td><td class="bad">٤١٪</td><td class="r" style="font-weight:400">«أبلغتُ ولم يصلني رد» (٥)</td></tr>
+        <tr><td class="r">٣ · ما يحكم العمل</td><td>نعم</td><td>٨١٪</td><td>نعم</td><td class="warn">٥٣٪</td><td>نعم</td><td class="warn">٤٧٪</td><td>نعم</td><td>٤٤٪</td><td class="r" style="font-weight:400">«الإجراء الجديد لم يُشرح» (٤)</td></tr>
+        <tr><td class="r">١ · أهداف الإدارة</td><td>نعم</td><td>٩٤٪</td><td>نعم</td><td>٩١٪</td><td>نعم</td><td>٨٨٪</td><td>نعم</td><td>٨٤٪</td><td></td></tr>
+        <tr><td class="r">٤ · المخاطر والفرص</td><td>نعم</td><td>٨٧٪</td><td>نعم</td><td>٨٢٪</td><td>نعم</td><td>٧٨٪</td><td>نعم</td><td>٧٦٪</td><td></td></tr>
+        <tr><td class="r">٧ · التعلم والتطوير</td><td>نعم</td><td>٧٢٪</td><td>نعم</td><td>٦٦٪</td><td>نعم</td><td>٦٩٪</td><td>نعم</td><td>٦٣٪</td><td></td></tr>
+        <tr><td class="r">٥ · الانحيازات</td><td style="background:var(--tint)">لا</td><td>—</td><td style="background:var(--tint)">لا</td><td>—</td><td style="background:var(--tint)">لا</td><td>—</td><td style="background:var(--tint)">لا</td><td>—</td><td class="r" style="font-weight:400">الإدارة لم تدّعِ شيئاً</td></tr>
+      </tbody>
+      <tfoot><tr><td colspan="10" style="text-align:right;color:var(--mut);font-weight:400">المجيبون ٢٩ من ٣٢ · أعلن اسمه ٣ · اللجنة ومسؤول السلامة يريان هذا الجدول؛ المدير والمنسق يريان نسب إدارتهم بلا نصوص الموظفين</td></tr></tfoot>
+    </table>
+    </div>
+    <div class="note" style="margin-top:14px"><b>قراءة الصف الأول:</b> الإدارة تقول إن دور كل موظف موثّق ومعلن ومفهوم ومطبَّق، وأرَتنا الوصف الوظيفي. ٨١٪ من الموظفين يفهمونه و٣٤٪ فقط يقولون إنه يُطبَّق. هذه الفجوة الأخطر: معرفة بلا تطبيق تضرب الثقة. القرار للجنة.</div>
+  </section>
+</div>
+
+<script>
+const ITEMS = [
+  ["أهداف الإدارة وارتباطها بأهداف المعهد ورؤيته ورؤية ٢٠٣٠", "الإدارة تعرف إلى أين، ولماذا يهم عملها"],
+  ["دور كل موظف: وصفه ومهامه وصلاحياته ومسؤولياته وحقوقه وواجباته", "كل فرد يعرف ما له وما عليه — أصل العدالة"],
+  ["ما يحكم العمل: السياسات والإجراءات وتعليمات العمل", "طريقة واحدة معروفة، لا اجتهاد ولا تعارض"],
+  ["المخاطر والفرص على مستوى الإدارة والأفراد", "الحادث غير المرئي يُرى قبل وقوعه — «موثّق» يقرؤه النظام من سجل الإدارة"],
+  ["التوعية بالانحيازات الذاتية", "قرارات وعلاقات موضوعية"],
+  ["القنوات: إبلاغ واقتراح ومبادرة، بمتابعة وردّ", "لا شيء يبقى في صدر الموظف"],
+  ["التعلم والتطوير وربطهما بالتقييم السنوي", "النمو المعرفي ومسار واضح"],
+];
+const STAGES = [
+  ["موثّق", "هل يوجد مكتوباً؟", "أرني: ارفع الوثيقة أو الصق نصها أو رابطها", true],
+  ["معلن", "هل أُعلن للموظفين؟", "كيف ومتى؟ بريد · اجتماع · لوحة · منصة", false],
+  ["مفهوم", "هل تضمن أنهم يفهمونه؟", "ما الذي يضمن الفهم؟ تعريف · ورشة · اختبار · تدريب", false],
+  ["مطبَّق", "هل يُطبَّق فعلاً؟", "ما الذي يضمن التطبيق؟ متابعة · مؤشر · مراجعة دورية", false],
+];
+const EMP = ["وصلتني وثيقة مكتوبة بهذا", "أُعلن لي عنه بوضوح", "أفهمه فهماً كافياً لأعمل به", "أطبّقه فعلاً في عملي اليومي"];
+const AR = n => String(n).replace(/[0-9]/g, d => "٠١٢٣٤٥٦٧٨٩"[d]);
+
+document.getElementById("items").innerHTML = ITEMS.map(([t, why], i) => `
+  <div class="card">
+    <div class="h"><span class="n">${AR(i+1)}</span><b>${t}</b><small>لماذا؟ ${why}</small></div>
+    ${STAGES.map(([s, q, hint, doc], j) => `
+      <div class="stage">
+        <div class="lbl">${s}<small>${q}</small></div>
+        <div class="yn">
+          <label><input type="radio" name="m${i}_${j}" value="y"><span>نعم</span></label>
+          <label><input type="radio" name="m${i}_${j}" value="n"><span>لا</span></label>
+        </div>
+        <div class="ev">
+          ${doc ? `<textarea rows="2" placeholder="${hint}"></textarea><div class="att"><span>⬆ رفع ملف</span><span>🔗 رابط</span><span>✎ أكتبه الآن</span></div>`
+                : `<input placeholder="${hint}">`}
+        </div>
+      </div>`).join("")}
+  </div>`).join("");
+
+document.getElementById("emp").innerHTML = ITEMS.slice(0, 7).map(([t], i) => i === 4 ? "" : `
+  <div class="q">
+    <b>${AR(i+1)} · ${t}</b>
+    <div class="seen">ما شاركته إدارتك: ${i === 1 ? "الوصف الوظيفي (ملف) · أُعلن في اجتماع ١٤/٩" : "وثيقة ورابط"} — <u>اعرض</u></div>
+    ${EMP.map((e, j) => `
+      <div class="st"><span>${e}</span>
+        <div class="yn"><label><input type="radio" name="e${i}_${j}" value="y"><span>نعم</span></label><label><input type="radio" name="e${i}_${j}" value="n"><span>لا</span></label></div>
+      </div>
+      <div class="why"><textarea rows="2" placeholder="${j === 3 ? "ما الواقع؟ (إلزامي هنا)" : "ما الواقع؟ (اختياري)"}"></textarea></div>`).join("")}
+  </div>`).join("");
+
+document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".tabs button").forEach(x => x.setAttribute("aria-selected", x === b));
+  document.querySelectorAll(".screen").forEach(s => s.classList.toggle("on", s.id === b.dataset.s));
+  window.scrollTo(0, 0);
+}));
+</script>
+</body>
+</html>
