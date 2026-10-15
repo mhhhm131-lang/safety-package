@@ -98,6 +98,42 @@
                   @endif
                   @break
 
+                @case('claim')
+                  {{-- قرار ٨٨: ادعاء بدليل — نعم تعني «أرني» (سطر أو وثيقة)، لا جواب مقبول؛ وما يقرؤه النظام من السجل يُعرض قراءةً --}}
+                  @php $cd = $field->claimDef(); $oldC = (array) old('fields.'.$field->id, []); $fact = $facts[$field->id] ?? null; @endphp
+                  @if($fact)
+                    <div class="rounded p-2 d-flex align-items-center gap-2 flex-wrap" style="background:#e8f0ed;border:1px solid #c5d9ce" data-claim-fact="{{ $field->id }}">
+                      <span class="badge {{ $fact['claim'] === 'yes' ? 'bg-success' : 'bg-secondary' }}">{{ $fact['claim'] === 'yes' ? 'نعم' : 'لا' }}</span>
+                      <span class="small">{{ $fact['evidence'] }}</span>
+                      <span class="small text-muted">— يقرؤه النظام من سجل الإدارة</span>
+                    </div>
+                  @else
+                    <div class="claim rounded p-2 @error($key.'.claim') border border-danger @enderror" style="background:#f6faf7;border:1px solid #cfe3d8" data-claim="{{ $field->id }}">
+                      <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <label class="btn btn-sm btn-outline-success claim-btn {{ ($oldC['claim'] ?? '') === 'yes' ? 'active' : '' }}">
+                          <input type="radio" class="claim-yn d-none" name="fields[{{ $field->id }}][claim]" value="yes" @checked(($oldC['claim'] ?? '') === 'yes') @required($field->is_required)> نعم
+                        </label>
+                        <label class="btn btn-sm btn-outline-secondary claim-btn {{ ($oldC['claim'] ?? '') === 'no' ? 'active' : '' }}">
+                          <input type="radio" class="claim-yn d-none" name="fields[{{ $field->id }}][claim]" value="no" @checked(($oldC['claim'] ?? '') === 'no')> لا
+                        </label>
+                        <small class="text-muted">نعم تعني: أرني. لا جواب مقبول.</small>
+                      </div>
+                      <div class="claim-ev mt-2" @if(($oldC['claim'] ?? '') !== 'yes') hidden @endif>
+                        <textarea name="fields[{{ $field->id }}][evidence]" rows="2" maxlength="2000"
+                                  class="form-control form-control-sm @error($key.'.evidence') is-invalid @enderror"
+                                  placeholder="أرني: {{ $cd['hint'] }}">{{ $oldC['evidence'] ?? '' }}</textarea>
+                        @if($cd['attach'])
+                          <input type="file" name="photos[{{ $field->id }}]" class="form-control form-control-sm mt-1 @error('photos.'.$field->id) is-invalid @enderror"
+                                 accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,image/*">
+                          <div class="form-text">أو ارفع الوثيقة: ملف واحد، ١٠ ميجابايت حداً أقصى.</div>
+                        @endif
+                        @error($key.'.evidence')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                      </div>
+                      @error($key.'.claim')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                    </div>
+                  @endif
+                  @break
+
                 @case('ack_item')
                   {{-- ٢٩-١: بند إقرار ثلاثي — صحيح؟ أفهمه؟ مطبَّق؟ و«ما الواقع» إلزامية عند أي «لا» --}}
                   @php $oldAck = (array) old('fields.'.$field->id, []); @endphp
@@ -306,6 +342,18 @@ document.addEventListener('click', function (e) {
   var body = del.closest('tbody');
   if (body.children.length > 1) del.closest('tr').remove();
   else del.closest('tr').querySelectorAll('input[type=text], select').forEach(function (el) { if (el.tagName === 'SELECT') el.selectedIndex = 0; else el.value = ''; });
+});
+
+// قرار ٨٨: الادعاء — «نعم» تُظهر «أرني» وتجعل الزر ظاهراً مختاراً
+document.querySelectorAll('.claim').forEach(function (box) {
+  var ev = box.querySelector('.claim-ev');
+  function sync() {
+    var yes = box.querySelector('.claim-yn[value=yes]').checked;
+    box.querySelectorAll('.claim-btn').forEach(function (l) { l.classList.toggle('active', l.querySelector('input').checked); });
+    if (ev) ev.hidden = !yes;
+  }
+  box.querySelectorAll('.claim-yn').forEach(function (r) { r.addEventListener('change', sync); });
+  sync();
 });
 
 // ٢٩-١: بند الإقرار — أي «لا» يجعل «ما الواقع» إلزامية

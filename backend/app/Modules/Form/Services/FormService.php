@@ -79,6 +79,15 @@ class FormService
 
             return $def['columns'] === [] ? null : $def;
         }
+        if ($type === FormField::TYPE_CLAIM) {
+            // قرار ٨٨: من الشاشة سطر التلميح وحده؛ من البذرة البنية كاملة (البند، المرحلة، الإرفاق، من السجل)
+            if (is_array($raw)) {
+                return ['item' => (string) ($raw['item'] ?? ''), 'stage' => (string) ($raw['stage'] ?? ''), 'hint' => trim((string) ($raw['hint'] ?? '')),
+                    'attach' => (bool) ($raw['attach'] ?? false), 'from_register' => (bool) ($raw['from_register'] ?? false)];
+            }
+
+            return ['item' => '', 'stage' => '', 'hint' => trim((string) $raw), 'attach' => false, 'from_register' => false];
+        }
         if (is_array($raw)) {
             $list = $raw;
         } else {
@@ -251,6 +260,25 @@ class FormService
                         continue;
                     }
                     $answer->value = json_encode($ack ?? ['ok' => '', 'und' => '', 'app' => '', 'note' => ''], JSON_UNESCAPED_UNICODE);
+                } elseif ($field->isClaim()) {
+                    // قرار ٨٨: ادعاء بدليل {claim: yes|no, evidence}؛ «موثّق» المخاطر يقرؤه النظام من سجل الإدارة
+                    $def = $field->claimDef();
+                    if ($def['from_register']) {
+                        $claim = \App\Modules\Form\Support\RegisterFacts::documentedRisksClaim(\App\Modules\Form\Support\OwnerScope::of($userId)['organization_unit_id']);
+                    } else {
+                        $claim = self::claimValue($values[$fieldId] ?? null);
+                        if ($claim === null) {
+                            if (!$field->is_required) {
+                                continue;
+                            }
+                            $claim = ['claim' => '', 'evidence' => ''];
+                        }
+                        $file = $files[$fieldId] ?? null;
+                        if ($def['attach'] && $claim['claim'] === FormField::CLAIM_YES && $file instanceof UploadedFile) {
+                            $answer->attachUpload($file);
+                        }
+                    }
+                    $answer->value = json_encode($claim, JSON_UNESCAPED_UNICODE);
                 } elseif ($field->field_type === FormField::TYPE_SIGNATURE) {
                     $data = $signatures[$fieldId] ?? null;
                     if ($data && $answer->attachSignatureDataUrl($data)) {
@@ -357,6 +385,21 @@ class FormService
         $out['note'] = trim((string) ($raw['note'] ?? ''));
 
         return $any ? $out : null;
+    }
+
+    /**
+     * قرار ٨٨: إجابة الادعاء من مدخلات الشاشة — null إن لم يُجب (لا نعم ولا لا).
+     * @return array{claim: string, evidence: string}|null
+     */
+    public static function claimValue(mixed $raw): ?array
+    {
+        $raw = is_array($raw) ? $raw : [];
+        $claim = trim((string) ($raw['claim'] ?? ''));
+        if (!in_array($claim, [FormField::CLAIM_YES, FormField::CLAIM_NO], true)) {
+            return null;
+        }
+
+        return ['claim' => $claim, 'evidence' => $claim === FormField::CLAIM_YES ? trim((string) ($raw['evidence'] ?? '')) : ''];
     }
 
     /**
@@ -524,6 +567,12 @@ class FormService
                 }
             } elseif ($field->isTable()) {
                 // لا توزيع للجدول — عدد من أجاب يكفي هنا؛ قراءة الخلايا في التعبئات
+            } elseif ($field->isClaim()) {
+                // قرار ٨٨: نعم / لا
+                foreach ([FormField::CLAIM_YES => 'نعم', FormField::CLAIM_NO => 'لا'] as $k => $label) {
+                    $n = $answers->filter(fn ($a) => ($a->claimValue()['claim'] ?? '') === $k)->count();
+                    if ($n > 0) $distribution[$label] = $n;
+                }
             } elseif ($field->needsOptions() || $field->field_type === FormField::TYPE_ACKNOWLEDGE) {
                 foreach ($answers as $answer) {
                     foreach (preg_split('/،\s*/', $answer->display()) ?: [] as $part) {
@@ -556,7 +605,7 @@ class FormService
             $fields = $form->fields->filter(fn (FormField $f) => $f->hasAnswer())->values(); // ٢٩-١: القسم لا عمود له
             $headers = ['#', 'المعبِّئ', 'وقت التعبئة'];
             foreach ($fields as $field) {
-                $headers[] = $field->label;
+                $headers[] = $field->displayLabel();
             }
             fputcsv($out, $headers);
 

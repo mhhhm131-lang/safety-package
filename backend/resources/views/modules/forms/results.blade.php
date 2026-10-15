@@ -35,7 +35,7 @@
     @foreach($summary as $row)
       <div class="px-3 py-2 border-bottom" data-summary-field="{{ $row['field']->id }}">
         <div class="d-flex align-items-center gap-2 small">
-          <span class="fw-bold flex-grow-1">{{ $row['field']->label }}</span>
+          <span class="fw-bold flex-grow-1">{{ $row['field']->displayLabel() }}</span>
           <span class="badge bg-light text-dark border">{{ $row['field']->getTypeLabel() }}</span>
           <span class="text-muted">أجاب {{ $row['answered'] }}</span>
         </div>
@@ -68,7 +68,7 @@
         @php $answerFields = $form->fields->filter->hasAnswer(); @endphp
         <tr>
           <th>#</th><th>المعبِّئ</th><th>الوقت</th>
-          @foreach($answerFields as $field)<th>{{ \Illuminate\Support\Str::limit($field->label, 28) }}</th>@endforeach
+          @foreach($answerFields as $field)<th title="{{ $field->displayLabel() }}">{{ \Illuminate\Support\Str::limit($field->displayLabel(), 36) }}</th>@endforeach
         </tr>
       </thead>
       <tbody>
@@ -83,6 +83,11 @@
               <td class="small">
                 @if(!$answer)
                   <span class="text-muted">—</span>
+                @elseif($field->isClaim() && ($c = $answer->claimValue()))
+                  {{-- قرار ٨٨: الادعاء — نعم بدليله ووثيقته، أو لا --}}
+                  <span class="badge {{ $c['claim'] === 'yes' ? 'bg-success' : ($c['claim'] === 'no' ? 'bg-secondary' : 'bg-light text-muted border') }}" data-claim="{{ $c['claim'] }}">{{ $c['claim'] === 'yes' ? 'نعم' : ($c['claim'] === 'no' ? 'لا' : '—') }}</span>
+                  @if($c['evidence'] !== '')<div class="text-muted">{{ $c['evidence'] }}</div>@endif
+                  @if($answer->hasFile())<a href="{{ route('forms.answers.file', [$form, $answer]) }}" target="_blank"><i class="bi bi-paperclip"></i> {{ $answer->file_name ?: 'الوثيقة' }}</a>@endif
                 @elseif($answer->hasFile())
                   <a href="{{ route('forms.answers.file', [$form, $answer]) }}" target="_blank">
                     <i class="bi bi-{{ $field->field_type === 'signature' ? 'vector-pen' : 'image' }}"></i>

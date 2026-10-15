@@ -32,6 +32,7 @@ class FormField extends Model
     public const TYPE_SECTION     = 'section';
     public const TYPE_TABLE       = 'table';
     public const TYPE_ACK_ITEM    = 'ack_item';
+    public const TYPE_CLAIM       = 'claim';
 
     public const TYPE_LABELS = [
         self::TYPE_TEXT        => 'نص قصير',
@@ -47,10 +48,15 @@ class FormField extends Model
         self::TYPE_SECTION     => 'قسم (عنوان بلا إجابة)',
         self::TYPE_TABLE       => 'جدول',
         self::TYPE_ACK_ITEM    => 'بند إقرار ثلاثي',
+        self::TYPE_CLAIM       => 'ادعاء بدليل (نعم مع «أرني» / لا)',
     ];
 
-    /** الأنواع التي تحتاج قائمة خيارات (والجدول يحتاج تعريفه). */
-    public const TYPES_WITH_OPTIONS = [self::TYPE_SELECT, self::TYPE_RADIO, self::TYPE_CHECKBOX, self::TYPE_TABLE];
+    /** قرار ٨٨: إجابة الادعاء. */
+    public const CLAIM_YES = 'yes';
+    public const CLAIM_NO  = 'no';
+
+    /** الأنواع التي تحتاج قائمة خيارات (والجدول يحتاج تعريفه، والادعاء تلميحه). */
+    public const TYPES_WITH_OPTIONS = [self::TYPE_SELECT, self::TYPE_RADIO, self::TYPE_CHECKBOX, self::TYPE_TABLE, self::TYPE_CLAIM];
 
     /** الأنواع التي دليلها ملف يُرفع أو يُرسم. */
     public const TYPES_WITH_FILE = [self::TYPE_SIGNATURE, self::TYPE_PHOTO];
@@ -90,6 +96,17 @@ class FormField extends Model
         return self::TYPE_LABELS[$this->field_type] ?? $this->field_type;
     }
 
+    /** الاسم كما يُعرض في النتائج والتصدير: للادعاء «البند — المرحلة» حتى لا تتكرر «موثّق» بلا سياق (قرار ٨٨). */
+    public function displayLabel(): string
+    {
+        if ($this->isClaim()) {
+            $item = \App\Modules\Form\Support\NonMaterialPackage::item($this->claimDef()['item']);
+            if ($item) return $item['title'].' — '.$this->label;
+        }
+
+        return (string) $this->label;
+    }
+
     public function needsOptions(): bool
     {
         return in_array($this->field_type, self::TYPES_WITH_OPTIONS, true);
@@ -103,6 +120,25 @@ class FormField extends Model
     public function isSection(): bool  { return $this->field_type === self::TYPE_SECTION; }
     public function isTable(): bool    { return $this->field_type === self::TYPE_TABLE; }
     public function isAckItem(): bool  { return $this->field_type === self::TYPE_ACK_ITEM; }
+    public function isClaim(): bool    { return $this->field_type === self::TYPE_CLAIM; }
+
+    /**
+     * قرار ٨٨: تعريف حقل الادعاء — البند ومرحلته (مفاتيح `NonMaterialPackage`)، وتلميح «أرني» في الخانة،
+     * وهل تُرفق وثيقة (موثّق)، وهل يقرؤه النظام من السجل بلا سؤال (المخاطر/موثّق).
+     * @return array{item: string, stage: string, hint: string, attach: bool, from_register: bool}
+     */
+    public function claimDef(): array
+    {
+        $o = is_array($this->options) ? $this->options : [];
+
+        return [
+            'item'          => (string) ($o['item'] ?? ''),
+            'stage'         => (string) ($o['stage'] ?? ''),
+            'hint'          => (string) ($o['hint'] ?? ''),
+            'attach'        => (bool) ($o['attach'] ?? false),
+            'from_register' => (bool) ($o['from_register'] ?? false),
+        ];
+    }
 
     /** هل لهذا الحقل إجابة تُحفظ وتُعرض؟ (القسم عنوان فقط) */
     public function hasAnswer(): bool
@@ -191,6 +227,12 @@ class FormField extends Model
     /** الخيارات كما تُعرض في شارة الحقل بصفحة النموذج. */
     public function optionsSummary(): ?string
     {
+        if ($this->isClaim()) {
+            $d = $this->claimDef();
+            $s = $d['hint'] !== '' ? 'أرني: '.$d['hint'] : null;
+            if ($d['from_register']) $s = 'يقرؤه النظام من سجل الإدارة';
+            return $s;
+        }
         if ($this->isTable()) {
             $def = $this->tableDef();
             if ($def['columns'] === []) return null;

@@ -320,9 +320,18 @@ class FormController extends Controller
         $this->authorize('fill', $form);
         $form->load('fields');
 
+        // قرار ٨٨: ما يقرؤه النظام من السجل بلا سؤال (المخاطر/موثّق) يُعرض للمعبِّئ قراءةً
+        $facts = [];
+        foreach ($form->fields as $field) {
+            if ($field->isClaim() && $field->claimDef()['from_register']) {
+                $facts[$field->id] = \App\Modules\Form\Support\RegisterFacts::documentedRisksClaim(Auth::user()->profile?->organization_unit_id);
+            }
+        }
+
         return view('modules.forms.fill', [
             'form'       => $form,
             'assignment' => FormAssignment::where('form_id', $form->id)->where('assigned_to_id', Auth::id())->first(),
+            'facts'      => $facts,
         ]);
     }
 
@@ -343,6 +352,23 @@ class FormController extends Controller
                 $rules["fields.{$field->id}.*"]   = ['nullable', 'array'];
                 $rules["fields.{$field->id}.*.*"] = ['nullable', 'string', 'max:2000'];
                 $names["fields.{$field->id}"] = $field->label;
+                continue;
+            }
+            if ($field->isClaim()) {
+                // قرار ٨٨: نعم/لا، و«نعم بلا أرني لا تُقبل» تُفحص بعد التحقق؛ ما يقرؤه النظام من السجل لا يُسأل
+                $def = $field->claimDef();
+                if ($def['from_register']) {
+                    continue;
+                }
+                $rules["fields.{$field->id}"]          = ['nullable', 'array'];
+                $rules["fields.{$field->id}.claim"]    = [$field->is_required ? 'required' : 'nullable', 'in:'.FormField::CLAIM_YES.','.FormField::CLAIM_NO];
+                $rules["fields.{$field->id}.evidence"] = ['nullable', 'string', 'max:2000'];
+                if ($def['attach']) {
+                    $rules["photos.{$field->id}"] = ['nullable', 'file', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,png,jpg,jpeg,webp', 'max:10240'];
+                }
+                $names["fields.{$field->id}.claim"]    = $field->label;
+                $names["fields.{$field->id}.evidence"] = 'أرني';
+                $names["photos.{$field->id}"]          = 'الوثيقة';
                 continue;
             }
             if ($field->isAckItem()) {
@@ -387,6 +413,13 @@ class FormController extends Controller
         $validator = Validator::make($request->all(), $rules, $messages, $names);
         $validator->after(function ($v) use ($fields, $request) {
             foreach ($fields as $field) {
+                if ($field->isClaim() && !$field->claimDef()['from_register']) {
+                    $c = FormService::claimValue($request->input("fields.{$field->id}"));
+                    if ($c && $c['claim'] === FormField::CLAIM_YES && $c['evidence'] === '' && !$request->hasFile("photos.{$field->id}")) {
+                        $v->errors()->add("fields.{$field->id}.evidence", 'نعم بلا «أرني» لا تُقبل: اكتب سطراً أو ارفع الوثيقة.');
+                    }
+                    continue;
+                }
                 if ($field->isTable() && $field->is_required) {
                     $rows = FormService::tableRows($field, $request->input("fields.{$field->id}"));
                     if ($rows === []) {

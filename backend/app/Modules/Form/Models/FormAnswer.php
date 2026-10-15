@@ -87,9 +87,28 @@ class FormAnswer extends Model
         return $out;
     }
 
+    /** إجابة الادعاء (قرار ٨٨) — مصفوفة فارغة إن لم تكن الإجابة ادعاءً. @return array{claim?: string, evidence?: string} */
+    public function claimValue(): array
+    {
+        $v = (string) $this->value;
+        if ($v === '' || !str_starts_with($v, '{')) return [];
+        $a = json_decode($v, true);
+        if (!is_array($a) || !array_key_exists('claim', $a)) return [];
+
+        return ['claim' => (string) ($a['claim'] ?? ''), 'evidence' => (string) ($a['evidence'] ?? '')];
+    }
+
     /** نص الرد كما يُعرض في النتائج والتصدير. */
     public function display(): string
     {
+        if ($c = $this->claimValue()) {
+            if ($c['claim'] === FormField::CLAIM_NO) return 'لا';
+            if ($c['claim'] === FormField::CLAIM_YES) {
+                $parts = array_filter([$c['evidence'], $this->hasFile() ? '(ملف مرفق: '.($this->file_name ?: 'وثيقة').')' : '']);
+                return 'نعم'.($parts ? ' — '.implode(' ', $parts) : '');
+            }
+            return '—';
+        }
         if ($this->hasFile()) {
             return $this->field?->field_type === FormField::TYPE_SIGNATURE ? '(موقَّع)' : '(ملف مرفق)';
         }
