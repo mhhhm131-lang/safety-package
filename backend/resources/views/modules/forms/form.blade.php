@@ -43,6 +43,16 @@
           <div class="form-text">في النماذج المولَّدة من المخاطر يُملأ هذا آلياً بالمخاطر وضوابطها.</div>
         </div>
 
+        <div class="col-12">
+          {{-- ٢٩-٢ (قرار ٨٨ §٤): يقبل الإجابة السرية؛ لا يتبدّل بعد أول تعبئة --}}
+          @php $locked = $form->exists && $form->submissions()->withoutGlobalScope('building')->exists(); @endphp
+          <label class="form-check-label">
+            <input type="checkbox" name="allows_anonymous" value="1" class="form-check-input" @checked(old('allows_anonymous', $form->allows_anonymous)) @disabled($locked)>
+            يقبل الإجابة السرية — سري افتراضاً، وللمعبِّئ «أُعلن اسمي»
+          </label>
+          <div class="form-text">السري بلا اسم ولا رقم تكليف ولا جهاز، وتاريخه باليوم؛ المتابعة بالأعداد لا الأسماء؛ ونتائجه لمن يرى الكل، ولا تُعرض تحت خمسة مجيبين.{{ $locked ? ' بدأت التعبئة فلا يتبدّل.' : '' }}</div>
+        </div>
+
         <div class="col-md-6">
           <label class="form-label">الوحدة التنظيمية</label>
           <select name="organization_unit_id" class="form-select">

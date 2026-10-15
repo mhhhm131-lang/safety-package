@@ -52,6 +52,7 @@
             <td>
               <a href="{{ route('forms.show', $form) }}" class="fw-bold">{{ $form->title }}</a>
               @unless($form->is_active)<span class="badge bg-secondary">موقوف</span>@endunless
+              @if($form->allows_anonymous)<span class="badge bg-dark" title="سري باختيار المعبِّئ"><i class="bi bi-incognito"></i> سري</span>@endif
               @if($form->description)<div class="small text-muted">{{ \Illuminate\Support\Str::limit($form->description, 60) }}</div>@endif
             </td>
             <td>@include('modules.forms._type', ['type' => $form->form_type])</td>

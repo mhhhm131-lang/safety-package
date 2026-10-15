@@ -130,7 +130,11 @@ class FormController extends Controller
     public function update(Request $request, FormTemplate $form)
     {
         $this->authorize('update', $form);
-        $form->update($this->validated($request));
+        $data = $this->validated($request);
+        if ($form->submissions()->withoutGlobalScope('building')->exists()) {
+            unset($data['allows_anonymous']); // ٢٩-٢: السرية لا تتبدّل بعد أول تعبئة — وعدٌ قُطع للمعبِّئين
+        }
+        $form->update($data);
 
         return redirect()->route('forms.show', $form)->with('ok', 'حُفظت التعديلات.');
     }
@@ -282,15 +286,20 @@ class FormController extends Controller
         $this->authorize('track', $form);
 
         $viewer = Auth::user();
-        $assignments = $form->assignments()->with(['assignedTo.profile', 'submission']);
-        $this->visibility->apply($assignments, $viewer); // ٢٩-٠: ما يراه الحساب من التكليفات
+        $assignments = null;
+        if (!$form->allows_anonymous) {
+            // ٢٩-٢: في القالب السري العدد لا الأسماء — لا تُحمَّل صفوف المكلَّفين أصلاً؛ النظام يذكّر من لم يعبّئ
+            $assignments = $form->assignments()->with(['assignedTo.profile', 'submission']);
+            $this->visibility->apply($assignments, $viewer); // ٢٩-٠: ما يراه الحساب من التكليفات
+            $assignments = $assignments
+                ->orderByRaw("CASE status WHEN 'overdue' THEN 1 WHEN 'pending' THEN 2 ELSE 3 END")
+                ->orderBy('due_date')
+                ->paginate(50);
+        }
 
         return view('modules.forms.tracking', [
             'form'        => $form,
-            'assignments' => $assignments
-                ->orderByRaw("CASE status WHEN 'overdue' THEN 1 WHEN 'pending' THEN 2 ELSE 3 END")
-                ->orderBy('due_date')
-                ->paginate(50),
+            'assignments' => $assignments,
             'stats'       => $form->assignmentStats($viewer),
         ]);
     }
@@ -456,6 +465,8 @@ class FormController extends Controller
         });
         $validator->validate();
 
+        // ٢٩-٢: في القالب السري الإجابة سرية افتراضاً، وللمعبِّئ «أُعلن اسمي»
+        $anonymous = $form->allows_anonymous && !$request->boolean('reveal_name');
         $submission = $this->forms->submit(
             $form,
             Auth::id(),
@@ -463,20 +474,29 @@ class FormController extends Controller
             $request->file('photos', []),
             $request->input('signatures', []),
             $request->ip(),
+            $anonymous,
         );
 
-        return redirect()->route('forms.submitted', [$form, 'submission' => $submission->id])
-            ->with('ok', 'شكراً — سُجّلت تعبئتك.');
+        return redirect()->route('forms.submitted', $anonymous ? $form : [$form, 'submission' => $submission->id])
+            ->with('ok', $anonymous ? 'شكراً — سُجّلت إجابتك سرياً.' : 'شكراً — سُجّلت تعبئتك.');
     }
 
     public function submitted(Request $request, FormTemplate $form)
     {
-        $submission = FormSubmission::where('form_id', $form->id)
-            ->where('id', (int) $request->query('submission'))
-            ->where('submitted_by_id', Auth::id())
-            ->firstOrFail();
+        $submission = null;
+        $assignment = null;
+        if ($request->filled('submission')) {
+            $submission = FormSubmission::where('form_id', $form->id)
+                ->where('id', (int) $request->query('submission'))
+                ->where('submitted_by_id', Auth::id())
+                ->firstOrFail();
+        } else {
+            // ٢٩-٢: التعبئة السرية لا رقم لها يُعاد — الدليل تكليفُه المكتمل (صندوق التكليف)
+            $assignment = FormAssignment::where('form_id', $form->id)->where('assigned_to_id', Auth::id())
+                ->where('status', FormAssignment::STATUS_COMPLETED)->firstOrFail();
+        }
 
-        return view('modules.forms.submitted', compact('form', 'submission'));
+        return view('modules.forms.submitted', compact('form', 'submission', 'assignment'));
     }
 
     // ── النتائج ──
@@ -487,18 +507,24 @@ class FormController extends Controller
         $form->load('fields');
 
         $viewer = Auth::user();
+        $hidden = $this->forms->hiddenBelowThreshold($form, $viewer); // ٢٩-٢: تحت خمسة مجيبين لا نتائج
 
         return view('modules.forms.results', [
             'form'        => $form,
-            'submissions' => $this->forms->results($form, $viewer),
-            'summary'     => $this->forms->resultsSummary($form, $viewer),
+            'submissions' => $hidden === null ? $this->forms->results($form, $viewer) : collect(),
+            'summary'     => $hidden === null ? $this->forms->resultsSummary($form, $viewer) : [],
             'stats'       => $form->assignmentStats($viewer),
+            'hidden'      => $hidden,
         ]);
     }
 
     public function export(FormTemplate $form)
     {
         $this->authorize('results', $form);
+        if (($n = $this->forms->hiddenBelowThreshold($form, Auth::user())) !== null) {
+            return redirect()->route('forms.results', $form)
+                ->with('err', "أجاب {$n} — لا تصدير لنموذج سري تحت ".FormTemplate::ANONYMOUS_MIN_RESPONSES.' مجيبين.');
+        }
 
         return $this->forms->exportCsv($form, Auth::user());
     }
@@ -530,9 +556,11 @@ class FormController extends Controller
             'description'          => ['nullable', 'string', 'max:2000'],
             'intro'                => ['nullable', 'string', 'max:8000'],
             'form_type'            => ['required', 'in:'.implode(',', array_keys(FormTemplate::TYPE_LABELS))],
+            'allows_anonymous'     => ['nullable', 'boolean'], // ٢٩-٢
             'organization_unit_id' => ['nullable', 'integer', 'exists:organization_units,id'],
             'place_id'             => InAccountBuildings::placeRules('nullable'), // حارس الكتابة (تتمة قرار ٨٤): من مبانيك
-        ], [], ['title' => 'عنوان النموذج', 'form_type' => 'نوع النموذج']);
+        ], [], ['title' => 'عنوان النموذج', 'form_type' => 'نوع النموذج'])
+            + ['allows_anonymous' => $request->boolean('allows_anonymous')];
     }
 
     private function validatedField(Request $request): array

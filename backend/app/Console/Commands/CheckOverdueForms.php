@@ -24,12 +24,14 @@ class CheckOverdueForms extends Command
             ->where('status', FormAssignment::STATUS_PENDING)
             ->whereNotNull('due_date')
             ->whereDate('due_date', '<', now()->toDateString())
-            ->with(['form:id,title', 'assignedTo:id,name'])
+            ->with(['form:id,title,allows_anonymous', 'assignedTo:id,name'])
             ->get();
 
         $count = 0;
         foreach ($overdue as $assignment) {
-            $this->line("التكليف #{$assignment->id} — {$assignment->form?->title} — {$assignment->assignedTo?->name}"
+            // ٢٩-٢: القالب السري بلا أسماء حتى في سطر الأمر
+            $who = $assignment->form?->allows_anonymous ? 'سري' : $assignment->assignedTo?->name;
+            $this->line("التكليف #{$assignment->id} — {$assignment->form?->title} — {$who}"
                 ." (المهلة {$assignment->due_date?->format('Y-m-d')}) ← متأخر");
             if ($dry) {
                 continue;

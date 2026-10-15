@@ -66,11 +66,13 @@ class FormNotifier
         );
 
         if ($assignment->assigned_by_id && $assignment->assigned_by_id !== $assignment->assigned_to_id) {
+            // ٢٩-٢: في القالب السري يُعرف العدد لا الاسم — حتى من لم يعبّئ (الاسم ضغط، والضغط يفسد الصدق)
+            $who = $form->allows_anonymous ? 'مكلَّف' : ($assignment->assignedTo?->name ?? 'مكلَّف');
             $this->inbox->create(
                 $assignment->assigned_by_id,
                 'form.overdue',
                 'تأخر مكلَّف عن نموذج: '.$form->title,
-                ($assignment->assignedTo?->name ?? 'مكلَّف').' تجاوز المهلة.',
+                $who.' تجاوز المهلة.',
                 "/app/forms/{$form->id}/tracking",
             );
         }

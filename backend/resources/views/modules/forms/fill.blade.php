@@ -264,8 +264,17 @@
           @endforelse
         </div>
         @if($form->fields->isNotEmpty())
+          @if($form->allows_anonymous)
+            {{-- ٢٩-٢ (قرار ٨٨ §٤): سري افتراضاً، وله «أُعلن اسمي» --}}
+            <div class="mx-3 mb-3 rounded p-3" style="background:#f6faf7;border:1px solid #cfe3d8" data-anonymous-box>
+              <div class="small"><i class="bi bi-incognito"></i> <strong>إجابتك سرية.</strong> لا يُنسب جوابك إليك: لا يُحفظ معه اسم ولا رقم تكليف ولا جهاز، والتاريخ باليوم لا بالساعة. يُعلَّم تكليفك «مكتملاً» فقط.</div>
+              <label class="small d-block mt-2">
+                <input type="checkbox" name="reveal_name" value="1" class="form-check-input" @checked(old('reveal_name'))> أُعلن اسمي مع إجاباتي (اختياري)
+              </label>
+            </div>
+          @endif
           <div class="card-footer d-flex justify-content-between align-items-center">
-            <small class="text-muted">تُسجَّل تعبئتك باسمك ووقتها. لا يمكن التعديل بعد الإرسال.</small>
+            <small class="text-muted">{{ $form->allows_anonymous ? 'لا يمكن التعديل بعد الإرسال.' : 'تُسجَّل تعبئتك باسمك ووقتها. لا يمكن التعديل بعد الإرسال.' }}</small>
             <button class="btn btn-g"><i class="bi bi-send"></i> إرسال</button>
           </div>
         @endif

@@ -10,6 +10,7 @@
     <div class="d-flex align-items-center gap-2 flex-wrap mt-1">
       @include('modules.forms._type', ['type' => $form->form_type])
       @unless($form->is_active)<span class="badge bg-secondary">موقوف</span>@endunless
+      @if($form->allows_anonymous)<span class="badge bg-dark" data-anonymous><i class="bi bi-incognito"></i> سري باختيار المعبِّئ</span>@endif
       @if($form->place)<span class="small text-muted"><i class="bi bi-geo-alt"></i> {{ $form->place->name }}</span>@endif
       @if($form->organizationUnit)<span class="small text-muted"><i class="bi bi-diagram-3"></i> {{ $form->organizationUnit->name }}</span>@endif
       <span class="small text-muted">أنشأه {{ $form->createdBy?->name ?? '—' }}</span>

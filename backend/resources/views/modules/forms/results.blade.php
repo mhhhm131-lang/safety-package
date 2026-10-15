@@ -28,6 +28,16 @@
   @endforeach
 </div>
 
+@if($hidden !== null)
+  {{-- ٢٩-٢ (قرار ٨٨ §٤): تحت خمسة مجيبين لا نتائج — الإدارة الصغيرة تكشف صاحب «لا» بالاستبعاد --}}
+  <div class="card" data-hidden-below-threshold="{{ $hidden }}">
+    <div class="card-body text-center text-muted py-4">
+      <i class="bi bi-incognito fs-3 d-block mb-2"></i>
+      أجاب {{ $hidden }}. النتائج السرية تُعرض عند خمسة مجيبين فأكثر حتى لا يُعرف صاحب الإجابة.
+    </div>
+  </div>
+@else
+
 {{-- ملخّص لكل حقل --}}
 <div class="card mb-3">
   <div class="card-header"><i class="bi bi-bar-chart"></i> ملخّص الإجابات</div>
@@ -73,11 +83,14 @@
       </thead>
       <tbody>
         @forelse($submissions as $submission)
-          @php $byField = $submission->answers->keyBy('field_id'); @endphp
-          <tr data-submission="{{ $submission->id }}">
-            <td class="text-muted">{{ $submission->id }}</td>
-            <td class="fw-bold small">{{ $submission->submittedBy?->name ?? '—' }}</td>
-            <td class="small text-muted text-nowrap" dir="ltr">{{ $submission->submitted_at?->format('Y-m-d H:i') }}</td>
+          @php
+            $byField = $submission->answers->keyBy('field_id');
+            $secret = $form->allows_anonymous && $submission->submitted_by_id === null; // ٢٩-٢: بلا رقم ولا اسم، والتاريخ باليوم
+          @endphp
+          <tr data-submission="{{ $secret ? 'secret' : $submission->id }}">
+            <td class="text-muted">{{ $secret ? '—' : $submission->id }}</td>
+            <td class="fw-bold small">{{ $submission->submittedBy?->name ?? ($form->allows_anonymous ? 'سري' : '—') }}</td>
+            <td class="small text-muted text-nowrap" dir="ltr">{{ $submission->submitted_at?->format($secret ? 'Y-m-d' : 'Y-m-d H:i') }}</td>
             @foreach($answerFields as $field)
               @php $answer = $byField[$field->id] ?? null; @endphp
               <td class="small">
@@ -123,4 +136,5 @@
     </table>
   </div>
 </div>
+@endif
 @endsection

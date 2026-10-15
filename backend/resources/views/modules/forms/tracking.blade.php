@@ -47,6 +47,14 @@
   </div>
 </div>
 
+@if($form->allows_anonymous)
+  {{-- ٢٩-٢ (قرار ٨٨ §٤): العدد لا الأسماء — الاسم ضغط، والضغط يفسد الصدق --}}
+  <div class="card" data-anonymous-tracking>
+    <div class="card-body small text-muted">
+      <i class="bi bi-incognito"></i> نموذج سري: تُعرض الأعداد لا الأسماء، ولا يُعرف من عبّأ ومن لم يعبّئ. النظام يذكّر من لم يعبّئ بزر «ذكّر من لم يعبّئ».
+    </div>
+  </div>
+@else
 <div class="card">
   <div class="table-responsive">
     <table class="table table-hover align-middle mb-0">
@@ -87,4 +95,5 @@
   </div>
   @if($assignments->hasPages())<div class="card-footer">{{ $assignments->links() }}</div>@endif
 </div>
+@endif
 @endsection

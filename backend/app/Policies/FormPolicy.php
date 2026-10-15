@@ -6,6 +6,7 @@ use App\Core\Permissions\PermissionRegistry;
 use App\Models\User;
 use App\Modules\Form\Models\FormAssignment;
 use App\Modules\Form\Models\FormTemplate;
+use App\Modules\Form\Services\FormVisibilityService;
 
 /**
  * صلاحيات النماذج بجدول BACKEND.md ٤-٣-ب (`form.*`).
@@ -50,17 +51,30 @@ class FormPolicy
         return $this->can($user, 'form.track');
     }
 
+    /**
+     * النتائج. ٢٩-٢ (قرار ٨٨ §٢): نتائج القالب السري لمن يرى الكل (مسؤول السلامة، المناوب، الإدارة العليا، اللجنة) —
+     * لا يراها مدير ولا منسق إدارة ولا مدير فرع، مجمّعةً ولا مفصّلة.
+     */
     public function results(User $user, FormTemplate $form): bool
     {
-        return $this->can($user, 'form.results');
+        if (!$this->can($user, 'form.results')) {
+            return false;
+        }
+
+        return !$form->allows_anonymous || (bool) (app(FormVisibilityService::class)->rule($user)['all'] ?? false);
     }
 
-    /** التعبئة: مكلَّف، والنموذج مفعَّل، ولم يعبّئه من قبل. */
+    /**
+     * التعبئة: مكلَّف، والنموذج مفعَّل، وتكليفه لم يكتمل بعد.
+     * ٢٩-٢: «مرة واحدة» تُقرأ من التكليف لا من اسم المعبِّئ — فالتعبئة السرية بلا اسم.
+     */
     public function fill(User $user, FormTemplate $form): bool
     {
         return $form->is_active
-            && $this->isAssigned($user, $form)
-            && $form->submissions()->where('submitted_by_id', $user->id)->doesntExist();
+            && FormAssignment::where('form_id', $form->id)
+                ->where('assigned_to_id', $user->id)
+                ->where('status', '!=', FormAssignment::STATUS_COMPLETED)
+                ->exists();
     }
 
     private function can(User $user, string $permission): bool

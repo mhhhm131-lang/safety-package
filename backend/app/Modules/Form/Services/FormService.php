@@ -8,6 +8,7 @@ use App\Modules\Form\Models\FormAssignment;
 use App\Modules\Form\Models\FormField;
 use App\Modules\Form\Models\FormSubmission;
 use App\Modules\Form\Models\FormTemplate;
+use App\Modules\Form\Support\OwnerScope;
 use App\Modules\Governance\Models\OrganizationUnit;
 use App\Modules\Governance\Models\UserProfile;
 use App\Modules\Risk\Models\Risk;
@@ -213,6 +214,10 @@ class FormService
      * حفظ تعبئة. `$values` مفاتيحها معرّفات الحقول (`fields[<id>]` من الشاشة — مفتاح واحد لا اثنان).
      * `$files` للصور، و`$signatures` لبيانات التوقيع المرسوم (data URL).
      *
+     * ٢٩-٢ (قرار ٨٨ §٤) `$anonymous`: تعبئة سرية — تُقبل في قالب يقبل السرية وحده. صندوق الإجابات بلا شخص ولا تكليف
+     * ولا جهاز، والتاريخ باليوم لا بالساعة حتى لا يُطابَق بوقت إكمال التكليف؛ الإدارة والمبنى يُقرآن من حساب المعبِّئ قبل قطع النسبة.
+     * صندوق التكليف يُعلَّم «مكتملاً» بوقته كما في كل تعبئة — بلا رابط إلى الإجابة.
+     *
      * @param array<int, mixed>        $values
      * @param array<int, UploadedFile> $files
      * @param array<int, string>       $signatures
@@ -224,21 +229,38 @@ class FormService
         array $files = [],
         array $signatures = [],
         ?string $ip = null,
+        bool $anonymous = false,
     ): FormSubmission {
         $fields = $form->fields()->get()->keyBy('id');
+        $anonymous = $anonymous && $form->allows_anonymous;
 
-        return DB::transaction(function () use ($form, $userId, $values, $files, $signatures, $ip, $fields) {
+        return DB::transaction(function () use ($form, $userId, $values, $files, $signatures, $ip, $fields, $anonymous) {
             $assignment = FormAssignment::where('form_id', $form->id)
                 ->where('assigned_to_id', $userId)
                 ->first();
 
-            $submission = FormSubmission::create([
-                'form_id'         => $form->id,
-                'assignment_id'   => $assignment?->id,
-                'submitted_by_id' => $userId,
-                'submitted_at'    => now(),
-                'submitted_ip'    => $ip,
-            ]);
+            if ($anonymous) {
+                $scope = OwnerScope::of($userId);
+                $day = now()->startOfDay();
+                $submission = FormSubmission::create([
+                    'form_id'              => $form->id,
+                    'assignment_id'        => null,
+                    'submitted_by_id'      => null,
+                    'building_id'          => $scope['building_id'],
+                    'organization_unit_id' => $scope['organization_unit_id'],
+                    'submitted_at'         => $day,
+                    'submitted_ip'         => null,
+                    'created_at'           => $day,
+                ]);
+            } else {
+                $submission = FormSubmission::create([
+                    'form_id'         => $form->id,
+                    'assignment_id'   => $assignment?->id,
+                    'submitted_by_id' => $userId,
+                    'submitted_at'    => now(),
+                    'submitted_ip'    => $ip,
+                ]);
+            }
 
             foreach ($fields as $fieldId => $field) {
                 if (!$field->hasAnswer()) {
@@ -417,10 +439,12 @@ class FormService
             ->exists();
     }
 
-    /** هل عبّأ هذا المستخدم النموذج مسبقاً؟ */
+    /** هل عبّأ هذا المستخدم النموذج مسبقاً؟ (٢٩-٢: يُقرأ من التكليف المكتمل، فالتعبئة السرية بلا اسم) */
     public function hasSubmitted(FormTemplate $form, int $userId): bool
     {
-        return FormSubmission::where('form_id', $form->id)->where('submitted_by_id', $userId)->exists();
+        return FormAssignment::where('form_id', $form->id)->where('assigned_to_id', $userId)
+                ->where('status', FormAssignment::STATUS_COMPLETED)->exists()
+            || FormSubmission::where('form_id', $form->id)->where('submitted_by_id', $userId)->exists();
     }
 
     // ── التوليد من المخاطر ──
@@ -532,12 +556,25 @@ class FormService
      */
     public function results(FormTemplate $form, ?User $viewer = null): Collection
     {
-        $q = FormSubmission::where('form_id', $form->id)
-            ->with(['answers.field', 'submittedBy'])
-            ->latest('submitted_at');
+        $q = FormSubmission::where('form_id', $form->id)->with(['answers.field', 'submittedBy']);
+        // ٢٩-٢: صفوف القالب السري بترتيب عشوائي — ترتيب الوصول يطابق ترتيب إكمال التكليفات فيكشف أصحابها
+        $form->allows_anonymous ? $q->inRandomOrder() : $q->latest('submitted_at');
         if ($viewer) $this->visibility->apply($q, $viewer);
 
         return $q->get();
+    }
+
+    /** ٢٩-٢: عدد تعبئات القالب السري التي يراها الحساب دون العتبة ← لا نتائج ولا تصدير (null = تُعرض) */
+    public function hiddenBelowThreshold(FormTemplate $form, ?User $viewer = null): ?int
+    {
+        if (!$form->allows_anonymous) {
+            return null;
+        }
+        $q = FormSubmission::where('form_id', $form->id);
+        if ($viewer) $this->visibility->apply($q, $viewer);
+        $n = $q->count();
+
+        return $n < FormTemplate::ANONYMOUS_MIN_RESPONSES ? $n : null;
     }
 
     /**
@@ -611,10 +648,12 @@ class FormService
 
             foreach ($submissions as $submission) {
                 $byField = $submission->answers->keyBy('field_id');
+                // ٢٩-٢: الصف السري بلا رقم ولا اسم، وتاريخه باليوم
+                $secret = $form->allows_anonymous && $submission->submitted_by_id === null;
                 $row = [
-                    $submission->id,
-                    $submission->submittedBy?->name ?? '—',
-                    $submission->submitted_at?->format('Y-m-d H:i'),
+                    $secret ? '' : $submission->id,
+                    $submission->submittedBy?->name ?? ($form->allows_anonymous ? 'سري' : '—'),
+                    $submission->submitted_at?->format($secret ? 'Y-m-d' : 'Y-m-d H:i'),
                 ];
                 foreach ($fields as $field) {
                     // get() لا [] : الحقل الاختياري بلا ردّ ليس له مفتاح في المجموعة
