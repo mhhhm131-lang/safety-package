@@ -89,8 +89,11 @@
                 <input type="text" name="placeholder" class="form-control form-control-sm" maxlength="190">
               </div>
               <div class="col-12" id="optionsWrap" style="display:none">
-                <label class="form-label small mb-1">الخيارات — خيار في كل سطر</label>
-                <textarea name="options" class="form-control form-control-sm" rows="3"></textarea>
+                <label class="form-label small mb-1" id="optionsLabel">الخيارات — خيار في كل سطر</label>
+                <textarea name="options" class="form-control form-control-sm @error('options') is-invalid @enderror" rows="3">{{ old('options') }}</textarea>
+                {{-- ٢٩-١: تعريف الجدول من الشاشة --}}
+                <div class="form-text" id="tableHelp" style="display:none">سطر لكل عمود: <code dir="rtl">الاسم | نص</code> أو <code dir="rtl">الاسم | اختيار | نعم، جزئياً، لا</code> أو <code dir="rtl">الاسم | ثابت</code>؛ وسطر يبدأ بـ<code>+</code> لكل صف ثابت (مثل الآليات). بلا صفوف ثابتة يضيف المعبِّئ صفوفه.</div>
+                @error('options')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
               </div>
               <div class="col-md-6 d-flex align-items-end">
                 <label class="small"><input type="checkbox" name="is_required" value="1" class="form-check-input"> حقل إلزامي</label>
@@ -112,8 +115,8 @@
               @if($field->help_text)<div class="text-muted">{{ $field->help_text }}</div>@endif
               <div class="d-flex gap-1 mt-1 flex-wrap">
                 <span class="badge bg-light text-dark border" style="font-size:.65rem">{{ $field->getTypeLabel() }}</span>
-                @if($field->options)
-                  <span class="badge bg-light text-muted border" style="font-size:.65rem">{{ implode(' · ', $field->options) }}</span>
+                @if($summary = $field->optionsSummary())
+                  <span class="badge bg-light text-muted border text-wrap text-start" style="font-size:.65rem">{{ $summary }}</span>
                 @endif
               </div>
             </div>
@@ -171,13 +174,20 @@
 
 @push('scripts')
 <script>
-// إظهار مربع الخيارات للأنواع التي تحتاجها فقط
+// إظهار مربع الخيارات للأنواع التي تحتاجها فقط — والجدول (٢٩-١) بعنوانه وشرحه
 (function () {
-  var withOptions = ['select', 'radio', 'checkbox'];
+  var withOptions = ['select', 'radio', 'checkbox', 'table'];
   var sel = document.getElementById('newFieldType');
   var wrap = document.getElementById('optionsWrap');
+  var label = document.getElementById('optionsLabel');
+  var help = document.getElementById('tableHelp');
   if (!sel || !wrap) return;
-  function sync() { wrap.style.display = withOptions.indexOf(sel.value) >= 0 ? '' : 'none'; }
+  function sync() {
+    var isTable = sel.value === 'table';
+    wrap.style.display = withOptions.indexOf(sel.value) >= 0 ? '' : 'none';
+    if (label) label.textContent = isTable ? 'تعريف الجدول — سطر لكل عمود، وسطر يبدأ بـ+ لكل صف ثابت' : 'الخيارات — خيار في كل سطر';
+    if (help) help.style.display = isTable ? '' : 'none';
+  }
   sel.addEventListener('change', sync);
   sync();
 })();

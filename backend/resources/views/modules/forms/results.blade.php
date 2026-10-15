@@ -64,9 +64,11 @@
   <div class="table-responsive">
     <table class="table table-sm table-hover align-middle mb-0">
       <thead class="table-light">
+        {{-- ٢٩-١: القسم لا عمود له --}}
+        @php $answerFields = $form->fields->filter->hasAnswer(); @endphp
         <tr>
           <th>#</th><th>المعبِّئ</th><th>الوقت</th>
-          @foreach($form->fields as $field)<th>{{ \Illuminate\Support\Str::limit($field->label, 28) }}</th>@endforeach
+          @foreach($answerFields as $field)<th>{{ \Illuminate\Support\Str::limit($field->label, 28) }}</th>@endforeach
         </tr>
       </thead>
       <tbody>
@@ -76,7 +78,7 @@
             <td class="text-muted">{{ $submission->id }}</td>
             <td class="fw-bold small">{{ $submission->submittedBy?->name ?? '—' }}</td>
             <td class="small text-muted text-nowrap" dir="ltr">{{ $submission->submitted_at?->format('Y-m-d H:i') }}</td>
-            @foreach($form->fields as $field)
+            @foreach($answerFields as $field)
               @php $answer = $byField[$field->id] ?? null; @endphp
               <td class="small">
                 @if(!$answer)
@@ -86,6 +88,23 @@
                     <i class="bi bi-{{ $field->field_type === 'signature' ? 'vector-pen' : 'image' }}"></i>
                     {{ $field->field_type === 'signature' ? 'التوقيع' : 'الصورة' }}
                   </a>
+                @elseif($field->isTable() && ($rows = $answer->tableRows()))
+                  {{-- ٢٩-١: الجدول صفوفاً كما أُدخلت --}}
+                  <details>
+                    <summary class="text-primary" style="cursor:pointer">{{ count($rows) }} {{ count($rows) === 1 ? 'صف' : 'صفوف' }}</summary>
+                    <table class="table table-sm table-bordered mb-0 mt-1" style="min-width:260px">
+                      <thead><tr>@foreach($field->tableDef()['columns'] as $col)<th class="small fw-normal text-muted">{{ $col['label'] }}</th>@endforeach</tr></thead>
+                      <tbody>@foreach($rows as $row)<tr>@foreach($row as $cell)<td>{{ $cell }}</td>@endforeach</tr>@endforeach</tbody>
+                    </table>
+                  </details>
+                @elseif($field->isAckItem() && ($ack = $answer->ackValue()))
+                  {{-- ٢٩-١: بند الإقرار — ثلاث إجابات، و«لا» حمراء، والواقع تحتها --}}
+                  <div class="d-flex gap-1 flex-wrap">
+                    @foreach(\App\Modules\Form\Models\FormField::ACK_QUESTIONS as $k => $q)
+                      <span class="badge {{ $ack[$k] === 'لا' ? 'bg-danger' : ($ack[$k] === 'نعم' ? 'bg-success' : 'bg-light text-muted border') }}" data-ack="{{ $k }}">{{ rtrim($q, '؟') }}: {{ $ack[$k] !== '' ? $ack[$k] : '—' }}</span>
+                    @endforeach
+                  </div>
+                  @if($ack['note'] !== '')<div class="text-muted mt-1"><i class="bi bi-chat-left-text"></i> {{ $ack['note'] }}</div>@endif
                 @else
                   {{ \Illuminate\Support\Str::limit($answer->display(), 40) }}
                 @endif
@@ -93,7 +112,7 @@
             @endforeach
           </tr>
         @empty
-          <tr><td colspan="{{ 3 + $form->fields->count() }}" class="text-center text-muted py-4">لا تعبئات بعد.</td></tr>
+          <tr><td colspan="{{ 3 + $answerFields->count() }}" class="text-center text-muted py-4">لا تعبئات بعد.</td></tr>
         @endforelse
       </tbody>
     </table>

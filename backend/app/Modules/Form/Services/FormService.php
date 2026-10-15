@@ -43,6 +43,7 @@ class FormService
         $data['form_id'] = $form->id;
         $data['order'] ??= ((int) FormField::where('form_id', $form->id)->max('order')) + 1;
         $data['options'] = $this->normalizeOptions($data);
+        if (($data['field_type'] ?? null) === FormField::TYPE_SECTION) $data['is_required'] = false; // ٢٩-١: القسم بلا إجابة
 
         return FormField::create($data);
     }
@@ -62,7 +63,10 @@ class FormService
         }
     }
 
-    /** الخيارات تصل سطراً لكل خيار من الشاشة؛ الأنواع التي لا تحتاجها تُفرَّغ. */
+    /**
+     * الخيارات تصل سطراً لكل خيار من الشاشة؛ الأنواع التي لا تحتاجها تُفرَّغ.
+     * ٢٩-١: الجدول تعريفه من سطور الشاشة (`FormField::parseTableText`) أو بنيةً جاهزة من البذرة (`{columns, rows}`).
+     */
     private function normalizeOptions(array $data): ?array
     {
         $type = $data['field_type'] ?? null;
@@ -70,6 +74,11 @@ class FormService
             return null;
         }
         $raw = $data['options'] ?? null;
+        if ($type === FormField::TYPE_TABLE) {
+            $def = is_array($raw) ? FormField::normalizeTableDef($raw) : FormField::parseTableText((string) $raw);
+
+            return $def['columns'] === [] ? null : $def;
+        }
         if (is_array($raw)) {
             $list = $raw;
         } else {
@@ -223,9 +232,26 @@ class FormService
             ]);
 
             foreach ($fields as $fieldId => $field) {
+                if (!$field->hasAnswer()) {
+                    continue; // ٢٩-١: القسم عنوان بلا إجابة
+                }
                 $answer = new FormAnswer(['submission_id' => $submission->id, 'field_id' => $fieldId]);
 
-                if ($field->field_type === FormField::TYPE_SIGNATURE) {
+                if ($field->isTable()) {
+                    // ٢٩-١: صفوف الجدول كما أُدخلت، والخلية الثابتة من التعريف لا من المرسِل
+                    $rows = self::tableRows($field, $values[$fieldId] ?? null);
+                    if ($rows === [] && !$field->is_required) {
+                        continue;
+                    }
+                    $answer->value = json_encode($rows, JSON_UNESCAPED_UNICODE);
+                } elseif ($field->isAckItem()) {
+                    // ٢٩-١: بند إقرار ثلاثي {ok, und, app, note}
+                    $ack = self::ackValue($values[$fieldId] ?? null);
+                    if ($ack === null && !$field->is_required) {
+                        continue;
+                    }
+                    $answer->value = json_encode($ack ?? ['ok' => '', 'und' => '', 'app' => '', 'note' => ''], JSON_UNESCAPED_UNICODE);
+                } elseif ($field->field_type === FormField::TYPE_SIGNATURE) {
                     $data = $signatures[$fieldId] ?? null;
                     if ($data && $answer->attachSignatureDataUrl($data)) {
                         $answer->value = 'موقَّع';
@@ -267,6 +293,70 @@ class FormService
 
             return $submission->fresh(['answers']);
         });
+    }
+
+    /**
+     * ٢٩-١: صفوف الجدول من مدخلات الشاشة (`fields[id][صف][عمود]`) مطبَّعة على أعمدة التعريف.
+     * صفوف ثابتة: صف لكل اسم بترتيبه والخلية الثابتة من التعريف؛ وإن خلت كل خلاياه الحرة عُدّ فارغاً.
+     * صفوف حرة: الصفوف الفارغة كلها تُسقط.
+     * @return array<int, array<int, string>>
+     */
+    public static function tableRows(FormField $field, mixed $raw): array
+    {
+        $def = $field->tableDef();
+        $cols = $def['columns'];
+        $in = is_array($raw) ? array_values($raw) : [];
+        $cell = fn ($r, int $c): string => is_array($r) ? trim((string) ($r[$c] ?? '')) : '';
+
+        if ($def['rows'] !== []) {
+            $out = [];
+            $any = false;
+            foreach ($def['rows'] as $i => $label) {
+                $row = [];
+                foreach ($cols as $c => $col) {
+                    $v = $col['type'] === 'fixed' ? $label : $cell($in[$i] ?? null, $c);
+                    if ($col['type'] !== 'fixed' && $v !== '') $any = true;
+                    $row[] = $v;
+                }
+                $out[] = $row;
+            }
+
+            return $any ? $out : [];
+        }
+
+        $out = [];
+        foreach ($in as $r) {
+            $row = [];
+            $empty = true;
+            foreach ($cols as $c => $col) {
+                $v = $cell($r, $c);
+                if ($v !== '') $empty = false;
+                $row[] = $v;
+            }
+            if (!$empty) $out[] = $row;
+        }
+
+        return $out;
+    }
+
+    /**
+     * ٢٩-١: إجابة بند الإقرار من مدخلات الشاشة — null إن لم يُجب عن أي سؤال.
+     * @return array{ok: string, und: string, app: string, note: string}|null
+     */
+    public static function ackValue(mixed $raw): ?array
+    {
+        $raw = is_array($raw) ? $raw : [];
+        $out = [];
+        $any = false;
+        foreach (array_keys(FormField::ACK_QUESTIONS) as $k) {
+            $v = trim((string) ($raw[$k] ?? ''));
+            $v = in_array($v, [FormField::ACK_YES, FormField::ACK_NO], true) ? $v : '';
+            if ($v !== '') $any = true;
+            $out[$k] = $v;
+        }
+        $out['note'] = trim((string) ($raw['note'] ?? ''));
+
+        return $any ? $out : null;
     }
 
     /**
@@ -418,10 +508,23 @@ class FormService
         $out = [];
 
         foreach ($form->fields as $field) {
+            if (!$field->hasAnswer()) {
+                continue; // ٢٩-١: القسم خارج الملخص
+            }
             $answers = $submissions->flatMap->answers->where('field_id', $field->id);
             $distribution = [];
 
-            if ($field->needsOptions() || $field->field_type === FormField::TYPE_ACKNOWLEDGE) {
+            if ($field->isAckItem()) {
+                // ٢٩-١: لكل سؤال من الثلاثة عدد «نعم» و«لا» — «صحيح — لا» هو أول ما تقرؤه اللجنة
+                foreach (FormField::ACK_QUESTIONS as $k => $q) {
+                    foreach ([FormField::ACK_YES, FormField::ACK_NO] as $yn) {
+                        $n = $answers->filter(fn ($a) => ($a->ackValue()[$k] ?? '') === $yn)->count();
+                        if ($n > 0) $distribution[rtrim($q, '؟').' — '.$yn] = $n;
+                    }
+                }
+            } elseif ($field->isTable()) {
+                // لا توزيع للجدول — عدد من أجاب يكفي هنا؛ قراءة الخلايا في التعبئات
+            } elseif ($field->needsOptions() || $field->field_type === FormField::TYPE_ACKNOWLEDGE) {
                 foreach ($answers as $answer) {
                     foreach (preg_split('/،\s*/', $answer->display()) ?: [] as $part) {
                         $part = trim($part);
@@ -450,8 +553,9 @@ class FormService
             $out = fopen('php://output', 'w');
             fwrite($out, "\xEF\xBB\xBF");
 
+            $fields = $form->fields->filter(fn (FormField $f) => $f->hasAnswer())->values(); // ٢٩-١: القسم لا عمود له
             $headers = ['#', 'المعبِّئ', 'وقت التعبئة'];
-            foreach ($form->fields as $field) {
+            foreach ($fields as $field) {
                 $headers[] = $field->label;
             }
             fputcsv($out, $headers);
@@ -463,7 +567,7 @@ class FormService
                     $submission->submittedBy?->name ?? '—',
                     $submission->submitted_at?->format('Y-m-d H:i'),
                 ];
-                foreach ($form->fields as $field) {
+                foreach ($fields as $field) {
                     // get() لا [] : الحقل الاختياري بلا ردّ ليس له مفتاح في المجموعة
                     $row[] = $byField->get($field->id)?->display() ?? '';
                 }

@@ -20,6 +20,7 @@ use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * النماذج الرقمية: القائمة، البناء، التوليد من المخاطر، التكليف، التعبئة، التتبع، النتائج.
@@ -333,6 +334,28 @@ class FormController extends Controller
         $rules = [];
         $names = [];
         foreach ($fields as $field) {
+            if (!$field->hasAnswer()) {
+                continue; // ٢٩-١: القسم عنوان بلا إجابة
+            }
+            if ($field->isTable()) {
+                // ٢٩-١: صفوف × أعمدة؛ الإلزام يُفحص بعد التطبيع (صف مملوء واحد، أو اختيار لكل صف ثابت)
+                $rules["fields.{$field->id}"]     = ['nullable', 'array'];
+                $rules["fields.{$field->id}.*"]   = ['nullable', 'array'];
+                $rules["fields.{$field->id}.*.*"] = ['nullable', 'string', 'max:2000'];
+                $names["fields.{$field->id}"] = $field->label;
+                continue;
+            }
+            if ($field->isAckItem()) {
+                // ٢٩-١: ثلاثة أسئلة نعم/لا وخانة «ما الواقع» — إلزامها عند أي «لا» يُفحص بعد التحقق
+                $rules["fields.{$field->id}"] = ['nullable', 'array'];
+                foreach (array_keys(FormField::ACK_QUESTIONS) as $k) {
+                    $rules["fields.{$field->id}.{$k}"] = ['nullable', 'in:'.FormField::ACK_YES.','.FormField::ACK_NO];
+                }
+                $rules["fields.{$field->id}.note"] = ['nullable', 'string', 'max:2000'];
+                $names["fields.{$field->id}"] = $field->label;
+                $names["fields.{$field->id}.note"] = 'ما الواقع';
+                continue;
+            }
             $key = match ($field->field_type) {
                 FormField::TYPE_PHOTO     => "photos.{$field->id}",
                 FormField::TYPE_SIGNATURE => "signatures.{$field->id}",
@@ -361,7 +384,44 @@ class FormController extends Controller
             }
         }
 
-        $request->validate($rules, $messages, $names);
+        $validator = Validator::make($request->all(), $rules, $messages, $names);
+        $validator->after(function ($v) use ($fields, $request) {
+            foreach ($fields as $field) {
+                if ($field->isTable() && $field->is_required) {
+                    $rows = FormService::tableRows($field, $request->input("fields.{$field->id}"));
+                    if ($rows === []) {
+                        $v->errors()->add("fields.{$field->id}", 'أضف صفاً واحداً على الأقل في «'.$field->label.'».');
+                        continue;
+                    }
+                    $def = $field->tableDef();
+                    if ($def['rows'] !== []) {
+                        foreach ($rows as $row) {
+                            foreach ($def['columns'] as $c => $col) {
+                                if ($col['type'] === 'select' && ($row[$c] ?? '') === '') {
+                                    $v->errors()->add("fields.{$field->id}", 'اختر لكل صف في «'.$field->label.'».');
+                                    break 2;
+                                }
+                            }
+                        }
+                    }
+                }
+                if ($field->isAckItem()) {
+                    $ack = FormService::ackValue($request->input("fields.{$field->id}"));
+                    if ($ack === null) {
+                        if ($field->is_required) $v->errors()->add("fields.{$field->id}", 'أجب عن الأسئلة الثلاثة في «'.$field->label.'».');
+                        continue;
+                    }
+                    $answers = [$ack['ok'], $ack['und'], $ack['app']];
+                    if ($field->is_required && in_array('', $answers, true)) {
+                        $v->errors()->add("fields.{$field->id}", 'أجب عن الأسئلة الثلاثة في «'.$field->label.'».');
+                    }
+                    if (in_array(FormField::ACK_NO, $answers, true) && $ack['note'] === '') {
+                        $v->errors()->add("fields.{$field->id}.note", 'اكتب ما الواقع عند أي «لا» في «'.$field->label.'».');
+                    }
+                }
+            }
+        });
+        $validator->validate();
 
         $submission = $this->forms->submit(
             $form,
@@ -444,13 +504,22 @@ class FormController extends Controller
 
     private function validatedField(Request $request): array
     {
-        return $request->validate([
+        $validator = Validator::make($request->all(), [
             'label'       => ['required', 'string', 'max:300'],
             'help_text'   => ['nullable', 'string', 'max:500'],
             'placeholder' => ['nullable', 'string', 'max:190'],
             'field_type'  => ['required', 'in:'.implode(',', array_keys(FormField::TYPE_LABELS))],
             'is_required' => ['nullable', 'boolean'],
-            'options'     => ['nullable', 'string', 'max:2000'],
-        ], [], ['label' => 'نص الحقل', 'field_type' => 'نوع الحقل']) + ['is_required' => $request->boolean('is_required')];
+            'options'     => ['nullable', 'string', 'max:5000'],
+        ], [], ['label' => 'نص الحقل', 'field_type' => 'نوع الحقل', 'options' => 'الخيارات']);
+        // ٢٩-١: الجدول يحتاج عموداً واحداً على الأقل في تعريفه
+        $validator->after(function ($v) use ($request) {
+            if ($request->input('field_type') === FormField::TYPE_TABLE
+                && FormField::parseTableText((string) $request->input('options'))['columns'] === []) {
+                $v->errors()->add('options', 'عرّف عموداً واحداً على الأقل: سطر لكل عمود «الاسم | نص».');
+            }
+        });
+
+        return $validator->validate() + ['is_required' => $request->boolean('is_required')];
     }
 }

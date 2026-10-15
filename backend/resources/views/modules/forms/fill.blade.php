@@ -32,6 +32,14 @@
         <div class="card-body">
           @forelse($form->fields as $field)
             @php $key = 'fields.'.$field->id; @endphp
+            @if($field->isSection())
+              {{-- ٢٩-١: القسم عنوان بلا إجابة --}}
+              <div class="mt-4 mb-3 pt-3 border-top" data-field="{{ $field->id }}" data-field-type="section">
+                <h2 class="h6 fw-bold text-g m-0">{{ $field->label }}</h2>
+                @if($field->help_text)<div class="form-text">{{ $field->help_text }}</div>@endif
+              </div>
+              @continue
+            @endif
             <div class="mb-4" data-field="{{ $field->id }}" data-field-type="{{ $field->field_type }}">
               <label class="form-label fw-bold">
                 {{ $field->label }}
@@ -40,6 +48,84 @@
               @if($field->help_text)<div class="form-text mb-1">{{ $field->help_text }}</div>@endif
 
               @switch($field->field_type)
+                @case('table')
+                  {{-- ٢٩-١: جدول بأعمدة التعريف؛ صفوف ثابتة من التعريف أو صفوف يضيفها المعبِّئ --}}
+                  @php
+                    $def = $field->tableDef();
+                    $oldRows = (array) old('fields.'.$field->id, []);
+                    $n = $def['rows'] ? count($def['rows']) : max(2, count($oldRows));
+                  @endphp
+                  <div class="table-responsive">
+                    <table class="table table-sm table-bordered align-middle mb-1 form-table @error($key) border-danger @enderror" data-table="{{ $field->id }}">
+                      <thead class="table-light">
+                        <tr>
+                          @foreach($def['columns'] as $col)<th class="small">{{ $col['label'] }}</th>@endforeach
+                          @if($def['can_add'])<th style="width:2.2rem"></th>@endif
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for($r = 0; $r < $n; $r++)
+                          <tr>
+                            @foreach($def['columns'] as $c => $col)
+                              @php
+                                $name = "fields[{$field->id}][{$r}][{$c}]";
+                                $val = ($def['rows'] && $col['type'] === 'fixed') ? $def['rows'][$r] : (string) ($oldRows[$r][$c] ?? '');
+                              @endphp
+                              <td>
+                                @if($col['type'] === 'fixed')
+                                  <span class="small fw-bold">{{ $val }}</span>
+                                  <input type="hidden" name="{{ $name }}" value="{{ $val }}">
+                                @elseif($col['type'] === 'select')
+                                  <select name="{{ $name }}" class="form-select form-select-sm">
+                                    <option value="">—</option>
+                                    @foreach($col['options'] as $opt)<option value="{{ $opt }}" @selected($val === $opt)>{{ $opt }}</option>@endforeach
+                                  </select>
+                                @else
+                                  <input type="text" name="{{ $name }}" class="form-control form-control-sm" value="{{ $val }}" maxlength="2000">
+                                @endif
+                              </td>
+                            @endforeach
+                            @if($def['can_add'])
+                              <td class="text-center"><button type="button" class="btn btn-sm btn-link text-danger p-0 row-del" title="حذف الصف"><i class="bi bi-x-lg"></i></button></td>
+                            @endif
+                          </tr>
+                        @endfor
+                      </tbody>
+                    </table>
+                  </div>
+                  @if($def['can_add'])
+                    <button type="button" class="btn btn-sm btn-outline-secondary row-add" data-table="{{ $field->id }}"><i class="bi bi-plus"></i> صف</button>
+                  @endif
+                  @break
+
+                @case('ack_item')
+                  {{-- ٢٩-١: بند إقرار ثلاثي — صحيح؟ أفهمه؟ مطبَّق؟ و«ما الواقع» إلزامية عند أي «لا» --}}
+                  @php $oldAck = (array) old('fields.'.$field->id, []); @endphp
+                  <div class="ack-item rounded p-2 @error($key) border border-danger @enderror" style="background:#f6faf7;border:1px solid #cfe3d8" data-ack="{{ $field->id }}">
+                    <div class="row g-2">
+                      @foreach(\App\Modules\Form\Models\FormField::ACK_QUESTIONS as $k => $q)
+                        <div class="col-md-4 d-flex align-items-center gap-2 flex-wrap">
+                          <span class="small fw-bold" style="min-width:4.6rem">{{ $q }}</span>
+                          @foreach(['نعم', 'لا'] as $yn)
+                            <div class="form-check form-check-inline m-0">
+                              <input type="radio" class="form-check-input ack-yn" name="fields[{{ $field->id }}][{{ $k }}]"
+                                     id="f{{ $field->id }}_{{ $k }}_{{ $loop->index }}" value="{{ $yn }}"
+                                     @checked(($oldAck[$k] ?? '') === $yn) @required($field->is_required)>
+                              <label class="form-check-label" for="f{{ $field->id }}_{{ $k }}_{{ $loop->index }}">{{ $yn }}</label>
+                            </div>
+                          @endforeach
+                        </div>
+                      @endforeach
+                    </div>
+                    <div class="mt-2">
+                      <label class="small text-muted" for="f{{ $field->id }}_note">ما الواقع؟ <span class="ack-note-req text-danger" hidden>— إلزامي عند أي «لا»</span></label>
+                      <textarea name="fields[{{ $field->id }}][note]" id="f{{ $field->id }}_note" rows="2" maxlength="2000"
+                                class="form-control form-control-sm @error($key.'.note') is-invalid @enderror">{{ $oldAck['note'] ?? '' }}</textarea>
+                      @error($key.'.note')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                    </div>
+                  </div>
+                  @break
+
                 @case('text')
                   <input type="text" name="fields[{{ $field->id }}]" class="form-control @error($key) is-invalid @enderror"
                          value="{{ old('fields.'.$field->id) }}" placeholder="{{ $field->placeholder }}"
@@ -198,6 +284,39 @@ document.querySelectorAll('.sig-clear').forEach(function (btn) {
     document.getElementById(btn.dataset.target).value = '';
     if (state) { state.textContent = 'لم يُوقَّع بعد'; state.className = 'text-muted sig-state'; }
   });
+});
+
+// ٢٩-١: الجدول الحر — إضافة صف (نسخة من الأخير بلا قيم) وحذفه؛ أسماء الحقول fields[id][صف][عمود]
+document.querySelectorAll('.row-add').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var body = document.querySelector('.form-table[data-table="' + btn.dataset.table + '"] tbody');
+    var last = body.lastElementChild;
+    var clone = last.cloneNode(true);
+    var r = body.children.length;
+    clone.querySelectorAll('input, select').forEach(function (el) {
+      el.name = el.name.replace(/\[(\d+)\]\[(\d+)\]$/, '[' + r + '][$2]');
+      if (el.tagName === 'SELECT') el.selectedIndex = 0; else if (el.type !== 'hidden') el.value = '';
+    });
+    body.appendChild(clone);
+    var first = clone.querySelector('input[type=text], select'); if (first) first.focus();
+  });
+});
+document.addEventListener('click', function (e) {
+  var del = e.target.closest('.row-del'); if (!del) return;
+  var body = del.closest('tbody');
+  if (body.children.length > 1) del.closest('tr').remove();
+  else del.closest('tr').querySelectorAll('input[type=text], select').forEach(function (el) { if (el.tagName === 'SELECT') el.selectedIndex = 0; else el.value = ''; });
+});
+
+// ٢٩-١: بند الإقرار — أي «لا» يجعل «ما الواقع» إلزامية
+document.querySelectorAll('.ack-item').forEach(function (box) {
+  var note = box.querySelector('textarea'), flag = box.querySelector('.ack-note-req');
+  function sync() {
+    var anyNo = Array.prototype.some.call(box.querySelectorAll('.ack-yn:checked'), function (r) { return r.value === 'لا'; });
+    note.required = anyNo; if (flag) flag.hidden = !anyNo;
+  }
+  box.querySelectorAll('.ack-yn').forEach(function (r) { r.addEventListener('change', sync); });
+  sync();
 });
 
 // منع الإرسال بلا توقيع في الحقول الإلزامية (المتصفح لا يتحقق من حقل مخفي)
