@@ -198,6 +198,7 @@ class EmergencyController extends Controller
     public function buildingsShow(EmergencyBuilding $building)
     {
         $building->load(['floors.responsible', 'floors.exits', 'assemblyPoints.place', 'exits.floor', 'exits.assemblyPoint', 'teams.members', 'teams.place', 'contacts', 'branchUnit', 'places']);
+        app(\App\Modules\Emergency\Services\ComplianceSync::class)->syncBuilding($building); // ٣١-١: جاهزية المبنى أمام اللائحة من صفوفه (الزرع رخيص: sha1 ملف واحد)
         $status = $this->service->getBuildingStatus($building);
         $places = $building->places; // ٢٨-٢: نقاط التجمع تخدم أماكن هذا المبنى
         $users = User::whereHas('profile', fn ($q) => $q->where('is_active', true))->orderBy('name')->get(['id', 'name']);

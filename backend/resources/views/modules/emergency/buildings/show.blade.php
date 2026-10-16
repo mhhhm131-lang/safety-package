@@ -5,6 +5,9 @@
 @php($canManage = \App\Core\Permissions\PermissionRegistry::hasPermission($role, 'emergency.manage'))
 <div class="d-flex align-items-center gap-2 flex-wrap mb-3">
   <h1 class="h4 m-0"><i class="bi bi-building"></i> {{ $building->name }} @if($building->code)<small class="text-muted">({{ $building->code }})</small>@endif</h1>
+  {{-- ٣١-١ (قرار ٩٠): جاهزية المبنى أمام اللائحة من صفوف المقارنة --}}
+  @php($cr = \App\Modules\Emergency\Models\BuildingComplianceItem::readiness($building->id))
+  <a class="btn btn-sm btn-outline-secondary" href="{{ route('app.compliance', ['b' => $building->id]) }}" data-compliance="{{ $cr['percent'] }}"><i class="bi bi-clipboard-check"></i> المقارنة مع اللائحة — {{ $cr['ratable'] ? $cr['percent'].'% · لم يُقيَّم '.$cr['unrated'] : 'لم تُزرع بعد' }}</a>
   <span class="badge text-bg-{{ $building->isInEmergency() ? 'danger' : 'success' }}">{{ $building->getEmergencyStatusLabel() }}</span>
   <span class="ms-auto d-flex gap-1">
     <a class="btn btn-sm btn-{{ $building->isInEmergency() ? 'danger' : 'warning' }}" href="{{ route('emergency.buildings.control', $building) }}"><i class="bi bi-joystick"></i> لوحة التحكم</a>

@@ -26,6 +26,11 @@ Route::middleware(['web', 'auth'])->prefix('app')->name('app.')->group(function 
     Route::get('/role-cards', [$brc, 'show'])->name('role-cards');
     Route::post('/role-cards/{card}', [$brc, 'update'])->name('role-cards.update')->whereNumber('card');
     Route::post('/role-cards/{card}/restore', [$brc, 'restore'])->name('role-cards.restore')->whereNumber('card');
+    // المرحلة ٣١-١ (قرار ٩٠): المقارنة مع اللائحة لمبنى الجلسة — جاهزيته وكلامه في كل مادة وبند
+    $bcc = \App\Modules\Governance\Controllers\BuildingComplianceController::class;
+    Route::get('/compliance', [$bcc, 'show'])->name('compliance');
+    Route::post('/compliance/{item}', [$bcc, 'update'])->name('compliance.update')->whereNumber('item');
+    Route::post('/compliance/{item}/restore', [$bcc, 'restore'])->name('compliance.restore')->whereNumber('item');
     Route::middleware('permission:system.settings')->get('/settings', [\App\Modules\Governance\Controllers\SettingsController::class, 'index'])->name('settings'); // ١١-٤: الباب الثالث
     // ٢٨-٣ (قرار ٧٨): مبدّل المبنى لمن يرى أكثر من مبنى — الوثائق التشغيلية بمبنى الجلسة
     Route::post('/building/{building}', \App\Modules\Governance\Controllers\BuildingSwitchController::class)->name('building.switch')->whereNumber('building');

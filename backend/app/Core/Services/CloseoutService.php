@@ -87,6 +87,8 @@ class CloseoutService
         'safety_plans', 'safety_plan_tasks',
         // بطاقات الأدوار لكل مبنى (٣٠-٣): تُعاد من ملفات role-cards/، وكلام المبنى (الشاغل وهاتفه) محتوى المعهد
         'building_role_cards',
+        // جدول المقارنة لكل مبنى (٣١-١): يُعاد من comparison.html، وتقييم المبنى محتوى المعهد
+        'building_compliance_items',
         // قنوات التحقق من المقاولين (إعدادات لا بيانات)
         'contractor_channels',
         // بنية الإطار

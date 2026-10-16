@@ -47,6 +47,14 @@ class IpaSyncPlans extends Command
             }
             $this->table(['المبنى', 'البطاقات', 'العدد', 'معدَّلة في المبنى', 'ملفات مفقودة'], $rows);
         }
+        // ٣١-١ (قرار ٩٠): جدول المقارنة لكل مبنى من comparison.html
+        if (Schema::hasTable('building_compliance_items')) {
+            $rows = [];
+            foreach (app(\App\Modules\Emergency\Services\ComplianceSync::class)->sync($from, $force) as $code => $r) {
+                $rows[] = [$code, $r['status'], $r['rows'], $r['edited']];
+            }
+            $this->table(['المبنى', 'المقارنة', 'الصفوف', 'معدَّلة في المبنى'], $rows);
+        }
         return self::SUCCESS;
     }
 }

@@ -28,6 +28,7 @@
   الشكل للمعهد كله (الرقم والفئة والملف)، والكلام لهذا المبنى.</p>
 <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
   <a class="btn btn-o btn-sm" href="/role-cards/index.html" target="_blank" rel="noopener"><i class="bi bi-file-earmark-text"></i> ملفات البطاقات الأصلية</a>
+  <a class="btn btn-o btn-sm" href="{{ route('app.compliance', ['b' => $building->id]) }}"><i class="bi bi-clipboard-check"></i> المقارنة مع اللائحة</a>
   @if($canEdit)<span class="small text-muted">اسم الدور: ما هذه البطاقة · الوصف: أين يُمارَس أو ما حدّه · المكلّف: من يقوم به في مبناك اليوم وهاتفه. عدّل ما يختلف في مبناك، أو اضغط «لا ينطبق هنا». ما تكتبه هنا تقرؤه خطوات الاستجابة والقائمة الحية وقت الطوارئ.</span>
   @else<span class="small text-muted">التعديل لمدير الفرع ومنسق سلامته ومدير المرافق ومسؤول السلامة.</span>@endif
 </div>
