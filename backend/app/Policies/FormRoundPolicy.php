@@ -18,6 +18,14 @@ class FormRoundPolicy
 {
     public function __construct(private readonly FormVisibilityService $visibility) {}
 
+    /** ٢٩-٧: تبويب «الطبقة الثانية» لمن يرى الكل أو وحدةً (الإدارة العليا واللجنة ومسؤول السلامة والمناوب والمدراء والمنسقون) — لا الموظف */
+    public function viewAny(User $user): bool
+    {
+        $rule = $this->visibility->rule($user);
+
+        return $rule !== null && ($rule['all'] || $rule['units'] !== []);
+    }
+
     public function view(User $user, FormRound $round): bool
     {
         if ($this->visibility->canSeeUnit($user, $round->organization_unit_id === null ? null : (int) $round->organization_unit_id)) {

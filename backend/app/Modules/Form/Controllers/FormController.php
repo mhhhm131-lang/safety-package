@@ -45,7 +45,8 @@ class FormController extends Controller
     public function index(Request $request)
     {
         $viewer = Auth::user();
-        $query = FormTemplate::query()->withCount([
+        // ٢٩-٧: قوالب الطبقة الثانية (بطاقة الإدارة والإقرارات المولَّدة) في تبويبها «الطبقة الثانية» لا في القائمة العامة
+        $query = FormTemplate::query()->whereNull('package_code')->withCount([
             'fields',
             'submissions' => fn ($q) => $this->visibility->apply($q, $viewer), // ٢٩-٠: ما يراه الحساب
             'assignments' => fn ($q) => $this->visibility->apply($q, $viewer),
@@ -65,7 +66,7 @@ class FormController extends Controller
 
         return view('modules.forms.index', [
             'forms'      => $query->paginate(25)->withQueryString(),
-            'facets'     => FormTemplate::selectRaw('form_type, COUNT(*) as n')->where('is_active', true)
+            'facets'     => FormTemplate::selectRaw('form_type, COUNT(*) as n')->where('is_active', true)->whereNull('package_code')
                 ->groupBy('form_type')->pluck('n', 'form_type')->all(),
             'activeType' => $type,
             'places'     => \App\Modules\Governance\Services\BuildingContext::placesFor(Auth::user()), // قرار ٨٤

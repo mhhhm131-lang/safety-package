@@ -25,7 +25,7 @@ Route::middleware(['web', 'auth'])->prefix('app')->group(function () {
         Route::put('/{form}/draft', [FormController::class, 'saveDraft'])->name('draft')->whereNumber('form'); // ٢٩-٤: حفظ آلي للمسودة
 
         // ٢٩-٤: جولات بطاقة الإدارة — الصفحة لمن يرى وحدتها أو كُلّف فيها (السياسة)، والفتح لمن يملك الإرسال، والاعتماد لمدير الإدارة
-        Route::get('/rounds', [FormRoundController::class, 'index'])->name('rounds.index')->middleware('permission:form.list');
+        Route::get('/rounds', [FormRoundController::class, 'index'])->name('rounds.index'); // ٢٩-٧: الحارس سياسة viewAny (قاعدة الرؤية) لا form.list
         Route::post('/rounds', [FormRoundController::class, 'store'])->name('rounds.store')->middleware('permission:form.send');
         Route::get('/rounds/{round}', [FormRoundController::class, 'show'])->name('rounds.show')->whereNumber('round');
         Route::post('/rounds/{round}/approve', [FormRoundController::class, 'approve'])->name('rounds.approve')->whereNumber('round');

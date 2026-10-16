@@ -3,12 +3,28 @@
 @section('content')
 
 <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
-  <div>
-    <div class="small"><a href="{{ route('forms.index') }}" class="text-muted text-decoration-none"><i class="bi bi-arrow-right"></i> النماذج</a></div>
-    <h1 class="h4 m-0"><i class="bi bi-arrow-repeat me-2"></i>جولات بطاقة الإدارة</h1>
-    <div class="small text-muted mt-1">كل جولة: تكليف واحد لمدير الإدارة ببطاقة الإدارة، ثم اعتماده، ثم الإقرار السري لموظفيها.</div>
+  <h1 class="h4 m-0"><i class="bi bi-ui-checks me-2"></i>النماذج الرقمية</h1>
+  <a href="{{ route('forms.mine') }}" class="btn btn-sm btn-outline-secondary ms-auto"><i class="bi bi-inbox"></i> نماذجي</a>
+</div>
+
+{{-- ٢٩-٧: التبويبان --}}
+<ul class="nav nav-tabs mb-3" data-forms-tabs>
+  <li class="nav-item"><a class="nav-link" href="{{ route('forms.index') }}" data-tab="forms"><i class="bi bi-ui-checks"></i> النماذج</a></li>
+  <li class="nav-item"><a class="nav-link active" href="{{ route('forms.rounds.index') }}" data-tab="layer2"><i class="bi bi-layers"></i> الطبقة الثانية — بطاقة الإدارة</a></li>
+</ul>
+
+{{-- ٢٩-٧: البطاقة الواحدة (قرار ٨٨) --}}
+<div class="card mb-3" data-card="{{ $card?->id }}">
+  <div class="card-body d-flex flex-wrap gap-3 align-items-center">
+    <div class="flex-grow-1">
+      <div class="fw-bold"><i class="bi bi-card-checklist"></i> {{ $card?->title ?? 'بطاقة الإدارة' }}</div>
+      <div class="small text-muted">سبعة بنود × أربع مراحل (موثّق، معلن، مفهوم، مطبَّق). يعبّئها مدير الإدارة في جولة، ويعتمدها، فيصل موظفيها الإقرار السري آلياً، ثم الأرقام. النظام يسأل ولا يبني ولا يحاسب.</div>
+    </div>
+    @if($card)<a href="{{ route('forms.show', $card) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i> بنود البطاقة</a>@endif
   </div>
 </div>
+
+<h2 class="h6 mb-2"><i class="bi bi-arrow-repeat"></i> الجولات <span class="small text-muted fw-normal">— كل جولة: تكليف واحد لمدير الإدارة، ثم اعتماده، ثم الإقرار السري لموظفيها، ثم الأرقام.</span></h2>
 
 @if($canOpen)
   {{-- ٢٩-٤: فتح جولة لإدارة — الوحدة من مبانيك (حارس الكتابة) --}}

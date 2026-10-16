@@ -129,7 +129,10 @@ class IntentRegistry
         // ── النماذج ──
         $add(true, 'myforms', 'أعبّئ نماذجي', route('forms.mine'), 'bi-inbox', $gForms);
         // ٢٦-٩: السجل خرج من «المزيد» — قراءته سؤال، والإرسال فعل (قرار ٦٧-٥)؛ من يقرأ ولا يرسل (المديرون واللجنة) بابه هذا
-        $add($can('form.list'), 'forms_log', 'النماذج الرقمية', route('forms.index'), 'bi-ui-checks', $gForms, false, 'ما أُرسل، ومن عبّأ، والنتائج');
+        // ٢٩-٧ (قرار ٨٨): الإدارة العليا بلا `form.list` تقرأ أرقام الطبقة الثانية — الباب نفسه يفتح لها تبويب «الطبقة الثانية» لا القائمة العامة
+        $layer2 = (bool) (app(\App\Modules\Form\Services\FormVisibilityService::class)->rule($user)['all'] ?? false);
+        $add($can('form.list') || $layer2, 'forms_log', 'النماذج الرقمية', $can('form.list') ? route('forms.index') : route('forms.rounds.index'), 'bi-ui-checks', $gForms, false,
+            $can('form.list') ? 'ما أُرسل، ومن عبّأ، والنتائج' : 'الطبقة الثانية: جولات الإدارات وأرقامها');
         $add($can('form.send'), 'sendform', 'أرسل نموذجاً لموظفين', route('forms.index'), 'bi-send', $gForms);
 
         // ── المقاولون ──

@@ -27,6 +27,7 @@ class FormRoundController extends Controller
 
     public function index()
     {
+        $this->authorize('viewAny', FormRound::class); // ٢٩-٧: بقاعدة الرؤية لا بصلاحية form.list — الإدارة العليا ترى الأرقام
         $q = FormRound::with(['organizationUnit', 'openedBy', 'approvedBy'])->latest('id');
         $this->visibility->apply($q, Auth::user());
 
@@ -34,6 +35,7 @@ class FormRoundController extends Controller
             'rounds'  => $q->paginate(30),
             'units'   => OrganizationUnit::treeOptions(),
             'canOpen' => Auth::user()->can('open', FormRound::class),
+            'card'    => RoundService::card(), // ٢٩-٧: تبويب «الطبقة الثانية» يعرض البطاقة وجولاتها معاً
         ]);
     }
 
