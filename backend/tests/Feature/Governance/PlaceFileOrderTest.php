@@ -58,8 +58,8 @@ class PlaceFileOrderTest extends TestCase
         $sorted = $pos; sort($sorted);
         $this->assertSame($sorted, $pos, 'الترتيب: الوحدات ← الخطتان ← النماذج ← المخاطر ← المفتوح ← الفريق ← التصريح');
         $this->assertStringNotContainsString('id="pfUnitsH"', $h);
-        // ١ خطة السلامة بطبقتيها تفتح الخطة نفسها، ٢ خطة الاستجابة بآخر تمرين
-        $this->assertMatchesRegularExpression('~id="pfPlanSafety".*?href="/HZ-01-basement/safety-plan.html".*?الاستباقية والتشغيلية.*?معتمدة~s', $h);
+        // ١ خطة السلامة بطبقتيها تفتح شاشتها في النظام من صفوف المكان (٣٠-١، قرار ٨٩)، ٢ خطة الاستجابة بآخر تمرين
+        $this->assertMatchesRegularExpression('~id="pfPlanSafety".*?href="[^"]*/app/places/'.$park->id.'/safety-plan".*?الاستباقية والتشغيلية.*?معتمدة~s', $h);
         $this->assertMatchesRegularExpression('~id="pfPlanResponse".*?href="/HZ-01-basement/response-plan.html".*?آخر تمرين 2026-09-10~s', $h);
         // ٤ مخاطر المكان بمنسقها ومعالجها لمن يملك السجل
         $this->assertMatchesRegularExpression('~data-risk="PH-01-01/PARK".*?المنسق: اسم mudir · المعالج: اسم fani~s', $h);

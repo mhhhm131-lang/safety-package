@@ -92,7 +92,8 @@ class PlaceFileButtonsTest extends TestCase
         foreach (['pfSecForms', 'pfSecRisks', 'pfSecNow', 'pfSecTeam'] as $s) $this->assertMatchesRegularExpression('~id="'.$s.'"[^>]*\shidden~', $h, $s);
 
         // كل زر يحمل حاله ولونه
-        $this->assertMatchesRegularExpression('~id="pfPlanSafety"[^>]*data-state="ok"[^>]*href="/HZ-01-basement/safety-plan.html"~', $h);
+        // ٣٠-١ (قرار ٨٩): خطة السلامة تفتح شاشتها في النظام من صفوف المكان
+        $this->assertMatchesRegularExpression('~id="pfPlanSafety"[^>]*data-state="ok"[^>]*href="[^"]*/app/places/'.$this->park->id.'/safety-plan"~', $h);
         $this->assertMatchesRegularExpression('~id="pfPlanResponse"[^>]*data-state="ok"[^>]*href="/HZ-01-basement/response-plan.html"~', $h);
         $this->assertMatchesRegularExpression('~id="pfForms"[^>]*data-state="bad".*?2 متأخر~s', $h); // الإنارة لم تُفحص + كواشف الغاز متأخرة
         $this->assertMatchesRegularExpression('~id="pfNow"[^>]*data-state="bad".*?متجاوز~s', $h);   // بلاغ «فوري» منذ ٣٠ ساعة

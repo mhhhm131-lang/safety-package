@@ -55,6 +55,8 @@ Route::middleware(['web', 'auth'])->prefix('app')->name('app.')->group(function 
         Route::get('/{place}/file', [\App\Modules\Governance\Controllers\PlaceFileController::class, 'show'])->name('file')->whereNumber('place');
         // المرحلة ١٩-٢: ملف النظام (ما كان في dashboard.html#place=…&sys=…)
         Route::get('/{place}/systems/{form}/{sys}', [\App\Modules\Governance\Controllers\PlaceFileController::class, 'system'])->name('system')->whereNumber('place');
+        // المرحلة ٣٠-١ (قرار ٨٩): خطة السلامة من الصفوف — القراءة لمن المكان في مبانيه، والتعديل في PlaceWordsAccess
+        Route::get('/{place}/safety-plan', [\App\Modules\Governance\Controllers\PlaceSafetyPlanController::class, 'show'])->name('safety')->whereNumber('place');
         Route::get('/{place}/units', [\App\Modules\Governance\Controllers\PlaceUnitsController::class, 'index'])->name('index');
         Route::post('/{place}/units', [\App\Modules\Governance\Controllers\PlaceUnitsController::class, 'store'])->name('store');
         Route::post('/{place}/units/paste', [\App\Modules\Governance\Controllers\PlaceUnitsController::class, 'paste'])->name('paste');
@@ -65,6 +67,10 @@ Route::middleware(['web', 'auth'])->prefix('app')->name('app.')->group(function 
     Route::prefix('places/{place}')->name('places.team.')->whereNumber('place')->group(function () {
         $c = \App\Modules\Governance\Controllers\PlaceTeamController::class;
         Route::post('/plans', [$c, 'plans'])->name('plans');
+        // المرحلة ٣٠-١ (قرار ٨٩): كلام المكان في مهمة من خطة السلامة — الكتابة والاستعادة
+        $sp = \App\Modules\Governance\Controllers\PlaceSafetyPlanController::class;
+        Route::post('/safety-plan/{task}', [$sp, 'update'])->name('safety.update')->whereNumber('task');
+        Route::post('/safety-plan/{task}/restore', [$sp, 'restore'])->name('safety.restore')->whereNumber('task');
         Route::post('/team/{uid}/staff', [$c, 'staff'])->name('staff');
         Route::get('/team/{uid}/{k}', [$c, 'edit'])->name('edit')->whereNumber('k');
         Route::post('/team/{uid}/{k}', [$c, 'save'])->name('save')->whereNumber('k');

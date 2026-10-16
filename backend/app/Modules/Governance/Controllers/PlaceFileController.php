@@ -67,9 +67,13 @@ class PlaceFileController extends Controller
         $pl = $profile['plans'];
         $drillDays = !empty($pl['drill']) && ($t = \DateTimeImmutable::createFromFormat('!Y-m-d', substr((string) $pl['drill'], 0, 10))) ? (int) $t->diff(now())->days : null;
         $folder = '/'.(Place::FOLDERS[$hz] ?? $hz);
+        // المرحلة ٣٠-١ (قرار ٨٩): خطة السلامة من الصفوف — الزر يفتح شاشتها في النظام (والوثيقة منها)؛ الزرع عند الفتح رخيص (sha1 ملف واحد)
+        app(\App\Modules\Governance\Services\SafetyPlanSync::class)->syncPlace($place);
+        $sp = \App\Modules\Governance\Models\SafetyPlan::where('place_id', $place->id)->first();
+        $spLine = $sp ? ' · '.$sp->tasks_count.' مهام'.($sp->edited_count ? ' · '.$sp->edited_count.' معدّلة هنا' : '') : '';
         $plans = [
-            ['label' => 'خطة السلامة', 'url' => "$folder/safety-plan.html", 'cls' => !empty($pl['sa']) ? 'ok' : 'bad',
-                'v' => !empty($pl['sa']) ? 'معتمدة' : 'غير معتمدة', 'd' => !empty($pl['sa']) ? 'بتاريخ '.$pl['sa'].(!empty($pl['saBy']) ? ' · '.$pl['saBy'] : '') : 'تُعتمد بقرار الإدارة العليا'],
+            ['label' => 'خطة السلامة', 'url' => route('app.places.units.safety', $place), 'cls' => !empty($pl['sa']) ? 'ok' : 'bad',
+                'v' => !empty($pl['sa']) ? 'معتمدة' : 'غير معتمدة', 'd' => (!empty($pl['sa']) ? 'بتاريخ '.$pl['sa'].(!empty($pl['saBy']) ? ' · '.$pl['saBy'] : '') : 'تُعتمد بقرار الإدارة العليا').$spLine],
         ];
         if ($hz !== 'HZ-00') {
             $plans[] = ['label' => 'خطة الاستجابة', 'url' => "$folder/response-plan.html",

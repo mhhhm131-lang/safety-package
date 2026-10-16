@@ -54,8 +54,8 @@ class AwarenessButtonsTest extends TestCase
         $plans = $this->intentUrl($html, 'plans');
         $this->assertSame(route('app.places.units.file', $offices).'#plans', $plans);
         $file = $this->actingAs($emp)->get($plans)->assertOk()->getContent();
-        // الخطتان أول ما في الملف، كل واحدة تفتح وثيقتها، والمرساة تبرزهما
-        $this->assertMatchesRegularExpression('~id="pfPlanSafety"[^>]*href="/HZ-06-offices/safety-plan\.html"~', $file);
+        // الخطتان أول ما في الملف، والمرساة تبرزهما — ٣٠-١ (قرار ٨٩): خطة السلامة تفتح شاشة النظام من صفوف المكان، وخطة الاستجابة وثيقتها حتى ٣٠-٢
+        $this->assertMatchesRegularExpression('~id="pfPlanSafety"[^>]*href="[^"]*/app/places/'.$offices->id.'/safety-plan"~', $file);
         $this->assertMatchesRegularExpression('~id="pfPlanResponse"[^>]*href="/HZ-06-offices/response-plan\.html"~', $file);
         $this->assertLessThan(strpos($file, 'id="pfForms"'), strpos($file, 'id="pfPlanResponse"'));
         $this->assertStringContainsString("location.hash==='#plans'", $file);
