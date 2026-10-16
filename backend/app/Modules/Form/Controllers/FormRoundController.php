@@ -72,6 +72,30 @@ class FormRoundController extends Controller
         ]);
     }
 
+    /** ٢٩-٦: الأرقام — لمن يرى الجولة؛ نصوص الموظفين لمن يرى الكل فقط (المدير والمنسق النسب بلا نصوص). */
+    public function numbers(FormRound $round, \App\Modules\Form\Services\RoundNumbersService $numbers)
+    {
+        $this->authorize('view', $round);
+        $round->load('organizationUnit');
+        $withTexts = (bool) ($this->visibility->rule(Auth::user())['all'] ?? false);
+
+        return view('modules.forms.rounds.numbers', ['round' => $round, 'n' => $numbers->compute($round, $withTexts)]);
+    }
+
+    /** ٢٩-٦: إقفال الجولة */
+    public function close(FormRound $round)
+    {
+        $this->authorize('close', $round);
+
+        try {
+            $this->rounds->close($round, Auth::user());
+        } catch (\InvalidArgumentException $e) {
+            return back()->with('err', $e->getMessage());
+        }
+
+        return redirect()->route('forms.rounds.numbers', $round)->with('ok', 'أُقفلت الجولة. هذه أرقامها.');
+    }
+
     public function approve(FormRound $round)
     {
         $this->authorize('approve', $round);

@@ -29,6 +29,8 @@ Route::middleware(['web', 'auth'])->prefix('app')->group(function () {
         Route::post('/rounds', [FormRoundController::class, 'store'])->name('rounds.store')->middleware('permission:form.send');
         Route::get('/rounds/{round}', [FormRoundController::class, 'show'])->name('rounds.show')->whereNumber('round');
         Route::post('/rounds/{round}/approve', [FormRoundController::class, 'approve'])->name('rounds.approve')->whereNumber('round');
+        Route::get('/rounds/{round}/numbers', [FormRoundController::class, 'numbers'])->name('rounds.numbers')->whereNumber('round'); // ٢٩-٦
+        Route::post('/rounds/{round}/close', [FormRoundController::class, 'close'])->name('rounds.close')->whereNumber('round');
 
         // إدارة النماذج
         Route::middleware('permission:form.list')->group(function () {

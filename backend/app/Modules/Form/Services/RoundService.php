@@ -112,4 +112,24 @@ final class RoundService
 
         $this->notifier->roundApproved($round, $actor, $ackNote);
     }
+
+    /**
+     * ٢٩-٦: إقفال الجولة (مسؤول السلامة والمناوب والمنسق — `form.send`؛ اللجنة ترى): بعد الإقرارات أو حين لم يُرسل إقرار.
+     * يوقف قالب الإقرار فلا يجيب أحد بعدها، والأرقام تبقى؛ وجولة جديدة تُفتح بعدها (`open`).
+     * @throws \InvalidArgumentException
+     */
+    public function close(FormRound $round, User $actor): void
+    {
+        if (!in_array($round->state, [FormRound::STATE_ACK, FormRound::STATE_DONE], true)) {
+            throw new \InvalidArgumentException('لا تُقفل الجولة في حالتها هذه: '.$round->getStateLabel().'.');
+        }
+        $ack = FormTemplate::where('package_code', NonMaterialPackage::ackCode($round->id))->first();
+
+        DB::transaction(function () use ($round, $actor, $ack) {
+            $ack?->update(['is_active' => false]);
+            $round->state = FormRound::STATE_CLOSED;
+            $round->addLog('closed', $actor, $ack ? 'أُوقف الإقرار السري؛ من لم يجب لا يجيب بعدها، والأرقام على من أجاب' : 'لم يكن إقرار');
+            $round->save();
+        });
+    }
 }

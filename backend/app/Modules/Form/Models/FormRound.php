@@ -33,8 +33,11 @@ class FormRound extends Model
     ];
 
     public const ACTION_LABELS = [
-        'opened'   => 'فُتحت الجولة وكُلّف المدير',
-        'approved' => 'اعتمد المدير: «البيانات صحيحة وأعتمدها»',
+        'opened'    => 'فُتحت الجولة وكُلّف المدير',
+        'approved'  => 'اعتمد المدير: «البيانات صحيحة وأعتمدها»',
+        'acks_sent' => 'أُرسل الإقرار السري آلياً إلى موظفي الإدارة',
+        'acks_none' => 'لم يُرسل الإقرار السري',
+        'closed'    => 'أُقفلت الجولة',
     ];
 
     protected $fillable = ['organization_unit_id', 'building_id', 'round_no', 'state', 'opened_by_id', 'approved_by_id', 'approved_at', 'log'];

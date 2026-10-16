@@ -61,6 +61,24 @@ class FormTasks implements TaskSource
         }
 
         if (in_array($user->role(), ['system_admin', 'system_staff'], true) && $user->can_('form.send')) {
+            // ٢٩-٦: اكتملت الإقرارات (لا تكليف مفتوح على إقرار الجولة) ← «أقفل واعرض»
+            $q = FormRound::where('state', FormRound::STATE_ACK)->with('organizationUnit');
+            app(FormVisibilityService::class)->apply($q, $user);
+            foreach ($q->get() as $r) {
+                $ack = \App\Modules\Form\Models\FormTemplate::where('package_code', \App\Modules\Form\Support\NonMaterialPackage::ackCode($r->id))->first();
+                $st = $ack?->assignmentStats();
+                if (!$st || $st['total'] === 0 || $st['pending'] + $st['overdue'] > 0) continue;
+                $out->push(new Task(
+                    key: "round:{$r->id}:close",
+                    module: 'النماذج',
+                    question: 'اكتملت إقرارات إدارة «'.($r->organizationUnit?->name ?? '—').'» (الجولة '.$r->round_no.'): أجاب '.$st['completed'].' من '.$st['total'].' — أقفل واعرض',
+                    primary: ['label' => 'أقفل الجولة', 'url' => route('forms.rounds.close', $r), 'method' => 'POST'],
+                    secondary: ['label' => 'الأرقام', 'url' => route('forms.rounds.numbers', $r)],
+                    detailsUrl: route('forms.rounds.show', $r),
+                    createdAt: $r->approved_at ?? $r->created_at,
+                ));
+            }
+
             $q = FormRound::where('state', FormRound::STATE_DONE)->with('organizationUnit');
             app(FormVisibilityService::class)->apply($q, $user);
             foreach ($q->get() as $r) {

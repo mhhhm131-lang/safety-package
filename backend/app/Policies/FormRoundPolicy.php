@@ -24,7 +24,10 @@ class FormRoundPolicy
             return true;
         }
 
-        return FormAssignment::withoutGlobalScope('building')->where('round_id', $round->id)->where('assigned_to_id', $user->id)->exists();
+        // ٢٩-٦: المكلَّف ببطاقة الإدارة (المدير) لا المكلَّف بالإقرار السري (الموظف لا يرى الجولة ولا أرقامها)
+        return FormAssignment::withoutGlobalScope('building')->where('round_id', $round->id)->where('assigned_to_id', $user->id)
+            ->whereHas('form', fn ($q) => $q->where('package_code', \App\Modules\Form\Support\NonMaterialPackage::CODE))
+            ->exists();
     }
 
     public function open(User $user): bool
@@ -35,5 +38,11 @@ class FormRoundPolicy
     public function approve(User $user, FormRound $round): bool
     {
         return RoundService::isManagerOf($user, (int) $round->organization_unit_id);
+    }
+
+    /** ٢٩-٦: الإقفال لمن يفتح (`form.send`)؛ اللجنة ترى بلا أزرار */
+    public function close(User $user, FormRound $round): bool
+    {
+        return $user->can_('form.send');
     }
 }

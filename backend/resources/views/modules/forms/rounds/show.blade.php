@@ -84,11 +84,21 @@
           أُرسل آلياً بعد الاعتماد إلى <strong data-ack-total="{{ $ackStats['total'] }}">{{ $ackStats['total'] }}</strong> موظفاً،
           أجاب <strong data-ack-done="{{ $ackStats['completed'] }}">{{ $ackStats['completed'] }}</strong>.
           <span class="text-muted">العدد لا الأسماء: لا يُعرف من أجاب ومن لم يجب.</span>
+          <a href="{{ route('forms.rounds.numbers', $round) }}" class="btn btn-sm btn-g ms-2" data-numbers><i class="bi bi-graph-up"></i> الأرقام</a>
           @if($me->can('results', $ack))
-            <a href="{{ route('forms.results', $ack) }}" class="btn btn-sm btn-outline-primary ms-2"><i class="bi bi-bar-chart"></i> النتائج</a>
+            <a href="{{ route('forms.results', $ack) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-bar-chart"></i> النتائج</a>
           @endif
         </div>
       </div>
+    @endif
+
+    @if($me->can('close', $round) && in_array($round->state, [\App\Modules\Form\Models\FormRound::STATE_ACK, \App\Modules\Form\Models\FormRound::STATE_DONE], true))
+      {{-- ٢٩-٦: إقفال الجولة — يوقف الإقرار والأرقام على من أجاب --}}
+      <form method="post" action="{{ route('forms.rounds.close', $round) }}" class="mb-3"
+            onsubmit="return confirm('تُقفل الجولة: من لم يجب لا يجيب بعدها، والأرقام على من أجاب. تقفل؟')">
+        @csrf
+        <button class="btn btn-outline-dark" data-close><i class="bi bi-lock"></i> أقفل الجولة واعرض الأرقام</button>
+      </form>
     @endif
   </div>
 

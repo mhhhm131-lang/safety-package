@@ -45,7 +45,10 @@
             <td><span class="badge bg-{{ $r->stateColor() }}" data-round-state="{{ $r->state }}">{{ $r->getStateLabel() }}</span></td>
             <td class="small text-muted"><span dir="ltr">{{ $r->created_at?->format('Y-m-d') }}</span> · {{ $r->openedBy?->name ?? '—' }}</td>
             <td class="small text-muted">{{ $r->approved_at ? ($r->approvedBy?->name ?? '—').' · '.$r->approved_at->format('Y-m-d H:i') : '—' }}</td>
-            <td class="text-nowrap"><a href="{{ route('forms.rounds.show', $r) }}" class="btn btn-sm btn-outline-primary">افتح</a></td>
+            <td class="text-nowrap">
+              <a href="{{ route('forms.rounds.show', $r) }}" class="btn btn-sm btn-outline-primary">افتح</a>
+              @if(in_array($r->state, ['ack', 'closed'], true))<a href="{{ route('forms.rounds.numbers', $r) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-graph-up"></i> الأرقام</a>@endif
+            </td>
           </tr>
         @empty
           <tr><td colspan="6" class="text-center text-muted py-4">لا جولات بعد.</td></tr>
