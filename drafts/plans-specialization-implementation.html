@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>خطة التنفيذ — تخصيص الخطط والبطاقات</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Kufi Arabic', 'IBM Plex Sans Arabic', sans-serif;
+            line-height: 1.8;
+            color: #2c3e50;
+            background: #f8f9fa;
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #0f4c3a 0%, #1a6b4f 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 8px;
+            margin-bottom: 40px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 2.2em;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+
+        .meta {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            font-size: 0.95em;
+            opacity: 0.95;
+        }
+
+        h2 {
+            color: #0f4c3a;
+            font-size: 1.8em;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #d9b25a;
+        }
+
+        h3 {
+            color: #1a6b4f;
+            font-size: 1.3em;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+
+        h4 {
+            color: #2c3e50;
+            font-size: 1.05em;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        p {
+            margin-bottom: 15px;
+        }
+
+        .main-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .main-table th {
+            background: #0f4c3a;
+            color: white;
+            padding: 18px 15px;
+            text-align: right;
+            font-weight: 600;
+            font-size: 1.05em;
+        }
+
+        .main-table td {
+            padding: 16px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .main-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .main-table tr:hover {
+            background: #f5f9f8;
+        }
+
+        .step-number {
+            background: #0f4c3a;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .step-box {
+            background: white;
+            border-left: 5px solid #d9b25a;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        .step-box h4:first-child {
+            margin-top: 0;
+            color: #0f4c3a;
+            font-size: 1.15em;
+        }
+
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 18px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            direction: ltr;
+            text-align: left;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+
+        .success-item {
+            background: #d5f4e6;
+            border-right: 4px solid #27ae60;
+            padding: 12px 15px;
+            margin: 8px 0;
+            border-radius: 4px;
+            color: #1e6b4f;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .success-item::before {
+            content: "✓";
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #27ae60;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border-right: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            color: #856404;
+        }
+
+        .warning strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .final-question {
+            background: linear-gradient(135deg, #f0f8f5 0%, #fff9e6 100%);
+            border: 2px solid #d9b25a;
+            padding: 30px;
+            margin: 30px 0;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .final-question h3 {
+            margin-top: 0;
+            color: #0f4c3a;
+        }
+
+        .option {
+            background: white;
+            border: 2px solid #e0e0e0;
+            padding: 15px;
+            margin: 12px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .option:hover {
+            border-color: #0f4c3a;
+            background: #f5f9f8;
+        }
+
+        .option input[type="radio"] {
+            margin-left: 10px;
+        }
+
+        table.sub-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background: white;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .sub-table th {
+            background: #1a6b4f;
+            color: white;
+            padding: 12px 15px;
+            text-align: right;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        .sub-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 0.95em;
+        }
+
+        .sub-table tr:hover {
+            background: #f5f9f8;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+            color: #7f8c8d;
+            font-size: 0.95em;
+        }
+
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+        }
+
+        .timeline-dot {
+            width: 35px;
+            height: 35px;
+            background: #0f4c3a;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+            margin-top: 5px;
+        }
+
+        .timeline-content h4 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚡ خطة التنفيذ</h1>
+            <p>تخصيص الخطط والبطاقات حسب الفرع</p>
+            <div class="meta">
+                <div>📅 <strong>٢٠٢٦-١٠-١٦</strong></div>
+                <div>✅ <strong>جاهزة للموافقة</strong></div>
+            </div>
+        </header>
+
+        <h2>الخطة بالاختصار</h2>
+
+        <table class="main-table">
+            <thead>
+                <tr>
+                    <th style="width: 8%;">الخطوة</th>
+                    <th style="width: 35%;">ماذا نفعل</th>
+                    <th style="width: 35%;">المخرج</th>
+                    <th style="width: 22%;">الوقت</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>١</strong></td>
+                    <td>جدول <code>plan_specializations</code></td>
+                    <td>جدول يحفظ التعديلات المحلية</td>
+                    <td style="background: #d5f4e6;"><strong>15 دقيقة</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>٢</strong></td>
+                    <td>كود قراءة يختار (تخصيص vs أساسي)</td>
+                    <td>وظيفة تعيد النص الصحيح</td>
+                    <td style="background: #d5f4e6;"><strong>20 دقيقة</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>٣</strong></td>
+                    <td>شاشة تحرير بسيطة</td>
+                    <td>نموذج يحفظ التعديل</td>
+                    <td style="background: #d5f4e6;"><strong>20 دقيقة</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>٤</strong></td>
+                    <td>اختبار على المنشور</td>
+                    <td>النسخة المحدّثة تظهر</td>
+                    <td style="background: #d5f4e6;"><strong>5 دقائق</strong></td>
+                </tr>
+                <tr>
+                    <td colspan="3" style="text-align: center; font-weight: bold;">المجموع</td>
+                    <td style="background: #0f4c3a; color: white; font-weight: bold; text-align: center;">ساعة واحدة</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>الخطوة الأولى: الجدول</h2>
+
+        <div class="step-box">
+            <h4>① ماذا نفعل</h4>
+            <p>إنشاء <strong>جدول واحد فقط</strong> يحفظ التخصيصات:</p>
+
+            <div class="code-block">
+CREATE TABLE plan_specializations (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    plan_id INT,              -- معرّف الخطة (١-١٧)
+    department_id INT,        -- معرّف الفرع/الإدارة
+    item_id INT,              -- معرّف البند في الخطة
+    value_key VARCHAR(100),   -- اسم الحقل (responsible_person, location, إلخ)
+    value TEXT,               -- القيمة الجديدة
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    UNIQUE(plan_id, department_id, item_id, value_key)
+);
+            </div>
+        </div>
+
+        <div class="step-box">
+            <h4>② المخرج</h4>
+            <div class="success-item">جدول موجود في قاعدة البيانات</div>
+            <div class="success-item">Migration مُنفَّذة</div>
+            <div class="success-item">يمكن إدراج صف اختبار والتحقق منه</div>
+        </div>
+
+        <div class="step-box">
+            <h4>③ قياس النجاح</h4>
+            <p>شغّل هذا الاستعلام:</p>
+            <div class="code-block">
+-- أدرج صف اختبار
+INSERT INTO plan_specializations
+(plan_id, department_id, item_id, value_key, value)
+VALUES (2, 5, 2, "responsible_person", "إسعاف خارجي 997");
+
+-- اقرأ الصف
+SELECT * FROM plan_specializations
+WHERE plan_id=2 AND department_id=5;
+
+-- النتيجة: الصف يظهر مع القيمة الجديدة ✓
+            </div>
+        </div>
+
+        <h2>الخطوة الثانية: الكود</h2>
+
+        <div class="step-box">
+            <h4>① ماذا نفعل</h4>
+            <p>إضافة <strong>وظيفة واحدة</strong> في الـ service:</p>
+
+            <div class="code-block">
+// app/Services/PlanService.php
+
+public function getItemValue(
+    $planId, $departmentId, $itemId,
+    $valueKey, $defaultValue
+) {
+    // ١. ابحث عن تخصيص
+    $specialization = DB::table('plan_specializations')
+        ->where('plan_id', $planId)
+        ->where('department_id', $departmentId)
+        ->where('item_id', $itemId)
+        ->where('value_key', $valueKey)
+        ->first();
+
+    // ٢. إذا وجدت → عودة القيمة الجديدة
+    if ($specialization) {
+        return $specialization->value;
+    }
+
+    // ٣. إلا → عودة الأساسي
+    return $defaultValue;
+}
+            </div>
+        </div>
+
+        <div class="step-box">
+            <h4>② المخرج</h4>
+            <div class="success-item">وظيفة تختار بين التخصيص والأساسي</div>
+            <div class="success-item">تُستخدم في عرض الخطة</div>
+        </div>
+
+        <div class="step-box">
+            <h4>③ قياس النجاح</h4>
+            <p>اختبر الوظيفة:</p>
+            <div class="code-block">
+// الملز (department_id=1): لا تخصيص
+$result = $planService->getItemValue(
+    2, 1, 2, "responsible_person", "الطبيب أحمد"
+);
+// النتيجة: "الطبيب أحمد" ✓
+
+// القصيم (department_id=5): تخصيص موجود
+$result = $planService->getItemValue(
+    2, 5, 2, "responsible_person", "الطبيب أحمد"
+);
+// النتيجة: "إسعاف خارجي 997" ✓
+            </div>
+        </div>
+
+        <h2>الخطوة الثالثة: الواجهة</h2>
+
+        <div class="step-box">
+            <h4>① ماذا نفعل</h4>
+            <p>إضافة <strong>نموذج تحرير بسيط</strong> على الصفحة الموجودة:</p>
+
+            <p style="margin-top: 15px;"><strong>الزر والنموذج (HTML):</strong></p>
+            <div class="code-block">
+&lt;button @click="editItem(itemId)"&gt;تعديل&lt;/button&gt;
+
+&lt;div v-if="editing[itemId]"&gt;
+    &lt;input v-model="editValue" placeholder="القيمة الجديدة"&gt;
+    &lt;button @click="save(itemId, editValue)"&gt;حفظ&lt;/button&gt;
+&lt;/div&gt;
+            </div>
+
+            <p style="margin-top: 15px;"><strong>API واحد (POST):</strong></p>
+            <div class="code-block">
+POST /api/plans/specializations
+
+{
+    "plan_id": 2,
+    "department_id": 5,
+    "item_id": 2,
+    "value_key": "responsible_person",
+    "value": "إسعاف خارجي 997"
+}
+            </div>
+        </div>
+
+        <div class="step-box">
+            <h4>② المخرج</h4>
+            <div class="success-item">يمكن تعديل البند مباشرة</div>
+            <div class="success-item">يُحفظ في الجدول</div>
+            <div class="success-item">عند إعادة التحميل، يظهر التعديل</div>
+        </div>
+
+        <div class="step-box">
+            <h4>③ قياس النجاح</h4>
+            <ul>
+                <li>✓ مسؤول سلامة الملز يفتح الخطة → يرى الأساسي</li>
+                <li>✓ مدير القصيم يفتح الخطة → يرى التعديل</li>
+                <li>✓ يعدّل قيمة → يحفظ</li>
+                <li>✓ يحدّث الصفحة → يرى التعديل الجديد</li>
+            </ul>
+        </div>
+
+        <h2>الخطوة الرابعة: الاختبار</h2>
+
+        <div class="step-box">
+            <h4>① ماذا نفعل</h4>
+            <p>اختبار على المنشور بحسابات حقيقية</p>
+        </div>
+
+        <div class="step-box">
+            <h4>② المخرج</h4>
+            <div class="success-item">النظام يعمل كما هو مطلوب</div>
+            <div class="success-item">كل فرع يرى نسخته المحدّثة</div>
+        </div>
+
+        <h2>ملاحظات مهمة</h2>
+
+        <h3>ما الذي لا نعدّل</h3>
+        <div class="warning">
+            <strong>لا تلمس:</strong>
+            <ul style="margin-top: 10px;">
+                <li>✗ وثائق المعهد (cover, policy, الخطط الأصلية)</li>
+                <li>✗ الواجهة الحالية (فقط نضيف زر تحرير)</li>
+                <li>✗ نماذج الفحص (تبقى كما هي)</li>
+            </ul>
+        </div>
+
+        <h3>ما الذي يبقى ثابتاً</h3>
+        <div class="success-item">البنية (عدد البنود، العناوين)</div>
+        <div class="success-item">الصلاحيات (مدير الإدارة يعدّل فرعه فقط)</div>
+        <div class="success-item">الكود الموجود (نضيف فقط، لا نعدّل)</div>
+
+        <h2>الآن: هل الخطة واضحة؟</h2>
+
+        <div class="final-question">
+            <h3>استعد للبدء</h3>
+
+            <div class="option">
+                <input type="radio" name="answer" id="yes">
+                <label for="yes"><strong>✓ نعم، الخطة واضحة — ابدأ بالخطوة ١</strong></label>
+            </div>
+
+            <div class="option">
+                <input type="radio" name="answer" id="question">
+                <label for="question"><strong>❓ عندي سؤال عن الخطة</strong></label>
+            </div>
+
+            <div class="option">
+                <input type="radio" name="answer" id="edit">
+                <label for="edit"><strong>✏️ عندي تعديل على الخطة</strong></label>
+            </div>
+        </div>
+
+        <footer>
+            <p><strong>الحالة:</strong> جاهزة للموافقة</p>
+            <p>معهد الإدارة العامة — حزمة السلامة والصحة المهنية</p>
+        </footer>
+    </div>
+</body>
+</html>

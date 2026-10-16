@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>وثيقة تصميم — تخصيص الخطط والبطاقات حسب الفرع</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Kufi Arabic', 'IBM Plex Sans Arabic', sans-serif;
+            line-height: 1.8;
+            color: #2c3e50;
+            background: #f8f9fa;
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #0f4c3a 0%, #1a6b4f 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 8px;
+            margin-bottom: 40px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 2.2em;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .meta {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            font-size: 0.95em;
+            opacity: 0.95;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status {
+            background: rgba(255,193,7,0.3);
+            color: #fff8dc;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        h2 {
+            color: #0f4c3a;
+            font-size: 1.8em;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #d9b25a;
+        }
+
+        h3 {
+            color: #1a6b4f;
+            font-size: 1.3em;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+
+        h4 {
+            color: #2c3e50;
+            font-size: 1.1em;
+            margin-top: 20px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        blockquote {
+            background: #f0f8f5;
+            border-right: 4px solid #d9b25a;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+            color: #1a5c4f;
+            font-weight: 500;
+        }
+
+        ul, ol {
+            margin: 15px 0 15px 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        th {
+            background: #0f4c3a;
+            color: white;
+            padding: 15px;
+            text-align: right;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background: #f5f9f8;
+        }
+
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            direction: ltr;
+            text-align: left;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 500;
+        }
+
+        .check {
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        .cross {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .box {
+            background: #f0f8f5;
+            border-left: 4px solid #0f4c3a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .alert {
+            background: #fdeaea;
+            border-left: 4px solid #e74c3c;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            color: #c0392b;
+        }
+
+        .success {
+            background: #d5f4e6;
+            border-left: 4px solid #27ae60;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            color: #1e6b4f;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+            color: #7f8c8d;
+            font-size: 0.95em;
+        }
+
+        .decision-box {
+            background: linear-gradient(135deg, #f0f8f5 0%, #fff9e6 100%);
+            border: 2px solid #d9b25a;
+            padding: 25px;
+            margin: 30px 0;
+            border-radius: 8px;
+        }
+
+        .section-number {
+            display: inline-block;
+            background: #0f4c3a;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 35px;
+            margin-left: 10px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.5em;
+            }
+
+            h2 {
+                font-size: 1.3em;
+            }
+
+            .meta {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            table {
+                font-size: 0.9em;
+            }
+
+            th, td {
+                padding: 10px;
+            }
+        }
+
+        .checklist {
+            background: white;
+            border-left: 4px solid #0f4c3a;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .checklist-item {
+            margin: 10px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .checklist-item input {
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📋 وثيقة تصميم</h1>
+            <h2 style="color: #d9b25a; font-size: 1.3em;">تخصيص الخطط والبطاقات حسب الفرع</h2>
+            <div class="meta">
+                <div class="meta-item">
+                    <strong>التاريخ:</strong>
+                    <span>٢٠٢٦-١٠-١٦</span>
+                </div>
+                <div class="meta-item">
+                    <strong>الحالة:</strong>
+                    <span class="status">مسودة للاعتماد</span>
+                </div>
+            </div>
+        </header>
+
+        <h2>٠. الفهم أولاً</h2>
+
+        <h3>الغاية</h3>
+        <p><strong>ليست</strong> "إضافة ميزة تحرير" — بل:</p>
+        <blockquote>
+            إلغاء الفجوة بين الخطة الموحدة والواقع المختلف في كل فرع/إدارة، حتى يكون لدى كل فرع نسخة محدّثة من خطته الفعلية على النظام.
+        </blockquote>
+
+        <h3>المشكلة الحقيقية</h3>
+        <p><strong>الحالة الحالية:</strong></p>
+        <ul>
+            <li>الخطة الموحدة تقول: "استدعاء الطبيب الداخلي"</li>
+            <li>الفرع ليس فيه طبيب → يقول "هذا لا ينطبق علينا"</li>
+            <li>يعدّلها يدويّاً (Word/ورقة) → النسخة الرقمية عتيقة</li>
+            <li>الفريق يستخدم نسخة قديمة أو ملموسة → <strong>نتائج مختلفة عن الخطة</strong></li>
+        </ul>
+
+        <p><strong>السبب الجذري:</strong> الخطة <strong>موحدة</strong> لكن الواقع <strong>متعدد</strong>:</p>
+        <ul>
+            <li>فروع لها موارد مختلفة (طبيب، إسعاف خارجي)</li>
+            <li>إدارات مسؤولة مختلفة (شؤون إدارية، مرافق)</li>
+            <li>أشخاص مختلفين (الفني، المنسق، المدير)</li>
+        </ul>
+
+        <h3>الحل المقترح</h3>
+        <div class="box">
+            <p style="text-align: center; font-size: 1.1em; margin-bottom: 10px;"><strong>الخطة الأساسية (البنية الموحدة)</strong></p>
+            <p style="text-align: center; color: #0f4c3a; font-size: 1.3em;">↓</p>
+            <p style="text-align: center; font-size: 1.1em; margin: 10px 0;"><strong>[البيانات المشتركة]</strong></p>
+            <p style="text-align: center; color: #0f4c3a; font-size: 1.3em;">↓</p>
+            <p style="text-align: center; font-size: 1.1em;"><strong>نسخة مخصصة لكل فرع/إدارة</strong></p>
+            <p style="text-align: center; font-size: 0.95em; color: #666;">(تحتفظ بالبنية، تغيّر المحتوى)</p>
+        </div>
+
+        <p><strong>النتيجة:</strong></p>
+        <div class="success">
+            <p><span class="check">✓</span> نفس البنية (لا تعديل الكود)</p>
+            <p><span class="check">✓</span> محتوى مختلف (بيانات محدّثة)</p>
+            <p><span class="check">✓</span> نسخة دائماً على النظام (لا Word ولا ورقة)</p>
+            <p><span class="check">✓</span> كل فرع يرى خطته الفعلية</p>
+        </div>
+
+        <h2>١. البنية الحالية</h2>
+
+        <h3>الوثائق الموحدة (لا تُمس)</h3>
+        <div class="box">
+            <ul>
+                <li>١٧ خطة (سلامة + استجابة)</li>
+                <li>٢١ بطاقة دور</li>
+                <li>١٠ نماذج فحص (محتوى موحد)</li>
+                <li>٨+١ مكان (التصنيف الموحد)</li>
+            </ul>
+            <p style="margin-top: 15px; color: #666;"><strong>المصدر:</strong> وثائق المعهد (HTML)</p>
+            <p style="color: #666;"><strong>الكتابة:</strong> الخلفية فقط</p>
+        </div>
+
+        <h3>البيانات المتغيرة (قابلة للتعديل)</h3>
+        <div class="box">
+            <ul>
+                <li>الفروع والإدارات (departments)</li>
+                <li>المستخدمون والحسابات (users)</li>
+                <li>الهيكل التنظيمي</li>
+                <li>محتوى الخطط المخصصة</li>
+                <li>أسماء الأشخاص والأدوار</li>
+            </ul>
+            <p style="margin-top: 15px; color: #666;"><strong>المصدر:</strong> قاعدة البيانات</p>
+            <p style="color: #666;"><strong>الكتابة:</strong> الخلفية (من إدخال المستخدم)</p>
+        </div>
+
+        <h2>٢. المشكلة التفصيلية</h2>
+
+        <h3>سيناريوهات واقعية</h3>
+
+        <h4>الخطط (مثال)</h4>
+        <p><strong>المركز الرئيسي — خطة الاستجابة الطبية:</strong></p>
+        <div class="code-block">
+١. تقييم الحالة بواسطة: أي شخص حاضر
+٢. استدعاء الطبيب الداخلي: الطبيب أحمد (الملز ٥)
+٣. نقل المصاب: إلى العيادة الداخلية (الملز ٧)
+٤. الإجلاء: إن لزم → مستشفى الملك فيصل
+٥. الإبلاغ: مسؤول السلامة + الدفاع المدني
+        </div>
+
+        <p><strong>فرع بدون طبيب (مثلاً القصيم):</strong></p>
+        <div class="code-block">
+✗ الطبيب الداخلي غير موجود
+✗ العيادة الداخلية غير موجودة
+→ الخطة لا تنطبق!
+
+الفرع يعدّلها يدويّاً:
+١. تقييم الحالة
+٢. استدعاء الإسعاف الخارجي: ٩٩٧
+٣. نقل المصاب: إلى أقرب مستشفى
+٤. الإبلاغ: مسؤول السلامة المركز + الدفاع المدني
+        </div>
+
+        <h4>جدول المقارنة (مثال)</h4>
+        <p><strong>الملز (المركز الرئيسي) — جاهزية ٩٠%:</strong></p>
+        <div class="code-block">
+البند: المخطط الموضوعي للسلامة
+└─ اللائحة: يجب أن يكون موجوداً
+└─ الوضع الحالي: ✓ موجود
+└─ الإجراء: معتمد منذ ٢٠٢٥
+        </div>
+
+        <p><strong>القصيم (فرع) — جاهزية ٦٠%:</strong></p>
+        <div class="code-block">
+البند: المخطط الموضوعي للسلامة
+└─ اللائحة: يجب أن يكون موجوداً
+└─ الوضع الحالي: ✗ غير موجود
+└─ الإجراء: جاري الإعداد (موعد النهاية: ديسمبر ٢٠٢٦)
+        </div>
+
+        <h2>٣. الحل المقترح</h2>
+
+        <h3>المبدأ</h3>
+        <p style="font-size: 1.1em; text-align: center; background: #f0f8f5; padding: 15px; border-radius: 4px; margin: 20px 0;">
+            <strong>نفس البنية (الهيكل) + محتوى مختلف (البيانات)</strong>
+        </p>
+
+        <p><strong>ينطبق على أربعة عناصر:</strong></p>
+        <table>
+            <thead>
+                <tr>
+                    <th>العنصر</th>
+                    <th>الموحد (لا يتغير)</th>
+                    <th>المخصص (يتغير)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>خطة السلامة/الاستجابة</strong></td>
+                    <td>عناوين البنود</td>
+                    <td>الأسماء والأرقام والإدارات</td>
+                </tr>
+                <tr>
+                    <td><strong>بطاقة الدور</strong></td>
+                    <td>الدور والوصف</td>
+                    <td>الاسم والإدارة والمكان</td>
+                </tr>
+                <tr>
+                    <td><strong>جدول المقارنة</strong></td>
+                    <td>الأعمدة والبنود</td>
+                    <td>الوضع الحالي والإجراء والمسؤول والموعد</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>٤. التفاصيل</h2>
+
+        <h3>ما الذي يُمكن تخصيصه</h3>
+
+        <h4>أ) الخطط والبطاقات</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>العنصر</th>
+                    <th>مثال على التخصيص</th>
+                    <th>من الذي يعدّل</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>أسماء الأشخاص</td>
+                    <td>الطبيب أحمد → إسعاف خارجي</td>
+                    <td>مدير الإدارة</td>
+                </tr>
+                <tr>
+                    <td>أرقام الاتصال</td>
+                    <td>0123456</td>
+                    <td>مدير الإدارة</td>
+                </tr>
+                <tr>
+                    <td>الأماكن</td>
+                    <td>العيادة الداخلية → مستشفى الملك</td>
+                    <td>مدير الإدارة</td>
+                </tr>
+                <tr>
+                    <td>الإدارات المسؤولة</td>
+                    <td>شؤون إدارية</td>
+                    <td>مدير الإدارة</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>ب) جدول المقارنة</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>العنصر</th>
+                    <th>مثال على التخصيص</th>
+                    <th>من الذي يعدّل</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>الوضع الحالي</td>
+                    <td>✓ موجود / ✗ غير موجود</td>
+                    <td>مدير الإدارة</td>
+                </tr>
+                <tr>
+                    <td>الإجراء المتخذ</td>
+                    <td>"جاري الإعداد" أو "مكتمل"</td>
+                    <td>مدير الإدارة</td>
+                </tr>
+                <tr>
+                    <td>المسؤول</td>
+                    <td>اسم الشخص المسؤول</td>
+                    <td>مدير الإدارة</td>
+                </tr>
+                <tr>
+                    <td>الموعد النهائي</td>
+                    <td>تاريخ الانتهاء المتوقع</td>
+                    <td>مدير الإدارة</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>ما الذي لا يُمكن تخصيصه</h3>
+        <div class="alert">
+            <p><span class="cross">✗</span> عناوين البنود (البنية موحدة)</p>
+            <p><span class="cross">✗</span> عدد البنود (يُمكن إخفاء فقط، لا حذف)</p>
+            <p><span class="cross">✗</span> الأماكن الأساسية (HZ-00 إلى HZ-08)</p>
+            <p><span class="cross">✗</span> أنواع البلاغات (عادي، سري، عاجل)</p>
+            <p><span class="cross">✗</span> متطلبات اللائحة (الأعمدة في المقارنة)</p>
+        </div>
+
+        <h3>الصلاحيات</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>الدور</th>
+                    <th>الصلاحية</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>مدير الإدارة</strong></td>
+                    <td>تعديل التخصيصات الخاصة بإدارته فقط</td>
+                </tr>
+                <tr>
+                    <td><strong>مسؤول السلامة</strong></td>
+                    <td>رؤية كل التخصيصات، الموافقة على الحذف</td>
+                </tr>
+                <tr>
+                    <td><strong>الإدارة العليا</strong></td>
+                    <td>رؤية فقط (دون تعديل)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>٥. خطوات التطبيق</h2>
+
+        <h3>المرحلة ١: التصميم (الآن)</h3>
+        <div class="checklist">
+            <div class="checklist-item">
+                <input type="checkbox"> وثيقة التصميم (هذه الوثيقة)
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox"> رسم الشاشات (كيف يبدو التعديل)
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox"> اعتماد من المستخدم
+            </div>
+        </div>
+
+        <h3>المرحلة ٢: الكود (الأسبوع ١)</h3>
+        <div class="checklist">
+            <div class="checklist-item">
+                <input type="checkbox"> جداول plan_specializations في قاعدة البيانات
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox"> وظائف القراءة (أساسي + تخصيص)
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox"> وظائف الكتابة (حفظ التخصيص)
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox"> اختبارات الوحدة
+            </div>
+        </div>
+
+        <h3>المرحلة ٣: الواجهة (الأسبوع ٢)</h3>
+        <div class="checklist">
+            <div class="checklist-item">
+                <input type="checkbox"> شاشة عرض الخطة (مع تنبيه التخصيص)
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox"> شاشة التعديل (نموذج بسيط)
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox"> تاريخ التعديلات (من عدّل ومتى)
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox"> اختبار على جهاز المستخدم
+            </div>
+        </div>
+
+        <h3>المرحلة ٤: النشر</h3>
+        <div class="checklist">
+            <div class="checklist-item">
+                <input type="checkbox"> بيانات اختبار (خطط موحدة + تخصيصات)
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox"> نقل الخطط الحالية إذا كانت موجودة
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox"> تدريب الإدارات على التعديل
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox"> موافقة المستخدم النهائية
+            </div>
+        </div>
+
+        <h2>٦. السؤال المهم: هل نبدأ؟</h2>
+
+        <p><strong>قبل الإجابة — أتأكد:</strong></p>
+
+        <div class="decision-box">
+            <div class="checklist">
+                <div class="checklist-item">
+                    <input type="checkbox"> هل هذا الفهم صحيح؟
+                    <div style="margin-right: 30px; color: #666; font-size: 0.95em;">
+                        كل فرع/مبنى قد يحتاج تعديلات محلية على:
+                        <ul style="margin: 8px 0 0 15px;">
+                            <li>خطط السلامة</li>
+                            <li>خطط الاستجابة</li>
+                            <li>بطاقات الأدوار</li>
+                            <li>جدول المقارنة (الوضع الحالي والجاهزية)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="checklist-item">
+                    <input type="checkbox"> هل البيانات قابلة للتغيير؟
+                    <div style="margin-right: 30px; color: #666; font-size: 0.95em;">
+                        نعم، البيانات قابلة للتغيير دون ضرر الكود
+                    </div>
+                </div>
+                <div class="checklist-item">
+                    <input type="checkbox"> هل هذا يحقق الغاية؟
+                    <div style="margin-right: 30px; color: #666; font-size: 0.95em;">
+                        نعم، كل فرع سيكون لديه نسخة محدّثة على النظام وجاهزيته الفعلية
+                    </div>
+                </div>
+                <div class="checklist-item">
+                    <input type="checkbox"> هل الكود سيتحمل هذا؟
+                    <div style="margin-right: 30px; color: #666; font-size: 0.95em;">
+                        نعم، الكود يقرأ البيانات فقط (لا يعتمد على قيم محددة)
+                    </div>
+                </div>
+            </div>
+
+            <p style="margin-top: 25px; text-align: center; font-size: 1.1em;">
+                <strong style="color: #0f4c3a;">هل نبدأ بالمرحلة ١ (التصميم والرسومات) للأربعة عناصر؟</strong>
+            </p>
+        </div>
+
+        <footer>
+            <p><strong>الحالة:</strong> ⏳ في انتظار كلمة المستخدم "ابدأ"</p>
+            <p><strong>المرجع:</strong> هذه الوثيقة هي الأساس لكل خطوات التطبيق</p>
+            <p style="margin-top: 20px; font-size: 0.9em;">
+                معهد الإدارة العامة — حزمة السلامة والصحة المهنية<br>
+                ٢٠٢٦-١٠-١٦
+            </p>
+        </footer>
+    </div>
+</body>
+</html>
