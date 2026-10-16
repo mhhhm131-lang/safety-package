@@ -88,7 +88,8 @@ class IntentsTwoEnginesTest extends TestCase
         [$keys] = $this->shown($this->actingAs($salama)->get('/app')->assertOk()->getContent());
         sort($keys);
         // ٢٦-٩: السجلات الأربعة التي خرجت من «المزيد» ولا باب لها في مكان أو رسم تُقرأ من هنا (١٥ + ٤)
-        $expected = ['activate', 'book', 'competency', 'forms_log', 'gate', 'hazards', 'my_medical', 'my_reports', 'myforms', 'parties_log', 'party', 'plans', 'project', 'projects_log', 'roles', 'roles_map', 'sendform', 'worker', 'workers_log'];
+        // ٣١-٢ (قرار ٩٠): + «المقارنة مع اللائحة» لكل حساب في مبناه
+        $expected = ['activate', 'book', 'competency', 'compliance', 'forms_log', 'gate', 'hazards', 'my_medical', 'my_reports', 'myforms', 'parties_log', 'party', 'plans', 'project', 'projects_log', 'roles', 'roles_map', 'sendform', 'worker', 'workers_log'];
         $this->assertSame($expected, $keys);
         // كل زر يفتح
         foreach (IntentRegistry::forUser($salama) as $i) {

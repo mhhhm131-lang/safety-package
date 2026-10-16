@@ -104,6 +104,8 @@ class IntentRegistry
         $add(true, 'plans', 'خطة مكاني', $myPlace ? route('app.places.units.file', $myPlace).'#plans' : '/index.html', 'bi-map', $gEmergency, false,
             $myPlace ? 'خطة السلامة وخطة الاستجابة لـ'.$myPlace->name : 'خطط الأماكن التسعة');
         $add($active, 'my_medical', 'ملفي الطبي', route('emergency.medical.my-profile'), 'bi-heart-pulse', $gEmergency, false, 'اختياري — لا يطّلع عليه إلا طبيب العيادة');
+        // ٣١-٢ (قرار ٩٠، بكلمته «أليس أفضل» عن «أريد أن»): المقارنة مع اللائحة لمبنى الشخص — القراءة لكل حساب في مبناه، والتعديل لمن يعدّل كلام المبنى
+        $add($active, 'compliance', 'المقارنة مع اللائحة', route('app.compliance'), 'bi-clipboard-check', $gEmergency, false, 'جاهزية مبناي أمام لائحة مسؤول السلامة: المواد الست عشرة وبنودها');
 
         // ── الفريق الأولي ── الترشيح من ملف المكان (البند ٧)؛ هنا معرفة الدور والبطاقات
         // ١٩-٦ (قرار ٤٩): بطاقة الشخص مباشرة حين تكون له بطاقة واحدة، وإلا الفهرس
