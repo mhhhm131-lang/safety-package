@@ -44,6 +44,7 @@
 </p>
 <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
   <a class="btn btn-o btn-sm" href="{{ $plan->documentUrl() }}" target="_blank" rel="noopener"><i class="bi bi-file-earmark-text"></i> الوثيقة الأصلية (للصنف)</a>
+  <a class="btn btn-o btn-sm" href="{{ route('app.role-cards', ['b' => $place->building_id]) }}"><i class="bi bi-person-vcard"></i> بطاقات المبنى — الشاغلون وهواتفهم</a>
   @if($canEdit)<span class="small text-muted">الشكل للمعهد كله، والكلام لهذا المكان: عدّل من وأين وكيف والهاتف، أو اضغط «لا ينطبق هنا». العنوان ومتى والنافذة لا تُعدَّل. ما تعدّله هنا هو ما تقرؤه القائمة الحية وقت الطوارئ.</span>
   @else<span class="small text-muted">التعديل {{ $A::EDITORS }}.</span>@endif
 </div>
@@ -74,7 +75,10 @@
         @endforeach
         <td data-label="البطاقة">
           @forelse($s->cards() as $no => $c)
-            <a href="{{ $c['url'] }}" target="_blank" class="badge text-bg-{{ $no === $s->role_card_no ? 'dark' : 'light border text-dark' }} text-decoration-none" title="{{ $c['name'] }}">{{ $no }} {{ $c['name'] }}</a>
+            {{-- ٣٠-٣: بطاقة المبنى — اسمها وشاغلها وهاتفه من صفّها --}}
+            <div class="mb-1"><a href="{{ $c['url'] }}" target="_blank" class="badge text-bg-{{ $no === $s->role_card_no ? 'dark' : 'light border text-dark' }} text-decoration-none" title="{{ $c['name'] }}">{{ $no }} {{ $c['name'] }}</a>
+              @if($c['not_applicable'])<span class="badge text-bg-secondary">لا ينطبق هنا</span>@endif
+              @if($c['holder_name'] || $c['holder_phone'])<small class="d-block">{{ $c['holder_name'] ?? '' }}@if($c['holder_phone']) · <a href="tel:{{ $c['holder_phone'] }}" dir="ltr">{{ $c['holder_phone'] }}</a>@endif</small>@endif</div>
           @empty
             <span class="badge {{ $s->isLive() && !$s->not_applicable ? 'text-bg-danger' : 'text-bg-light border text-muted' }}">بلا بطاقة</span>
           @endforelse

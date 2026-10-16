@@ -43,12 +43,14 @@ class EmergencyIncidentStep extends Model
 
     public function getStatusLabel(): string { return self::STATUS_LABELS[$this->status] ?? $this->status; }
 
-    public function primaryCard(): ?array { return $this->role_card_no ? RoleCards::get($this->role_card_no) : null; }
+    /** ٣٠-٣: البطاقة في مبنى الحالة (الاسم والشاغل وهاتفه من صف المبنى). */
+    public function primaryCard(): ?array { return $this->role_card_no ? RoleCards::forBuilding($this->incident?->building_id, $this->role_card_no) : null; }
 
     public function cards(): array
     {
+        $b = $this->incident?->building_id;
         $out = [];
-        foreach ($this->role_cards ?? [] as $n) if ($c = RoleCards::get((int) $n)) $out[(int) $n] = $c;
+        foreach ($this->role_cards ?? [] as $n) if ($c = RoleCards::forBuilding($b, (int) $n)) $out[(int) $n] = $c;
         return $out;
     }
 

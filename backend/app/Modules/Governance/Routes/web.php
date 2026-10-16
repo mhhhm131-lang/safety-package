@@ -21,6 +21,11 @@ Route::middleware(['web', 'auth'])->prefix('app')->name('app.')->group(function 
     Route::get('/inbox/open', [\App\Modules\Governance\Controllers\InboxController::class, 'open'])->name('inbox.open'); // ١١-٥: فتح مهمة يعلّم إشعارها مقروءاً
     Route::get('/search', [\App\Modules\Governance\Controllers\SearchController::class, 'index'])->name('search'); // ١١-٤: الباب الثاني
     Route::get('/roles', [\App\Modules\Governance\Controllers\RolesController::class, 'index'])->name('roles'); // ٢٠-٦ (قرار ٥١): الأدوار والبطاقات — قراءة لأي حساب
+    // المرحلة ٣٠-٣ (قرار ٨٩): بطاقات الأدوار في مبنى الجلسة — كلام المبنى (الاسم، الوصف، المهام، الشاغل وهاتفه)؛ القراءة لكل حساب والتعديل في PlaceWordsAccess
+    $brc = \App\Modules\Governance\Controllers\BuildingRoleCardsController::class;
+    Route::get('/role-cards', [$brc, 'show'])->name('role-cards');
+    Route::post('/role-cards/{card}', [$brc, 'update'])->name('role-cards.update')->whereNumber('card');
+    Route::post('/role-cards/{card}/restore', [$brc, 'restore'])->name('role-cards.restore')->whereNumber('card');
     Route::middleware('permission:system.settings')->get('/settings', [\App\Modules\Governance\Controllers\SettingsController::class, 'index'])->name('settings'); // ١١-٤: الباب الثالث
     // ٢٨-٣ (قرار ٧٨): مبدّل المبنى لمن يرى أكثر من مبنى — الوثائق التشغيلية بمبنى الجلسة
     Route::post('/building/{building}', \App\Modules\Governance\Controllers\BuildingSwitchController::class)->name('building.switch')->whereNumber('building');

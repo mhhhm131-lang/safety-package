@@ -90,6 +90,25 @@ class RoleCards
     }
 
     /**
+     * ٣٠-٣ (قرار ٨٩): البطاقة **في مبناها** — الثابت في الكود (الرقم، الفئة، الدور/الفريق، الملف) وفوقه كلام المبنى من صفّه
+     * (الاسم كما في الملف أو كما عدّله، الوصف، الشاغل وهاتفه، «لا ينطبق هنا»). بلا مبنى أو بلا صف: الثابت وحده.
+     */
+    public static function forBuilding(?int $buildingId, int $no): ?array
+    {
+        $card = self::get($no);
+        if (!$card) return null;
+        $card += ['holder_name' => null, 'holder_phone' => null, 'not_applicable' => false, 'edited' => false, 'row_id' => null];
+        if (!$buildingId) return $card;
+        $row = \App\Modules\Emergency\Models\BuildingRoleCard::forBuilding($buildingId)->get($no);
+        if (!$row) return $card;
+        return array_merge($card, [
+            'name' => $row->name ?: $card['name'], 'desc' => $row->description ?? $card['desc'],
+            'holder_name' => $row->holder_name, 'holder_phone' => $row->holder_phone,
+            'not_applicable' => (bool) $row->not_applicable, 'edited' => $row->isEdited(), 'row_id' => $row->id,
+        ]);
+    }
+
+    /**
      * ١٩-٦ (قرار ٤٩): بطاقة الشخص — القيادة ببطاقة دورها؛ وعضو الفريق الأولي ببطاقة دوره في الفريق؛
      * ثم الدور الذي له بطاقة واحدة (الموظف ١٢)؛ ومن له أكثر من بطاقة (الفنيون والإسناد) أو لا بطاقة = null فيبقى الفهرس.
      */

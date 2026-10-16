@@ -35,6 +35,20 @@ final class PlaceWordsAccess
         return false;
     }
 
+    /**
+     * ٣٠-٣: كلام المبنى (بطاقات الأدوار: البطاقة للمبنى لا للمكان) — من يحرّر الخطتين كل مبنى؛ مدير الفرع ومنسق سلامة الفرع
+     * مباني فرعهما؛ مدير المرافق والمناوب مبناهما. منسق الإدارة ومديرها لا (البطاقة ليست لمكان بعينه).
+     */
+    public static function canEditBuilding(User $user, \App\Modules\Emergency\Models\EmergencyBuilding $building): bool
+    {
+        $p = $user->profile;
+        if (!$p || !$p->is_active) return false;
+        if (P::canPlans($user)) return true;
+        if (!BuildingContext::choices($user)->contains('id', (int) $building->id)) return false;
+        if (in_array($user->role(), ['branch_manager', 'facilities_manager', 'system_staff'], true)) return true;
+        return ScopeService::isBranchCoordinator($p);
+    }
+
     /** سجل «عدّله فلان في كذا يوم كذا»: مسؤول السلامة ومن يرى الكل، ومن يحرّر الخطتين. */
     public static function seesLog(User $user): bool
     {

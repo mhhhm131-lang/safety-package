@@ -122,15 +122,19 @@ class ResponsePlanStep extends Model
         return $t === '' ? null : $t;
     }
 
-    /** البطاقات المطابقة كمصفوفة [رقم => بيانات البطاقة]. */
+    /** ٣٠-٣: مبنى الخطوة (مبنى مكان خطتها) — البطاقات تُقرأ في مبناها. */
+    public function buildingId(): ?int { return $this->plan?->place?->building_id; }
+
+    /** البطاقات المطابقة كمصفوفة [رقم => بيانات البطاقة في مبناها]. */
     public function cards(): array
     {
+        $b = $this->buildingId();
         $out = [];
-        foreach ($this->role_cards ?? [] as $n) if ($c = RoleCards::get((int) $n)) $out[(int) $n] = $c;
+        foreach ($this->role_cards ?? [] as $n) if ($c = RoleCards::forBuilding($b, (int) $n)) $out[(int) $n] = $c;
         return $out;
     }
 
-    public function primaryCard(): ?array { return $this->role_card_no ? RoleCards::get($this->role_card_no) : null; }
+    public function primaryCard(): ?array { return $this->role_card_no ? RoleCards::forBuilding($this->buildingId(), $this->role_card_no) : null; }
 
     /** النافذة بصيغة مقروءة: «٠–٥ ث» أو «شرطية». */
     public function windowLabel(): string

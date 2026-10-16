@@ -39,6 +39,14 @@ class IpaSyncPlans extends Command
             }
             $this->table(['المكان', 'خطة السلامة', 'المهام', 'معدَّلة في المكان'], $rows);
         }
+        // ٣٠-٣ (قرار ٨٩): بطاقات الأدوار الـ٢١ لكل مبنى من ملفات role-cards/
+        if (Schema::hasTable('building_role_cards')) {
+            $rows = [];
+            foreach (app(\App\Modules\Emergency\Services\RoleCardSync::class)->sync($from, $force) as $code => $r) {
+                $rows[] = [$code, $r['status'], $r['cards'], $r['edited'], $r['missing'] ? implode('،', $r['missing']) : '—'];
+            }
+            $this->table(['المبنى', 'البطاقات', 'العدد', 'معدَّلة في المبنى', 'ملفات مفقودة'], $rows);
+        }
         return self::SUCCESS;
     }
 }

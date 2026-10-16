@@ -50,17 +50,24 @@ class ResponsePlan extends Model
     public function place(): BelongsTo { return $this->belongsTo(Place::class); }
     public function steps(): HasMany { return $this->hasMany(ResponsePlanStep::class, 'plan_id')->orderBy('sort'); }
 
+    /** ٣٠-٣: الخطوات تعرف خطتها (فمبناها) بلا استعلام لكل خطوة. */
+    private function stepsWithPlan()
+    {
+        foreach ($this->steps as $s) if (!$s->relationLoaded('plan')) $s->setRelation('plan', $this);
+        return $this->steps;
+    }
+
     /** خطوات المسارات (بلا الكشف والسيناريوهات). */
     public function pathSteps()
     {
-        return $this->steps->whereIn('path_key', self::LIVE_PATHS)->values();
+        return $this->stepsWithPlan()->whereIn('path_key', self::LIVE_PATHS)->values();
     }
 
     /** الخطوات مجمّعة بالمسار بترتيب الوثيقة. */
     public function stepsByPath(): array
     {
         $out = [];
-        foreach ($this->steps as $s) $out[$s->path_key][] = $s;
+        foreach ($this->stepsWithPlan() as $s) $out[$s->path_key][] = $s;
         return $out;
     }
 
@@ -79,9 +86,10 @@ class ResponsePlan extends Model
         $needed = [];
         foreach ($this->pathSteps() as $s) foreach ($s->role_cards ?? [] as $n) $needed[(int) $n] = true;
         $out = [];
+        $b = $this->place?->building_id;
         foreach (array_keys($needed) as $no) {
-            $card = \App\Modules\Emergency\Support\RoleCards::get($no);
-            if (!$card || !empty($card['none'])) continue;
+            $card = \App\Modules\Emergency\Support\RoleCards::forBuilding($b, $no);
+            if (!$card || !empty($card['none']) || !empty($card['not_applicable'])) continue; // ٣٠-٣: ما وسمه المبنى «لا ينطبق هنا» ليس دوراً بلا شاغل
             if (!empty($card['role']) && ($activeByRole[$card['role']] ?? 0) === 0) $out[] = $no;
             if (!empty($card['team']) && !array_intersect($card['team'], $memberKeys)) $out[] = $no;
         }

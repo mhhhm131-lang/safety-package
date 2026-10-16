@@ -38,7 +38,10 @@
             @if($s->who_text)<div class="text-muted">{{ $s->who_text }}</div>@endif
             @if($s->phone_text)<div><a href="tel:{{ $s->phone_text }}" dir="ltr"><i class="bi bi-telephone"></i> {{ $s->phone_text }}</a></div>@endif
             @forelse($s->cards() as $no => $c)
-              <a href="{{ $c['url'] }}" target="_blank" class="badge text-bg-{{ $no === $s->role_card_no ? 'dark' : 'light border text-dark' }} text-decoration-none" title="{{ $c['name'] }}">{{ $no }} {{ $c['name'] }}</a>
+              {{-- ٣٠-٣: بطاقة المبنى — شاغلها وهاتفه من صفّها --}}
+              <div class="mb-1"><a href="{{ $c['url'] }}" target="_blank" class="badge text-bg-{{ $no === $s->role_card_no ? 'dark' : 'light border text-dark' }} text-decoration-none" title="{{ $c['name'] }}">{{ $no }} {{ $c['name'] }}</a>
+                @if($c['not_applicable'])<span class="badge text-bg-secondary">لا ينطبق هنا</span>@endif
+                @if($c['holder_name'] || $c['holder_phone'])<small class="d-block">{{ $c['holder_name'] ?? '' }}@if($c['holder_phone']) · <a href="tel:{{ $c['holder_phone'] }}" dir="ltr">{{ $c['holder_phone'] }}</a>@endif</small>@endif</div>
             @empty
               <span class="badge text-bg-danger">بلا بطاقة</span>
             @endforelse
