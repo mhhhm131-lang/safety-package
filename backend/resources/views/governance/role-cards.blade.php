@@ -2,7 +2,7 @@
 @section('title', 'بطاقات الأدوار — '.$building->name)
 @section('content')
 {{-- المرحلة ٣٠-٣ (قرار ٨٩ «كلام المكان»): البطاقات الـ٢١ في مبنى الجلسة من الصفوف — الرقم والفئة والملف للصنف؛
-     الاسم والوصف والمهام والشاغل وهاتفه كلام المبنى بـ«تعديل» و«لا ينطبق هنا»؛ خطوات الاستجابة والقائمة الحية تقرأ بطاقة المبنى. --}}
+     اسم الدور والوصف والمهام والمكلّف وهاتفه كلام المبنى بـ«تعديل» و«لا ينطبق هنا»؛ خطوات الاستجابة والقائمة الحية تقرأ بطاقة المبنى. --}}
 @php($RC = \App\Modules\Emergency\Support\RoleCards::class)
 @php($C = \App\Modules\Emergency\Models\BuildingRoleCard::class)
 @php($AR = fn ($n) => strtr((string) $n, ['0' => '٠', '1' => '١', '2' => '٢', '3' => '٣', '4' => '٤', '5' => '٥', '6' => '٦', '7' => '٧', '8' => '٨', '9' => '٩']))
@@ -28,7 +28,7 @@
   الشكل للمعهد كله (الرقم والفئة والملف)، والكلام لهذا المبنى.</p>
 <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
   <a class="btn btn-o btn-sm" href="/role-cards/index.html" target="_blank" rel="noopener"><i class="bi bi-file-earmark-text"></i> ملفات البطاقات الأصلية</a>
-  @if($canEdit)<span class="small text-muted">عدّل الاسم أو الوصف أو المهام، وسمِّ شاغل البطاقة في مبناك وهاتفه، أو اضغط «لا ينطبق هنا». ما تكتبه هنا تقرؤه خطوات الاستجابة والقائمة الحية وقت الطوارئ.</span>
+  @if($canEdit)<span class="small text-muted">اسم الدور: ما هذه البطاقة · الوصف: أين يُمارَس أو ما حدّه · المكلّف: من يقوم به في مبناك اليوم وهاتفه. عدّل ما يختلف في مبناك، أو اضغط «لا ينطبق هنا». ما تكتبه هنا تقرؤه خطوات الاستجابة والقائمة الحية وقت الطوارئ.</span>
   @else<span class="small text-muted">التعديل لمدير الفرع ومنسق سلامته ومدير المرافق ومسؤول السلامة.</span>@endif
 </div>
 
@@ -49,7 +49,7 @@
             @if($c->holder_name || $c->holder_phone)
               <i class="bi bi-person"></i> <b>{{ $c->holder_name ?? '—' }}</b>
               @if($c->holder_phone) · <a href="tel:{{ $c->holder_phone }}" dir="ltr"><i class="bi bi-telephone"></i> {{ $c->holder_phone }}</a>@endif
-            @else<span class="text-muted">لم يُسمَّ شاغل هذه البطاقة في هذا المبنى بعد.</span>@endif
+            @else<span class="text-muted">لم يُسمَّ المكلّف بهذه البطاقة في هذا المبنى بعد.</span>@endif
           </div>
           @if($c->isEdited())<div class="rc-src">عدّله {{ $c->edited_by_name }} · {{ $c->edited_at->format('Y-m-d') }}@if($c->changedLabels()) · {{ implode('، ', $c->changedLabels()) }}@endif</div>@endif
         </div>
@@ -68,9 +68,9 @@
         <form method="post" action="{{ route('app.role-cards.update', $c) }}" data-card-form="{{ $c->id }}">@csrf
           <input type="hidden" name="_card" value="{{ $c->id }}">
           <div class="row g-2">
-            <div class="col-12 col-md-6"><label class="form-label small mb-0">الاسم</label><input name="name" class="form-control form-control-sm" maxlength="160" value="{{ old('name', $c->name) }}" required></div>
-            <div class="col-12 col-md-6"><label class="form-label small mb-0">الوصف</label><input name="description" class="form-control form-control-sm" maxlength="255" value="{{ old('description', $c->description) }}"></div>
-            <div class="col-12 col-md-6"><label class="form-label small mb-0">الشاغل في هذا المبنى</label><input name="holder_name" class="form-control form-control-sm" maxlength="120" value="{{ old('holder_name', $c->holder_name) }}" placeholder="الاسم"></div>
+            <div class="col-12 col-md-6"><label class="form-label small mb-0">اسم الدور <span class="text-muted">— ما هذه البطاقة، لا اسم الشخص</span></label><input name="name" class="form-control form-control-sm" maxlength="160" value="{{ old('name', $c->name) }}" required></div>
+            <div class="col-12 col-md-6"><label class="form-label small mb-0">الوصف <span class="text-muted">— أين يُمارَس أو ما حدّه</span></label><input name="description" class="form-control form-control-sm" maxlength="255" value="{{ old('description', $c->description) }}"></div>
+            <div class="col-12 col-md-6"><label class="form-label small mb-0">المكلّف بهذه البطاقة في هذا المبنى <span class="text-muted">— اسم الشخص</span></label><input name="holder_name" class="form-control form-control-sm" maxlength="120" value="{{ old('holder_name', $c->holder_name) }}" placeholder="اسم من يقوم بالدور اليوم"></div>
             <div class="col-12 col-md-6"><label class="form-label small mb-0">الهاتف</label><input name="holder_phone" class="form-control form-control-sm" maxlength="60" value="{{ old('holder_phone', $c->holder_phone) }}" dir="ltr" inputmode="tel" placeholder="يُنادى وقت الحالة"></div>
             @foreach($C::TASK_FIELDS as $f => $h)
               <div class="col-12 col-md-4"><label class="form-label small mb-0">{{ $h }} <span class="text-muted">— سطر لكل مهمة</span></label>
@@ -80,7 +80,7 @@
             @endforeach
           </div>
           <div class="d-flex flex-wrap gap-2 align-items-center mt-2">
-            <div class="form-check me-2"><input class="form-check-input" type="checkbox" name="not_applicable" value="1" id="na{{ $c->id }}" @checked(old('not_applicable', $c->not_applicable))><label class="form-check-label" for="na{{ $c->id }}">لا ينطبق هنا — لا شاغل لهذه البطاقة في هذا المبنى</label></div>
+            <div class="form-check me-2"><input class="form-check-input" type="checkbox" name="not_applicable" value="1" id="na{{ $c->id }}" @checked(old('not_applicable', $c->not_applicable))><label class="form-check-label" for="na{{ $c->id }}">لا ينطبق هنا — لا مكلّف بهذه البطاقة في هذا المبنى</label></div>
             <button class="btn btn-g btn-sm">حفظ</button>
             <button type="button" class="btn btn-o btn-sm rc-cancel" data-for="e{{ $c->id }}">إلغاء</button>
           </div>

@@ -20,10 +20,11 @@ class BuildingRoleCard extends Model
     protected $casts = ['source' => 'array', 'not_applicable' => 'boolean', 'edited_at' => 'datetime', 'synced_at' => 'datetime', 'card_no' => 'integer'];
 
     /** خانات كلام المبنى بعناوينها. */
+    /** بكلمته «موافق» (٢٠٢٦-١٠-١٦): «اسم الدور» (ما هذه البطاقة) · «الوصف» (أين يُمارَس أو ما حدّه) · «المكلّف» (من يقوم به في هذا المبنى اليوم) — «الشاغل» محجوزة لشاغل المبنى الذي يبلّغ */
     public const WORD_LABELS = [
-        'name' => 'الاسم', 'description' => 'الوصف',
+        'name' => 'اسم الدور', 'description' => 'الوصف',
         'tasks_proactive' => 'المهام الاستباقية', 'tasks_operational' => 'المهام التشغيلية', 'tasks_response' => 'مهام الاستجابة',
-        'holder_name' => 'الشاغل', 'holder_phone' => 'الهاتف',
+        'holder_name' => 'المكلّف', 'holder_phone' => 'الهاتف',
     ];
 
     public const WORD_FIELDS = ['name', 'description', 'tasks_proactive', 'tasks_operational', 'tasks_response', 'holder_name', 'holder_phone'];
