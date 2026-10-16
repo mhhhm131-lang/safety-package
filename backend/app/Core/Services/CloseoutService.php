@@ -46,8 +46,8 @@ class CloseoutService
         'permit_attachments', 'permit_deviations', 'permit_events', 'permit_requirements',
         'permit_risks', 'permit_trades', 'permit_workers', 'permits',
         'equipment_inspections', 'equipment',
-        // النماذج الرقمية
-        'form_answers', 'form_submissions', 'form_assignments',
+        // النماذج الرقمية (٢٩-٤: جولات بطاقة الإدارة بعد تكليفاتها وتعبئاتها التي تشير إليها)
+        'form_answers', 'form_submissions', 'form_assignments', 'form_rounds',
         'form_fields', 'form_template_risks', 'form_templates',
         // المشاريع والمقاولون والعمال
         'manhour_logs', 'competency_gaps',
@@ -175,6 +175,7 @@ class CloseoutService
             'النماذج الرقمية'      => ['form_templates'],
             'تكليفات النماذج'      => ['form_assignments'],
             'تعبئات النماذج'       => ['form_submissions'],
+            'جولات بطاقة الإدارة'  => ['form_rounds'], // ٢٩-٤
             'الأطراف الخارجية'     => ['external_parties'],
             'المشاريع'             => ['projects'],
             'العمال'               => ['workers'],

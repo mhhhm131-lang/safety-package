@@ -39,18 +39,20 @@ class FormAssignment extends Model
         'role'  => 'بالدور',
         'unit'  => 'بالوحدة',
         'place' => 'بالمكان',
+        'round' => 'بالجولة', // ٢٩-٤
     ];
 
     protected $fillable = [
-        'form_id', 'assigned_to_id', 'building_id', 'organization_unit_id', 'status', 'due_date', 'source', 'source_value',
-        'reminded_at', 'completed_at', 'assigned_by_id', 'created_at',
+        'form_id', 'assigned_to_id', 'building_id', 'organization_unit_id', 'round_id', 'status', 'due_date', 'source', 'source_value',
+        'reminded_at', 'completed_at', 'draft', 'draft_saved_at', 'assigned_by_id', 'created_at',
     ];
 
     protected $casts = [
-        'due_date'     => 'date',
-        'reminded_at'  => 'datetime',
-        'completed_at' => 'datetime',
-        'created_at'   => 'datetime',
+        'due_date'       => 'date',
+        'reminded_at'    => 'datetime',
+        'completed_at'   => 'datetime',
+        'draft_saved_at' => 'datetime',
+        'created_at'     => 'datetime',
     ];
 
     protected $attributes = ['status' => self::STATUS_PENDING, 'source' => 'user'];
@@ -71,6 +73,16 @@ class FormAssignment extends Model
     public function assignedBy(): BelongsTo { return $this->belongsTo(User::class, 'assigned_by_id'); }
     public function submission(): HasOne    { return $this->hasOne(FormSubmission::class, 'assignment_id'); }
     public function organizationUnit(): BelongsTo { return $this->belongsTo(OrganizationUnit::class); }
+    /** ٢٩-٤: الجولة التي كُلّف فيها (بطاقة الإدارة)، إن كانت */
+    public function round(): BelongsTo      { return $this->belongsTo(FormRound::class, 'round_id'); }
+
+    /** ٢٩-٤: المسودة المحفوظة آلياً — بمفاتيح الحقول كما تُرسلها الشاشة (`fields[id]`) */
+    public function draftValues(): array
+    {
+        $v = $this->draft ? json_decode((string) $this->draft, true) : null;
+
+        return is_array($v) ? $v : [];
+    }
 
     public function getStatusLabel(): string { return self::STATUS_LABELS[$this->status] ?? $this->status; }
     public function getSourceLabel(): string { return self::SOURCE_LABELS[$this->source] ?? $this->source; }

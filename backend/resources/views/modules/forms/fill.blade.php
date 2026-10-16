@@ -19,6 +19,18 @@
       @if($form->description)<p class="text-muted small mt-2 mb-0">{{ $form->description }}</p>@endif
     </div>
 
+    @if($header)
+      {{-- ٢٩-٤ (قرار ٨٨ §٢): رأس البطاقة يملؤه النظام — الإدارة، مديرها، عدد موظفيها، الجولة --}}
+      <div class="card mb-3" data-round-header>
+        <div class="card-body py-2 small d-flex flex-wrap gap-3">
+          <span><i class="bi bi-diagram-3"></i> الإدارة: <strong>{{ $header['unit'] }}</strong></span>
+          <span><i class="bi bi-person-badge"></i> مديرها: <strong>{{ $header['manager'] }}</strong></span>
+          <span><i class="bi bi-people"></i> موظفوها: <strong>{{ $header['employees'] }}</strong></span>
+          <span><i class="bi bi-arrow-repeat"></i> الجولة: <strong>{{ $header['round_no'] }}</strong></span>
+        </div>
+      </div>
+    @endif
+
     @if($form->intro)
       <div class="card mb-3 border-warning">
         <div class="card-header bg-warning-subtle"><i class="bi bi-card-text"></i> اقرأ قبل التعبئة</div>
@@ -26,7 +38,7 @@
       </div>
     @endif
 
-    <form method="post" action="{{ route('forms.submit', $form) }}" enctype="multipart/form-data" id="fillForm">
+    <form method="post" action="{{ route('forms.submit', $form) }}" enctype="multipart/form-data" id="fillForm" @if($autosave) data-draft-url="{{ route('forms.draft', $form) }}" @endif>
       @csrf
       <div class="card">
         <div class="card-body">
@@ -125,7 +137,7 @@
                         @if($cd['attach'])
                           <input type="file" name="photos[{{ $field->id }}]" class="form-control form-control-sm mt-1 @error('photos.'.$field->id) is-invalid @enderror"
                                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,image/*">
-                          <div class="form-text">أو ارفع الوثيقة: ملف واحد، ١٠ ميجابايت حداً أقصى.</div>
+                          <div class="form-text">أو ارفع الوثيقة: ملف واحد، ١٠ ميجابايت حداً أقصى.@if($autosave) الوثيقة تُرفق عند الإرسال، لا تُحفظ في المسودة.@endif</div>
                         @endif
                         @error($key.'.evidence')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
                       </div>
@@ -273,8 +285,12 @@
               </label>
             </div>
           @endif
-          <div class="card-footer d-flex justify-content-between align-items-center">
+          <div class="card-footer d-flex justify-content-between align-items-center gap-2 flex-wrap">
             <small class="text-muted">{{ $form->allows_anonymous ? 'لا يمكن التعديل بعد الإرسال.' : 'تُسجَّل تعبئتك باسمك ووقتها. لا يمكن التعديل بعد الإرسال.' }}</small>
+            @if($autosave)
+              {{-- ٢٩-٤: حفظ آلي للمسودة على الخادم — تعبئة على أيام ومن أي جهاز --}}
+              <small class="text-muted" data-autosave data-state="idle"><i class="bi bi-cloud-check"></i> {{ $assignment->draft_saved_at ? 'مسودة محفوظة '.$assignment->draft_saved_at->format('Y-m-d H:i') : 'يُحفظ تلقائياً وأنت تكتب' }}</small>
+            @endif
             <button class="btn btn-g"><i class="bi bi-send"></i> إرسال</button>
           </div>
         @endif
@@ -375,6 +391,29 @@ document.querySelectorAll('.ack-item').forEach(function (box) {
   box.querySelectorAll('.ack-yn').forEach(function (r) { r.addEventListener('change', sync); });
   sync();
 });
+
+// ٢٩-٤: حفظ آلي للمسودة على الخادم (النص والاختيارات؛ الملفات تُرفق عند الإرسال)
+(function () {
+  var form = document.getElementById('fillForm'), ind = document.querySelector('[data-autosave]');
+  if (!form || !ind || !form.dataset.draftUrl) return;
+  var timer = null, submitting = false, token = (document.querySelector('meta[name=csrf-token]') || {}).content || '';
+  function save() {
+    if (submitting) return; // الإرسال النهائي يحفظ كل شيء — لا مسودة تتعارض معه
+    var fd = new FormData(form), params = new URLSearchParams();
+    fd.forEach(function (v, k) { if (typeof v === 'string' && k !== '_token' && k !== 'reveal_name') params.append(k, v); });
+    fetch(form.dataset.draftUrl, {
+      method: 'PUT', credentials: 'same-origin', body: params, keepalive: true,
+      headers: {'X-CSRF-TOKEN': token, 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'}
+    }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      ind.dataset.state = j ? 'saved' : 'error';
+      ind.innerHTML = j ? '<i class="bi bi-cloud-check"></i> حُفظ تلقائياً ' + j.saved_at : '<i class="bi bi-cloud-slash"></i> لم يُحفظ — تحقق من الاتصال';
+    }).catch(function () { ind.dataset.state = 'error'; ind.innerHTML = '<i class="bi bi-cloud-slash"></i> لم يُحفظ — تحقق من الاتصال'; });
+  }
+  function queue(ms) { clearTimeout(timer); ind.dataset.state = 'pending'; ind.textContent = 'يحفظ…'; timer = setTimeout(save, ms); }
+  form.addEventListener('input', function () { queue(1200); });
+  form.addEventListener('change', function () { queue(400); });
+  form.addEventListener('submit', function () { submitting = true; clearTimeout(timer); });
+})();
 
 // منع الإرسال بلا توقيع في الحقول الإلزامية (المتصفح لا يتحقق من حقل مخفي)
 document.getElementById('fillForm')?.addEventListener('submit', function (e) {

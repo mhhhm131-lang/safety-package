@@ -78,6 +78,19 @@ class FormNotifier
         }
     }
 
+    /** ٢٩-٤: اعتمد المدير بطاقة إدارته — يُعلَم مسؤول السلامة والمناوب (٢٩-٥: ليرسلا الإقرارات). */
+    public function roundApproved(\App\Modules\Form\Models\FormRound $round, \App\Models\User $by): void
+    {
+        $unit = $round->organizationUnit?->name ?? '—';
+        $this->inbox->notifyRoles(
+            ['system_admin', 'system_staff'],
+            'form.round',
+            'عادت بطاقة إدارة «'.$unit.'» — الجولة '.$round->round_no,
+            'اعتمدها مديرها '.$by->name.': «البيانات صحيحة وأعتمدها».',
+            "/app/forms/rounds/{$round->id}",
+        );
+    }
+
     /** عند توليد نموذج من خطر: يُعلَم مسؤول السلامة والمناوب ليكلّفا به. */
     public function generatedFromRisks(FormTemplate $form, int $riskCount): void
     {

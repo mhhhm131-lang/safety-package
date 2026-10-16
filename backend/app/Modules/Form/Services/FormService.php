@@ -105,6 +105,8 @@ class FormService
      * تكليف مجموعة مستخدمين. غير تكراري: من كُلّف سابقاً بالنموذج نفسه لا يُكرَّر تكليفه،
      * وتُحدَّث مهلته إن تغيّرت. يعيد عدد التكليفات الجديدة.
      *
+     * ٢٩-٤ `$roundId`: التكليف في جولة — القيد الفريد (النموذج، المكلَّف، الجولة) فيُكلَّف المدير بالبطاقة نفسها كل جولة.
+     *
      * @param array<int> $userIds
      */
     public function assignToUsers(
@@ -114,6 +116,7 @@ class FormService
         ?int $actorId = null,
         string $source = 'user',
         ?string $sourceValue = null,
+        ?int $roundId = null,
     ): int {
         $userIds = array_values(array_unique(array_filter(array_map('intval', $userIds))));
         if ($userIds === []) {
@@ -121,18 +124,19 @@ class FormService
         }
 
         // ٢٩-٠: التكليف القائم يُسأل عنه في المعهد كله لا في مباني المرسل — وإلا تكرّر التكليف وسقط القيد الفريد
-        $existing = FormAssignment::withoutGlobalScope('building')->where('form_id', $form->id)
+        $inRound = fn ($q) => $roundId === null ? $q->whereNull('round_id') : $q->where('round_id', $roundId);
+        $existing = $inRound(FormAssignment::withoutGlobalScope('building')->where('form_id', $form->id))
             ->whereIn('assigned_to_id', $userIds)
             ->pluck('assigned_to_id')
             ->all();
 
         $created = [];
-        DB::transaction(function () use ($form, $userIds, $existing, $dueDate, $actorId, $source, $sourceValue, &$created) {
+        DB::transaction(function () use ($form, $userIds, $existing, $dueDate, $actorId, $source, $sourceValue, $roundId, $inRound, &$created) {
             foreach ($userIds as $userId) {
                 if (in_array($userId, $existing, true)) {
                     // تكليف قائم: تُحدَّث المهلة فقط، ولا يُنشأ تكليف ثانٍ
                     if ($dueDate) {
-                        FormAssignment::withoutGlobalScope('building')->where('form_id', $form->id)
+                        $inRound(FormAssignment::withoutGlobalScope('building')->where('form_id', $form->id))
                             ->where('assigned_to_id', $userId)
                             ->where('status', '!=', FormAssignment::STATUS_COMPLETED)
                             ->update(['due_date' => $dueDate]);
@@ -142,6 +146,7 @@ class FormService
                 $created[] = FormAssignment::create([
                     'form_id'        => $form->id,
                     'assigned_to_id' => $userId,
+                    'round_id'       => $roundId,
                     'due_date'       => $dueDate,
                     'source'         => $source,
                     'source_value'   => $sourceValue,
@@ -235,9 +240,7 @@ class FormService
         $anonymous = $anonymous && $form->allows_anonymous;
 
         return DB::transaction(function () use ($form, $userId, $values, $files, $signatures, $ip, $fields, $anonymous) {
-            $assignment = FormAssignment::where('form_id', $form->id)
-                ->where('assigned_to_id', $userId)
-                ->first();
+            $assignment = $this->openAssignment($form, $userId); // ٢٩-٤: التكليف المفتوح (أحدث جولة)
 
             if ($anonymous) {
                 $scope = OwnerScope::of($userId);
@@ -248,6 +251,7 @@ class FormService
                     'submitted_by_id'      => null,
                     'building_id'          => $scope['building_id'],
                     'organization_unit_id' => $scope['organization_unit_id'],
+                    'round_id'             => $assignment?->round_id, // الإدارة والجولة فقط
                     'submitted_at'         => $day,
                     'submitted_ip'         => null,
                     'created_at'           => $day,
@@ -257,6 +261,7 @@ class FormService
                     'form_id'         => $form->id,
                     'assignment_id'   => $assignment?->id,
                     'submitted_by_id' => $userId,
+                    'round_id'        => $assignment?->round_id,
                     'submitted_at'    => now(),
                     'submitted_ip'    => $ip,
                 ]);
@@ -335,14 +340,38 @@ class FormService
                 $answer->save();
             }
 
-            // التكليف يُغلق بالتعبئة (وهذا هو المعنى الوحيد لـ«مكتمل»).
+            // التكليف يُغلق بالتعبئة (وهذا هو المعنى الوحيد لـ«مكتمل»)، وتُمسح مسودته (٢٩-٤).
             $assignment?->update([
-                'status'       => FormAssignment::STATUS_COMPLETED,
-                'completed_at' => now(),
+                'status'         => FormAssignment::STATUS_COMPLETED,
+                'completed_at'   => now(),
+                'draft'          => null,
+                'draft_saved_at' => null,
             ]);
 
             return $submission->fresh(['answers']);
         });
+    }
+
+    /** ٢٩-٤: تكليف المستخدم بالنموذج — المفتوح أولاً (أحدث جولة)، وإلا الأحدث. */
+    public function openAssignment(FormTemplate $form, int $userId): ?FormAssignment
+    {
+        return FormAssignment::where('form_id', $form->id)->where('assigned_to_id', $userId)
+            ->orderByRaw("CASE status WHEN 'completed' THEN 1 ELSE 0 END")
+            ->orderByDesc('id')
+            ->first();
+    }
+
+    /**
+     * ٢٩-٤: حفظ آلي للمسودة على الخادم (تعبئة على أيام، من أي جهاز). النص والاختيارات فقط؛ الوثائق تُرفق عند الإرسال.
+     * @throws \InvalidArgumentException
+     */
+    public function saveDraft(FormAssignment $assignment, array $values): void
+    {
+        $json = json_encode($values, JSON_UNESCAPED_UNICODE);
+        if ($json === false || strlen($json) > 200_000) {
+            throw new \InvalidArgumentException('المسودة أكبر من الحد.');
+        }
+        $assignment->forceFill(['draft' => $json, 'draft_saved_at' => now()])->save();
     }
 
     /**

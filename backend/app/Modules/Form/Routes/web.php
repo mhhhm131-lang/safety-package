@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Form\Controllers\FormController;
+use App\Modules\Form\Controllers\FormRoundController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,6 +22,13 @@ Route::middleware(['web', 'auth'])->prefix('app')->group(function () {
         Route::post('/{form}/fill', [FormController::class, 'submit'])->name('submit')->whereNumber('form');
         Route::get('/{form}/submitted', [FormController::class, 'submitted'])->name('submitted')->whereNumber('form');
         Route::get('/{form}/answers/{answer}/file', [FormController::class, 'answerFile'])->name('answers.file');
+        Route::put('/{form}/draft', [FormController::class, 'saveDraft'])->name('draft')->whereNumber('form'); // ٢٩-٤: حفظ آلي للمسودة
+
+        // ٢٩-٤: جولات بطاقة الإدارة — الصفحة لمن يرى وحدتها أو كُلّف فيها (السياسة)، والفتح لمن يملك الإرسال، والاعتماد لمدير الإدارة
+        Route::get('/rounds', [FormRoundController::class, 'index'])->name('rounds.index')->middleware('permission:form.list');
+        Route::post('/rounds', [FormRoundController::class, 'store'])->name('rounds.store')->middleware('permission:form.send');
+        Route::get('/rounds/{round}', [FormRoundController::class, 'show'])->name('rounds.show')->whereNumber('round');
+        Route::post('/rounds/{round}/approve', [FormRoundController::class, 'approve'])->name('rounds.approve')->whereNumber('round');
 
         // إدارة النماذج
         Route::middleware('permission:form.list')->group(function () {

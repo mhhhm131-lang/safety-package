@@ -7,6 +7,7 @@
   <h1 class="h4 m-0"><i class="bi bi-ui-checks me-2"></i>النماذج الرقمية</h1>
   <div class="ms-auto d-flex gap-2 flex-wrap">
     <a href="{{ route('forms.mine') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-inbox"></i> نماذجي</a>
+    <a href="{{ route('forms.rounds.index') }}" class="btn btn-sm btn-outline-secondary" data-rounds-link><i class="bi bi-arrow-repeat"></i> جولات بطاقة الإدارة</a>
     @if($me->can_('form.create'))
       <a href="{{ route('forms.generate') }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-magic"></i> توليد من المخاطر</a>
       <a href="{{ route('forms.create') }}" class="btn btn-sm btn-g"><i class="bi bi-plus-lg"></i> نموذج جديد</a>

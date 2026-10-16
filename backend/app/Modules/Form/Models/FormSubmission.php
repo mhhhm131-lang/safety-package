@@ -24,7 +24,7 @@ class FormSubmission extends Model
     public const UPDATED_AT = null;
 
     protected $fillable = [
-        'form_id', 'assignment_id', 'submitted_by_id', 'building_id', 'organization_unit_id', 'submitted_at', 'submitted_ip', 'created_at',
+        'form_id', 'assignment_id', 'submitted_by_id', 'building_id', 'organization_unit_id', 'round_id', 'submitted_at', 'submitted_ip', 'created_at',
     ];
 
     protected $casts = [
@@ -49,5 +49,6 @@ class FormSubmission extends Model
     public function assignment(): BelongsTo  { return $this->belongsTo(FormAssignment::class, 'assignment_id'); }
     public function submittedBy(): BelongsTo { return $this->belongsTo(User::class, 'submitted_by_id'); }
     public function organizationUnit(): BelongsTo { return $this->belongsTo(OrganizationUnit::class); }
+    public function round(): BelongsTo       { return $this->belongsTo(FormRound::class, 'round_id'); } // ٢٩-٤
     public function answers(): HasMany       { return $this->hasMany(FormAnswer::class, 'submission_id'); }
 }

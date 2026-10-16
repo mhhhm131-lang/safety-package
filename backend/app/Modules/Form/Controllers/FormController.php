@@ -12,6 +12,7 @@ use App\Modules\Form\Models\FormTemplate;
 use App\Modules\Form\Services\FormNotifier;
 use App\Modules\Form\Services\FormService;
 use App\Modules\Form\Services\FormVisibilityService;
+use App\Modules\Form\Services\RoundService;
 use App\Modules\Governance\Models\OrganizationUnit;
 use App\Modules\Governance\Models\Place;
 use App\Modules\Governance\Models\UserProfile;
@@ -337,11 +338,48 @@ class FormController extends Controller
             }
         }
 
+        // ٢٩-٤: التكليف المفتوح (أحدث جولة)؛ مسودته المحفوظة آلياً تعود إلى الشاشة؛ ورأس الجولة يملؤه النظام
+        $assignment = $this->forms->openAssignment($form, Auth::id());
+        $autosave = $assignment !== null && !$form->allows_anonymous; // لا مسودة في القالب السري: تربط الإجابة بالشخص
+        if ($autosave && $assignment->draft !== null && !request()->session()->hasOldInput()) {
+            request()->session()->flash('_old_input', ['fields' => $assignment->draftValues()]);
+        }
+        $header = null;
+        if ($round = $assignment?->round) {
+            $unit = $round->organizationUnit;
+            $header = [
+                'unit'      => $unit?->name ?? '—',
+                'manager'   => $assignment->assignedTo?->name ?? Auth::user()->name,
+                'employees' => $unit ? RoundService::employeeCount($unit) : 0,
+                'round_no'  => $round->round_no,
+            ];
+        }
+
         return view('modules.forms.fill', [
             'form'       => $form,
-            'assignment' => FormAssignment::where('form_id', $form->id)->where('assigned_to_id', Auth::id())->first(),
+            'assignment' => $assignment,
             'facts'      => $facts,
+            'header'     => $header,
+            'autosave'   => $autosave,
         ]);
+    }
+
+    /** ٢٩-٤: حفظ آلي للمسودة — للمكلَّف وتكليفه مفتوح؛ ولا مسودة في القالب السري. */
+    public function saveDraft(Request $request, FormTemplate $form)
+    {
+        $this->authorize('fill', $form);
+        abort_if($form->allows_anonymous, 422, 'لا مسودة في النموذج السري.');
+        $assignment = $this->forms->openAssignment($form, Auth::id());
+        abort_if(!$assignment || !$assignment->isOpen(), 404);
+        $data = $request->validate(['fields' => ['nullable', 'array']]);
+
+        try {
+            $this->forms->saveDraft($assignment, $data['fields'] ?? []);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
+
+        return response()->json(['saved_at' => now()->format('H:i')]);
     }
 
     public function submit(Request $request, FormTemplate $form)
