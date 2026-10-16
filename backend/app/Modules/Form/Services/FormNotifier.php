@@ -78,15 +78,15 @@ class FormNotifier
         }
     }
 
-    /** ٢٩-٤: اعتمد المدير بطاقة إدارته — يُعلَم مسؤول السلامة والمناوب (٢٩-٥: ليرسلا الإقرارات). */
-    public function roundApproved(\App\Modules\Form\Models\FormRound $round, \App\Models\User $by): void
+    /** ٢٩-٤: اعتمد المدير بطاقة إدارته — يُعلَم مسؤول السلامة والمناوب، ومعه ما فعله النظام بالإقرار السري (٢٩-٥). */
+    public function roundApproved(\App\Modules\Form\Models\FormRound $round, \App\Models\User $by, string $ackNote = ''): void
     {
         $unit = $round->organizationUnit?->name ?? '—';
         $this->inbox->notifyRoles(
             ['system_admin', 'system_staff'],
             'form.round',
             'عادت بطاقة إدارة «'.$unit.'» — الجولة '.$round->round_no,
-            'اعتمدها مديرها '.$by->name.': «البيانات صحيحة وأعتمدها».',
+            'اعتمدها مديرها '.$by->name.': «البيانات صحيحة وأعتمدها».'.($ackNote !== '' ? ' '.$ackNote : ''),
             "/app/forms/rounds/{$round->id}",
         );
     }

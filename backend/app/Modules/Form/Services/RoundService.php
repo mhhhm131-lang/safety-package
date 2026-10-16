@@ -24,6 +24,7 @@ final class RoundService
     public function __construct(
         private readonly FormService $forms,
         private readonly FormNotifier $notifier,
+        private readonly AckService $acks,
     ) {}
 
     /** مدير الوحدة نفسها (أدوار المديرين الستة — قرار ٦٩) بحساب مفعّل؛ لا مدير ما فوقها. */
@@ -103,6 +104,12 @@ final class RoundService
         $round->addLog('approved', $actor);
         $round->save();
 
-        $this->notifier->roundApproved($round, $actor);
+        // ٢٩-٥ (بكلمته): بعد التأكيد يرسله النظام لجميع موظفي الإدارة — آلياً، لا بزر
+        $this->acks->generate($round, $actor);
+        $log = $round->log ?? [];
+        $last = end($log);
+        $ackNote = ($last['action'] ?? '') === 'acks_sent' ? (string) $last['note'] : 'لم يُرسل الإقرار السري: '.(string) ($last['note'] ?? '');
+
+        $this->notifier->roundApproved($round, $actor, $ackNote);
     }
 }

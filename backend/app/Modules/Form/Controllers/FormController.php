@@ -13,6 +13,7 @@ use App\Modules\Form\Services\FormNotifier;
 use App\Modules\Form\Services\FormService;
 use App\Modules\Form\Services\FormVisibilityService;
 use App\Modules\Form\Services\RoundService;
+use App\Modules\Form\Support\NonMaterialPackage;
 use App\Modules\Governance\Models\OrganizationUnit;
 use App\Modules\Governance\Models\Place;
 use App\Modules\Governance\Models\UserProfile;
@@ -349,7 +350,7 @@ class FormController extends Controller
             $unit = $round->organizationUnit;
             $header = [
                 'unit'      => $unit?->name ?? '—',
-                'manager'   => $assignment->assignedTo?->name ?? Auth::user()->name,
+                'manager'   => $round->cardAssignment()?->assignedTo?->name ?? '—', // ٢٩-٥: مدير الإدارة لا المعبِّئ (الموظف في الإقرار)
                 'employees' => $unit ? RoundService::employeeCount($unit) : 0,
                 'round_no'  => $round->round_no,
             ];
@@ -418,6 +419,18 @@ class FormController extends Controller
                 $names["photos.{$field->id}"]          = 'الوثيقة';
                 continue;
             }
+            if ($field->isLadder()) {
+                // ٢٩-٥: أربع عبارات نعم/لا، و«لا ينطبق على عملي»، و«ما الواقع» — إلزامها عند «لا» على «أطبّقه» يُفحص بعد التحقق
+                $rules["fields.{$field->id}"]    = ['nullable', 'array'];
+                $rules["fields.{$field->id}.na"] = ['nullable', 'boolean'];
+                foreach (array_keys(NonMaterialPackage::EMPLOYEE_STATEMENTS) as $k) {
+                    $rules["fields.{$field->id}.{$k}"] = ['nullable', 'in:'.FormField::LADDER_YES.','.FormField::LADDER_NO];
+                }
+                $rules["fields.{$field->id}.note"] = ['nullable', 'string', 'max:2000'];
+                $names["fields.{$field->id}"] = $field->label;
+                $names["fields.{$field->id}.note"] = NonMaterialPackage::REALITY_LABEL;
+                continue;
+            }
             if ($field->isAckItem()) {
                 // ٢٩-١: ثلاثة أسئلة نعم/لا وخانة «ما الواقع» — إلزامها عند أي «لا» يُفحص بعد التحقق
                 $rules["fields.{$field->id}"] = ['nullable', 'array'];
@@ -460,6 +473,16 @@ class FormController extends Controller
         $validator = Validator::make($request->all(), $rules, $messages, $names);
         $validator->after(function ($v) use ($fields, $request) {
             foreach ($fields as $field) {
+                if ($field->isLadder()) {
+                    // ٢٩-٥: بند بلا جواب ولا «لا ينطبق» يُرفض؛ و«لا» على «أطبّقه فعلاً» بلا «ما الواقع» تُرفض — أثمن نص في الحزمة
+                    $lv = FormService::ladderValue($request->input("fields.{$field->id}"));
+                    if ($lv === null || (!$lv['na'] && in_array('', [$lv['doc'], $lv['ann'], $lv['und'], $lv['app']], true))) {
+                        if ($field->is_required) $v->errors()->add("fields.{$field->id}", 'أجب عن العبارات الأربع في «'.$field->label.'» أو اختر «'.NonMaterialPackage::NA_LABEL.'».');
+                    } elseif (!$lv['na'] && $lv['app'] === FormField::LADDER_NO && $lv['note'] === '') {
+                        $v->errors()->add("fields.{$field->id}.note", 'قلتَ إنك لا تطبّقه — اكتب ما الواقع في «'.$field->label.'».');
+                    }
+                    continue;
+                }
                 if ($field->isClaim() && !$field->claimDef()['from_register']) {
                     $c = FormService::claimValue($request->input("fields.{$field->id}"));
                     if ($c && $c['claim'] === FormField::CLAIM_YES && $c['evidence'] === '' && !$request->hasFile("photos.{$field->id}")) {
@@ -567,14 +590,18 @@ class FormController extends Controller
         return $this->forms->exportCsv($form, Auth::user());
     }
 
-    /** عرض ملف رد (توقيع أو صورة) — لمن يرى النتائج (ويرى وحدة التعبئة — ٢٩-٠)، أو لصاحب التعبئة. */
+    /**
+     * عرض ملف رد (توقيع أو صورة أو وثيقة) — لمن يرى النتائج (ويرى وحدة التعبئة — ٢٩-٠)، أو لصاحب التعبئة،
+     * أو (٢٩-٥) لموظف كُلّف بإقرار الجولة التي رُفعت فيها الوثيقة: ما شاركته إدارته يراه.
+     */
     public function answerFile(FormTemplate $form, FormAnswer $answer)
     {
         $submission = $answer->submission; // النطاق العام بالمبنى يحجب تعبئة مبنى آخر فتصير 404
         abort_if(!$submission || $submission->form_id !== $form->id, 404);
         abort_unless(
             (Auth::user()->can('results', $form) && $this->visibility->canSeeSubmission(Auth::user(), $submission))
-            || $submission->submitted_by_id === Auth::id(),
+            || $submission->submitted_by_id === Auth::id()
+            || $this->isAckRecipient(Auth::user(), $submission),
             403,
         );
         abort_unless($answer->hasFile(), 404, 'لا ملف.');
@@ -586,6 +613,18 @@ class FormController extends Controller
     }
 
     // ── مساعدات ──
+
+    /** ٢٩-٥: هل كُلّف هذا الحساب بإقرار الجولة التي جاءت منها التعبئة (بطاقة الإدارة)؟ */
+    private function isAckRecipient(User $user, FormSubmission $submission): bool
+    {
+        if (!$submission->round_id) {
+            return false;
+        }
+
+        return FormAssignment::withoutGlobalScope('building')->where('assigned_to_id', $user->id)->where('round_id', $submission->round_id)
+            ->whereHas('form', fn ($q) => $q->where('package_code', NonMaterialPackage::ackCode((int) $submission->round_id)))
+            ->exists();
+    }
 
     private function validated(Request $request): array
     {

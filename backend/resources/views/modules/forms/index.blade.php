@@ -68,7 +68,7 @@
             <td class="small">{{ $form->submissions_count }}</td>
             <td class="text-nowrap">
               <a href="{{ route('forms.show', $form) }}" class="btn btn-sm btn-outline-primary">عرض</a>
-              @if($me->can_('form.results') && $form->submissions_count > 0)
+              @if($form->submissions_count > 0 && $me->can('results', $form)) {{-- ٢٩-٢: السري لمن يرى الكل --}}
                 <a href="{{ route('forms.results', $form) }}" class="btn btn-sm btn-outline-secondary">النتائج</a>
               @endif
             </td>

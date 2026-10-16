@@ -115,6 +115,19 @@
                       <tbody>@foreach($rows as $row)<tr>@foreach($row as $cell)<td>{{ $cell }}</td>@endforeach</tr>@endforeach</tbody>
                     </table>
                   </details>
+                @elseif($field->isLadder() && ($lv = $answer->ladderValue()))
+                  {{-- ٢٩-٥: السُّلّم — أربع شارات، و«لا» على «أطبّقه» حمراء، والواقع تحتها؛ أو «لا ينطبق» --}}
+                  @if($lv['na'])
+                    <span class="badge bg-light text-muted border" data-ladder-na>{{ \App\Modules\Form\Support\NonMaterialPackage::NA_LABEL }}</span>
+                  @else
+                    <div class="d-flex gap-1 flex-wrap">
+                      @foreach(\App\Modules\Form\Support\NonMaterialPackage::STAGES as $st)
+                        @php $lvv = $lv[$st['key']]; @endphp
+                        <span class="badge {{ $lvv === 'yes' ? 'bg-success' : ($lvv === 'no' ? ($st['key'] === 'app' ? 'bg-danger' : 'bg-secondary') : 'bg-light text-muted border') }}" data-ladder="{{ $st['key'] }}">{{ $st['name'] }}: {{ $lvv === 'yes' ? 'نعم' : ($lvv === 'no' ? 'لا' : '—') }}</span>
+                      @endforeach
+                    </div>
+                    @if($lv['note'] !== '')<div class="text-muted mt-1"><i class="bi bi-chat-left-text"></i> {{ $lv['note'] }}</div>@endif
+                  @endif
                 @elseif($field->isAckItem() && ($ack = $answer->ackValue()))
                   {{-- ٢٩-١: بند الإقرار — ثلاث إجابات، و«لا» حمراء، والواقع تحتها --}}
                   <div class="d-flex gap-1 flex-wrap">

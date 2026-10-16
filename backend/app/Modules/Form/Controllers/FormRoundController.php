@@ -60,12 +60,15 @@ class FormRoundController extends Controller
         $this->authorize('view', $round);
         $round->load(['organizationUnit', 'openedBy', 'approvedBy']);
         $assignment = $round->cardAssignment();
+        $ack = \App\Modules\Form\Models\FormTemplate::where('package_code', \App\Modules\Form\Support\NonMaterialPackage::ackCode($round->id))->first(); // ٢٩-٥
 
         return view('modules.forms.rounds.show', [
             'round'      => $round,
             'assignment' => $assignment,
             'employees'  => $round->organizationUnit ? RoundService::employeeCount($round->organizationUnit) : 0,
             'isManager'  => RoundService::isManagerOf(Auth::user(), (int) $round->organization_unit_id),
+            'ack'        => $ack,
+            'ackStats'   => $ack?->assignmentStats(Auth::user()), // العدد لا الأسماء
         ]);
     }
 

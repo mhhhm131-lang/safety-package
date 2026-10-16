@@ -75,6 +75,21 @@
         @endif
       </div>
     </div>
+
+    @if($ack)
+      {{-- ٢٩-٥: الإقرار السري — العدد لا الأسماء (قرار ٨٨ §٤)؛ النتائج لمن يرى الكل --}}
+      <div class="card mb-3" data-ack="{{ $ack->id }}">
+        <div class="card-header"><i class="bi bi-incognito"></i> الإقرار السري للموظفين</div>
+        <div class="card-body small">
+          أُرسل آلياً بعد الاعتماد إلى <strong data-ack-total="{{ $ackStats['total'] }}">{{ $ackStats['total'] }}</strong> موظفاً،
+          أجاب <strong data-ack-done="{{ $ackStats['completed'] }}">{{ $ackStats['completed'] }}</strong>.
+          <span class="text-muted">العدد لا الأسماء: لا يُعرف من أجاب ومن لم يجب.</span>
+          @if($me->can('results', $ack))
+            <a href="{{ route('forms.results', $ack) }}" class="btn btn-sm btn-outline-primary ms-2"><i class="bi bi-bar-chart"></i> النتائج</a>
+          @endif
+        </div>
+      </div>
+    @endif
   </div>
 
   <div class="col-lg-5">

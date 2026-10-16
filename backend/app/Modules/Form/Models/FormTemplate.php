@@ -87,6 +87,12 @@ class FormTemplate extends Model
         return $this->fills_as === self::FILLS_UNIT;
     }
 
+    /** ٢٩-٥: إقرار سري مولَّد لجولة (`ack` + رقم الجولة) */
+    public function isAck(): bool
+    {
+        return \App\Modules\Form\Support\NonMaterialPackage::isAckCode($this->package_code);
+    }
+
     public function fields(): HasMany           { return $this->hasMany(FormField::class, 'form_id')->orderBy('order'); }
     /** ٢٩-٠: التعبئات والتكليفات تُقرأ داخل مباني الحساب تلقائياً (`BelongsToBuilding` عليهما) */
     public function submissions(): HasMany      { return $this->hasMany(FormSubmission::class, 'form_id'); }

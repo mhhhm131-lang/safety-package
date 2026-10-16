@@ -79,9 +79,26 @@ class FormAnswer extends Model
         $v = (string) $this->value;
         if ($v === '' || !str_starts_with($v, '{')) return [];
         $a = json_decode($v, true);
-        if (!is_array($a) || !array_intersect_key($a, FormField::ACK_QUESTIONS)) return [];
+        if (!is_array($a) || !array_key_exists('ok', $a)) return []; // ٢٩-٥: «ok» يميّزه عن السُّلّم الذي يشاركه und/app
         $out = [];
         foreach (array_keys(FormField::ACK_QUESTIONS) as $k) $out[$k] = (string) ($a[$k] ?? '');
+        $out['note'] = (string) ($a['note'] ?? '');
+
+        return $out;
+    }
+
+    /**
+     * ٢٩-٥: إجابة السُّلّم الرباعي — مصفوفة فارغة إن لم تكن الإجابة سُلّماً.
+     * @return array{na?: bool, doc?: string, ann?: string, und?: string, app?: string, note?: string}
+     */
+    public function ladderValue(): array
+    {
+        $v = (string) $this->value;
+        if ($v === '' || !str_starts_with($v, '{')) return [];
+        $a = json_decode($v, true);
+        if (!is_array($a) || !array_key_exists('na', $a)) return [];
+        $out = ['na' => (bool) $a['na']];
+        foreach (array_keys(\App\Modules\Form\Support\NonMaterialPackage::EMPLOYEE_STATEMENTS) as $k) $out[$k] = (string) ($a[$k] ?? '');
         $out['note'] = (string) ($a['note'] ?? '');
 
         return $out;
@@ -101,6 +118,17 @@ class FormAnswer extends Model
     /** نص الرد كما يُعرض في النتائج والتصدير. */
     public function display(): string
     {
+        if ($l = $this->ladderValue()) {
+            if ($l['na']) return \App\Modules\Form\Support\NonMaterialPackage::NA_LABEL;
+            $parts = [];
+            foreach (\App\Modules\Form\Support\NonMaterialPackage::STAGES as $st) {
+                $v = $l[$st['key']];
+                $parts[] = $st['name'].': '.($v === FormField::LADDER_YES ? 'نعم' : ($v === FormField::LADDER_NO ? 'لا' : '—'));
+            }
+            $s = implode(' · ', $parts);
+
+            return $l['note'] !== '' ? $s.' — الواقع: '.$l['note'] : $s;
+        }
         if ($c = $this->claimValue()) {
             if ($c['claim'] === FormField::CLAIM_NO) return 'لا';
             if ($c['claim'] === FormField::CLAIM_YES) {

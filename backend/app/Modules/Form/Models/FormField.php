@@ -33,6 +33,7 @@ class FormField extends Model
     public const TYPE_TABLE       = 'table';
     public const TYPE_ACK_ITEM    = 'ack_item';
     public const TYPE_CLAIM       = 'claim';
+    public const TYPE_LADDER      = 'ladder';
 
     public const TYPE_LABELS = [
         self::TYPE_TEXT        => 'نص قصير',
@@ -49,14 +50,23 @@ class FormField extends Model
         self::TYPE_TABLE       => 'جدول',
         self::TYPE_ACK_ITEM    => 'بند إقرار ثلاثي',
         self::TYPE_CLAIM       => 'ادعاء بدليل (نعم مع «أرني» / لا)',
+        self::TYPE_LADDER      => 'سُلّم الموظف الرباعي (إقرار سري)',
     ];
 
     /** قرار ٨٨: إجابة الادعاء. */
     public const CLAIM_YES = 'yes';
     public const CLAIM_NO  = 'no';
 
-    /** الأنواع التي تحتاج قائمة خيارات (والجدول يحتاج تعريفه، والادعاء تلميحه). */
-    public const TYPES_WITH_OPTIONS = [self::TYPE_SELECT, self::TYPE_RADIO, self::TYPE_CHECKBOX, self::TYPE_TABLE, self::TYPE_CLAIM];
+    /**
+     * ٢٩-٥ (قرار ٨٨): السُّلّم الرباعي — بند من بطاقة الإدارة يراه الموظف بما شاركته إدارته، ثم العبارات الأربع بالمتكلم
+     * (`NonMaterialPackage::EMPLOYEE_STATEMENTS`) نعم/لا، وخيار «لا ينطبق على عملي»، و«ما الواقع» إلزامية عند «لا» على «أطبّقه» وحدها.
+     * `options` = {item, claims: {doc|ann|und|app: {claim, evidence, answer_id, form_id, file_name}}}؛ الإجابة {na, doc, ann, und, app, note}.
+     */
+    public const LADDER_YES = 'yes';
+    public const LADDER_NO  = 'no';
+
+    /** الأنواع التي تحتاج قائمة خيارات (والجدول يحتاج تعريفه، والادعاء تلميحه، والسُّلّم ما قالته الإدارة). */
+    public const TYPES_WITH_OPTIONS = [self::TYPE_SELECT, self::TYPE_RADIO, self::TYPE_CHECKBOX, self::TYPE_TABLE, self::TYPE_CLAIM, self::TYPE_LADDER];
 
     /** الأنواع التي دليلها ملف يُرفع أو يُرسم. */
     public const TYPES_WITH_FILE = [self::TYPE_SIGNATURE, self::TYPE_PHOTO];
@@ -121,6 +131,29 @@ class FormField extends Model
     public function isTable(): bool    { return $this->field_type === self::TYPE_TABLE; }
     public function isAckItem(): bool  { return $this->field_type === self::TYPE_ACK_ITEM; }
     public function isClaim(): bool    { return $this->field_type === self::TYPE_CLAIM; }
+    public function isLadder(): bool   { return $this->field_type === self::TYPE_LADDER; }
+
+    /**
+     * ٢٩-٥: تعريف السُّلّم — البند، وما قالته الإدارة في مراحله الأربع (الادعاء، الدليل، ووثيقتها إن رُفعت: رقم الإجابة وقالبها واسم الملف).
+     * @return array{item: string, claims: array<string, array{claim: string, evidence: string, answer_id: int|null, form_id: int|null, file_name: string|null}>}
+     */
+    public function ladderDef(): array
+    {
+        $o = is_array($this->options) ? $this->options : [];
+        $claims = [];
+        foreach (\App\Modules\Form\Support\NonMaterialPackage::STAGES as $st) {
+            $c = (array) (($o['claims'] ?? [])[$st['key']] ?? []);
+            $claims[$st['key']] = [
+                'claim'     => (string) ($c['claim'] ?? ''),
+                'evidence'  => (string) ($c['evidence'] ?? ''),
+                'answer_id' => isset($c['answer_id']) ? (int) $c['answer_id'] : null,
+                'form_id'   => isset($c['form_id']) ? (int) $c['form_id'] : null,
+                'file_name' => isset($c['file_name']) ? (string) $c['file_name'] : null,
+            ];
+        }
+
+        return ['item' => (string) ($o['item'] ?? ''), 'claims' => $claims];
+    }
 
     /**
      * قرار ٨٨: تعريف حقل الادعاء — البند ومرحلته (مفاتيح `NonMaterialPackage`)، وتلميح «أرني» في الخانة،
@@ -227,6 +260,13 @@ class FormField extends Model
     /** الخيارات كما تُعرض في شارة الحقل بصفحة النموذج. */
     public function optionsSummary(): ?string
     {
+        if ($this->isLadder()) {
+            $yes = [];
+            foreach (\App\Modules\Form\Support\NonMaterialPackage::STAGES as $st) {
+                if ($this->ladderDef()['claims'][$st['key']]['claim'] === self::CLAIM_YES) $yes[] = $st['name'];
+            }
+            return $yes ? 'الإدارة قالت «نعم» في: '.implode('، ', $yes) : 'الإدارة لم تدّعِ شيئاً';
+        }
         if ($this->isClaim()) {
             $d = $this->claimDef();
             $s = $d['hint'] !== '' ? 'أرني: '.$d['hint'] : null;

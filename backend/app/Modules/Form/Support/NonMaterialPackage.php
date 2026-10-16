@@ -44,6 +44,28 @@ final class NonMaterialPackage
     /** البند الذي يقرأ النظام مرحلته «موثّق» من سجل الإدارة (بكلمته «موافق»). */
     public const FROM_REGISTER = ['item' => 'risks', 'stage' => 'doc'];
 
+    /** ٢٩-٥: الإقرار السري المولَّد لكل جولة — رمزه `ack` + رقم الجولة (ثماني خانات، فريد)؛ عنوانه ومقدمته [نص الصفحة التجريبية] وخيار الموظف. */
+    public const ACK_PREFIX    = 'ack';
+    public const ACK_TITLE     = 'إقرارك السري';
+    public const ACK_INTRO     = 'لا يُنسب جوابك إليك. إدارتك قالت «نعم» في هذه البنود وأرَتنا ما عندها. قل ما وصلك أنت.';
+    public const NA_LABEL      = 'لا ينطبق على عملي';
+    public const REALITY_LABEL = 'ما الواقع؟';
+
+    public static function ackCode(int $roundId): string
+    {
+        return sprintf('%s%05d', self::ACK_PREFIX, $roundId);
+    }
+
+    public static function isAckCode(?string $code): bool
+    {
+        return $code !== null && str_starts_with($code, self::ACK_PREFIX);
+    }
+
+    public static function roundIdOfAck(?string $code): ?int
+    {
+        return self::isAckCode($code) ? (int) substr($code, strlen(self::ACK_PREFIX)) : null;
+    }
+
     /** @return array{key: string, title: string, why: string}|null */
     public static function item(string $key): ?array
     {

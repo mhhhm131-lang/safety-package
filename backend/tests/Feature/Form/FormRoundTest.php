@@ -189,16 +189,16 @@ class FormRoundTest extends TestCase
 
         $this->as($this->mudirA)->post(route('forms.rounds.approve', $r))->assertSessionHas('ok');
         $r = $r->fresh();
-        $this->assertSame(FormRound::STATE_DONE, $r->state);
+        // ٢٩-٥: الإدارة قالت «نعم» في بند وفيها موظفون بحساب ← يولّد النظام الإقرار ويرسله فتصير الحالة «الإقرارات جارية»
+        $this->assertSame(FormRound::STATE_ACK, $r->state);
         $this->assertSame($this->mudirA->id, (int) $r->approved_by_id);
         $this->assertNotNull($r->approved_at);
         $log = $r->log;
-        $last = end($log);
-        $this->assertSame('approved', $last['action']);
-        $this->assertSame('اسم mudir.a', $last['by'], 'الاعتماد بالاسم');
-        $this->assertNotEmpty($last['at'], 'وبالوقت');
+        $approved = collect($log)->firstWhere('action', 'approved');
+        $this->assertNotNull($approved);
+        $this->assertSame('اسم mudir.a', $approved['by'], 'الاعتماد بالاسم');
+        $this->assertNotEmpty($approved['at'], 'وبالوقت');
         $this->assertTrue(AppNotification::where('user_id', $this->salama->id)->where('type', 'form.round')->where('title', 'like', '%إدارة أ%')->exists(), 'يُعلَم مسؤول السلامة');
-        $this->assertContains("round:{$r->id}:returned", app(FormTasks::class)->tasksFor($this->salama)->pluck('key')->all());
         $this->assertNotContains("round:{$r->id}:approve", app(FormTasks::class)->tasksFor($this->mudirA)->pluck('key')->all());
 
         // لا اعتماد ثانٍ

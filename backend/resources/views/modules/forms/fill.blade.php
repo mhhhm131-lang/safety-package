@@ -146,6 +146,54 @@
                   @endif
                   @break
 
+                @case('ladder')
+                  {{-- ٢٩-٥ (قرار ٨٨): ما شاركته الإدارة، ثم العبارات الأربع بالمتكلم نعم/لا، و«لا ينطبق على عملي»، و«ما الواقع» إلزامية عند «لا» على «أطبّقه» --}}
+                  @php
+                    $ld = $field->ladderDef();
+                    $oldL = (array) old('fields.'.$field->id, []);
+                    $stages = \App\Modules\Form\Support\NonMaterialPackage::STAGES;
+                    $statements = \App\Modules\Form\Support\NonMaterialPackage::EMPLOYEE_STATEMENTS;
+                  @endphp
+                  <div class="ladder rounded p-2 @error($key) border border-danger @enderror" style="background:#f6faf7;border:1px solid #cfe3d8" data-ladder="{{ $field->id }}">
+                    <div class="small mb-2 pb-2 border-bottom" data-ladder-claims>
+                      <div class="text-muted mb-1">إدارتك قالت:</div>
+                      @foreach($stages as $st)
+                        @php $c = $ld['claims'][$st['key']]; $yes = $c['claim'] === 'yes'; @endphp
+                        <div class="d-flex gap-2 align-items-start flex-wrap mb-1">
+                          <span class="badge {{ $yes ? 'bg-success' : 'bg-secondary' }}">{{ $st['name'] }}: {{ $yes ? 'نعم' : 'لا' }}</span>
+                          @if($yes && $c['evidence'] !== '')<span>{{ $c['evidence'] }}</span>@endif
+                          @if($yes && $c['answer_id'] && $c['form_id'])
+                            <a href="{{ route('forms.answers.file', [$c['form_id'], $c['answer_id']]) }}" target="_blank"><i class="bi bi-paperclip"></i> {{ $c['file_name'] ?: 'الوثيقة' }}</a>
+                          @endif
+                        </div>
+                      @endforeach
+                    </div>
+                    <label class="small d-block mb-2">
+                      <input type="checkbox" class="form-check-input ladder-na" name="fields[{{ $field->id }}][na]" value="1" @checked(!empty($oldL['na']))> {{ \App\Modules\Form\Support\NonMaterialPackage::NA_LABEL }}
+                    </label>
+                    <div class="ladder-rows">
+                      @foreach($statements as $k => $text)
+                        <div class="d-flex align-items-center gap-2 flex-wrap py-1 border-top" data-ladder-row="{{ $k }}">
+                          <span class="small flex-grow-1">{{ $text }}</span>
+                          @foreach(['yes' => 'نعم', 'no' => 'لا'] as $v => $lbl)
+                            <div class="form-check form-check-inline m-0">
+                              <input type="radio" class="form-check-input ladder-yn" name="fields[{{ $field->id }}][{{ $k }}]"
+                                     id="f{{ $field->id }}_{{ $k }}_{{ $v }}" value="{{ $v }}" @checked(($oldL[$k] ?? '') === $v)>
+                              <label class="form-check-label" for="f{{ $field->id }}_{{ $k }}_{{ $v }}">{{ $lbl }}</label>
+                            </div>
+                          @endforeach
+                        </div>
+                      @endforeach
+                      <div class="mt-2">
+                        <label class="small text-muted" for="f{{ $field->id }}_note">{{ \App\Modules\Form\Support\NonMaterialPackage::REALITY_LABEL }} <span class="ladder-note-req text-danger" hidden>— إلزامي حين لا تطبّقه</span></label>
+                        <textarea name="fields[{{ $field->id }}][note]" id="f{{ $field->id }}_note" rows="2" maxlength="2000"
+                                  class="form-control form-control-sm @error($key.'.note') is-invalid @enderror">{{ $oldL['note'] ?? '' }}</textarea>
+                        @error($key.'.note')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                      </div>
+                    </div>
+                  </div>
+                  @break
+
                 @case('ack_item')
                   {{-- ٢٩-١: بند إقرار ثلاثي — صحيح؟ أفهمه؟ مطبَّق؟ و«ما الواقع» إلزامية عند أي «لا» --}}
                   @php $oldAck = (array) old('fields.'.$field->id, []); @endphp
@@ -378,6 +426,22 @@ document.querySelectorAll('.claim').forEach(function (box) {
     if (ev) ev.hidden = !yes;
   }
   box.querySelectorAll('.claim-yn').forEach(function (r) { r.addEventListener('change', sync); });
+  sync();
+});
+
+// ٢٩-٥: السُّلّم — «لا ينطبق على عملي» يطوي العبارات، و«لا» على «أطبّقه فعلاً» تجعل «ما الواقع» إلزامية
+document.querySelectorAll('.ladder').forEach(function (box) {
+  var na = box.querySelector('.ladder-na'), rows = box.querySelector('.ladder-rows'), note = box.querySelector('textarea'), flag = box.querySelector('.ladder-note-req');
+  function sync() {
+    var off = na.checked;
+    rows.hidden = off;
+    box.querySelectorAll('.ladder-yn').forEach(function (r) { r.disabled = off; });
+    var appNo = box.querySelector('[data-ladder-row=app] .ladder-yn[value=no]');
+    var need = !off && !!appNo && appNo.checked;
+    note.required = need; if (flag) flag.hidden = !need;
+  }
+  na.addEventListener('change', sync);
+  box.querySelectorAll('.ladder-yn').forEach(function (r) { r.addEventListener('change', sync); });
   sync();
 });
 

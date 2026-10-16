@@ -8,6 +8,7 @@ use App\Modules\Form\Models\FormAssignment;
 use App\Modules\Form\Models\FormField;
 use App\Modules\Form\Models\FormSubmission;
 use App\Modules\Form\Models\FormTemplate;
+use App\Modules\Form\Support\NonMaterialPackage;
 use App\Modules\Form\Support\OwnerScope;
 use App\Modules\Governance\Models\OrganizationUnit;
 use App\Modules\Governance\Models\UserProfile;
@@ -79,6 +80,9 @@ class FormService
             $def = is_array($raw) ? FormField::normalizeTableDef($raw) : FormField::parseTableText((string) $raw);
 
             return $def['columns'] === [] ? null : $def;
+        }
+        if ($type === FormField::TYPE_LADDER) {
+            return is_array($raw) ? $raw : null; // ٢٩-٥: يولّده النظام بنيةً كاملة؛ لا يُعرَّف من الشاشة
         }
         if ($type === FormField::TYPE_CLAIM) {
             // قرار ٨٨: من الشاشة سطر التلميح وحده؛ من البذرة البنية كاملة (البند، المرحلة، الإرفاق، من السجل)
@@ -287,6 +291,16 @@ class FormService
                         continue;
                     }
                     $answer->value = json_encode($ack ?? ['ok' => '', 'und' => '', 'app' => '', 'note' => ''], JSON_UNESCAPED_UNICODE);
+                } elseif ($field->isLadder()) {
+                    // ٢٩-٥: السُّلّم الرباعي {na, doc, ann, und, app, note}
+                    $lv = self::ladderValue($values[$fieldId] ?? null);
+                    if ($lv === null) {
+                        if (!$field->is_required) {
+                            continue;
+                        }
+                        $lv = ['na' => false, 'doc' => '', 'ann' => '', 'und' => '', 'app' => '', 'note' => ''];
+                    }
+                    $answer->value = json_encode($lv, JSON_UNESCAPED_UNICODE);
                 } elseif ($field->isClaim()) {
                     // قرار ٨٨: ادعاء بدليل {claim: yes|no, evidence}؛ «موثّق» المخاطر يقرؤه النظام من سجل الإدارة
                     $def = $field->claimDef();
@@ -430,6 +444,28 @@ class FormService
         foreach (array_keys(FormField::ACK_QUESTIONS) as $k) {
             $v = trim((string) ($raw[$k] ?? ''));
             $v = in_array($v, [FormField::ACK_YES, FormField::ACK_NO], true) ? $v : '';
+            if ($v !== '') $any = true;
+            $out[$k] = $v;
+        }
+        $out['note'] = trim((string) ($raw['note'] ?? ''));
+
+        return $any ? $out : null;
+    }
+
+    /**
+     * ٢٩-٥: إجابة السُّلّم من مدخلات الشاشة — null إن لم يُجب عن شيء ولم يختر «لا ينطبق».
+     * «لا ينطبق» يُفرغ العبارات الأربع؛ و«ما الواقع» تُحفظ كما كُتبت (إلزامها عند «لا» على «أطبّقه» يُفحص في المتحكّم).
+     * @return array{na: bool, doc: string, ann: string, und: string, app: string, note: string}|null
+     */
+    public static function ladderValue(mixed $raw): ?array
+    {
+        $raw = is_array($raw) ? $raw : [];
+        $na = !empty($raw['na']);
+        $out = ['na' => $na];
+        $any = $na;
+        foreach (array_keys(NonMaterialPackage::EMPLOYEE_STATEMENTS) as $k) {
+            $v = trim((string) ($raw[$k] ?? ''));
+            $v = (!$na && in_array($v, [FormField::LADDER_YES, FormField::LADDER_NO], true)) ? $v : '';
             if ($v !== '') $any = true;
             $out[$k] = $v;
         }
@@ -633,6 +669,16 @@ class FormService
                 }
             } elseif ($field->isTable()) {
                 // لا توزيع للجدول — عدد من أجاب يكفي هنا؛ قراءة الخلايا في التعبئات
+            } elseif ($field->isLadder()) {
+                // ٢٩-٥: لكل عبارة عدد «نعم» و«لا»، وعدد «لا ينطبق على عملي» — النسب على من أجاب (٢٩-٦)
+                foreach (NonMaterialPackage::EMPLOYEE_STATEMENTS as $k => $text) {
+                    foreach ([FormField::LADDER_YES => 'نعم', FormField::LADDER_NO => 'لا'] as $yn => $label) {
+                        $n = $answers->filter(fn ($a) => ($a->ladderValue()[$k] ?? '') === $yn)->count();
+                        if ($n > 0) $distribution[$text.' — '.$label] = $n;
+                    }
+                }
+                $na = $answers->filter(fn ($a) => !empty($a->ladderValue()['na']))->count();
+                if ($na > 0) $distribution[NonMaterialPackage::NA_LABEL] = $na;
             } elseif ($field->isClaim()) {
                 // قرار ٨٨: نعم / لا
                 foreach ([FormField::CLAIM_YES => 'نعم', FormField::CLAIM_NO => 'لا'] as $k => $label) {

@@ -67,7 +67,8 @@ class FormTasks implements TaskSource
                 $out->push(new Task(
                     key: "round:{$r->id}:returned",
                     module: 'النماذج',
-                    question: 'عادت بطاقة إدارة «'.($r->organizationUnit?->name ?? '—').'» (الجولة '.$r->round_no.') — اعتمدها مديرها',
+                    // ٢٩-٥: الحالة «اعتمدها المدير» تبقى حين لا يُرسل النظام الإقرار (لا «نعم» أو لا موظفين بحساب) — السبب في سجل الجولة
+                    question: 'عادت بطاقة إدارة «'.($r->organizationUnit?->name ?? '—').'» (الجولة '.$r->round_no.') ولم يُرسل الإقرار السري — انظر سجل الجولة',
                     primary: ['label' => 'افتح الجولة', 'url' => route('forms.rounds.show', $r)],
                     detailsUrl: route('forms.rounds.show', $r),
                     createdAt: $r->approved_at ?? $r->created_at,
