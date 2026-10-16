@@ -27,13 +27,16 @@
       <thead><tr><th style="width:2.5rem">#</th><th style="width:9rem">متى</th><th style="width:8rem">النافذة</th><th>الخطوة</th><th style="width:22%">من → البطاقة</th><th style="width:14%">أين</th><th style="width:22%">كيف</th></tr></thead>
       <tbody>
       @foreach($steps as $s)
-        <tr class="{{ $s->isLive() && !$s->hasCard() ? 'table-danger' : '' }}">
+        {{-- ٣٠-٢ (قرار ٨٩): الصف يحمل كلام المكان كما عدّله — «لا ينطبق هنا» لا يدخل القائمة الحية، والهاتف مع «من» --}}
+        <tr class="{{ $s->not_applicable ? 'text-muted' : ($s->isLive() && !$s->hasCard() ? 'table-danger' : '') }}">
           <td><strong>{{ $s->label }}</strong></td>
           <td>{{ $s->when_text ?? '—' }}</td>
           <td class="text-muted">{{ $s->windowLabel() }}</td>
-          <td><strong>{{ $s->title }}</strong></td>
+          <td><strong>{{ $s->title }}</strong>@if($s->not_applicable) <span class="badge text-bg-secondary">لا ينطبق هنا</span>@endif
+            @if($s->isEdited())<br><small class="text-muted">عدّله {{ $s->edited_by_name }} · {{ $s->edited_at->format('Y-m-d') }}@if($s->changedLabels()) · {{ implode('، ', $s->changedLabels()) }}@endif</small>@endif</td>
           <td>
             @if($s->who_text)<div class="text-muted">{{ $s->who_text }}</div>@endif
+            @if($s->phone_text)<div><a href="tel:{{ $s->phone_text }}" dir="ltr"><i class="bi bi-telephone"></i> {{ $s->phone_text }}</a></div>@endif
             @forelse($s->cards() as $no => $c)
               <a href="{{ $c['url'] }}" target="_blank" class="badge text-bg-{{ $no === $s->role_card_no ? 'dark' : 'light border text-dark' }} text-decoration-none" title="{{ $c['name'] }}">{{ $no }} {{ $c['name'] }}</a>
             @empty

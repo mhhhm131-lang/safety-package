@@ -56,7 +56,7 @@ class AwarenessButtonsTest extends TestCase
         $file = $this->actingAs($emp)->get($plans)->assertOk()->getContent();
         // الخطتان أول ما في الملف، والمرساة تبرزهما — ٣٠-١ (قرار ٨٩): خطة السلامة تفتح شاشة النظام من صفوف المكان، وخطة الاستجابة وثيقتها حتى ٣٠-٢
         $this->assertMatchesRegularExpression('~id="pfPlanSafety"[^>]*href="[^"]*/app/places/'.$offices->id.'/safety-plan"~', $file);
-        $this->assertMatchesRegularExpression('~id="pfPlanResponse"[^>]*href="/HZ-06-offices/response-plan\.html"~', $file);
+        $this->assertMatchesRegularExpression('~id="pfPlanResponse"[^>]*href="[^"]*/app/places/'.$offices->id.'/response-plan"~', $file); // ٣٠-٢
         $this->assertLessThan(strpos($file, 'id="pfForms"'), strpos($file, 'id="pfPlanResponse"'));
         $this->assertStringContainsString("location.hash==='#plans'", $file);
 

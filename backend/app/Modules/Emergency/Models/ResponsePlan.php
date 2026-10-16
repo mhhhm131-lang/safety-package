@@ -13,10 +13,27 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class ResponsePlan extends Model
 {
     protected $fillable = ['place_id', 'title', 'declared_total', 'steps_count', 'detection_count', 'scenario_count',
-        'no_card_count', 'source_path', 'fingerprint', 'synced_at'];
+        'no_card_count', 'edited_count', 'source_path', 'fingerprint', 'synced_at'];
 
     protected $casts = ['synced_at' => 'datetime', 'declared_total' => 'integer', 'steps_count' => 'integer',
-        'detection_count' => 'integer', 'scenario_count' => 'integer', 'no_card_count' => 'integer'];
+        'detection_count' => 'integer', 'scenario_count' => 'integer', 'no_card_count' => 'integer', 'edited_count' => 'integer'];
+
+    /**
+     * ٣٠-٢: العدّادات من الصفوف بعد كل زرع أو تعديل — عدّ الوثيقة (المسارات، الكشف، السيناريوهات) لا يتأثر بـ«لا ينطبق هنا»،
+     * و«بلا بطاقة» على ما يدخل القائمة الحية فعلاً، و`edited_count` ما عدّله المكان.
+     */
+    public function refreshCounts(): void
+    {
+        $steps = ResponsePlanStep::where('plan_id', $this->id)->get();
+        $live = $steps->whereIn('path_key', self::LIVE_PATHS);
+        $this->forceFill([
+            'steps_count' => $live->count(),
+            'detection_count' => $steps->where('path_key', 'detection')->count(),
+            'scenario_count' => $steps->where('path_key', 'scenario')->count(),
+            'no_card_count' => $live->filter(fn ($s) => !$s->not_applicable && $s->role_card_no === null)->count(),
+            'edited_count' => $steps->filter(fn ($s) => $s->isEdited())->count(),
+        ])->save();
+    }
 
     /** المسارات بترتيب الوثيقة وعناوينها العامة. */
     public const PATHS = [

@@ -35,40 +35,55 @@ class ResponsePlanSync
         $result = [];
         // ٢٨-٣ (قرار ٧٨): وثيقة الصنف لكل مكان منه في كل مبنى
         foreach (Place::where('category', '!=', 'HZ-00')->orderBy('building_id')->orderBy('sort')->get() as $place) {
-            $path = $this->resolvePath($place->category, $from);
-            if (!$path) {
-                $result[$place->code] = ['status' => 'missing'];
-                continue;
-            }
-            $html = file_get_contents($path);
-            $fingerprint = sha1($html);
-            $plan = ResponsePlan::firstOrNew(['place_id' => $place->id]);
-            if ($plan->exists && !$force && $plan->fingerprint === $fingerprint && $plan->source_path === $path) {
-                $result[$place->code] = ['status' => 'unchanged', 'steps' => $plan->steps_count, 'declared' => $plan->declared_total, 'no_card' => $plan->no_card_count, 'path' => $path];
-                continue;
-            }
-            $parsed = $this->parse($html);
-            DB::transaction(function () use ($plan, $parsed, $path, $fingerprint, $place) {
-                $steps = $parsed['steps'];
-                $live = array_filter($steps, fn ($s) => in_array($s['path_key'], ResponsePlan::LIVE_PATHS, true));
-                $plan->fill([
-                    'title' => $parsed['title'] ?: $place->name,
-                    'declared_total' => $parsed['declared_total'],
-                    'steps_count' => count($live),
-                    'detection_count' => count(array_filter($steps, fn ($s) => $s['path_key'] === 'detection')),
-                    'scenario_count' => count(array_filter($steps, fn ($s) => $s['path_key'] === 'scenario')),
-                    'no_card_count' => count(array_filter($live, fn ($s) => $s['role_card_no'] === null)),
-                    'source_path' => $path,
-                    'fingerprint' => $fingerprint,
-                    'synced_at' => now(),
-                ]);
-                $plan->save();
-                ResponsePlanStep::where('plan_id', $plan->id)->delete();
-                foreach ($steps as $s) ResponsePlanStep::create($s + ['plan_id' => $plan->id]);
-            });
-            $result[$place->code] = ['status' => 'synced', 'steps' => $plan->steps_count, 'declared' => $plan->declared_total, 'no_card' => $plan->no_card_count, 'path' => $path];
+            $result[$place->code] = $this->syncPlace($place, $from, $force);
         }
         return $result;
+    }
+
+    /**
+     * مكان واحد — رخيصة (sha1 لملف واحد) فتُستدعى عند فتح ملف المكان وشاشة خطته.
+     * ٣٠-٢ (قرار ٨٩): الصفوف بمفاتيحها (المسار + رقم الخطوة) لا تُحذف وتُزرع من جديد: الشكل (العنوان، متى، النافذة، الترتيب) يتبع
+     * الوثيقة دائماً؛ كلام المكان (من، أين، كيف، الهاتف، «لا ينطبق هنا») يبقى في الصف المعدَّل ويحدَّث أصله فقط؛ غير المعدَّل يتبع
+     * الوثيقة؛ الجديد يُزرع، وغير المعدَّل الغائب يُحذف. لا كتابة عكسية أبداً.
+     */
+    public function syncPlace(Place $place, ?string $from = null, bool $force = false): array
+    {
+        if ($place->category === 'HZ-00') return ['status' => 'missing'];
+        $path = $this->resolvePath($place->category, $from);
+        if (!$path) return ['status' => 'missing'];
+        $html = file_get_contents($path);
+        $fingerprint = sha1($html);
+        $plan = ResponsePlan::firstOrNew(['place_id' => $place->id]);
+        // خطة زُرعت قبل ٣٠-٢ صفوفها بلا مفتاح ولا أصل (كما على المنشور) تُعاد قراءتها ولو لم تتغير بصمتها — مرة واحدة
+        $legacy = $plan->exists && ResponsePlanStep::where('plan_id', $plan->id)->whereNull('step_key')->exists();
+        if ($plan->exists && !$force && !$legacy && $plan->fingerprint === $fingerprint && $plan->source_path === $path) {
+            return ['status' => 'unchanged', 'steps' => $plan->steps_count, 'declared' => $plan->declared_total, 'no_card' => $plan->no_card_count, 'edited' => $plan->edited_count, 'path' => $path];
+        }
+        $parsed = $this->parse($html);
+        DB::transaction(function () use ($plan, $parsed, $path, $fingerprint, $place) {
+            $plan->fill(['title' => $parsed['title'] ?: $place->name, 'declared_total' => $parsed['declared_total'],
+                'source_path' => $path, 'fingerprint' => $fingerprint, 'synced_at' => now()]);
+            $plan->save();
+            $existing = ResponsePlanStep::where('plan_id', $plan->id)->whereNotNull('step_key')->get()->keyBy('step_key');
+            $seen = [];
+            foreach ($parsed['steps'] as $s) {
+                $seen[$s['step_key']] = true;
+                $source = array_intersect_key($s, array_flip(ResponsePlanStep::SOURCE_FIELDS)) + ['phone_text' => null];
+                $shape = array_diff_key($s, array_flip(ResponsePlanStep::SOURCE_FIELDS));
+                if ($t = $existing->get($s['step_key'])) {
+                    $t->fill($shape);
+                    $t->source = $source;
+                    if (!$t->isEdited()) $t->fill($source); // غير المعدَّل يتبع الوثيقة؛ المعدَّل يحتفظ بكلامه وبطاقاته
+                    $t->save();
+                } else {
+                    ResponsePlanStep::create($s + ['plan_id' => $plan->id, 'source' => $source]);
+                }
+            }
+            foreach ($existing as $k => $t) if (!isset($seen[$k]) && !$t->isEdited()) $t->delete();
+            ResponsePlanStep::where('plan_id', $plan->id)->whereNull('step_key')->delete(); // صفوف ما قبل ٣٠-٢ بلا مفتاح: لم تُعدَّل قط
+            $plan->refreshCounts();
+        });
+        return ['status' => 'synced', 'steps' => $plan->steps_count, 'declared' => $plan->declared_total, 'no_card' => $plan->no_card_count, 'edited' => $plan->edited_count, 'path' => $path];
     }
 
     /** مسار وثيقة المكان: المجلد المُمرَّر ← مجلد المستودع الأعلى ← public/. */
@@ -170,7 +185,14 @@ class ResponsePlanSync
 
         usort($raw, fn ($a, $b) => $a[0] <=> $b[0]);
         $steps = [];
-        foreach ($raw as $i => [, $s]) $steps[] = $s + ['sort' => $i + 1];
+        $keys = [];
+        foreach ($raw as $i => [, $s]) {
+            // ٣٠-٢: مفتاح الصف = المسار + رقم الخطوة كما في الوثيقة (والمكرّر — كسطر «←» الثاني — بترتيبه)
+            $key = sha1($s['path_key'].'|'.$s['label']);
+            $keys[$key] = ($keys[$key] ?? 0) + 1;
+            if ($keys[$key] > 1) $key .= '#'.$keys[$key];
+            $steps[] = $s + ['sort' => $i + 1, 'step_key' => $key];
+        }
         return ['title' => $title, 'declared_total' => $declared, 'steps' => $steps];
     }
 

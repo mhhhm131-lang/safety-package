@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class EmergencyIncidentStep extends Model
 {
     protected $fillable = ['incident_id', 'plan_step_id', 'path_key', 'path_title', 'sort', 'label', 'title', 'when_text',
-        'window_from_sec', 'window_to_sec', 'is_conditional', 'who_text', 'where_text', 'how_text', 'role_cards', 'role_card_no',
+        'window_from_sec', 'window_to_sec', 'is_conditional', 'who_text', 'where_text', 'how_text', 'phone_text', 'role_cards', 'role_card_no',
         'status', 'due_at', 'done_at', 'done_by_id', 'done_by_name', 'delta_sec', 'auto_source', 'overdue_alerted_at', 'note'];
 
     protected $casts = ['role_cards' => 'array', 'is_conditional' => 'boolean', 'due_at' => 'datetime', 'done_at' => 'datetime',

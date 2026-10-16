@@ -76,10 +76,14 @@ class PlaceFileController extends Controller
                 'v' => !empty($pl['sa']) ? 'معتمدة' : 'غير معتمدة', 'd' => (!empty($pl['sa']) ? 'بتاريخ '.$pl['sa'].(!empty($pl['saBy']) ? ' · '.$pl['saBy'] : '') : 'تُعتمد بقرار الإدارة العليا').$spLine],
         ];
         if ($hz !== 'HZ-00') {
-            $plans[] = ['label' => 'خطة الاستجابة', 'url' => "$folder/response-plan.html",
+            // ٣٠-٢ (قرار ٨٩): خطة الاستجابة من الصفوف — الزر يفتح شاشتها في النظام ويعدّ خطواتها وما عدّله المكان
+            app(\App\Modules\Emergency\Services\ResponsePlanSync::class)->syncPlace($place);
+            $rp = \App\Modules\Emergency\Models\ResponsePlan::where('place_id', $place->id)->first();
+            $rpLine = $rp ? ' · '.$rp->steps_count.' خطوة'.($rp->edited_count ? ' · '.$rp->edited_count.' معدّلة هنا' : '') : '';
+            $plans[] = ['label' => 'خطة الاستجابة', 'url' => route('app.places.units.response', $place),
                 'cls' => empty($pl['ra']) ? 'bad' : (($drillDays === null || $drillDays > 365) ? 'warn' : 'ok'),
                 'v' => empty($pl['ra']) ? 'غير معتمدة' : ($drillDays === null ? 'معتمدة — بلا تمرين' : ($drillDays > 365 ? 'معتمدة — التمرين قديم' : 'معتمدة ومُمرَّنة')),
-                'd' => (!empty($pl['ra']) ? 'اعتُمدت '.$pl['ra'] : '').(!empty($pl['drill']) ? ' · آخر تمرين '.$pl['drill'] : ' · لم يُنفَّذ تمرين')];
+                'd' => (!empty($pl['ra']) ? 'اعتُمدت '.$pl['ra'] : '').(!empty($pl['drill']) ? ' · آخر تمرين '.$pl['drill'] : ' · لم يُنفَّذ تمرين').$rpLine];
         }
 
         foreach ($plans as $i => $c) $plans[$i]['key'] = $i ? 'ra' : 'sa';

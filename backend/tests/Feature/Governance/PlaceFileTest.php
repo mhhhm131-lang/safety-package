@@ -89,7 +89,7 @@ class PlaceFileTest extends TestCase
         $this->assertStringContainsString('لم يُفحص بعد', $h);
         // الجاهزية: البطاقة تفتح الخطة نفسها — ٣٠-١ (قرار ٨٩): خطة السلامة من صفوف المكان في النظام، وخطة الاستجابة وثيقتها حتى ٣٠-٢
         $this->assertStringContainsString("/app/places/{$this->park->id}/safety-plan\"", $h);
-        $this->assertStringContainsString('href="/HZ-01-basement/response-plan.html"', $h);
+        $this->assertStringContainsString("/app/places/{$this->park->id}/response-plan\"", $h); // ٣٠-٢
         $this->assertStringContainsString('معتمدة', $h);
         $this->assertStringContainsString('بلا تمرين', $h);
         // الوحدات والفريق بهواتفه وبلاغ الشاغل وبلاغ الفحص المفتوح

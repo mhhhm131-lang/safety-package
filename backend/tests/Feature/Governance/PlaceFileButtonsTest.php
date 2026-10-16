@@ -94,7 +94,7 @@ class PlaceFileButtonsTest extends TestCase
         // كل زر يحمل حاله ولونه
         // ٣٠-١ (قرار ٨٩): خطة السلامة تفتح شاشتها في النظام من صفوف المكان
         $this->assertMatchesRegularExpression('~id="pfPlanSafety"[^>]*data-state="ok"[^>]*href="[^"]*/app/places/'.$this->park->id.'/safety-plan"~', $h);
-        $this->assertMatchesRegularExpression('~id="pfPlanResponse"[^>]*data-state="ok"[^>]*href="/HZ-01-basement/response-plan.html"~', $h);
+        $this->assertMatchesRegularExpression('~id="pfPlanResponse"[^>]*data-state="ok"[^>]*href="[^"]*/app/places/'.$this->park->id.'/response-plan"~', $h); // ٣٠-٢
         $this->assertMatchesRegularExpression('~id="pfForms"[^>]*data-state="bad".*?2 متأخر~s', $h); // الإنارة لم تُفحص + كواشف الغاز متأخرة
         $this->assertMatchesRegularExpression('~id="pfNow"[^>]*data-state="bad".*?متجاوز~s', $h);   // بلاغ «فوري» منذ ٣٠ ساعة
         $this->assertMatchesRegularExpression('~id="pfRisks"[^>]*data-state="none"~', $h);         // لا خطر مفعّل

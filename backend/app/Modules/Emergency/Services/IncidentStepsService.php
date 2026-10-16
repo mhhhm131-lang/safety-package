@@ -49,11 +49,12 @@ class IncidentStepsService
         $n = 0; $counts = [];
         foreach ($plan->steps as $s) {
             if (!in_array($s->path_key, $paths, true)) continue;
+            if ($s->not_applicable) continue; // ٣٠-٢ (قرار ٨٩): ما وسمه المكان «لا ينطبق هنا» لا يدخل قائمته الحية
             EmergencyIncidentStep::create([
                 'incident_id' => $incident->id, 'plan_step_id' => $s->id, 'path_key' => $s->path_key, 'path_title' => $s->path_title,
                 'sort' => $s->sort, 'label' => $s->label, 'title' => $s->title, 'when_text' => $s->when_text,
                 'window_from_sec' => $s->window_from_sec, 'window_to_sec' => $s->window_to_sec, 'is_conditional' => $s->is_conditional,
-                'who_text' => $s->who_text, 'where_text' => $s->where_text, 'how_text' => $s->how_text,
+                'who_text' => $s->who_text, 'where_text' => $s->where_text, 'how_text' => $s->how_text, 'phone_text' => $s->phone_text, // كلام المكان كما هو في صفوفه
                 'role_cards' => $s->role_cards, 'role_card_no' => $s->role_card_no,
                 'status' => EmergencyIncidentStep::STATUS_PENDING,
                 'due_at' => $s->window_to_sec !== null ? $incident->triggered_at->copy()->addSeconds($s->window_to_sec) : null,
@@ -157,7 +158,7 @@ class IncidentStepsService
             if (!$user) continue;
             $lines = [];
             foreach ($mine as $s) {
-                $lines[] = $s->label.' '.$s->title.' — '.($s->when_text ?? '').($s->where_text ? ' — '.$s->where_text : '').($s->how_text ? ' — '.$s->how_text : '');
+                $lines[] = $s->label.' '.$s->title.' — '.($s->when_text ?? '').($s->where_text ? ' — '.$s->where_text : '').($s->how_text ? ' — '.$s->how_text : '').($s->phone_text ? ' — الهاتف: '.$s->phone_text : '');
             }
             $subject = 'خطواتك في خطة '.$place.' — '.$incident->incident_code;
             $body = 'الحالة: '.$incident->getTypeLabel().' في '.$place.". خطواتك من خطة الاستجابة وبطاقة دورك:\n".implode("\n", $lines)."\nاضغط «تم» في شاشة الحالة عند إتمام كل خطوة.";

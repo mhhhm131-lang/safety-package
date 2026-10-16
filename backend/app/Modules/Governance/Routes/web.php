@@ -57,6 +57,8 @@ Route::middleware(['web', 'auth'])->prefix('app')->name('app.')->group(function 
         Route::get('/{place}/systems/{form}/{sys}', [\App\Modules\Governance\Controllers\PlaceFileController::class, 'system'])->name('system')->whereNumber('place');
         // المرحلة ٣٠-١ (قرار ٨٩): خطة السلامة من الصفوف — القراءة لمن المكان في مبانيه، والتعديل في PlaceWordsAccess
         Route::get('/{place}/safety-plan', [\App\Modules\Governance\Controllers\PlaceSafetyPlanController::class, 'show'])->name('safety')->whereNumber('place');
+        // المرحلة ٣٠-٢ (قرار ٨٩): خطة الاستجابة من الصفوف — كلام المكان في خطواتها
+        Route::get('/{place}/response-plan', [\App\Modules\Governance\Controllers\PlaceResponsePlanController::class, 'show'])->name('response')->whereNumber('place');
         Route::get('/{place}/units', [\App\Modules\Governance\Controllers\PlaceUnitsController::class, 'index'])->name('index');
         Route::post('/{place}/units', [\App\Modules\Governance\Controllers\PlaceUnitsController::class, 'store'])->name('store');
         Route::post('/{place}/units/paste', [\App\Modules\Governance\Controllers\PlaceUnitsController::class, 'paste'])->name('paste');
@@ -71,6 +73,10 @@ Route::middleware(['web', 'auth'])->prefix('app')->name('app.')->group(function 
         $sp = \App\Modules\Governance\Controllers\PlaceSafetyPlanController::class;
         Route::post('/safety-plan/{task}', [$sp, 'update'])->name('safety.update')->whereNumber('task');
         Route::post('/safety-plan/{task}/restore', [$sp, 'restore'])->name('safety.restore')->whereNumber('task');
+        // المرحلة ٣٠-٢ (قرار ٨٩): كلام المكان في خطوة من خطة الاستجابة — الكتابة والاستعادة
+        $rp = \App\Modules\Governance\Controllers\PlaceResponsePlanController::class;
+        Route::post('/response-plan/{step}', [$rp, 'update'])->name('response.update')->whereNumber('step');
+        Route::post('/response-plan/{step}/restore', [$rp, 'restore'])->name('response.restore')->whereNumber('step');
         Route::post('/team/{uid}/staff', [$c, 'staff'])->name('staff');
         Route::get('/team/{uid}/{k}', [$c, 'edit'])->name('edit')->whereNumber('k');
         Route::post('/team/{uid}/{k}', [$c, 'save'])->name('save')->whereNumber('k');
