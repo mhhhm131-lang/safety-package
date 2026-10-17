@@ -85,25 +85,38 @@ class HomeController extends Controller
             if (isset($tilesByB[$pp->building_id][$pp->category])) $placeTiles[$code] = $tilesByB[$pp->building_id][$pp->category];
         }
         // بكلمته «طبّقها الآن» (٢٠٢٦-١٠-٠٨): أكثر من مبنى ← المربعات مجمَّعة بالمبنى، مبنى الجلسة مفتوح والباقي مطوي
+        // ٣٢-١ (قرار ٩١): فرع واحد ظاهر — صف أزرار الفروع وشبكة المختار؛ مبنى الجلسة مختار (وإلا الأول)، والرسم يبدأ بأرقامه
         $tileGroups = [];
         $byB = [];
+        $chartInit = null;
         foreach (array_keys($placeTiles) as $code) $byB[$placeByCode[$code]->building_id][] = $code;
+        // ٣٢-٢ (بكلمته «اضفها في الشاشة وأنا أضيف الأماكن لاحقاً»): مباني الحساب التي بلا أماكن بعد تظهر زراً أيضاً (شبكتها رسالة وباب ملف المبنى، ورسمها أصفار)
+        if ($placeTiles) {
+            foreach (\App\Modules\Governance\Services\BuildingContext::choices($user) as $eb) {
+                if (isset($byB[$eb->id])) continue;
+                $byB[$eb->id] = [];
+                $snapshot['buildings'][$eb->id] = ['id' => $eb->id, 'name' => $eb->name, 'branch' => $eb->branchUnit?->name ?? $eb->branch, 'total' => array_fill_keys(array_keys(\App\Modules\Governance\Services\PlaceSnapshot::KEYS), 0)];
+            }
+        }
         if (count($byB) > 1) {
             $sessionB = \App\Modules\Governance\Services\BuildingContext::id($user);
+            $selB = isset($byB[$sessionB]) ? $sessionB : (int) array_key_first($byB);
             $mainId = \App\Modules\Emergency\Models\EmergencyBuilding::main()?->id;
             $blds = \App\Modules\Emergency\Models\EmergencyBuilding::with('branchUnit')->whereIn('id', array_keys($byB))->get()->keyBy('id');
             foreach ($byB as $bidKey => $codesOf) {
                 $b = $blds->get($bidKey);
                 if (!$b) continue;
-                $tileGroups[] = ['b' => $b, 'branch' => $b->branchUnit?->name ?? $b->branch, 'codes' => $codesOf, 'main' => $b->id === $mainId, 'expanded' => $b->id === $sessionB,
+                $tileGroups[] = ['b' => $b, 'branch' => $b->branchUnit?->name ?? $b->branch, 'codes' => $codesOf, 'main' => $b->id === $mainId, 'expanded' => $b->id === $selB,
                     'open' => array_sum(array_map(fn ($c) => (int) ($placeTiles[$c]['open'] ?? 0), $codesOf)), 'od' => array_sum(array_map(fn ($c) => (int) ($placeTiles[$c]['od'] ?? 0), $codesOf))];
             }
+            $chartInit = $snapshot['buildings'][$selB] ?? null;
         }
 
         // المرحلة ١٢ (قرار ٣٥): «ما ينتظرك» + «أريد أن…»
         return view('governance.inbox', [
             'placeTiles' => $placeTiles,
             'tileGroups' => $tileGroups,
+            'chartInit' => $chartInit,
             'placeByCode' => $placeByCode,
             'scopeAll' => $snapshot['all'],
             'snapshot' => $snapshot,

@@ -29,30 +29,36 @@
         // الكتلة لا المختصرة: المختصرة تبتلع كتلة @php التالية (درس مسجَّل)
         $multiB = !empty($tileGroups) && count($tileGroups) > 1;
       @endphp
-      <h2 class="sec-h d-flex align-items-center gap-2 flex-wrap"><i class="bi bi-geo-alt"></i> {{ $multiB ? 'الأماكن في كل مبنى' : ($scopeAll ? 'الأماكن (٨+١)' : (count($placeTiles) === 1 ? 'مكانك' : 'أماكنك')) }} <span class="small text-muted fw-normal">{{ $multiB ? 'اضغط المبنى فتظهر أماكنه، والمكان لملفه' : 'اضغط المكان لملفه' }}</span>
+      <h2 class="sec-h d-flex align-items-center gap-2 flex-wrap"><i class="bi bi-geo-alt"></i> {{ $multiB ? 'الأماكن في كل مبنى' : ($scopeAll ? 'الأماكن (٨+١)' : (count($placeTiles) === 1 ? 'مكانك' : 'أماكنك')) }} <span class="small text-muted fw-normal">{{ $multiB ? 'اضغط الفرع فتظهر أماكنه، والمكان لملفه' : 'اضغط المكان لملفه' }}</span>
         <a class="btn btn-o btn-sm ms-auto" href="tel:{{ \App\Modules\Governance\Models\Place::CENTER_PHONE }}"><i class="bi bi-telephone-fill"></i> المركز <span dir="ltr">{{ \App\Modules\Governance\Models\Place::CENTER_PHONE }}</span></a></h2>
       @if($multiB)
-      {{-- بكلمته «طبّقها الآن» (٢٠٢٦-١٠-٠٨): أكثر من مبنى ← عنوان لكل مبنى، مبنى الجلسة مفتوح والباقي مطوي --}}
-      <div class="d-grid gap-2" id="places">
+      {{-- ٣٢-١ (قرار ٩١، بكلمته «موافق» ٢٠٢٦-١٠-١٧): أكثر من مبنى ← صف أزرار الفروع وشبكة واحدة لأماكن الفرع المختار (مبنى الجلسة)؛
+           التبديل في المتصفح بلا طلب، والرسم يتبع الفرع المختار. كان (٢٠٢٦-١٠-٠٨): قوائم تُطوى وتُفتح تحت بعض --}}
+      <div class="bld-tabs" id="bldTabs" role="tablist">
         @foreach($tileGroups as $g)
-        <div data-tile-group="{{ $g['b']->id }}">
-          <button class="grp-h {{ $g['expanded'] ? '' : 'collapsed' }}" type="button" data-bs-toggle="collapse" data-bs-target="#tiles-{{ $g['b']->id }}" aria-expanded="{{ $g['expanded'] ? 'true' : 'false' }}">
-            <i class="bi {{ $g['main'] ? 'bi-building' : 'bi-geo-alt' }}" style="color:var(--gold)"></i>
-            <span>{{ $g['b']->name }}</span>
-            <span class="small text-muted fw-normal">{{ $g['branch'] ? $g['branch'].' · ' : '' }}{{ count($g['codes']) }} أماكن
-              @if($g['od']) · <span class="text-danger">{{ $g['od'] }} متجاوز</span>@elseif($g['open']) · {{ $g['open'] }} مفتوح @endif</span>
-            <i class="bi bi-chevron-down grp-caret ms-auto"></i>
-          </button>
-          <div class="collapse {{ $g['expanded'] ? 'show' : '' }}" id="tiles-{{ $g['b']->id }}">
-            <div class="pl-grid pt-2">
-              @foreach($g['codes'] as $hz)
-                @if(($t = $placeTiles[$hz] ?? null) && ($p = $placeByCode[$hz] ?? null))
-                  @include('governance._place_tile', ['hz' => $hz, 't' => $t, 'p' => $p, 'n' => count($placeTiles)])
-                @endif
-              @endforeach
-            </div>
-          </div>
+        <button class="bld-tab {{ $g['expanded'] ? 'on' : '' }}" type="button" role="tab" data-bld="{{ $g['b']->id }}" aria-selected="{{ $g['expanded'] ? 'true' : 'false' }}" aria-controls="tiles-{{ $g['b']->id }}">
+          <span class="bld-nm"><i class="bi {{ $g['main'] ? 'bi-building' : 'bi-geo-alt' }}" style="color:var(--gold)"></i> {{ $g['b']->name }}</span>
+          <span class="small bld-st">{{ $g['branch'] ? $g['branch'].' · ' : '' }}@if(!$g['codes'])بلا أماكن بعد@else{{ count($g['codes']) }} أماكن@if($g['od']) · <span class="text-danger">{{ $g['od'] }} متجاوز</span>@elseif($g['open']) · {{ $g['open'] }} مفتوح@endif @endif</span>
+        </button>
+        @endforeach
+      </div>
+      <div id="places">
+        @foreach($tileGroups as $g)
+        @if(!$g['codes'])
+        {{-- ٣٢-٢: مبنى بلا أماكن بعد — رسالة وباب ملفه حيث زر «أماكن المبنى» --}}
+        <div class="pl-empty" data-tile-group="{{ $g['b']->id }}" id="tiles-{{ $g['b']->id }}" role="tabpanel"{{ $g['expanded'] ? '' : ' hidden' }}>
+          <p class="mb-2">لم تُنشأ أماكن هذا المبنى بعد. تُنشأ من ملفه بزر «أماكن المبنى».</p>
+          <a class="btn btn-g btn-sm" href="{{ route('emergency.buildings.show', $g['b']) }}"><i class="bi bi-building"></i> افتح ملف المبنى</a>
         </div>
+        @else
+        <div class="pl-grid" data-tile-group="{{ $g['b']->id }}" id="tiles-{{ $g['b']->id }}" role="tabpanel"{{ $g['expanded'] ? '' : ' hidden' }}>
+          @foreach($g['codes'] as $hz)
+            @if(($t = $placeTiles[$hz] ?? null) && ($p = $placeByCode[$hz] ?? null))
+              @include('governance._place_tile', ['hz' => $hz, 't' => $t, 'p' => $p, 'n' => count($placeTiles)])
+            @endif
+          @endforeach
+        </div>
+        @endif
         @endforeach
       </div>
       @else
@@ -73,21 +79,23 @@
     {{-- ٢٥-٢: الرسم «حال الآن» — ستة أعمدة من مصدر واحد لنطاق الحساب، تتغيّر بالمكان المضغوط بلا طلب ثانٍ، وكل عمود يفتح قائمته --}}
     @php
       $S = \App\Modules\Governance\Services\PlaceSnapshot::class;
-      $cmax = max(max($snapshot['total']), 1);
+      // ٣٢-١ (قرار ٩١): أكثر من مبنى ← الرسم يبدأ بأرقام الفرع المختار لا مجموع المباني؛ وإلا كما كان
+      $chartN = $chartInit['total'] ?? $snapshot['total'];
+      $cmax = max(max($chartN), 1);
     @endphp
     <div class="card h-100" id="chart"><div class="card-body d-flex flex-column">
-      <h2 class="sec-h d-flex align-items-center gap-2 flex-wrap"><i class="bi bi-bar-chart"></i> حال الآن · <span id="chartScope">{{ $scopeAll ? 'المبنى كله' : (count($placeTiles) === 1 ? reset($snapshot['places'])['name'] : 'أماكنك') }}</span>
+      <h2 class="sec-h d-flex align-items-center gap-2 flex-wrap"><i class="bi bi-bar-chart"></i> حال الآن · <span id="chartScope">{{ $chartInit ? $chartInit['name'] : ($scopeAll ? 'المبنى كله' : (count($placeTiles) === 1 ? reset($snapshot['places'])['name'] : 'أماكنك')) }}</span>
         @if(count($placeTiles) > 1)
         <span class="ms-auto d-flex gap-1">
           <a class="btn btn-g btn-sm" id="chartFile" href="#" hidden>افتح ملف المكان</a>
-          <button class="btn btn-o btn-sm" id="chartAll" type="button" hidden>{{ $scopeAll ? 'المبنى كله' : 'أماكنك' }}</button>
+          <button class="btn btn-o btn-sm" id="chartAll" type="button" hidden>{{ $chartInit ? 'الفرع كله' : ($scopeAll ? 'المبنى كله' : 'أماكنك') }}</button>
         </span>
         @endif
       </h2>
       <div class="bars flex-grow-1" id="bars">
         @foreach($S::KEYS as $k => [$label, $warn])
           @php
-            $n = $snapshot['total'][$k];
+            $n = $chartN[$k];
             $href = $snapshot['links'][$k];
           @endphp
           <a class="bar {{ $n ? '' : 'zero' }} {{ $warn && $n ? 'warn' : '' }}" data-k="{{ $k }}" data-n="{{ $n }}"@if($href) href="{{ $href }}"@endif title="{{ $label }} — اضغط للقائمة"><span class="col"><span class="fill" style="height:{{ $n ? max(6, round($n / $cmax * 100)) : 3 }}%"></span></span><span class="n">{{ $n }}</span><span class="lbl">{{ $label }}</span></a>
@@ -96,7 +104,7 @@
       <p class="small text-muted mt-2 mb-0">{{ count($placeTiles) > 1 ? 'اضغط مكاناً فيتغيّر الرسم له وحده، واضغط عموداً لقائمته.' : 'اضغط عموداً لقائمته.' }}</p>
       @if($canReports)<div class="mt-2"><a class="btn btn-o btn-sm" id="reportsDoor" href="{{ route('reports.dashboard') }}" title="فجوة الاستجابة والمؤشرات والسجلات"><i class="bi bi-clipboard-data"></i> التقارير</a></div>@endif
     </div></div>
-    <script type="application/json" id="snapshot">{!! json_encode(['places' => $snapshot['places'], 'total' => $snapshot['total'], 'links' => $snapshot['links'], 'keys' => array_map(fn ($v) => $v[1], $S::KEYS)], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}</script>
+    <script type="application/json" id="snapshot">{!! json_encode(['places' => $snapshot['places'], 'total' => $snapshot['total'], 'links' => $snapshot['links'], 'keys' => array_map(fn ($v) => $v[1], $S::KEYS), 'buildings' => (object) ($snapshot['buildings'] ?? []), 'sel' => $chartInit['id'] ?? null], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}</script>
   </div>
   @endif
 </div>
@@ -232,9 +240,11 @@
 })();
 /* ٢٥-٣-ب (بكلمته «قابلة للطي تنطوي»): المجموعات مطويّة عند كل فتح — لا تذكّر */
 /* ٢٥-٢: ضغطة المكان ترشّح الرسم من بيانات الصفحة نفسها (بلا طلب)؛ «المبنى كله» يعيده؛ بلا سكربت يبقى المربع رابطاً إلى ملف المكان */
+/* ٣٢-١ (قرار ٩١): أكثر من مبنى ← زر الفرع يُظهر شبكته وحدها ويرسم مجموعه («حال الآن · الفرع»)؛ المكان «الفرع · المكان»؛ «الفرع كله» يعيد إلى الفرع لا إلى المباني كلها */
 (function(){
   var el=document.getElementById('snapshot'),bars=document.getElementById('bars');if(!el||!bars)return;
   var D=JSON.parse(el.textContent),scope=document.getElementById('chartScope'),all=document.getElementById('chartAll'),file=document.getElementById('chartFile');
+  var cur=(D.sel&&D.buildings&&D.buildings[D.sel])?D.buildings[D.sel]:null;
   function draw(n,links,name,fileUrl){
     var vals=Object.keys(n).map(function(k){return n[k]}),m=Math.max.apply(null,vals.concat([1]));
     bars.querySelectorAll('.bar').forEach(function(b){
@@ -247,14 +257,24 @@
     if(all)all.hidden=!fileUrl;if(file){file.hidden=!fileUrl;if(fileUrl)file.href=fileUrl;}
   }
   var base=scope.textContent;
+  function clearOn(){document.querySelectorAll('#places .pl-tile.on').forEach(function(x){x.classList.remove('on')});}
+  function drawBase(){if(cur)draw(cur.total,D.links,cur.name,null);else draw(D.total,D.links,base,null);}
+  document.querySelectorAll('#bldTabs .bld-tab').forEach(function(b){
+    b.addEventListener('click',function(){
+      var id=b.dataset.bld;if(!D.buildings||!D.buildings[id])return;
+      document.querySelectorAll('#bldTabs .bld-tab').forEach(function(x){var on=x===b;x.classList.toggle('on',on);x.setAttribute('aria-selected',on?'true':'false');});
+      document.querySelectorAll('#places [data-tile-group]').forEach(function(g){g.hidden=g.getAttribute('data-tile-group')!==id;});
+      clearOn();cur=D.buildings[id];drawBase();
+    });
+  });
   document.querySelectorAll('#places .pl-tile[data-filter]').forEach(function(t){
     t.addEventListener('click',function(e){
       e.preventDefault();var p=D.places[t.dataset.place];if(!p)return;
-      document.querySelectorAll('#places .pl-tile.on').forEach(function(x){x.classList.remove('on')});t.classList.add('on');
-      draw(p.n,p.links,p.name,p.file);
+      clearOn();t.classList.add('on');
+      draw(p.n,p.links,(cur?cur.name+' · ':'')+p.name,p.file);
     });
   });
-  if(all)all.addEventListener('click',function(){document.querySelectorAll('#places .pl-tile.on').forEach(function(x){x.classList.remove('on')});draw(D.total,D.links,base,null);});
+  if(all)all.addEventListener('click',function(){clearOn();drawBase();});
 })();
 </script>
 @endpush

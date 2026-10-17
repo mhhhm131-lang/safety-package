@@ -4,6 +4,7 @@ namespace App\Modules\Governance\Services;
 
 use App\Core\Permissions\PermissionRegistry;
 use App\Models\User;
+use App\Modules\Emergency\Models\EmergencyBuilding;
 use App\Modules\Emergency\Models\EmergencyIncident;
 use App\Modules\Governance\Models\Place;
 use App\Modules\Incident\Models\Incident;
@@ -64,6 +65,8 @@ final class PlaceSnapshot
 
         $rows = [];
         $total = array_fill_keys(array_keys(self::KEYS), 0);
+        // ٣٢-١ (قرار ٩١): مجموع كل مبنى على حدة بجانب المجموع الكلي — إضافة لا حذف؛ الرسم يتبع الفرع المختار
+        $byB = [];
         foreach ($places as $p) {
             $n = [
                 'incidents' => (int) ($incidents[$p->id] ?? 0),
@@ -73,7 +76,8 @@ final class PlaceSnapshot
                 'emergency' => (int) ($emergencies[$p->id] ?? 0),
                 'permits'   => (int) ($permits[$p->id] ?? 0),
             ];
-            foreach ($n as $k => $v) $total[$k] += $v;
+            $byB[(int) $p->building_id] ??= array_fill_keys(array_keys(self::KEYS), 0);
+            foreach ($n as $k => $v) { $total[$k] += $v; $byB[(int) $p->building_id][$k] += $v; }
             // ٢٦-٧: مربع «مركز السلامة» يفتح صفحة المركز الواحدة (فيها بنود المكان بأسفلها بالمعرّفات نفسها)
             $file = $p->category === 'HZ-00' ? route('emergency.dashboard') : route('app.places.units.file', $p);
             $rows[$p->code] = ['code' => $p->code, 'id' => $p->id, 'name' => $p->name, 'file' => $file, 'n' => $n, 'links' => self::links($p->code, $file)];
@@ -87,7 +91,17 @@ final class PlaceSnapshot
             if (!$decision) $links['reports'] = $links['overdue'] = null;
         }
 
-        return ['all' => false, 'decision' => $decision, 'places' => $rows, 'total' => $total, 'links' => $links];
+        // ٣٢-١: لكل مبنى في النطاق اسمه وفرعه ومجموعه (مفتاحه معرّف المبنى — كائن في JSON لا قائمة)
+        $buildings = [];
+        if ($byB) {
+            $blds = EmergencyBuilding::whereIn('id', array_keys($byB))->get()->keyBy('id');
+            foreach ($byB as $bid => $t) {
+                $b = $blds->get($bid);
+                $buildings[$bid] = ['id' => $bid, 'name' => $b?->name ?? '', 'branch' => $b?->branchUnit?->name ?? $b?->branch, 'total' => $t];
+            }
+        }
+
+        return ['all' => false, 'decision' => $decision, 'places' => $rows, 'total' => $total, 'links' => $links, 'buildings' => $buildings];
     }
 
     /** الجولات المستحقة في كل مكان لكل أدوار الواجهة، بلا تكرار (مكان × نظام × دورية × مهمة) */

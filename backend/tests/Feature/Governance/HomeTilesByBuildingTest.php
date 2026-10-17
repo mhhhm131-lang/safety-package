@@ -15,7 +15,8 @@ use Tests\TestCase;
 
 /**
  * بكلمته «طبّقها الآن» (٢٠٢٦-١٠-٠٨): الصفحة الأولى لمن يرى أكثر من مبنى تجمع المربعات بالمبنى؛ مبنى الجلسة مفتوح والفروع مطوية.
- * مبنى واحد = كما كان (بلا عناوين).
+ * ٣٢-١ (قرار ٩١، بكلمته «موافق» ٢٠٢٦-١٠-١٧): صف أزرار الفروع وشبكة واحدة — المختار (مبنى الجلسة) ظاهر والباقي مخفي، لا قوائم تحت بعض.
+ * مبنى واحد = كما كان (بلا صف).
  */
 class HomeTilesByBuildingTest extends TestCase
 {
@@ -43,25 +44,32 @@ class HomeTilesByBuildingTest extends TestCase
         $this->assertStringContainsString('الأماكن في كل مبنى', $h);
         $this->assertStringContainsString('معهد الادارة فرع الدمام', $h);
         $this->assertStringContainsString('فرع الشرقية', $h);
-        // الملز (مبنى الجلسة) مفتوح، والدمام مطوي
+        // ٣٢-١: زر لكل فرع، والملز (مبنى الجلسة) مختار وشبكته ظاهرة، والدمام زره غير مختار وشبكته مخفية
+        $this->assertSame(2, substr_count($h, 'role="tab" data-bld="'), 'زر لكل مبنى');
+        $this->assertStringContainsString('data-bld="'.$main->id.'" aria-selected="true"', $h);
+        $this->assertStringContainsString('data-bld="'.$b->id.'" aria-selected="false"', $h);
+        $this->assertStringContainsString('data-tile-group="'.$main->id.'" id="tiles-'.$main->id.'" role="tabpanel">', $h, 'شبكة الملز غير ظاهرة');
+        $this->assertStringContainsString('data-tile-group="'.$b->id.'" id="tiles-'.$b->id.'" role="tabpanel" hidden>', $h, 'شبكة الدمام غير مخفية');
         $mainGrp = substr($h, strpos($h, 'data-tile-group="'.$main->id.'"'), strpos($h, 'data-tile-group="'.$b->id.'"') - strpos($h, 'data-tile-group="'.$main->id.'"'));
-        $this->assertStringContainsString('class="collapse show" id="tiles-'.$main->id.'"', $mainGrp);
         $this->assertStringContainsString('data-place="HZ-01"', $mainGrp);
         $this->assertStringNotContainsString('data-place="HZ-01/DMM"', $mainGrp, 'مكان الدمام داخل مجموعة الملز');
         $dmmGrp = substr($h, strpos($h, 'data-tile-group="'.$b->id.'"'), 6000);
-        $this->assertStringContainsString('class="collapse " id="tiles-'.$b->id.'"', $dmmGrp, 'فرع الدمام غير مطوي');
         $this->assertStringContainsString('data-place="HZ-01/DMM"', $dmmGrp);
+        $this->assertStringNotContainsString('data-bs-toggle="collapse" data-bs-target="#tiles-', $h, 'القوائم المتراكمة ما زالت');
 
-        // بعد التبديل إلى الدمام يصير هو المفتوح
+        // بعد التبديل إلى الدمام يصير هو المختار الظاهر
         $this->actingAs($salama)->post(route('app.building.switch', $b));
         $h = $this->actingAs($salama)->get(route('app.home'))->assertOk()->getContent();
-        $this->assertStringContainsString('class="collapse show" id="tiles-'.$b->id.'"', $h);
-        $this->assertStringContainsString('class="collapse " id="tiles-'.$main->id.'"', $h);
+        $this->assertStringContainsString('data-bld="'.$b->id.'" aria-selected="true"', $h);
+        $this->assertStringContainsString('data-bld="'.$main->id.'" aria-selected="false"', $h);
+        $this->assertStringContainsString('data-tile-group="'.$b->id.'" id="tiles-'.$b->id.'" role="tabpanel">', $h);
+        $this->assertStringContainsString('data-tile-group="'.$main->id.'" id="tiles-'.$main->id.'" role="tabpanel" hidden>', $h);
 
-        // فني في الدمام: مبنى واحد ← مربعاته بلا عناوين كما كان
+        // فني في الدمام: مبنى واحد ← مربعاته بلا صف كما كان
         $fani = $this->user('fani.b', 'field_worker', $b, Place::where('building_id', $b->id)->where('category', 'HZ-01')->first());
         $h = $this->actingAs($fani)->get(route('app.home'))->assertOk()->getContent();
         $this->assertStringNotContainsString('data-tile-group="', $h);
+        $this->assertStringNotContainsString('id="bldTabs"', $h);
         $this->assertSame(1, substr_count($h, 'data-place="'));
     }
 }

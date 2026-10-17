@@ -86,6 +86,13 @@
   .grp-ic.late{background:#fde8e8;color:var(--red)}.grp-ic.late .grp-n{background:var(--red)}
   .grp-od{color:var(--red);font-size:.8rem;font-weight:600}
   .grp-h .grp-caret{transition:transform .2s;color:var(--mut)}.grp-h:not(.collapsed) .grp-caret{transform:rotate(180deg)}
+  /* ٣٢-١ (قرار ٩١): صف أزرار الفروع في الصفحة الأولى — المختار ظاهر وحده وشبكته تحته */
+  .bld-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:8px}
+  .bld-tab{display:flex;flex-direction:column;align-items:flex-start;gap:2px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:.45rem .7rem;text-align:start;color:var(--ink);cursor:pointer;font-weight:700;line-height:1.25}
+  .bld-tab:hover{border-color:var(--g);color:var(--g)}
+  .bld-tab.on{background:var(--tint);border-color:var(--g);color:var(--g);box-shadow:inset 0 -3px 0 var(--g)}
+  .bld-tab .bld-st{font-weight:500;color:var(--mut)}
+  .pl-empty{border:1px dashed var(--line);border-radius:10px;padding:14px;background:#fbfcfb;color:var(--mut);font-size:.92rem}
   #inboxList .collapse>.d-grid{border:1px solid var(--line);border-top:0;border-radius:0 0 10px 10px;padding:.6rem;background:#fbfcfb}
   .task-actions{display:flex;gap:.5rem;flex-wrap:wrap}
   /* ٢٦-١١: الدفعة — بطاقة واحدة للمتطابق، وبنودها أسطر تحتها تُفتح بزرها */
